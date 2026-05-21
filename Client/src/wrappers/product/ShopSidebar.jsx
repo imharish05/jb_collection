@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import clsx from "clsx";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import Slider from "rc-slider";
@@ -19,15 +19,43 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
   const activeCombo    = params.get("combo")    || "";
   const activeSubCat   = params.get("subcategory") || "";
 
+  // ── Mobile Responsive State ──
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileSections, setMobileSections] = useState({
+    price: true,
+    categories: false,
+    events: false,
+    combos: false,
+  });
+
+  // Track window resizing to detect mobile viewports smoothly
+  useEffect(() => {
+    const handleResize = () => {
+      const mobileMode = window.innerWidth <= 768;
+      setIsMobile(mobileMode);
+      if (!mobileMode) {
+        // Keep everything open on desktop
+        setMobileSections({ price: true, categories: true, events: true, combos: true });
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const toggleMobileSection = (section) => {
+    if (!isMobile) return;
+    setMobileSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
   // ── Track which category's subcategories are expanded ──
   const [expandedCat, setExpandedCat] = useState(() => {
-    // Auto-expand the category that matches the current URL on first render
     return activeCategory || null;
   });
 
-  // ── Price range ──
+  // ── Price range (Force minimum starting from 0) ──
   const allPrices = useMemo(() => products.map(p => p.price).filter(Boolean), [products]);
-  const priceMin  = useMemo(() => allPrices.length ? Math.floor(Math.min(...allPrices)) : 0,    [allPrices]);
+  const priceMin  = 0; // Fixed at 0 per your request
   const priceMax  = useMemo(() => allPrices.length ? Math.ceil(Math.max(...allPrices))  : 5000, [allPrices]);
   const [priceRange, setPriceRange] = useState(null);
 
@@ -52,7 +80,6 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
       navigate(S);
       return;
     }
-    // If already expanded + active → collapse and go back to "all"
     if (expandedCat === cat.value && activeCategory === cat.value) {
       setExpandedCat(null);
       navigate(S);
@@ -62,187 +89,204 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
     }
   };
 
+  const isAllProductsActive = !activeCategory && !activeEvent && !activeCombo && !activeSubCat;
+
   return (
     <div className={clsx("sidebar-style", sideSpaceClass)} style={styles.root}>
+      
+      {/* Injecting simple CSS rule just to clean up native button focus & layout flow on phones */}
+      <style>{`
+        @media (max-width: 768px) {
+          .mobile-accordion-header { cursor: pointer; padding: 12px 4px; display: flex; justify-content: space-between; align-items: center; }
+          .mobile-accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.25s ease-out; }
+          .mobile-accordion-content.open { max-height: 1200px; transition: max-height 0.4s ease-in; }
+        }
+      `}</style>
 
       {/* ── Price Range ── */}
       <div style={styles.section}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <p style={{ ...styles.sectionTitle, margin: 0 }}>Price Range</p>
+        <div 
+          className="mobile-accordion-header" 
+          onClick={() => toggleMobileSection("price")}
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: isMobile ? 0 : 14 }}
+        >
+          <p style={{ ...styles.sectionTitle, margin: 0 }}>
+            Price Range {isMobile && <span style={styles.mobileChevron}>{mobileSections.price ? "▲" : "▼"}</span>}
+          </p>
           {priceRange && (
-            <button onClick={clearPrice} style={styles.clearBtn}>Reset</button>
+            <button onClick={(e) => { e.stopPropagation(); clearPrice(); }} style={styles.clearBtn}>Reset</button>
           )}
         </div>
 
-        <div style={styles.priceBadgeRow}>
-          <div style={styles.priceBadge}>
-            <span style={styles.badgeLabel}>Min</span>
-            <span style={styles.badgeValue}>
-              ₹{(priceRange ? priceRange.min : priceMin).toLocaleString("en-IN")}
-            </span>
+        <div className={clsx("mobile-accordion-content", (mobileSections.price || !isMobile) && "open")} style={(!mobileSections.price && isMobile) ? {display: 'none'} : {marginTop: 14}}>
+          <div style={styles.priceBadgeRow} >
+            <div style={styles.priceBadge}>
+              <span style={styles.badgeLabel}>Min</span>
+              <span style={styles.badgeValue}>
+                ₹{(priceRange ? priceRange.min : priceMin).toLocaleString("en-IN")}
+              </span>
+            </div>
+            <span style={styles.priceSep}>—</span>
+            <div style={styles.priceBadge}>
+              <span style={styles.badgeLabel}>Max</span>
+              <span style={styles.badgeValue}>
+                ₹{(priceRange ? priceRange.max : priceMax).toLocaleString("en-IN")}
+              </span>
+            </div>
           </div>
-          <span style={styles.priceSep}>—</span>
-          <div style={styles.priceBadge}>
-            <span style={styles.badgeLabel}>Max</span>
-            <span style={styles.badgeValue}>
-              ₹{(priceRange ? priceRange.max : priceMax).toLocaleString("en-IN")}
-            </span>
+
+          {/* Wrapper to add horizontal indentation specifically for the track on mobile viewports */}
+          <div style={isMobile ? styles.sliderMobileWrapper : undefined}>
+            <Slider
+              range
+              min={priceMin}
+              max={priceMax}
+              step={Math.max(1, Math.floor((priceMax - priceMin) / 100))}
+              value={sliderValue}
+              onChange={handlePriceChange}
+              onAfterChange={handlePriceAfterChange}
+              trackStyle={[{ backgroundColor: "#db1a5d", height: 3 }]}
+              handleStyle={[
+                { borderColor: "#db1a5d", backgroundColor: "#fff", width: 18, height: 18, marginTop: -7.5, boxShadow: "0 1px 4px rgba(219, 26, 93,0.35)", opacity: 1 },
+                { borderColor: "#db1a5d", backgroundColor: "#fff", width: 18, height: 18, marginTop: -7.5, boxShadow: "0 1px 4px rgba(219, 26, 93,0.35)", opacity: 1 },
+              ]}
+              railStyle={{ backgroundColor: "#e8e8e8", height: 3 }}
+            />
+
+            <div style={styles.priceLimits}>
+              <span>₹{priceMin.toLocaleString("en-IN")}</span>
+              <span>₹{priceMax.toLocaleString("en-IN")}</span>
+            </div>
           </div>
-        </div>
-
-        <Slider
-          range
-          min={priceMin}
-          max={priceMax}
-          step={Math.max(1, Math.floor((priceMax - priceMin) / 100))}
-          value={sliderValue}
-          onChange={handlePriceChange}
-          onAfterChange={handlePriceAfterChange}
-          trackStyle={[{ backgroundColor: "#db1a5d", height: 3 }]}
-          handleStyle={[
-            { borderColor: "#db1a5d", backgroundColor: "#fff", width: 16, height: 16, marginTop: -6.5, boxShadow: "0 1px 4px rgba(219, 26, 93,0.35)", opacity: 1 },
-            { borderColor: "#db1a5d", backgroundColor: "#fff", width: 16, height: 16, marginTop: -6.5, boxShadow: "0 1px 4px rgba(219, 26, 93,0.35)", opacity: 1 },
-          ]}
-          railStyle={{ backgroundColor: "#e8e8e8", height: 3 }}
-        />
-
-        <div style={styles.priceLimits}>
-          <span>₹{priceMin.toLocaleString("en-IN")}</span>
-          <span>₹{priceMax.toLocaleString("en-IN")}</span>
         </div>
       </div>
 
       {/* ── Categories + Subcategories ── */}
       <div style={styles.section}>
-        <p style={styles.sectionTitle}>Categories</p>
-        <ul style={styles.filterList}>
-          {categories.map((cat) => {
-            const isAll    = cat.value === null;
-            const isActive = isAll
-              ? !activeCategory && !activeEvent && !activeCombo
-              : activeCategory === cat.value;
-            const isExpanded  = expandedCat === cat.value;
-            const subcategories = cat.subcategories || [];
-            const hasSubCats  = !isAll && subcategories.length > 0;
+        <div className="mobile-accordion-header" onClick={() => toggleMobileSection("categories")}>
+          <p style={{...styles.sectionTitle, margin: 0}}>
+            Categories {isMobile && <span style={styles.mobileChevron}>{mobileSections.categories ? "▲" : "▼"}</span>}
+          </p>
+        </div>
+        
+        <div className={clsx("mobile-accordion-content", (mobileSections.categories || !isMobile) && "open")} style={(!mobileSections.categories && isMobile) ? {display: 'none'} : {marginTop: 14}}>
+          <ul style={styles.filterList}>
+            {/* ── All Products Button ── */}
+            <li>
+              <button
+                onClick={() => {
+                  setExpandedCat(null);
+                  navigate(S);
+                }}
+                style={{ ...styles.filterBtn, ...(isAllProductsActive ? styles.filterBtnActive : {}) }}
+              >
+                <span>All Products</span>
+                <span style={{ ...styles.filterCount, ...(isAllProductsActive ? styles.filterCountActive : {}) }}>
+                  ({products.length})
+                </span>
+              </button>
+            </li>
 
-            const count = isAll
-              ? products.length
-              : products.filter(p => p.category?.includes(cat.value)).length;
+            {categories.map((cat) => {
+              const isAll    = cat.value === null;
+              const isActive = isAll
+                ? !activeCategory && !activeEvent && !activeCombo
+                : activeCategory === cat.value;
+              const isExpanded  = expandedCat === cat.value;
+              const subcategories = cat.subcategories || [];
+              const hasSubCats  = !isAll && subcategories.length > 0;
 
-            return (
-              <li key={cat.value ?? "__all"}>
-                {/* ── Category row ── */}
-                <button
-                  onClick={() => handleCategoryClick(cat)}
-                  style={{ ...styles.filterBtn, ...(isActive ? styles.filterBtnActive : {}) }}
-                >
-                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    {/* Chevron — only shown for cats that have subcategories */}
-                    {hasSubCats && (
-                      <span style={{
-                        ...styles.chevron,
-                        transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
-                      }}>
-                        ›
-                      </span>
-                    )}
-                    {cat.label}
-                  </span>
-                  <span style={{ ...styles.filterCount, ...(isActive ? styles.filterCountActive : {}) }}>
-                    ({count})
-                  </span>
-                </button>
+              const count = isAll
+                ? products.length
+                : products.filter(p => p.category?.includes(cat.value)).length;
 
-                {/* ── Subcategory drawer ── */}
-                {hasSubCats && isExpanded && (
-                  <ul style={styles.subList}>
-                    {/* "All in <Category>" option */}
-                    <li>
-                      <button
-                        onClick={() => navigate(`${S}?category=${cat.value}`)}
-                        style={{
-                          ...styles.subBtn,
-                          ...(!activeSubCat && activeCategory === cat.value ? styles.subBtnActive : {}),
-                        }}
-                      >
-                        <span>All {cat.label}</span>
-                        <span style={styles.filterCount}>({count})</span>
-                      </button>
-                    </li>
+              return (
+                <li key={cat.value ?? "__all"}>
+                  <button
+                    onClick={() => handleCategoryClick(cat)}
+                    style={{ ...styles.filterBtn, ...(isActive ? styles.filterBtnActive : {}) }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {hasSubCats && (
+                        <span style={{
+                          ...styles.chevron,
+                          transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                        }}>
+                          ›
+                        </span>
+                      )}
+                      {cat.label}
+                    </span>
+                    <span style={{ ...styles.filterCount, ...(isActive ? styles.filterCountActive : {}) }}>
+                      ({count})
+                    </span>
+                  </button>
 
-                    {subcategories.map((sub) => {
-                      const subCount  = products.filter(p => p.subcategory?.includes(sub.value)).length;
-                      const subActive = activeSubCat === sub.value;
-                      return (
-                        <li key={sub.value}>
-                          <button
-                            onClick={() =>
-                              navigate(`${S}?category=${cat.value}&subcategory=${sub.value}`)
-                            }
-                            style={{ ...styles.subBtn, ...(subActive ? styles.subBtnActive : {}) }}
-                          >
-                            <span>{sub.label}</span>
-                            <span style={{ ...styles.filterCount, ...(subActive ? styles.filterCountActive : {}) }}>
-                              ({subCount})
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                  {/* ── Subcategory drawer ── */}
+                  {hasSubCats && isExpanded && (
+                    <ul style={styles.subList}>
+                      <li>
+                        <button
+                          onClick={() => navigate(`${S}?category=${cat.value}`)}
+                          style={{
+                            ...styles.subBtn,
+                            ...(!activeSubCat && activeCategory === cat.value ? styles.subBtnActive : {}),
+                          }}
+                        >
+                          <span>All {cat.label}</span>
+                          <span style={styles.filterCount}>({count})</span>
+                        </button>
+                      </li>
+
+                      {subcategories.map((sub) => {
+                        const subCount  = products.filter(p => p.subcategory?.includes(sub.value)).length;
+                        const subActive = activeSubCat === sub.value;
+                        return (
+                          <li key={sub.value}>
+                            <button
+                              onClick={() =>
+                                navigate(`${S}?category=${cat.value}&subcategory=${sub.value}`)
+                              }
+                              style={{ ...styles.subBtn, ...(subActive ? styles.subBtnActive : {}) }}
+                            >
+                              <span>{sub.label}</span>
+                              <span style={{ ...styles.filterCount, ...(subActive ? styles.filterCountActive : {}) }}>
+                                ({subCount})
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </div>
 
       {/* ── Events ── */}
       <div style={styles.section}>
-        <p style={styles.sectionTitle}>Shop by Event</p>
-        <ul style={styles.filterList}>
-          {events.map((evt) => {
-            const count    = products.filter(p => p.tag?.includes(evt.value)).length;
-            if (count === 0) return null;
-            const isActive = activeEvent === evt.value;
-            return (
-              <li key={evt.value}>
-                <button
-                  onClick={() => navigate(`${S}?event=${evt.value}`)}
-                  style={{ ...styles.filterBtn, ...(isActive ? styles.filterBtnActive : {}) }}
-                >
-                  <span>{evt.label}</span>
-                  <span style={{ ...styles.filterCount, ...(isActive ? styles.filterCountActive : {}) }}>
-                    ({count})
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
-      {/* ── Combos ── */}
-      {combos.length > 0 && (
-        <div style={{ ...styles.section, borderBottom: "none", paddingBottom: 0 }}>
-          <p style={styles.sectionTitle}>
-            <span style={styles.comboIcon}></span> Combos
+        <div className="mobile-accordion-header" onClick={() => toggleMobileSection("events")}>
+          <p style={{...styles.sectionTitle, margin: 0}}>
+            Shop by Event {isMobile && <span style={styles.mobileChevron}>{mobileSections.events ? "▲" : "▼"}</span>}
           </p>
+        </div>
+        
+        <div className={clsx("mobile-accordion-content", (mobileSections.events || !isMobile) && "open")} style={(!mobileSections.events && isMobile) ? {display: 'none'} : {marginTop: 14}}>
           <ul style={styles.filterList}>
-            {combos.map((combo) => {
-              const isAll    = combo.value === null;
-              const isActive = isAll ? activeCombo === "all" : activeCombo === combo.value;
-              const count    = isAll
-                ? products.filter(p => p.combo && p.combo.length > 0).length
-                : products.filter(p => p.combo?.includes(combo.value)).length;
-              if (!isAll && count === 0) return null;
+            {events.map((evt) => {
+              const count    = products.filter(p => p.tag?.includes(evt.value)).length;
+              if (count === 0) return null;
+              const isActive = activeEvent === evt.value;
               return (
-                <li key={combo.value ?? "__all-combos"}>
+                <li key={evt.value}>
                   <button
-                    onClick={() => combo.value ? navigate(`${S}?combo=${combo.value}`) : navigate(`${S}?combo=all`)}
+                    onClick={() => navigate(`${S}?event=${evt.value}`)}
                     style={{ ...styles.filterBtn, ...(isActive ? styles.filterBtnActive : {}) }}
                   >
-                    <span>{combo.label}</span>
+                    <span>{evt.label}</span>
                     <span style={{ ...styles.filterCount, ...(isActive ? styles.filterCountActive : {}) }}>
                       ({count})
                     </span>
@@ -251,6 +295,43 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
               );
             })}
           </ul>
+        </div>
+      </div>
+
+      {/* ── Combos ── */}
+      {combos.length > 0 && (
+        <div style={{ ...styles.section, borderBottom: "none", paddingBottom: 0 }}>
+          <div className="mobile-accordion-header" onClick={() => toggleMobileSection("combos")}>
+            <p style={{...styles.sectionTitle, margin: 0}}>
+              <span style={styles.comboIcon}></span> Combos {isMobile && <span style={styles.mobileChevron}>{mobileSections.combos ? "▲" : "▼"}</span>}
+            </p>
+          </div>
+          
+          <div className={clsx("mobile-accordion-content", (mobileSections.combos || !isMobile) && "open")} style={(!mobileSections.combos && isMobile) ? {display: 'none'} : {marginTop: 14}}>
+            <ul style={styles.filterList}>
+              {combos.map((combo) => {
+                const isAll    = combo.value === null;
+                const isActive = isAll ? activeCombo === "all" : activeCombo === combo.value;
+                const count    = isAll
+                  ? products.filter(p => p.combo && p.combo.length > 0).length
+                  : products.filter(p => p.combo?.includes(combo.value)).length;
+                if (!isAll && count === 0) return null;
+                return (
+                  <li key={combo.value ?? "__all-combos"}>
+                    <button
+                      onClick={() => combo.value ? navigate(`${S}?combo=${combo.value}`) : navigate(`${S}?combo=all`)}
+                      style={{ ...styles.filterBtn, ...(isActive ? styles.filterBtnActive : {}) }}
+                    >
+                      <span>{combo.label}</span>
+                      <span style={{ ...styles.filterCount, ...(isActive ? styles.filterCountActive : {}) }}>
+                        ({count})
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </div>
       )}
 
@@ -268,40 +349,46 @@ const styles = {
     color: "#999",
     textTransform: "uppercase",
     letterSpacing: "0.7px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%"
   },
+  mobileChevron: { fontSize: 10, color: "#bbb" },
   clearBtn: {
     background: "none", border: "none", color: "#db1a5d",
     fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, textDecoration: "underline",
   },
   priceBadgeRow: { display: "flex", alignItems: "center", gap: 8, marginBottom: 16 },
   priceBadge: {
-    flex: 1, border: "1px solid #e8e8e8", borderRadius: 4, padding: "7px 10px",
+    flex: 1, border: "1px solid #e8e8e8", borderRadius: 4,
     textAlign: "center", background: "#fafafa", display: "flex", flexDirection: "column", gap: 2,
   },
   badgeLabel: { fontSize: 10, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.4px" },
   badgeValue: { fontSize: 14, fontWeight: 600, color: "#222" },
   priceSep: { color: "#bbb", fontSize: 14, flexShrink: 0 },
   priceLimits: { display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 11, color: "#bbb" },
+  // This layout padding pinches the slider length in comfortably on small touch screens
+  sliderMobileWrapper: { paddingLeft: 16, paddingRight: 16 },
   filterList: { listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 1 },
   filterBtn: {
     width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
     background: "none", border: "none", outline: "none", cursor: "pointer",
-    paddingTop: 7, paddingBottom: 7, paddingRight: 10, paddingLeft: 10,
+    paddingTop: 10, paddingBottom: 10, paddingRight: 10, paddingLeft: 10,
     fontSize: 13, color: "#444", borderRadius: 6,
     transition: "background 0.15s, color 0.15s", textAlign: "left",
   },
   filterBtnActive: { background: "#fdf0ff", color: "#a020c0", fontWeight: 600 },
   filterCount: { fontSize: 11, color: "#bbb", fontWeight: 400, flexShrink: 0 },
   filterCountActive: { color: "#c050e0" },
-chevron: {
+  chevron: {
     display: "inline-block",
-    fontSize: 25,        // was 16
+    fontSize: 25,
     lineHeight: 1,
     color: "#bbb",
     transition: "transform 0.2s ease",
-    fontWeight: 900,     // was 400
-},
-  // ── Subcategory styles ──
+    fontWeight: 900,
+  },
   subList: {
     listStyle: "none",
     margin: "2px 0 4px 0",
@@ -314,7 +401,7 @@ chevron: {
   subBtn: {
     width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
     background: "none", border: "none", outline: "none", cursor: "pointer",
-    paddingTop: 6, paddingBottom: 6, paddingRight: 10, paddingLeft: 8,
+    paddingTop: 8, paddingBottom: 8, paddingRight: 10, paddingLeft: 8,
     fontSize: 12, color: "#666", borderRadius: 5,
     transition: "background 0.15s, color 0.15s", textAlign: "left",
   },

@@ -13,28 +13,43 @@ const normalizeProduct = (product) => ({
     variation: Array.isArray(product.variation) ? product.variation : parseJson(product.variation) || [],
 });
 
+// Two backend-variant cart items are the SAME only if both productId AND
+// the full selectedVariantName (attribute combo string) match.
+// selectedVariantId alone is NOT enough — the same variant row can represent
+// multiple attribute combos (e.g. bronze+Small+Gold-plated vs bronze+Small+Wood
+// may share the same variantId but differ by selectedVariantName).
+const isSameBackendVariant = (item, product) => {
+    if (item.id !== product.id) return false;
+    if (item.selectedVariantId !== product.selectedVariantId) return false;
+    const a = (item.selectedVariantName || '').trim();
+    const b = (product.selectedVariantName || '').trim();
+    return a === b && a !== '';
+};
+
 const cartSlice = createSlice({
     name: "cart",
-    initialState: {
-        cartItems: []
-    },
+    initialState: { cartItems: [] },
     reducers: {
         addToCart(state, action) {
             const product = normalizeProduct(action.payload);
             const newCartItemId = product.cartItemId || uuidv4();
 
-            // Backend variant products: deduplicate by cartItemId
+            // ── Backend variant products ──────────────────────────────────────
             if (product.selectedVariantId) {
-                const existingItem = state.cartItems.find(item => item.cartItemId === newCartItemId);
+                const existingItem = state.cartItems.find(item => isSameBackendVariant(item, product));
+
                 if (existingItem) {
-                    // Updating qty of existing item — NO toast
+                    // Same product + same full variant combo → increment qty, no toast
                     state.cartItems = state.cartItems.map(item =>
-                        item.cartItemId === newCartItemId
-                            ? { ...item, quantity: product.quantity || item.quantity + 1 }
+                        isSameBackendVariant(item, product)
+                            ? { ...item,
+                                quantity: product.quantity != null ? product.quantity : item.quantity + 1,
+                                cartItemId: product.cartItemId || item.cartItemId, // keep backend id in sync
+                              }
                             : item
                     );
                 } else {
-                    // New item added — show toast
+                    // Different combo or brand new → new cart row
                     state.cartItems.push({
                         ...product,
                         quantity: product.quantity || 1,
@@ -45,84 +60,51 @@ const cartSlice = createSlice({
                 return;
             }
 
+            // ── No variation at all ───────────────────────────────────────────
             if (!product.variation || (Array.isArray(product.variation) && product.variation.length === 0)) {
-                const cartItem = state.cartItems.find(item =>
-                    item.id === product.id &&
-                    (newCartItemId ? item.cartItemId === newCartItemId : true)
-                );
+                const cartItem = state.cartItems.find(item => item.id === product.id);
                 if (!cartItem) {
-                    state.cartItems.push({
-                        ...product,
-                        quantity: product.quantity ? product.quantity : 1,
-                        cartItemId: newCartItemId
-                    });
+                    state.cartItems.push({ ...product, quantity: product.quantity || 1, cartItemId: newCartItemId });
                     cogoToast.success("Added To Cart", { position: "top-center" });
                 } else {
-                    // Qty increment — NO toast
-                    state.cartItems = state.cartItems.map(item => {
-                        if (item.cartItemId === cartItem.cartItemId) {
-                            return {
-                                ...item,
-                                quantity: product.quantity ? item.quantity + product.quantity : item.quantity + 1
-                            };
-                        }
-                        return item;
-                    });
+                    state.cartItems = state.cartItems.map(item =>
+                        item.id === cartItem.id
+                            ? { ...item, quantity: item.quantity + (product.quantity || 1) }
+                            : item
+                    );
                 }
+                return;
+            }
+
+            // ── Old-style color/size variation ────────────────────────────────
+            const cartItem = state.cartItems.find(item =>
+                item.id === product.id &&
+                item.selectedProductColor === product.selectedProductColor &&
+                item.selectedProductSize === product.selectedProductSize
+            );
+            if (!cartItem) {
+                state.cartItems.push({ ...product, quantity: product.quantity || 1, cartItemId: newCartItemId });
+                cogoToast.success("Added To Cart", { position: "top-center" });
             } else {
-                const cartItem = state.cartItems.find(
-                    item =>
-                        item.id === product.id &&
-                        product.selectedProductColor &&
-                        product.selectedProductColor === item.selectedProductColor &&
-                        product.selectedProductSize &&
-                        product.selectedProductSize === item.selectedProductSize &&
-                        (product.cartItemId ? product.cartItemId === item.cartItemId : true)
+                state.cartItems = state.cartItems.map(item =>
+                    item.cartItemId === cartItem.cartItemId
+                        ? { ...item, quantity: item.quantity + (product.quantity || 1) }
+                        : item
                 );
-                if (!cartItem) {
-                    state.cartItems.push({
-                        ...product,
-                        quantity: product.quantity ? product.quantity : 1,
-                        cartItemId: newCartItemId
-                    });
-                    cogoToast.success("Added To Cart", { position: "top-center" });
-                } else if (cartItem !== undefined && (cartItem.selectedProductColor !== product.selectedProductColor || cartItem.selectedProductSize !== product.selectedProductSize)) {
-                    state.cartItems = [
-                        ...state.cartItems,
-                        {
-                            ...product,
-                            quantity: product.quantity ? product.quantity : 1,
-                            cartItemId: newCartItemId
-                        }
-                    ];
-                    cogoToast.success("Added To Cart", { position: "top-center" });
-                } else {
-                    // Qty increment — NO toast
-                    state.cartItems = state.cartItems.map(item => {
-                        if (item.cartItemId === cartItem.cartItemId) {
-                            return {
-                                ...item,
-                                quantity: product.quantity ? item.quantity + product.quantity : item.quantity + 1,
-                                selectedProductColor: product.selectedProductColor,
-                                selectedProductSize: product.selectedProductSize
-                            };
-                        }
-                        return item;
-                    });
-                }
             }
         },
+
         deleteFromCart(state, action) {
             state.cartItems = state.cartItems.filter(item => item.cartItemId !== action.payload);
             cogoToast.error("Removed From Cart", { position: "top-center" });
         },
+
         decreaseQuantity(state, action) {
             const product = action.payload;
             if (product.quantity === 1) {
                 state.cartItems = state.cartItems.filter(item => item.cartItemId !== product.cartItemId);
                 cogoToast.error("Removed From Cart", { position: "top-center" });
             } else {
-                // Just decrement — NO toast
                 state.cartItems = state.cartItems.map(item =>
                     item.cartItemId === product.cartItemId
                         ? { ...item, quantity: item.quantity - 1 }
@@ -130,9 +112,11 @@ const cartSlice = createSlice({
                 );
             }
         },
+
         deleteAllFromCart(state) {
             state.cartItems = [];
         },
+
         replaceCart(state, action) {
             state.cartItems = action.payload || [];
         }

@@ -69,7 +69,7 @@ const ProductGridSingleEleven = ({
                   {" "}
                   <i className="fa fa-shopping-cart"></i>{" "}
                 </a>
-              ) : product.variation && product.variation.length >= 1 ? (
+              ) : (product.variation && product.variation.length >= 1) || (Array.isArray(product.Variants) && product.Variants.length > 0) ? (
                 <Link
                   to={`${process.env.PUBLIC_URL}/product/${product.id}`}
                   title="Select options"

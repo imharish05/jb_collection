@@ -33,21 +33,32 @@ const addToCart = async (req, res, next) => {
     const product = await Product.findOne({ where: { id: productId, isActive: true } });
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    // For backend variants: deduplicate by selectedVariantId
-    // For old-style variations: deduplicate by color + size
-    const whereClause = {
-      userId: req.user.id,
-      productId,
-    };
+    // Deduplicate by EXACT combination:
+    // - backend variants: productId + selectedVariantId + selectedVariantName (full attr string)
+    //   → same variantId but different attribute combo = separate cart row
+    // - old-style: productId + color + size
+    let cartItem = null;
 
     if (selectedVariantId) {
-      whereClause.selectedVariantId = selectedVariantId;
+      // selectedVariantName lives in productSnapshot JSON, not a column — filter in JS
+      const candidates = await CartItem.findAll({
+        where: { userId: req.user.id, productId, selectedVariantId },
+      });
+      const incomingName = (selectedVariantName || "").trim();
+      cartItem = candidates.find(c => {
+        const storedName = (c.productSnapshot?.selectedVariantName || "").trim();
+        return storedName === incomingName;
+      }) || null;
     } else {
-      whereClause.selectedProductColor = selectedProductColor || null;
-      whereClause.selectedProductSize = selectedProductSize || null;
+      cartItem = await CartItem.findOne({
+        where: {
+          userId: req.user.id,
+          productId,
+          selectedProductColor: selectedProductColor || null,
+          selectedProductSize: selectedProductSize || null,
+        },
+      });
     }
-
-    let cartItem = await CartItem.findOne({ where: whereClause });
 
     if (cartItem) {
       cartItem.quantity += quantity;

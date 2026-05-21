@@ -86,7 +86,7 @@ const ProductGridSingle = ({
                         {" "}
                         Buy now{" "}
                     </a>
-                    ) : product.variation && product.variation.length >= 1 ? (
+                    ) : (product.variation && product.variation.length >= 1) || (Array.isArray(product.Variants) && product.Variants.length > 0) ? (
                     <Link to={`${process.env.PUBLIC_URL}/product/${product.id}`}>
                         Select Option
                     </Link>

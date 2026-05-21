@@ -34,7 +34,7 @@ const PAYMENT_METHODS = [
     id: "cod",
     label: "Cash on Delivery",
     icon: "💵",
-    desc: "Pay when your order arrives (+₹30 handling)",
+    desc: "Pay when your order arrives (+₹77 handling)",
   },
   {
     id: "upi",
@@ -153,7 +153,7 @@ const Checkout = () => {
   /* ── Derived values ────────────────────────────────────────────────────── */
   const selectedAddr = addresses.find((a) => a.id === selectedAddrId);
   const grandTotalWithCOD =
-    paymentMethod === "cod" ? pricing.grandTotal + 30 : pricing.grandTotal;
+    paymentMethod === "cod" ? pricing.grandTotal + 77: pricing.grandTotal;
 
   const [razorpayOrderId, setRazorpayOrderId] = useState(null);
   const [processingRazorpay, setProcessingRazorpay] = useState(false);
@@ -998,7 +998,7 @@ const Checkout = () => {
                     {paymentMethod === "cod" && (
                       <div className="kco-sum-row" style={{ color: "#888" }}>
                         <span>COD Handling</span>
-                        <span>₹30</span>
+                        <span>₹77</span>
                       </div>
                     )}
                   </div>

@@ -252,10 +252,15 @@ const Cart = () => {
                         }).filter(a => a.key && a.value)
                       : [];
 
-                    // Deduplicate attrs (keep unique key-value pairs)
-                    const uniqueAttrs = variantAttrs.filter(
-                      (a, i, arr) => arr.findIndex(x => x.key === a.key && x.value === a.value) === i
-                    );
+                    // Deduplicate attrs — keep only FIRST occurrence of each key
+                    // e.g. "Size: Small · Size: Medium · Size: Large" → just "Size: Small"
+                    const seenKeys = new Set();
+                    const uniqueAttrs = variantAttrs.filter(a => {
+                      const k = a.key?.toLowerCase();
+                      if (seenKeys.has(k)) return false;
+                      seenKeys.add(k);
+                      return true;
+                    });
 
                     return (
                       <div key={item.cartItemId} className="kg-cart-item">

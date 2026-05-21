@@ -98,14 +98,15 @@ const createOrder = async (req, res, next) => {
       itemsWithDetails.push(itemData);
     }
 
-    // Validate total amount: allow ₹1 variance for rounding
-    const totalDifference = Math.abs(serverComputedTotal - parseFloat(totalAmount));
-    if (totalDifference > 1) {
+    // Validate that client total is at least the items subtotal (prevents price tampering)
+    // We don't validate shipping/discounts here as those are still being finalized
+    const clientTotal = parseFloat(totalAmount);
+    if (clientTotal < serverComputedTotal - 1) {
       await transaction.rollback();
       return res.status(400).json({
-        message: `Order total mismatch. Expected ₹${serverComputedTotal.toFixed(2)}, received ₹${totalAmount}`,
-        expectedTotal: serverComputedTotal,
-        receivedTotal: parseFloat(totalAmount),
+        message: `Order total too low. Items subtotal is ₹${serverComputedTotal.toFixed(2)}, received ₹${clientTotal.toFixed(2)}`,
+        expectedMinimum: serverComputedTotal,
+        receivedTotal: clientTotal,
       });
     }
 

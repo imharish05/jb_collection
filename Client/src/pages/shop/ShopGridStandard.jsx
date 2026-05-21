@@ -61,7 +61,6 @@ const ShopGridStandard = () => {
     : null;
 
   const handleSortParams = (type, val) => {
-    // Price range comes as [min, max] array from rc-slider's onAfterChange
     if (type === "priceRange") {
       const [min, max] = val;
       setPriceRange(min === 0 && max === 5000 ? null : { min, max });
@@ -129,14 +128,16 @@ const ShopGridStandard = () => {
               </div>
             )}
             <div className="row">
-              <div className="col-lg-3 order-2 order-lg-1">
+              {/* Changed order-2 to order-1 for mobile visibility at the top */}
+              <div className="col-lg-3 order-1 order-lg-1">
                 <ShopSidebar
                   products={products}
                   getSortParams={handleSortParams}
                   sideSpaceClass="mr-30"
                 />
               </div>
-              <div className="col-lg-9 order-1 order-lg-2">
+              {/* Changed order-1 to order-2 so product grids sit below the mobile menu */}
+              <div className="col-lg-9 order-2 order-lg-2">
                 <ShopTopbar
                   getLayout={setLayout}
                   getFilterSortParams={(type, val) => { setFilterSortType(type); setFilterSortValue(val); }}

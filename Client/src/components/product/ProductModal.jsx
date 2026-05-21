@@ -19,48 +19,205 @@ const resolveImg = (img) => {
   return `${IMG_URL}/uploads/${clean}`;
 };
 
-// Safe helpers — backend products may have empty/null variation or size
+// ─── variant helpers (same logic as ProductDescriptionInfo) ───────────────────
+
+function safeAttrs(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; }
+  }
+  return [];
+}
+
 const hasBackendVariants = (p) => Array.isArray(p.Variants) && p.Variants.length > 0;
-
 const hasOldVariation = (p) =>
-  Array.isArray(p.variation) &&
-  p.variation.length > 0 &&
-  p.variation[0]?.color !== undefined;
+  Array.isArray(p.variation) && p.variation.length > 0 && p.variation[0]?.color !== undefined;
+const safeSize = (variation) => Array.isArray(variation?.size) ? variation.size : [];
 
-const safeSize = (variation) =>
-  Array.isArray(variation?.size) ? variation.size : [];
+const COLOR_MAP = {
+  red:"#e53935",crimson:"#c62828",maroon:"#800000",scarlet:"#FF2400",ruby:"#9B111E",
+  cherry:"#DE3163",orange:"#fb8c00",coral:"#ff7043",yellow:"#fdd835",gold:"#ffc107",
+  amber:"#ffb300",green:"#43a047",olive:"#827717",lime:"#cddc39",emerald:"#50C878",
+  teal:"#00897b",cyan:"#00bcd4",turquoise:"#26c6da",blue:"#1e88e5",navy:"#1a237e",
+  skyblue:"#29b6f6","sky blue":"#29b6f6",cobalt:"#0047AB",indigo:"#3949ab",
+  purple:"#7b1fa2",violet:"#6a1b9a",lavender:"#b39ddb",magenta:"#8e24aa",
+  pink:"#e91e63",rose:"#f48fb1",white:"#ffffff",ivory:"#fffff0",cream:"#fffde7",
+  silver:"#bdbdbd",grey:"#757575",gray:"#757575",charcoal:"#424242",black:"#212121",
+  brown:"#795548",tan:"#a1887f",beige:"#f5f5dc",bronze:"#CD7F32",
+  multicolour:"linear-gradient(135deg,#f06,#0cf,#fc0)",
+  "gold-plated":"#CFB53B","rose gold":"#b76e79",
+};
+const LIGHT_COLORS = new Set(["white","ivory","cream","yellow","lime","gold","amber","silver","bronze"]);
+function toHex(name) {
+  if (!name) return null;
+  const l = name.trim().toLowerCase();
+  if (l.startsWith("#")) return l;
+  return COLOR_MAP[l] || null;
+}
 
+const KEY_ALIASES = { color:"Colour", colour:"Colour", size:"Size", material:"Material", finish:"Finish", capacity:"Capacity" };
+function normalKey(k) { return KEY_ALIASES[k?.toLowerCase()] || k; }
+const KEY_ORDER = ["Colour","Size","Material","Finish","Capacity"];
+
+function buildOptionMap(variants) {
+  const map = {};
+  variants.forEach(v => {
+    safeAttrs(v.attributes).forEach(a => {
+      if (!a.key || !a.value || a.key === "Custom Note") return;
+      const k = normalKey(a.key);
+      if (!map[k]) map[k] = new Set();
+      map[k].add(a.value);
+    });
+  });
+  return map;
+}
+
+function compatibleValues(variants, selections, targetKey) {
+  const compatible = new Set();
+  variants.forEach(v => {
+    const attrs = {};
+    safeAttrs(v.attributes)
+      .filter(a => a.key && a.value && a.key !== "Custom Note")
+      .forEach(a => {
+        const k = normalKey(a.key);
+        if (!attrs[k]) attrs[k] = [];
+        attrs[k].push(a.value);
+      });
+    const othersMatch = Object.entries(selections).every(([k, val]) => {
+      if (k === targetKey || !val) return true;
+      return attrs[k] && attrs[k].includes(val);
+    });
+    if (othersMatch && attrs[targetKey]) attrs[targetKey].forEach(val => compatible.add(val));
+  });
+  return compatible;
+}
+
+function findMatchingVariant(variants, selections) {
+  const entries = Object.entries(selections).filter(([, v]) => v);
+  if (!entries.length) return variants[0] || null;
+  const exact = variants.find(v => {
+    const attrs = {};
+    safeAttrs(v.attributes).filter(a => a.key && a.value).forEach(a => {
+      const k = normalKey(a.key);
+      if (!attrs[k]) attrs[k] = [];
+      attrs[k].push(a.value);
+    });
+    return entries.every(([k, val]) => attrs[k] && attrs[k].includes(val));
+  });
+  if (exact) return exact;
+  let best = null, bestScore = -1;
+  variants.forEach(v => {
+    const attrs = {};
+    safeAttrs(v.attributes).filter(a => a.key && a.value).forEach(a => {
+      const k = normalKey(a.key);
+      if (!attrs[k]) attrs[k] = [];
+      attrs[k].push(a.value);
+    });
+    const score = entries.filter(([k, val]) => attrs[k] && attrs[k].includes(val)).length;
+    if (score > bestScore) { bestScore = score; best = v; }
+  });
+  return best;
+}
+
+const ORANGE = "#F15A24";
+const ORANGE_LIGHT = "#FEF0EB";
+
+// ─── AttributeGroup — identical UI to ProductDescriptionInfo ─────────────────
+function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSelect }) {
+  const isColour = /colou?r/i.test(attrKey);
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 7 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#444", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          {attrKey}
+        </span>
+        {selectedValue && (
+          <span style={{ fontSize: 12, color: ORANGE, fontWeight: 600 }}>— {selectedValue}</span>
+        )}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: isColour ? 10 : 8 }}>
+        {[...allValues].map(val => {
+          const isSelected = selectedValue === val;
+          const isDisabled = !compatibleSet.has(val);
+          const hex = isColour ? toHex(val) : null;
+          const isLight = LIGHT_COLORS.has(val.toLowerCase());
+          if (isColour && hex) {
+            return (
+              <button key={val} title={val} disabled={isDisabled} onClick={() => onSelect(isSelected ? null : val)}
+                style={{
+                  position:"relative", width:30, height:30, borderRadius:"50%", background:hex,
+                  border: isSelected ? `3px solid ${ORANGE}` : isLight ? "2px solid #ccc" : "2px solid transparent",
+                  boxShadow: isSelected ? `0 0 0 2px ${ORANGE_LIGHT},0 0 0 4px ${ORANGE}` : "0 1px 4px rgba(0,0,0,0.18)",
+                  cursor: isDisabled ? "not-allowed" : "pointer", opacity: isDisabled ? 0.35 : 1,
+                  flexShrink:0, padding:0, overflow:"hidden",
+                }}>
+                {isDisabled && <span style={{ position:"absolute",inset:0,borderRadius:"50%",background:"repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(0,0,0,0.25) 4px,rgba(0,0,0,0.25) 5px)" }} />}
+                {isSelected && <span style={{ position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:isLight?"#333":"#fff",fontSize:13,fontWeight:900 }}>✓</span>}
+              </button>
+            );
+          }
+          return (
+            <button key={val} disabled={isDisabled} onClick={() => onSelect(isSelected ? null : val)}
+              style={{
+                position:"relative", padding:"5px 12px",
+                border: `2px solid ${isSelected ? ORANGE : isDisabled ? "#e5e7eb" : "#d1d5db"}`,
+                borderRadius:6,
+                background: isSelected ? ORANGE_LIGHT : isDisabled ? "#f9fafb" : "#fff",
+                color: isSelected ? ORANGE : isDisabled ? "#c0c4cc" : "#374151",
+                fontWeight: isSelected ? 700 : 400, fontSize:13,
+                cursor: isDisabled ? "not-allowed" : "pointer",
+                fontFamily:"inherit", overflow:"hidden",
+              }}>
+              {isDisabled && <span style={{ position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%) rotate(-15deg)",width:"110%",height:1,background:"#d1d5db",pointerEvents:"none" }} />}
+              {val}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Modal ───────────────────────────────────────────────────────────────
 function ProductModal({ product, currency, discountedPrice, finalProductPrice, finalDiscountedPrice, show, onHide, wishlistItem, compareItem }) {
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const { cartItems } = useSelector((state) => state.cart);
 
-  const hasOldVar = hasOldVariation(product);
+  const hasNewVar = hasBackendVariants(product);
+  const hasOldVar = !hasNewVar && hasOldVariation(product);
+
+  // ── Backend variant state: grouped selections ─────────────────────────────
+  const optionMap = useMemo(() => hasNewVar ? buildOptionMap(product.Variants) : {}, [product]);
+  const orderedKeys = useMemo(() => {
+    if (!hasNewVar) return [];
+    const keys = Object.keys(optionMap);
+    return [...KEY_ORDER.filter(k => keys.includes(k)), ...keys.filter(k => !KEY_ORDER.includes(k))];
+  }, [optionMap, hasNewVar]);
+
+  const [selections, setSelections] = useState(() => {
+    if (!hasNewVar || !product.Variants?.length) return {};
+    const first = product.Variants[0];
+    const init = {};
+    safeAttrs(first.attributes).forEach(a => {
+      if (a.key && a.value && a.key !== "Custom Note") init[normalKey(a.key)] = a.value;
+    });
+    return init;
+  });
+
+  const selectedVariant = useMemo(() =>
+    hasNewVar ? findMatchingVariant(product.Variants, selections) : null,
+    [selections, hasNewVar, product]
+  );
+
+  // ── Old variation state ───────────────────────────────────────────────────
   const firstVariation = hasOldVar ? product.variation[0] : null;
   const firstSize = firstVariation ? safeSize(firstVariation)[0] : null;
-
-  const hasNewVar = hasBackendVariants(product);
-
-  const [selectedVariantId, setSelectedVariantId] = useState(
-    hasNewVar ? product.Variants[0].id : null
-  );
-  const [selectedProductColor, setSelectedProductColor] = useState(
-    hasOldVar ? (firstVariation?.color || "") : ""
-  );
-  const [selectedProductSize, setSelectedProductSize] = useState(
-    hasOldVar ? (firstSize?.name || "") : ""
-  );
+  const [selectedProductColor, setSelectedProductColor] = useState(hasOldVar ? (firstVariation?.color || "") : "");
+  const [selectedProductSize, setSelectedProductSize] = useState(hasOldVar ? (firstSize?.name || "") : "");
   const [productStock, setProductStock] = useState(
-    hasOldVar
-      ? (firstSize?.stock ?? 10)
-      : hasNewVar
-        ? (product.Variants[0]?.stock ?? 10)
-        : (product.stock ?? 10)
+    hasOldVar ? (firstSize?.stock ?? 10) : hasNewVar ? (product.Variants[0]?.stock ?? 10) : (product.stock ?? 10)
   );
   const [quantityCount, setQuantityCount] = useState(1);
-
-  const selectedVariant = hasNewVar
-    ? (product.Variants.find((v) => v.id === selectedVariantId) || product.Variants[0])
-    : null;
 
   const effectiveStock = selectedVariant
     ? Number(selectedVariant.stock ?? 0)
@@ -74,33 +231,24 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
     return getProductCartQuantity(cartItems, product, selectedProductColor, selectedProductSize);
   }, [cartItems, product, selectedVariant, hasNewVar, selectedProductColor, selectedProductSize]);
 
+  const handleSelect = (key, val) => {
+    setSelections(prev => ({ ...prev, [key]: val || undefined }));
+    setQuantityCount(1);
+  };
+
   const gallerySwiperParams = {
-    spaceBetween: 10,
-    loop: true,
-    effect: "fade",
+    spaceBetween: 10, loop: true, effect: "fade",
     fadeEffect: { crossFade: true },
     thumbs: { swiper: thumbsSwiper },
     modules: [EffectFade, Thumbs],
   };
-
   const thumbnailSwiperParams = {
-    onSwiper: setThumbsSwiper,
-    spaceBetween: 10,
-    slidesPerView: 4,
-    touchRatio: 0.2,
-    freeMode: true,
-    loop: true,
-    slideToClickedSlide: true,
-    navigation: true,
+    onSwiper: setThumbsSwiper, spaceBetween: 10, slidesPerView: 4,
+    touchRatio: 0.2, freeMode: true, loop: true, slideToClickedSlide: true, navigation: true,
   };
 
-  const onCloseModal = () => {
-    setThumbsSwiper(null);
-    onHide();
-  };
-
+  const onCloseModal = () => { setThumbsSwiper(null); onHide(); };
   const images = Array.isArray(product.image) ? product.image : (product.image ? [product.image] : []);
-
   const currencySymbol = currency?.currencySymbol || "₹";
 
   return (
@@ -137,6 +285,8 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
           <div className="col-md-7 col-sm-12 col-xs-12">
             <div className="product-details-content quickview-content">
               <h2>{product.name}</h2>
+
+              {/* Price */}
               <div className="product-details-price">
                 {selectedVariant ? (
                   <Fragment>
@@ -167,46 +317,29 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
                 <p>{product.shortDescription}</p>
               </div>
 
-              {/* Backend flat Variants */}
+              {/* ── Backend grouped variant selectors (same as product page) ── */}
               {hasNewVar && (
-                <div className="pro-details-size-color" style={{ marginBottom: 16 }}>
-                  <div className="pro-details-size">
-                    <span>Variant</span>
-                    <div className="pro-details-size-content" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-                      {product.Variants.map((v) => (
-                        <label className="pro-details-size-content--single" key={v.id} style={{ cursor: "pointer" }}>
-                          <input
-                            type="radio"
-                            name="product-variant"
-                            value={v.id}
-                            checked={selectedVariantId === v.id}
-                            onChange={() => { setSelectedVariantId(v.id); setQuantityCount(1); }}
-                            style={{ display: "none" }}
-                          />
-                          <span
-                            className="size-name"
-                            style={{
-                              padding: "6px 12px",
-                              border: `2px solid ${selectedVariantId === v.id ? "#F15A24" : "#ddd"}`,
-                              borderRadius: 6,
-                              background: selectedVariantId === v.id ? "#FEF0EB" : "#fff",
-                              color: selectedVariantId === v.id ? "#F15A24" : "#333",
-                              fontWeight: selectedVariantId === v.id ? 700 : 400,
-                              fontSize: 13,
-                              display: "block",
-                            }}
-                          >
-                            {v.variantName || `Variant ${v.id}`}
-                            {v.salesPrice ? <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.75 }}>₹{v.salesPrice}</span> : null}
-                          </span>
-                        </label>
-                      ))}
+                <div className="pro-details-size-color" style={{ marginBottom: 8 }}>
+                  {orderedKeys.map(key => (
+                    <AttributeGroup
+                      key={key}
+                      attrKey={key}
+                      allValues={optionMap[key]}
+                      selectedValue={selections[key] || null}
+                      compatibleSet={compatibleValues(product.Variants, selections, key)}
+                      onSelect={(val) => handleSelect(key, val)}
+                    />
+                  ))}
+                  {/* Stock badge */}
+                  {selectedVariant && (
+                    <div style={{ fontSize: 12, color: effectiveStock > 0 ? "#16a34a" : "#dc2626", fontWeight: 600, marginTop: 4 }}>
+                      {effectiveStock > 0 ? `${effectiveStock} in stock` : "Out of stock"}
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
-              {/* Old color/size variation */}
+              {/* ── Old color/size variation ── */}
               {!hasNewVar && hasOldVar && (
                 <div className="pro-details-size-color">
                   <div className="pro-details-color-wrap">
@@ -214,10 +347,7 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
                     <div className="pro-details-color-content">
                       {product.variation.map((single, key) => (
                         <label className={`pro-details-color-content--single ${single.color}`} key={key}>
-                          <input
-                            type="radio"
-                            value={single.color}
-                            name="product-color"
+                          <input type="radio" value={single.color} name="product-color"
                             checked={single.color === selectedProductColor ? "checked" : ""}
                             onChange={() => {
                               const sizes = safeSize(single);
@@ -225,8 +355,7 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
                               setSelectedProductSize(sizes[0]?.name || "");
                               setProductStock(sizes[0]?.stock ?? 10);
                               setQuantityCount(1);
-                            }}
-                          />
+                            }} />
                           <span className="checkmark"></span>
                         </label>
                       ))}
@@ -239,16 +368,9 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
                         single.color === selectedProductColor
                           ? safeSize(single).map((singleSize, key) => (
                               <label className="pro-details-size-content--single" key={key}>
-                                <input
-                                  type="radio"
-                                  value={singleSize.name}
+                                <input type="radio" value={singleSize.name}
                                   checked={singleSize.name === selectedProductSize ? "checked" : ""}
-                                  onChange={() => {
-                                    setSelectedProductSize(singleSize.name);
-                                    setProductStock(singleSize.stock);
-                                    setQuantityCount(1);
-                                  }}
-                                />
+                                  onChange={() => { setSelectedProductSize(singleSize.name); setProductStock(singleSize.stock); setQuantityCount(1); }} />
                                 <span className="size-name">{singleSize.name}</span>
                               </label>
                             ))
@@ -268,21 +390,9 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
               ) : (
                 <div className="pro-details-quality">
                   <div className="cart-plus-minus">
-                    <button
-                      onClick={() => setQuantityCount(quantityCount > 1 ? quantityCount - 1 : 1)}
-                      className="dec qtybutton"
-                    >-</button>
+                    <button onClick={() => setQuantityCount(quantityCount > 1 ? quantityCount - 1 : 1)} className="dec qtybutton">-</button>
                     <input className="cart-plus-minus-box" type="text" value={quantityCount} readOnly />
-                    <button
-                      onClick={() =>
-                        setQuantityCount(
-                          quantityCount < effectiveStock - productCartQty
-                            ? quantityCount + 1
-                            : quantityCount
-                        )
-                      }
-                      className="inc qtybutton"
-                    >+</button>
+                    <button onClick={() => setQuantityCount(quantityCount < effectiveStock - productCartQty ? quantityCount + 1 : quantityCount)} className="inc qtybutton">+</button>
                   </div>
                   <div className="pro-details-cart btn-hover">
                     {effectiveStock > 0 ? (
@@ -291,9 +401,9 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
                           let variantColor = null, variantSize = null;
                           if (selectedVariant && Array.isArray(selectedVariant.attributes)) {
                             selectedVariant.attributes.forEach(a => {
-                              const k = (a.key || '').toLowerCase();
-                              if (k === 'colour' || k === 'color') variantColor = a.value;
-                              if (k === 'size') variantSize = a.value;
+                              const k = (a.key || "").toLowerCase();
+                              if (k === "colour" || k === "color") variantColor = a.value;
+                              if (k === "size") variantSize = a.value;
                             });
                           }
                           addToCartService({
@@ -304,7 +414,7 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
                             selectedVariantName: selectedVariant?.variantName || null,
                             selectedProductColor: hasNewVar ? variantColor : selectedProductColor,
                             selectedProductSize: hasNewVar ? variantSize : selectedProductSize,
-                          })
+                          });
                         }}
                         disabled={productCartQty >= effectiveStock}
                       >
