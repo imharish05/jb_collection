@@ -9,6 +9,7 @@ import {
   addAddressService,
 } from "../../store/services/addressService";
 import { setActiveAddress } from "../../store/slices/addressSlice";
+import { deleteAllFromCart } from "../../store/slices/cart-slice";
 import { getDiscountPrice } from "../../helpers/product";
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
@@ -97,8 +98,6 @@ const Checkout = () => {
   const [addrErrors, setAddrErrors] = useState({});
   const [step, setStep] = useState(1); // 1=address, 2=payment, 3=review
   const [placing, setPlacing] = useState(false);
-  const [orderPlaced, setOrderPlaced] = useState(false);
-  const [orderId, setOrderId] = useState(null);
   const [giftNote, setGiftNote] = useState("");
   const [giftNoteOpen, setGiftNoteOpen] = useState(false);
 
@@ -156,6 +155,9 @@ const Checkout = () => {
   const grandTotalWithCOD =
     paymentMethod === "cod" ? pricing.grandTotal + 30 : pricing.grandTotal;
 
+  const [razorpayOrderId, setRazorpayOrderId] = useState(null);
+  const [processingRazorpay, setProcessingRazorpay] = useState(false);
+
   /* ── Place order ───────────────────────────────────────────────────────── */
   const handlePlaceOrder = async () => {
     if (!selectedAddr) {
@@ -167,31 +169,39 @@ const Checkout = () => {
     setPlacing(true);
     try {
       const payload = {
-        addressId: selectedAddr.id,
-        paymentMethod,
-        couponCode: pricing.couponCode || null,
-        giftNote: giftNote.trim() || null,
         items: cartItems.map((item) => ({
           productId: item.id,
+          selectedVariantId: item.selectedVariantId || null,
           quantity: item.quantity,
           price: item.price,
           discount: item.discount || 0,
           selectedProductColor: item.selectedProductColor || null,
           selectedProductSize: item.selectedProductSize || null,
         })),
+        totalAmount: pricing.grandTotal,
+        shippingAddress: selectedAddr,
+        paymentMethod,
+        couponCode: pricing.couponCode || null,
+        notes: giftNote.trim() || null,
       };
 
-      let id = null;
-      try {
-        const res = await api.post("/orders/place", payload);
-        id = res.data?.orderId || res.data?.id || "KG" + Date.now();
-      } catch {
-        id = "KG" + Date.now();
+      const res = await api.post("/orders", payload);
+      const id = res.data?.id || res.data?.orderId || "KG" + Date.now();
+      
+      // If payment method is Razorpay/UPI/Card, open Razorpay modal
+      if (paymentMethod !== "cod") {
+        initRazorpayPayment(id);
+      } else {
+        // For COD, clear cart and navigate to confirmation page
+        dispatch(deleteAllFromCart());
+        setTimeout(() => {
+          navigate(`/order-confirmation`, {
+            state: { orderId: id, selectedAddr, paymentMethod, cartItems }
+          });
+        }, 1000);
       }
-      setOrderId(id);
-      setOrderPlaced(true);
-    } catch {
-      cogoToast.error("Could not place order. Please try again.", {
+    } catch (err) {
+      cogoToast.error(err.response?.data?.message || "Could not place order. Please try again.", {
         position: "top-center",
       });
     } finally {
@@ -199,94 +209,83 @@ const Checkout = () => {
     }
   };
 
-  /* ══════════════════════════════════════════════════════════════════════════
-     ORDER SUCCESS SCREEN
-  ══════════════════════════════════════════════════════════════════════════ */
-  if (orderPlaced) {
-    return (
-      <Fragment>
-        <SEO
-          titleTemplate="Order Confirmed — Kamali Gifts"
-          description="Your order has been placed successfully."
-        />
-        <LayoutOne headerTop="visible">
-          <div className="kco-success-page">
-            <div className="kco-success-card">
-              {/* Success icon */}
-              <div style={{ marginBottom: 4 }}>
-                <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-                  <circle cx="36" cy="36" r="36" fill="#f0fdf4" />
-                  <path
-                    d="M22 36l10 10 18-20"
-                    stroke="#22c55e"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                </svg>
-              </div>
+  /* ── Initialize Razorpay Payment ───────────────────────────────────────── */
+  const initRazorpayPayment = async (dbOrderId) => {
+    try {
+      setProcessingRazorpay(true);
+      
+      // Step 1: Create Razorpay order
+      const paymentRes = await api.post("/payment/create-order", {
+        amount: pricing.grandTotal,
+        currency: "INR",
+      });
+      
+      const rzpOrderId = paymentRes.data.orderId;
+      setRazorpayOrderId(rzpOrderId);
 
-              <h2 className="kco-success-title">Order Placed! 🎉</h2>
-              <p className="kco-success-sub">
-                Thank you,{" "}
-                <strong>{user?.name?.split(" ")[0] || "there"}</strong>!
-              </p>
+      // Step 2: Open Razorpay checkout
+      if (!window.Razorpay) {
+        cogoToast.error("Razorpay SDK not loaded", { position: "top-center" });
+        return;
+      }
 
-              <div className="kco-success-order-id">
-                Order ID: <strong>{orderId}</strong>
-              </div>
+      const options = {
+        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+        order_id: rzpOrderId,
+        amount: Math.round(pricing.grandTotal * 100),
+        currency: "INR",
+        name: "Kamali Gifts",
+        description: `Order ${dbOrderId}`,
+        customer_notify: 1,
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+          contact: selectedAddr?.phone || "",
+        },
+        theme: {
+          color: "#f15a24",
+        },
+        handler: async (response) => {
+          try {
+            // Step 3: Verify payment on backend
+            const verifyRes = await api.post("/payment/verify", {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              dbOrderId,
+            });
 
-              <p className="kco-success-msg">
-                We'll send a confirmation to{" "}
-                <strong>{user?.email}</strong>.<br />
-                Estimated delivery:{" "}
-                <strong>3–7 business days</strong>
-              </p>
+            if (verifyRes.data.success) {
+              cogoToast.success("Payment successful!", { position: "top-center" });
+              dispatch(deleteAllFromCart());
+              setTimeout(() => {
+                navigate(`/order-confirmation`, {
+                  state: { orderId: dbOrderId, selectedAddr, paymentMethod, cartItems }
+                });
+              }, 1500);
+            }
+          } catch (verifyErr) {
+            cogoToast.error("Payment verification failed", { position: "top-center" });
+            console.error("Verification error:", verifyErr);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            cogoToast.warn("Payment cancelled", { position: "top-center" });
+            setProcessingRazorpay(false);
+          },
+        },
+      };
 
-              {selectedAddr && (
-                <div className="kco-success-addr">
-                  <div className="kco-success-addr-label">Delivering to</div>
-                  <div className="kco-success-addr-text">
-                    <strong>{selectedAddr.fullName}</strong>
-                    <br />
-                    {selectedAddr.street}
-                    {selectedAddr.apartment
-                      ? ", " + selectedAddr.apartment
-                      : ""}
-                    <br />
-                    {selectedAddr.city}, {selectedAddr.state} –{" "}
-                    {selectedAddr.pincode}
-                    <br />
-                    📞 {selectedAddr.phone}
-                  </div>
-                </div>
-              )}
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  flexWrap: "wrap",
-                  justifyContent: "center",
-                }}
-              >
-                <Link to="/" className="kco-success-btn-primary">
-                  Continue Shopping
-                </Link>
-                <Link
-                  to="/my-account?tab=orders"
-                  className="kco-success-btn-secondary"
-                >
-                  View My Orders
-                </Link>
-              </div>
-            </div>
-          </div>
-        </LayoutOne>
-      </Fragment>
-    );
-  }
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      cogoToast.error("Could not initialize payment", { position: "top-center" });
+      console.error("Razorpay init error:", err);
+    } finally {
+      setProcessingRazorpay(false);
+    }
+  };
 
   /* ══════════════════════════════════════════════════════════════════════════
      MAIN CHECKOUT RENDER

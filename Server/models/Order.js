@@ -51,6 +51,11 @@ const Order = sequelize.define(
       defaultValue: "pending",
       field: "payment_status",
     },
+    couponCode: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "coupon_code",
+    },
     notes: {
       type: DataTypes.TEXT,
       allowNull: true,

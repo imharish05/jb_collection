@@ -14,20 +14,20 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// api.interceptors.response.use(
-//     (response) => response,
-//     (error) => {
-//         if (error.response && error.response.status === 401) {
-//             localStorage.removeItem("token");
-//             localStorage.removeItem("user");
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
 
-//             // ONLY redirect if we aren't already on the sign-in page
-//             if (!window.location.pathname.includes("/login")) {
-//                 window.location.replace("/login");
-//             }
-//         }
-//         return Promise.reject(error);
-//     }
-// );
+            // ONLY redirect if we aren't already on the sign-in page
+            if (!window.location.pathname.includes("/login")) {
+                window.location.replace("/login");
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 
 export default api;

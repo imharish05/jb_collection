@@ -1,11 +1,40 @@
 import api from "../../api/axios";
 import { loginStart, loginSuccess, loginFailure, logoutAction } from "../slices/authSlice";
+import { replaceCart } from "../slices/cart-slice";
 import cogoToast from "cogo-toast";
 
 const getRedirectPath = () => {
   const params = new URLSearchParams(window.location.search);
   const redirect = params.get("redirect");
   return redirect ? decodeURIComponent(redirect) : process.env.PUBLIC_URL + "/";
+};
+
+// Sync cart from server after login
+const syncCartFromServer = async (dispatch) => {
+  try {
+    const res = await api.get('/cart');
+    const cartItems = res.data || [];
+    
+    // Map database records to Redux cart structure
+    const formattedItems = cartItems.map(cartItem => ({
+      id: cartItem.productId,
+      cartItemId: cartItem.id,
+      quantity: cartItem.quantity,
+      selectedVariantId: cartItem.selectedVariantId || null,
+      selectedVariantName: cartItem.productSnapshot?.selectedVariantName || null,
+      selectedProductColor: cartItem.selectedProductColor || null,
+      selectedProductSize: cartItem.selectedProductSize || null,
+      name: cartItem.productSnapshot?.name || cartItem.product?.name,
+      price: cartItem.productSnapshot?.price || cartItem.product?.price,
+      discount: cartItem.productSnapshot?.discount || cartItem.product?.discount || 0,
+      image: cartItem.productSnapshot?.image || cartItem.product?.image || [],
+      variation: cartItem.product?.variation || [],
+    }));
+    
+    dispatch(replaceCart(formattedItems));
+  } catch (err) {
+    console.error('Failed to sync cart from server:', err);
+  }
 };
 
 // --- REGISTER ---
@@ -42,6 +71,10 @@ export const loginFunction = async (dispatch, navigate, credentials) => {
     if (loader?.hide) loader.hide();
 
     dispatch(loginSuccess(res.data));
+    
+    // Sync cart from server after successful login
+    await syncCartFromServer(dispatch);
+    
     setTimeout(() => {
       cogoToast.success(`Welcome back, ${res.data.name}!`);
     }, 100);

@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import cogoToast from 'cogo-toast';
-const { createSlice } = require('@reduxjs/toolkit');
+import { createSlice } from '@reduxjs/toolkit';
 
 // Parse JSON strings that may come from backend (image, variation stored as JSON)
 const parseJson = (val) => {
@@ -132,9 +132,12 @@ const cartSlice = createSlice({
         },
         deleteAllFromCart(state){
             state.cartItems = []
+        },
+        replaceCart(state, action) {
+            state.cartItems = action.payload || [];
         }
     },
 });
 
-export const { addToCart, deleteFromCart, decreaseQuantity, deleteAllFromCart } = cartSlice.actions;
+export const { addToCart, deleteFromCart, decreaseQuantity, deleteAllFromCart, replaceCart } = cartSlice.actions;
 export default cartSlice.reducer;

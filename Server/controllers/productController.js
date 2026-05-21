@@ -78,13 +78,19 @@ const getAllProducts = async (req, res, next) => {
     if (category && !isAllCategory(category)) {
       where[Op.and] = [
         ...(where[Op.and] || []),
-        sequelize.literal(`JSON_CONTAINS(category, '"${category}"')`),
+        sequelize.where(
+          sequelize.fn('JSON_CONTAINS', sequelize.col('category'), JSON.stringify(category)),
+          sequelize.literal('= 1')
+        ),
       ];
     }
     if (tag) {
       where[Op.and] = [
         ...(where[Op.and] || []),
-        sequelize.literal(`JSON_CONTAINS(\`tag\`, '"${tag}"')`),
+        sequelize.where(
+          sequelize.fn('JSON_CONTAINS', sequelize.col('tag'), JSON.stringify(tag)),
+          sequelize.literal('= 1')
+        ),
       ];
     }
 

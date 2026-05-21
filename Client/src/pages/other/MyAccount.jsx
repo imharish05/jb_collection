@@ -14,6 +14,7 @@ import {
   deleteAddressService,
   setDefaultAddressService,
 } from "../../store/services/addressService";
+import api from "../../api/axios";
 import cogoToast from "cogo-toast";
 
 const ADDRESS_TYPES = ["Home", "Work", "Other"];
@@ -30,12 +31,6 @@ const EMPTY_FORM = {
   country: "India",
   isDefault: false,
 };
-
-const MOCK_ORDERS = [
-  { id: "KG102345", date: "28 Apr 2026", total: "₹850", status: "Delivered", items: [{ name: "Divine Statue", qty: 1, img: "/assets/img/products/products-9.jpeg" }] },
-  { id: "KG099821", date: "10 May 2026", total: "₹450", status: "Confirmed", items: [{ name: "Lamp", qty: 2, img: "/assets/img/products/products-7.jpeg" }] },
-  { id: "KG077341", date: "05 May 2026", total: "₹300", status: "Cancelled", items: [{ name: "Keychain", qty: 1, img: "/assets/img/products/products-1.jpeg" }] },
-];
 
 const labelStyle = {
   fontSize: 12, color: "#999", textTransform: "uppercase",
@@ -65,6 +60,10 @@ const MyAccount = () => {
   const [form, setForm] = useState(EMPTY_FORM);
   const [addrErrors, setAddrErrors] = useState({});
 
+  // Orders States
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
   // Profile States
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -86,6 +85,21 @@ const MyAccount = () => {
       dispatch(fetchAddresses());
     }
   }, [activeTab, user?.id, dispatch]);
+
+  useEffect(() => {
+    if (activeTab === "orders" && user?.id) {
+      setOrdersLoading(true);
+      api.get("/orders")
+        .then((res) => {
+          setOrders(res.data || []);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch orders:", err);
+          cogoToast.error("Could not load orders", { position: "top-center" });
+        })
+        .finally(() => setOrdersLoading(false));
+    }
+  }, [activeTab, user?.id]);
 
   useEffect(() => { if (tabFromUrl) setActiveTab(tabFromUrl); }, [tabFromUrl]);
 
@@ -419,7 +433,14 @@ const toggleVisibility = (field) => {
                     <div className="tab-card animate-fade-in">
                       <h3>Order History</h3>
                       <div className="order-list-container mt-4">
-                        {MOCK_ORDERS.map((order) => (
+                        {ordersLoading && <p style={{ color: "#999", fontSize: 13 }}>Loading orders...</p>}
+                        {!ordersLoading && orders.length === 0 && (
+                          <div style={{ textAlign: "center", padding: "40px 0", color: "#aaa" }}>
+                            <i className="fa fa-shopping-bag" style={{ fontSize: 40, marginBottom: 12, display: "block" }}></i>
+                            <p>No orders yet. Start shopping!</p>
+                          </div>
+                        )}
+                        {!ordersLoading && orders.length > 0 && orders.map((order) => (
                           <div className="order-main-card" key={order.id}>
                             <div className="order-card-header">
                               <div className="header-left">
@@ -427,23 +448,26 @@ const toggleVisibility = (field) => {
                                 <span className="order-number">#{order.id}</span>
                               </div>
                               <div className="header-right">
-                                <span className={`status-pill ${order.status.toLowerCase()}`}>{order.status}</span>
+                                <span className={`status-pill ${order.status?.toLowerCase() || 'pending'}`}>{order.status || 'Pending'}</span>
                               </div>
                             </div>
                             <div className="order-card-body">
-                              {order.items.map((item, i) => (
+                              {Array.isArray(order.items) && order.items.map((item, i) => (
                                 <div className="product-row" key={i}>
                                   <div className="product-img">
-                                    <img src={item.img} alt={item.name} onError={(e) => { e.target.src = "https://via.placeholder.com/80"; }} />
+                                    <img src={item.image?.[0] || "https://via.placeholder.com/80"} alt={item.productName || "Product"} onError={(e) => { e.target.src = "https://via.placeholder.com/80"; }} />
                                   </div>
-                                  <div className="product-details"><h6>{item.name}</h6><p>Qty: {item.qty}</p></div>
+                                  <div className="product-details">
+                                    <h6>{item.productName || "Product"}</h6>
+                                    <p>Qty: {item.quantity}</p>
+                                  </div>
                                 </div>
                               ))}
                             </div>
                             <div className="order-card-footer">
-                              <div className="footer-left"><p>Placed on: <strong>{order.date}</strong></p></div>
+                              <div className="footer-left"><p>Placed on: <strong>{new Date(order.createdAt).toLocaleDateString()}</strong></p></div>
                               <div className="footer-right">
-                                <span className="order-total-price">Total: {order.total}</span>
+                                <span className="order-total-price">Total: ₹{order.totalAmount}</span>
                                 <Link to={`/order-details/${order.id}`} className="btn-view-order">Details</Link>
                               </div>
                             </div>

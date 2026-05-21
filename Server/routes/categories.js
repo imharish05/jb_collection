@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { protect, adminOnly } = require("../middleware/auth");
 
 const { getNav, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory,
         getEvents, getEventById, createEvent, updateEvent, deleteEvent,
@@ -43,31 +44,31 @@ const uploadCombo = multer({ storage: multer.diskStorage({
 router.get("/", getNav);
 router.get("/categories", getCategories);
 router.get("/categories/:id", getCategoryById);
-router.post("/categories", upload.single("image"), createCategory);   // ← added upload
-router.patch("/categories/:id", upload.single("image"), updateCategory); // ← added upload
-router.delete("/categories/:id", deleteCategory);
+router.post("/categories", protect, adminOnly, upload.single("image"), createCategory);
+router.patch("/categories/:id", protect, adminOnly, upload.single("image"), updateCategory);
+router.delete("/categories/:id", protect, adminOnly, deleteCategory);
 
 // ─── Events ───────────────────────────────────────────────────────────────────
 
 router.get("/events", getEvents);
 router.get("/events/:id", getEventById);
-router.post("/events", uploadEvent.single("image"), createEvent);    // ← keep only these
-router.patch("/events/:id", uploadEvent.single("image"), updateEvent);
-router.delete("/events/:id", deleteEvent);
+router.post("/events", protect, adminOnly, uploadEvent.single("image"), createEvent);
+router.patch("/events/:id", protect, adminOnly, uploadEvent.single("image"), updateEvent);
+router.delete("/events/:id", protect, adminOnly, deleteEvent);
 
 
 // Combos
 router.get("/combos",      getCombos);
 router.get("/combos/:id",  getComboById);
-router.post("/combos",     uploadCombo.single("image"), createCombo);
-router.patch("/combos/:id",uploadCombo.single("image"), updateCombo);
-router.delete("/combos/:id", deleteCombo);
+router.post("/combos", protect, adminOnly, uploadCombo.single("image"), createCombo);
+router.patch("/combos/:id", protect, adminOnly, uploadCombo.single("image"), updateCombo);
+router.delete("/combos/:id", protect, adminOnly, deleteCombo);
 
 // ─── SubCategories ────────────────────────────────────────────────────────────
 router.get("/subcategories", getAllSubCategories);
 router.get("/subcategories/:id", getSubCategoryById);
-router.post("/subcategories", createSubCategory);
-router.patch("/subcategories/:id", updateSubCategory);
-router.delete("/subcategories/:id", deleteSubCategory);
+router.post("/subcategories", protect, adminOnly, createSubCategory);
+router.patch("/subcategories/:id", protect, adminOnly, updateSubCategory);
+router.delete("/subcategories/:id", protect, adminOnly, deleteSubCategory);
 
 module.exports = router;

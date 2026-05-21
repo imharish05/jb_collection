@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, useMemo } from "react";
 import PropTypes from "prop-types";
 import { EffectFade, Thumbs } from 'swiper';
 import { Modal } from "react-bootstrap";
@@ -66,9 +66,13 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
     ? Number(selectedVariant.stock ?? 0)
     : productStock;
 
-  const productCartQty = getProductCartQuantity(
-    cartItems, product, selectedProductColor, selectedProductSize
-  );
+  const productCartQty = useMemo(() => {
+    if (hasNewVar && selectedVariant) {
+      const match = cartItems?.find(i => i.id === product.id && i.selectedVariantId === selectedVariant.id);
+      return match ? match.quantity : 0;
+    }
+    return getProductCartQuantity(cartItems, product, selectedProductColor, selectedProductSize);
+  }, [cartItems, product, selectedVariant, hasNewVar, selectedProductColor, selectedProductSize]);
 
   const gallerySwiperParams = {
     spaceBetween: 10,
@@ -283,17 +287,25 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
                   <div className="pro-details-cart btn-hover">
                     {effectiveStock > 0 ? (
                       <button
-                        onClick={() =>
+                        onClick={() => {
+                          let variantColor = null, variantSize = null;
+                          if (selectedVariant && Array.isArray(selectedVariant.attributes)) {
+                            selectedVariant.attributes.forEach(a => {
+                              const k = (a.key || '').toLowerCase();
+                              if (k === 'colour' || k === 'color') variantColor = a.value;
+                              if (k === 'size') variantSize = a.value;
+                            });
+                          }
                           addToCartService({
                             ...product,
                             quantity: quantityCount,
                             price: selectedVariant ? parseFloat(selectedVariant.salesPrice) : (product.price || 0),
                             selectedVariantId: selectedVariant?.id || null,
                             selectedVariantName: selectedVariant?.variantName || null,
-                            selectedProductColor: selectedProductColor || null,
-                            selectedProductSize: selectedProductSize || null,
+                            selectedProductColor: hasNewVar ? variantColor : selectedProductColor,
+                            selectedProductSize: hasNewVar ? variantSize : selectedProductSize,
                           })
-                        }
+                        }}
                         disabled={productCartQty >= effectiveStock}
                       >
                         Add To Cart

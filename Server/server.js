@@ -16,6 +16,7 @@ const blogRoutes = require("./routes/blogs");
 const marketingRoutes = require("./routes/marketing");
 const orderRoutes = require("./routes/orders");
 const addressRoutes = require("./routes/addressRoutes");
+const paymentRoutes = require("./routes/payment");
 
 // New routes
 const categoryRoutes = require("./routes/categories");
@@ -43,6 +44,7 @@ const app = express();
 // );
 
 app.use(cors())
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -60,6 +62,7 @@ app.use("/api/wishlist", protect, wishlistRoutes);
 app.use("/api/compare", protect, compareRoutes);
 app.use("/api/blogs", protect, blogRoutes);
 app.use("/api/orders", protect, orderRoutes);
+app.use("/api/payment", protect, paymentRoutes);
 
 // New routes (no auth needed for admin panel — admin login handles it)
 app.use("/api/categories", categoryRoutes);
@@ -76,7 +79,7 @@ app.use("/api", marketingRoutes);
 
 // Health check
 app.get("/api/health", (req, res) =>
-  res.json({ status: "ok", service: "Kamali Grifts API", db: "MySQL" })
+  res.json({ status: "ok", service: "Kamali Gifts API", db: "MySQL" })
 );
 
 // 404 handler

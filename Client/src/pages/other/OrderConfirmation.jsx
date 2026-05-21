@@ -6,10 +6,12 @@ import LayoutOne from "../../layouts/LayoutOne";
 const OrderConfirmation = () => {
   const { state } = useLocation();
   const orderId = state?.orderId || "KG000000";
-  const form = state?.form || {};
-  const paymentMethod = state?.paymentMethod || "upi";
+  const selectedAddr = state?.selectedAddr || {};
+  const paymentMethod = state?.paymentMethod || "cod";
   const cartItems = state?.cartItems || [];
-  const cartTotalPrice = state?.cartTotalPrice || 0;
+
+  // Compute total from cartItems if available
+  const cartTotalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const PAYMENT_LABELS = {
     card: "Credit / Debit Card",
@@ -17,6 +19,7 @@ const OrderConfirmation = () => {
     netbanking: "Net Banking",
     wallet: "Wallet",
     cod: "Cash on Delivery (COD)",
+    razorpay: "Online Payment (Razorpay)",
   };
 
   return (
@@ -37,7 +40,7 @@ const OrderConfirmation = () => {
           >
             <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
             <h2 style={{ fontSize: 28, fontWeight: 700, color: "#2c2c2c", marginBottom: 8 }}>
-              Thank you, {form.firstName || "Customer"}!
+              Thank you, {selectedAddr?.fullName?.split(" ")[0] || "Customer"}!
             </h2>
             <p style={{ color: "#666", fontSize: 16, marginBottom: 20 }}>
               Your order has been placed successfully. We'll get it packed with love! 💝
@@ -108,21 +111,15 @@ const OrderConfirmation = () => {
                 <h4 style={cardTitle}>🏠 Delivery Details</h4>
                 <div style={infoRow}>
                   <span style={infoLabel}>Name</span>
-                  <span style={infoValue}>{form.firstName} {form.lastName}</span>
+                  <span style={infoValue}>{selectedAddr.fullName}</span>
                 </div>
                 <div style={infoRow}>
                   <span style={infoLabel}>Phone</span>
-                  <span style={infoValue}>{form.phone}</span>
+                  <span style={infoValue}>{selectedAddr.phone}</span>
                 </div>
-                {form.email && (
-                  <div style={infoRow}>
-                    <span style={infoLabel}>Email</span>
-                    <span style={infoValue}>{form.email}</span>
-                  </div>
-                )}
                 <div style={infoRow}>
                   <span style={infoLabel}>Address</span>
-                  <span style={infoValue}>{form.address}, {form.city}, {form.state} — {form.pincode}</span>
+                  <span style={infoValue}>{selectedAddr.street}, {selectedAddr.apartment}, {selectedAddr.city}, {selectedAddr.state} — {selectedAddr.pincode}</span>
                 </div>
                 <div style={{ ...infoRow, marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0" }}>
                   <span style={infoLabel}>🚚 Estimated delivery</span>
@@ -174,8 +171,8 @@ const OrderConfirmation = () => {
             <span style={{ fontSize: 20 }}>📩</span>
             <span>
               A confirmation has been sent to{" "}
-              <strong>{form.email || "your registered email"}</strong>{" "}
-              and an SMS to <strong>{form.phone || "your phone"}</strong>.
+              <strong>{selectedAddr.email || "your registered email"}</strong>{" "}
+              and an SMS to <strong>{selectedAddr.phone || "your phone"}</strong>.
             </span>
           </div>
 
