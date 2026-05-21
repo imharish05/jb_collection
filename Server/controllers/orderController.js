@@ -1,6 +1,6 @@
 // controllers/orderController.js
 const { Order, CartItem, User, Product, Variant } = require("../models");
-const { sequelize } = require("../config/database");
+const sequelize = require("../config/database");
 
 // Dashboard sends these status values in the URL:
 //   new | confirmed | shipped | delivery | delivered | cancelled

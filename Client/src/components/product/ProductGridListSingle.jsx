@@ -103,7 +103,7 @@ const ProductGridListSingle = ({
 
       ) : (
         /* ── GRID VIEW ── for two-column and three-column */
-        <div className={clsx("product-card-premium", spaceBottomClass)}>
+        <div className={clsx("product-card-premium", spaceBottomClass, !hoverImage && "single-image-card")}>
           <div className="product-img-container">
             <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
               <img className="main-img" src={mainImage} alt={product.name} />

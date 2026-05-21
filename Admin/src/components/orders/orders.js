@@ -3,8 +3,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchOrders, changeOrderStatus } from '../../redux/services/ordersService';
 
-const STATUS_OPTIONS = ['processing', 'confirmed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'];
-const labelFor = s => s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+const STATUS_OPTIONS = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+const labelFor = s => ({
+  pending: 'New / Pending',
+  confirmed: 'Confirmed',
+  processing: 'Out for Delivery',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+}[s] || s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
 const parseAddr = (raw) => { try { return JSON.parse(raw); } catch { return null; } };
 
 const AddressBlock = ({ addr, phone, email }) => {

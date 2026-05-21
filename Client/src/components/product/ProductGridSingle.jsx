@@ -58,7 +58,7 @@ const ProductGridSingle = ({
 
   return (
     <Fragment>
-      <div className={clsx("product-card-premium", spaceBottomClass)}>
+      <div className={clsx("product-card-premium", spaceBottomClass, product.image?.length === 1 && "single-image-card")}>
         <div className="product-img-container">
           <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
             <img
@@ -102,16 +102,22 @@ const ProductGridSingle = ({
           {/* Add to Cart Overlay */}
           <div className="cart-action-overlay">
             {product.stock && product.stock > 0 ? (
-              <button
-                onClick={handleAddToCart}
-                disabled={
-                  isAuthenticated && cartItem !== undefined && cartItem.quantity > 0
-                }
-              >
-                {isAuthenticated && cartItem !== undefined && cartItem.quantity > 0
-                  ? "IN CART"
-                  : "ADD TO CART"}
-              </button>
+              Array.isArray(product.Variants) && product.Variants.length > 0 ? (
+                <button onClick={handleAddToCart}>
+                  SELECT OPTIONS
+                </button>
+              ) : (
+                <button
+                  onClick={handleAddToCart}
+                  disabled={
+                    isAuthenticated && cartItem !== undefined && cartItem.quantity > 0
+                  }
+                >
+                  {isAuthenticated && cartItem !== undefined && cartItem.quantity > 0
+                    ? "IN CART"
+                    : "ADD TO CART"}
+                </button>
+              )
             ) : (
               <button disabled className="out-of-stock">
                 OUT OF STOCK

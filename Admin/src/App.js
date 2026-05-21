@@ -89,10 +89,10 @@ function AdminLayoutWrapper({ handleLogout }) {
             <Route path="/reviews"             element={<Reviews            showToast={showToast} />} />
             <Route path="/coupons"             element={<Coupons            showToast={showToast} />} />
             <Route path="/orders"              element={<Orders             showToast={showToast} status={null} />} />
-            <Route path="/orders_new"          element={<Orders             showToast={showToast} status="processing" />} />
+            <Route path="/orders_new"          element={<Orders             showToast={showToast} status="pending" />} />
             <Route path="/orders_confirmed"    element={<Orders             showToast={showToast} status="confirmed" />} />
             <Route path="/orders_shipped"      element={<Orders             showToast={showToast} status="shipped" />} />
-            <Route path="/orders_delivery"     element={<Orders             showToast={showToast} status="out_for_delivery" />} />
+            <Route path="/orders_delivery"     element={<Orders             showToast={showToast} status="processing" />} />
             <Route path="/orders_delivered"    element={<Orders             showToast={showToast} status="delivered" />} />
             <Route path="/orders_cancelled"    element={<Orders             showToast={showToast} status="cancelled" />} />
             <Route path="/contacts"            element={<AdminContactManager />} />

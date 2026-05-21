@@ -5,7 +5,6 @@ import { store } from "../store";
 
 /**
  * Check auth before any cart mutation.
- * Returns true if authenticated, false + shows toast + redirects if not.
  */
 const requireAuth = (redirectPath = "/cart") => {
   const state = store.getState();
@@ -13,7 +12,6 @@ const requireAuth = (redirectPath = "/cart") => {
 
   if (!isAuthenticated) {
     cogoToast.warn("Please login to continue", { position: "top-center" });
-    // Redirect to login with intended destination
     const redirect = encodeURIComponent(redirectPath);
     window.location.href = `${process.env.PUBLIC_URL}/login?redirect=${redirect}`;
     return false;
@@ -33,7 +31,6 @@ export const addToCartService = async (dispatchOrProduct, optionalProduct) => {
   if (!requireAuth(window.location.pathname)) return;
 
   try {
-    // Map payload correctly
     const payload = {
       productId: product.productId || product.id,
       quantity: product.quantity || 1,
@@ -46,10 +43,14 @@ export const addToCartService = async (dispatchOrProduct, optionalProduct) => {
     const res = await api.post("/cart/add", payload);
     const cartItem = res.data.cartItem;
 
-    // Map database record to flat product structure for frontend reducer
+    // Resolve variant stock — prefer matched variant, fall back to product stock
+    const variants = cartItem.product?.Variants || cartItem.product?.variants || product.Variants || [];
+    const matchedVariant = variants.find(v => String(v.id) === String(cartItem.selectedVariantId));
+    const resolvedStock = matchedVariant?.stock ?? cartItem.product?.stock ?? product.stock ?? 999;
+
     const formattedProduct = {
-      id: cartItem.productId, // Product ID
-      cartItemId: cartItem.id, // Cart Item ID (unique per product+variant)
+      id: cartItem.productId,
+      cartItemId: cartItem.id,
       quantity: cartItem.quantity,
       selectedProductColor: cartItem.selectedProductColor,
       selectedProductSize: cartItem.selectedProductSize,
@@ -57,9 +58,13 @@ export const addToCartService = async (dispatchOrProduct, optionalProduct) => {
       selectedVariantName: cartItem.productSnapshot?.selectedVariantName || product.selectedVariantName || null,
       name: cartItem.productSnapshot?.name || cartItem.product?.name || product.name,
       price: cartItem.productSnapshot?.price || cartItem.product?.price || product.price,
-      discount: cartItem.productSnapshot?.discount !== undefined ? cartItem.productSnapshot.discount : (cartItem.product?.discount || product.discount || 0),
+      discount: cartItem.productSnapshot?.discount !== undefined
+        ? cartItem.productSnapshot.discount
+        : (cartItem.product?.discount || product.discount || 0),
       image: cartItem.productSnapshot?.image || cartItem.product?.image || product.image || [],
       variation: cartItem.product?.variation || product.variation || [],
+      stock: resolvedStock,
+      Variants: variants,
     };
 
     dispatch(addToCart(formattedProduct));

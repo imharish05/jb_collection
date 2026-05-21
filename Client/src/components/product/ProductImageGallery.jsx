@@ -82,7 +82,7 @@ const ProductImageGallery = ({ product }) => {
 
       </div>
       <div className="product-small-image-wrapper mt-15">
-        {product?.image?.length ? (
+        {product?.image?.length > 1 ? (
           <Swiper options={thumbnailSwiperParams}>
             {product.image.map((single, key) => (
               <SwiperSlide key={key}>
@@ -107,4 +107,3 @@ ProductImageGallery.propTypes = {
 };
 
 export default ProductImageGallery;
-

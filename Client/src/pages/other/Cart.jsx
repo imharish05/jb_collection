@@ -5,7 +5,6 @@ import SEO from "../../components/seo";
 import { getDiscountPrice } from "../../helpers/product";
 import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
-import { cartItemStock } from "../../helpers/product";
 import {
   addToCartService,
   deleteFromCartService,
@@ -240,10 +239,22 @@ const Cart = () => {
                     const lineTotal = finalDisc
                       ? (parseFloat(finalDisc) * item.quantity).toFixed(2)
                       : (parseFloat(finalPrice) * item.quantity).toFixed(2);
-                    const maxStock = cartItemStock(
-                      item,
-                      item.selectedProductColor,
-                      item.selectedProductSize
+
+                    // Use stock stored on item directly (set by cartService from variant or product)
+                    const maxStock = item.stock || 999;
+
+                    // Parse variant attributes from selectedVariantName
+                    // Format: "Colour: bronze · Size: Small · Material: Gold-plated"
+                    const variantAttrs = item.selectedVariantName
+                      ? item.selectedVariantName.split(" · ").map(s => {
+                          const [key, ...rest] = s.split(": ");
+                          return { key: key?.trim(), value: rest.join(": ").trim() };
+                        }).filter(a => a.key && a.value)
+                      : [];
+
+                    // Deduplicate attrs (keep unique key-value pairs)
+                    const uniqueAttrs = variantAttrs.filter(
+                      (a, i, arr) => arr.findIndex(x => x.key === a.key && x.value === a.value) === i
                     );
 
                     return (
@@ -254,7 +265,11 @@ const Cart = () => {
                           className="kg-item-img-wrap"
                         >
                           <img
-                            src={process.env.PUBLIC_URL + item.image?.[0]}
+                            src={
+                              item.image?.[0]?.startsWith("http")
+                                ? item.image[0]
+                                : `${process.env.REACT_APP_IMG_URL || ""}/uploads/${(item.image?.[0] || "").replace(/^\/?uploads\//, "")}`
+                            }
                             alt={item.name}
                             className="kg-item-img"
                             onError={(e) => {
@@ -275,22 +290,25 @@ const Cart = () => {
                             {item.name}
                           </Link>
 
-                          {/* Variants */}
-                          {(item.selectedProductColor || item.selectedProductSize) && (
+                          {/* Variant attributes — show all parsed key-value pairs */}
+                          {uniqueAttrs.length > 0 && (
+                            <div className="kg-variant-row">
+                              {uniqueAttrs.map((attr, i) => (
+                                <span key={i} className="kg-variant-chip">
+                                  <span style={{ color: "#888", fontSize: 10, marginRight: 2 }}>
+                                    {attr.key}:
+                                  </span>
+                                  {attr.value}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Fallback: legacy color/size chips if no variantName */}
+                          {uniqueAttrs.length === 0 && (item.selectedProductColor || item.selectedProductSize) && (
                             <div className="kg-variant-row">
                               {item.selectedProductColor && (
                                 <span className="kg-variant-chip">
-                                  <span
-                                    style={{
-                                      width: 10,
-                                      height: 10,
-                                      borderRadius: "50%",
-                                      background: item.selectedProductColor,
-                                      display: "inline-block",
-                                      marginRight: 5,
-                                      border: "1px solid #ddd",
-                                    }}
-                                  />
                                   {item.selectedProductColor}
                                 </span>
                               )}
@@ -299,6 +317,13 @@ const Cart = () => {
                                   {item.selectedProductSize}
                                 </span>
                               )}
+                            </div>
+                          )}
+
+                          {/* Stock warning when near limit */}
+                          {maxStock < 10 && (
+                            <div style={{ fontSize: 11, color: "#f59e0b", marginTop: 3 }}>
+                              Only {maxStock} left in stock
                             </div>
                           )}
 
@@ -344,7 +369,7 @@ const Cart = () => {
                                   addToCartService({ ...item, quantity: 1 })
                                 }
                                 disabled={item.quantity >= maxStock}
-                                title="Increase"
+                                title={item.quantity >= maxStock ? `Max stock: ${maxStock}` : "Increase"}
                               >
                                 +
                               </button>

@@ -686,11 +686,22 @@ const Checkout = () => {
                     {/* Continue button */}
                     <button
                       className="kco-next-btn"
+                      disabled={!selectedAddr && !showNewAddrForm}
+                      style={{
+                        opacity: (!selectedAddr && !showNewAddrForm) ? 0.5 : 1,
+                        cursor: (!selectedAddr && !showNewAddrForm) ? "not-allowed" : "pointer",
+                      }}
                       onClick={() => {
-                        if (!selectedAddr && addresses.length > 0) {
-                          cogoToast.warn("Please select a delivery address", {
-                            position: "top-center",
-                          });
+                        if (!selectedAddr) {
+                          if (addresses.length > 0) {
+                            cogoToast.warn("Please select a delivery address", {
+                              position: "top-center",
+                            });
+                          } else {
+                            cogoToast.warn("Please add a delivery address first", {
+                              position: "top-center",
+                            });
+                          }
                           return;
                         }
                         if (!showNewAddrForm) setStep(2);
@@ -845,7 +856,11 @@ const Checkout = () => {
                         return (
                           <div key={item.cartItemId} className="kco-review-item">
                             <img
-                              src={process.env.PUBLIC_URL + item.image?.[0]}
+                              src={
+                                item.image?.[0]?.startsWith("http")
+                                  ? item.image[0]
+                                  : `${process.env.REACT_APP_IMG_URL || ""}/uploads/${(item.image?.[0] || "").replace(/^\/?uploads\//, "")}`
+                              }
                               alt={item.name}
                               className="kco-review-item-img"
                               onError={(e) => {
@@ -922,8 +937,18 @@ const Checkout = () => {
                       <button
                         className="kco-place-order-btn"
                         onClick={handlePlaceOrder}
-                        disabled={placing}
-                        style={{ opacity: placing ? 0.7 : 1 }}
+                        disabled={placing || !selectedAddr || !paymentMethod}
+                        style={{
+                          opacity: (placing || !selectedAddr || !paymentMethod) ? 0.5 : 1,
+                          cursor: (!selectedAddr || !paymentMethod) ? "not-allowed" : "pointer",
+                        }}
+                        title={
+                          !selectedAddr
+                            ? "Please select a delivery address first"
+                            : !paymentMethod
+                            ? "Please select a payment method"
+                            : ""
+                        }
                       >
                         {placing
                           ? "Placing Order..."
@@ -996,7 +1021,11 @@ const Checkout = () => {
                     {cartItems.slice(0, 3).map((item) => (
                       <img
                         key={item.cartItemId}
-                        src={process.env.PUBLIC_URL + item.image?.[0]}
+                        src={
+                          item.image?.[0]?.startsWith("http")
+                            ? item.image[0]
+                            : `${process.env.REACT_APP_IMG_URL || ""}/uploads/${(item.image?.[0] || "").replace(/^\/?uploads\//, "")}`
+                        }
                         alt={item.name}
                         className="kco-preview-img"
                         onError={(e) => {
