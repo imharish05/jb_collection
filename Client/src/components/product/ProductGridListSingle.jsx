@@ -15,6 +15,15 @@ const ProductGridListSingle = ({
 }) => {
   const [modalShow, setModalShow] = useState(false);
 
+  const images = Array.isArray(product.image)
+    ? product.image.filter(Boolean)
+    : product.image
+      ? [product.image]
+      : [];
+  const mainImage = images[0] ? getImgUrl(images[0]) : "/assets/img/products/products-1.jpeg";
+  const hoverImage = images.length > 1 ? getImgUrl(images[1]) : null;
+  const hasVariants = Array.isArray(product.Variants) && product.Variants.length > 0;
+
   const currencyRate = currency?.currencyRate || 1;
   const discountedPrice = getDiscountPrice(product.price, product.discount);
   const finalProductPrice = +(product.price * currencyRate).toFixed(2);
@@ -64,13 +73,22 @@ const ProductGridListSingle = ({
                   <p className="list-desc">{product.shortDescription}</p>
                 )}
                 <div className="list-actions-group">
-                  <button
-                    className="list-cart-btn"
-                    onClick={() => addToCartService(product)}
-                    disabled={cartItem !== undefined && cartItem.quantity > 0}
-                  >
-                    {cartItem !== undefined && cartItem.quantity > 0 ? "Added to Cart" : "Add to Cart"}
-                  </button>
+                  {hasVariants ? (
+                    <Link
+                      className="list-cart-btn"
+                      to={process.env.PUBLIC_URL + "/product/" + product.id}
+                    >
+                      View Product
+                    </Link>
+                  ) : (
+                    <button
+                      className="list-cart-btn"
+                      onClick={() => addToCartService(product)}
+                      disabled={cartItem !== undefined && cartItem.quantity > 0}
+                    >
+                      {cartItem !== undefined && cartItem.quantity > 0 ? "Added to Cart" : "Add to Cart"}
+                    </button>
+                  )}
                   <button
                     className={clsx("list-icon-btn", wishlistItem && "active")}
                     onClick={() => addToWishlistService(product)}
@@ -88,9 +106,9 @@ const ProductGridListSingle = ({
         <div className={clsx("product-card-premium", spaceBottomClass)}>
           <div className="product-img-container">
             <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
-              <img className="main-img" src={getImgUrl(product.image[0])} alt={product.name} />
-              {product.image.length > 1 && (
-                <img className="secondary-img" src={getImgUrl(product.image[1])} alt={product.name} />
+              <img className="main-img" src={mainImage} alt={product.name} />
+              {hoverImage && (
+                <img className="secondary-img" src={hoverImage} alt={product.name} />
               )}
             </Link>
             {/* CORRECT - only renders when discount is actually > 0 */}
@@ -111,7 +129,14 @@ const ProductGridListSingle = ({
               </button>
             </div>
             <div className="cart-action-overlay">
-              {product.stock && product.stock > 0 ? (
+              {hasVariants ? (
+                <Link
+                  className="cart-action-btn"
+                  to={process.env.PUBLIC_URL + "/product/" + product.id}
+                >
+                  View Product
+                </Link>
+              ) : product.stock && product.stock > 0 ? (
                 <button
                   onClick={() => addToCartService(product)}
                   disabled={cartItem !== undefined && cartItem.quantity > 0}
