@@ -16,20 +16,26 @@ const syncCartFromServer = async (dispatch) => {
     const cartItems = res.data || [];
     
     // Map database records to Redux cart structure
-    const formattedItems = cartItems.map(cartItem => ({
-      id: cartItem.productId,
-      cartItemId: cartItem.id,
-      quantity: cartItem.quantity,
-      selectedVariantId: cartItem.selectedVariantId || null,
-      selectedVariantName: cartItem.productSnapshot?.selectedVariantName || null,
-      selectedProductColor: cartItem.selectedProductColor || null,
-      selectedProductSize: cartItem.selectedProductSize || null,
-      name: cartItem.productSnapshot?.name || cartItem.product?.name,
-      price: cartItem.productSnapshot?.price || cartItem.product?.price,
-      discount: cartItem.productSnapshot?.discount || cartItem.product?.discount || 0,
-      image: cartItem.productSnapshot?.image || cartItem.product?.image || [],
-      variation: cartItem.product?.variation || [],
-    }));
+    const formattedItems = cartItems.map(cartItem => {
+      const variants = cartItem.product?.Variants || cartItem.product?.variants || [];
+      const matchedVariant = variants.find(v => String(v.id) === String(cartItem.selectedVariantId));
+      const resolvedPrice = matchedVariant?.salesPrice ?? cartItem.productSnapshot?.price ?? cartItem.product?.price ?? 0;
+      const resolvedDiscount = cartItem.productSnapshot?.discount ?? cartItem.product?.discount ?? 0;
+      return {
+        id: cartItem.productId,
+        cartItemId: cartItem.id,
+        quantity: cartItem.quantity,
+        selectedVariantId: cartItem.selectedVariantId || null,
+        selectedVariantName: cartItem.productSnapshot?.selectedVariantName || null,
+        selectedProductColor: cartItem.selectedProductColor || null,
+        selectedProductSize: cartItem.selectedProductSize || null,
+        name: cartItem.productSnapshot?.name || cartItem.product?.name,
+        price: typeof resolvedPrice === "string" ? parseFloat(resolvedPrice) : resolvedPrice,
+        discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
+        image: cartItem.productSnapshot?.image || cartItem.product?.image || [],
+        variation: cartItem.product?.variation || [],
+      };
+    });
     
     dispatch(replaceCart(formattedItems));
   } catch (err) {

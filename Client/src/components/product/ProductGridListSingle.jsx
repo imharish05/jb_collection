@@ -25,8 +25,20 @@ const ProductGridListSingle = ({
   const hasVariants = Array.isArray(product.Variants) && product.Variants.length > 0;
 
   const currencyRate = currency?.currencyRate || 1;
-  const discountedPrice = getDiscountPrice(product.price, product.discount);
-  const finalProductPrice = +(product.price * currencyRate).toFixed(2);
+  
+  // ── Get minimum variant price or product price ──
+  let basePrice = product.price;
+  if (hasVariants && product.Variants.length > 0) {
+    const minVariantPrice = Math.min(
+      ...product.Variants.map(v => parseFloat(v.salesPrice || v.mrp || 0)).filter(p => p > 0)
+    );
+    if (minVariantPrice > 0) {
+      basePrice = minVariantPrice;
+    }
+  }
+  
+  const discountedPrice = getDiscountPrice(basePrice, product.discount);
+  const finalProductPrice = +(basePrice * currencyRate).toFixed(2);
   const finalDiscountedPrice = +(discountedPrice * currencyRate).toFixed(2);
 
   return (

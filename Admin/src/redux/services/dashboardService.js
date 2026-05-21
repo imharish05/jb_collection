@@ -27,7 +27,7 @@ export const fetchDashboardData = () => async (dispatch) => {
 
 export const fetchOrderCounts = () => async (dispatch) => {
     const statuses = ["new", "confirmed", "shipped", "delivery", "delivered", "cancelled"];
-    const results = await Promise.allSettled(statuses.map(s => api.get(`/orders/${s}`)));
+    const results = await Promise.allSettled(statuses.map(s => api.get(`/orders/status/${s}`)));
     const counts = {};
     results.forEach((r, i) => {
         counts[statuses[i]] = r.status === "fulfilled" && Array.isArray(r.value.data) ? r.value.data.length : 0;

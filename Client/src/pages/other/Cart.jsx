@@ -262,6 +262,10 @@ const Cart = () => {
                       return true;
                     });
 
+                    const variantLabel = uniqueAttrs.length === 0 && item.selectedVariantName
+                      ? item.selectedVariantName
+                      : "";
+
                     return (
                       <div key={item.cartItemId} className="kg-cart-item">
                         {/* Image */}
@@ -309,8 +313,14 @@ const Cart = () => {
                             </div>
                           )}
 
+                          {variantLabel && (
+                            <div className="kg-variant-row">
+                              <span className="kg-variant-chip">{variantLabel}</span>
+                            </div>
+                          )}
+
                           {/* Fallback: legacy color/size chips if no variantName */}
-                          {uniqueAttrs.length === 0 && (item.selectedProductColor || item.selectedProductSize) && (
+                          {uniqueAttrs.length === 0 && !variantLabel && (item.selectedProductColor || item.selectedProductSize) && (
                             <div className="kg-variant-row">
                               {item.selectedProductColor && (
                                 <span className="kg-variant-chip">

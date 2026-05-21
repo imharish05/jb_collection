@@ -1,10 +1,14 @@
 // controllers/paymentController.js
+// ⚠️ TEST MODE CONFIGURATION
+// Using Razorpay test keys - replace with live keys in production
+// Test Card: 4111111111111111, Any future date, Any CVV
+
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const { Order } = require('../models');
 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
+  key_id: process.env.RAZORPAY_KEY_ID,      // rzp_test_* in dev
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 

@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from "react";
+﻿import { Fragment, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
@@ -11,19 +11,56 @@ const OrderDetails = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      setLoading(true);
-      api.get(`/orders/${id}`)
-        .then((res) => {
-          setOrder(res.data);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch order:", err);
-          cogoToast.error("Could not load order details", { position: "top-center" });
-        })
-        .finally(() => setLoading(false));
-    }
+    if (!id) return;
+    setLoading(true);
+    api.get(`/orders/${id}`)
+      .then((res) => setOrder(res.data))
+      .catch((err) => {
+        console.error("Failed to fetch order:", err);
+        cogoToast.error("Could not load order details", { position: "top-center" });
+      })
+      .finally(() => setLoading(false));
   }, [id]);
+
+  const formatPaymentMethod = (method) => {
+    if (!method) return "Pending";
+    const normalized = method.toLowerCase();
+    if (normalized === "cod") return "Cash on Delivery";
+    if (normalized === "upi") return "UPI";
+    if (normalized === "razorpay") return "Razorpay";
+    return method;
+  };
+
+  const statusMap = {
+    pending: "Placed",
+    confirmed: "Processing",
+    processing: "Processing",
+    shipped: "Shipped",
+    delivery: "Out for Delivery",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
+  };
+
+  const stages = [
+    { label: "Placed", icon: "fa-shopping-basket" },
+    { label: "Processing", icon: "fa-cogs" },
+    { label: "Shipped", icon: "fa-truck" },
+    { label: "Out for Delivery", icon: "fa-map-marker" },
+    { label: "Delivered", icon: "fa-check-circle" },
+  ];
+
+  const getVariantLabel = (item) => {
+    if (item.selectedVariantName) return item.selectedVariantName;
+    if (item.variantAttributes && Array.isArray(item.variantAttributes) && item.variantAttributes.length) {
+      return item.variantAttributes.map((attr) => `${attr.key}: ${attr.value}`).join(" · ");
+    }
+    return "Handcrafted Series";
+  };
+
+  const itemPrice = (item) => {
+    const price = item.price ?? item.salesPrice ?? item.mrp ?? 0;
+    return typeof price === "string" ? parseFloat(price) : price;
+  };
 
   if (loading) {
     return (
@@ -56,28 +93,11 @@ const OrderDetails = () => {
     );
   }
 
-  const stages = [
-    { label: "Placed", icon: "fa-shopping-basket" },
-    { label: "Processing", icon: "fa-cogs" },
-    { label: "Shipped", icon: "fa-truck" },
-    { label: "Out for Delivery", icon: "fa-map-marker" },
-    { label: "Delivered", icon: "fa-check-circle" }
-  ];
-
-  const statusMap = {
-    "pending": "Placed",
-    "confirmed": "Processing",
-    "processing": "Processing",
-    "shipped": "Shipped",
-    "delivery": "Out for Delivery",
-    "delivered": "Delivered",
-    "cancelled": "Cancelled"
-  };
-
   const orderStatus = statusMap[order.status?.toLowerCase()] || order.status || "Pending";
-  const currentIdx = stages.findIndex(s => s.label === orderStatus);
-
+  const currentIdx = Math.max(stages.findIndex((s) => s.label === orderStatus), -1);
   const shippingAddr = order.shippingAddress || {};
+  const orderItems = Array.isArray(order.items) ? order.items : [];
+  const orderTotal = typeof order.totalAmount === "string" ? parseFloat(order.totalAmount) : order.totalAmount;
 
   return (
     <Fragment>
@@ -87,16 +107,12 @@ const OrderDetails = () => {
           <div className="container">
             <div className="row justify-content-center">
               <div className="col-xl-10">
-                
-                {/* Top Action Bar */}
                 <div className="order-nav-bar">
                   <Link to="/my-account?tab=orders"><i className="fa fa-long-arrow-left"></i> My Account</Link>
                   <button className="minimal-btn" onClick={() => window.print()}><i className="fa fa-print"></i> Print Receipt</button>
                 </div>
 
                 <div className="premium-main-grid">
-                  
-                  {/* Left Sidebar: Minimal Status & Info */}
                   <div className="premium-side-panel">
                     <div className="side-card status-box">
                       <p className="mini-label">Current Status</p>
@@ -107,11 +123,11 @@ const OrderDetails = () => {
                     <div className="side-card info-summary">
                       <div className="info-group">
                         <label>Delivery Address</label>
-                        <p>{shippingAddr.fullName}, {shippingAddr.street}, {shippingAddr.city}, {shippingAddr.state} - {shippingAddr.pincode}</p>
+                        <p>{shippingAddr.fullName || shippingAddr.name}, {shippingAddr.street || shippingAddr.addressLine1}, {shippingAddr.city}, {shippingAddr.state} - {shippingAddr.pincode}</p>
                       </div>
                       <div className="info-group">
                         <label>Payment Method</label>
-                        <p>{order.paymentMethod || "Pending"}</p>
+                        <p>{formatPaymentMethod(order.paymentMethod)}</p>
                       </div>
                       <div className="info-group">
                         <label>Order ID</label>
@@ -120,14 +136,11 @@ const OrderDetails = () => {
                     </div>
                   </div>
 
-                  {/* Right Content: Tracking & Items */}
                   <div className="premium-content-panel">
-                    
-                    {/* Compact Visual Tracker */}
                     <div className="tracker-header-card">
                       <div className="tracker-steps-row">
                         {stages.map((stage, i) => (
-                          <div key={i} className={`step-item ${i <= currentIdx ? 'active' : ''}`}>
+                          <div key={i} className={`step-item ${i <= currentIdx ? "active" : ""}`}>
                             <div className="icon-wrap"><i className={`fa ${stage.icon}`}></i></div>
                             <span>{stage.label}</span>
                           </div>
@@ -135,49 +148,47 @@ const OrderDetails = () => {
                       </div>
                     </div>
 
-                    {/* Product List Section */}
                     <div className="items-container-card">
                       <h5>Items in this shipment</h5>
-                      {Array.isArray(order.items) && order.items.length > 0 ? (
-                        <>
-                          {order.items.map((item, index) => (
-                            <div className="premium-product-row" key={index}>
-                              <div className="prod-img">
-                                <img src={item.image?.[0] || "https://via.placeholder.com/80"} alt={item.productName || "Product"} onError={(e) => { e.target.src = "https://via.placeholder.com/80"; }} />
-                                <span className="qty-badge">{item.quantity}</span>
-                              </div>
-                              <div className="prod-info">
-                                <h6>{item.productName || "Product"}</h6>
-                                <p>Price: ₹{item.price}</p>
-                              </div>
-                              <div className="prod-price">₹{item.price * item.quantity}</div>
+                      {orderItems.length > 0 ? (
+                        orderItems.map((item, index) => (
+                          <div className="premium-product-row" key={index}>
+                            <div className="prod-img">
+                              <img
+                                src={Array.isArray(item.image) ? item.image[0] : item.image || "https://via.placeholder.com/80"}
+                                alt={item.productName || "Product"}
+                                onError={(e) => { e.target.src = "https://via.placeholder.com/80"; }}
+                              />
+                              <span className="qty-badge">{item.quantity}</span>
                             </div>
-                          ))}
-                        </>
+                            <div className="prod-info">
+                              <h6>{item.productName || "Product"}</h6>
+                              <p>{getVariantLabel(item)}</p>
+                            </div>
+                            <div className="prod-price">₹{itemPrice(item).toFixed(2)}</div>
+                          </div>
+                        ))
                       ) : (
-                        <p style={{ color: "#999" }}>No items found</p>
+                        <p style={{ color: "#999" }}>No order items found</p>
                       )}
 
-                      {/* Floating Total Area */}
                       <div className="premium-total-footer">
                         <div className="total-line">
                           <span>Subtotal</span>
-                          <span>₹{order.totalAmount || "0"}</span>
+                          <span>₹{orderTotal?.toFixed(2) ?? "0.00"}</span>
                         </div>
                         <div className="total-line">
-                          <span>Payment Status</span>
-                          <span className={order.paymentStatus === 'paid' ? "text-success" : "text-warning"}>{order.paymentStatus || "Pending"}</span>
+                          <span>Shipping</span>
+                          <span className="text-success">Free</span>
                         </div>
                         <div className="total-line grand-total">
                           <span>Amount Paid</span>
-                          <span>₹{order.totalAmount || "0"}</span>
+                          <span>₹{orderTotal?.toFixed(2) ?? "0.00"}</span>
                         </div>
                       </div>
                     </div>
-
                   </div>
                 </div>
-
               </div>
             </div>
           </div>

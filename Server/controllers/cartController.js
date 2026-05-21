@@ -1,4 +1,4 @@
-const { CartItem, Product } = require("../models");
+const { CartItem, Product, Variant } = require("../models");
 
 // GET /api/cart
 const getCart = async (req, res, next) => {
@@ -33,6 +33,14 @@ const addToCart = async (req, res, next) => {
     const product = await Product.findOne({ where: { id: productId, isActive: true } });
     if (!product) return res.status(404).json({ message: "Product not found" });
 
+    // ── Fetch variant if selectedVariantId provided (for correct pricing) ──────
+    let variant = null;
+    if (selectedVariantId) {
+      variant = await Variant.findOne({
+        where: { id: selectedVariantId, productId },
+      });
+    }
+
     // Deduplicate by EXACT combination:
     // - backend variants: productId + selectedVariantId + selectedVariantName (full attr string)
     //   → same variantId but different attribute combo = separate cart row
@@ -64,6 +72,10 @@ const addToCart = async (req, res, next) => {
       cartItem.quantity += quantity;
       await cartItem.save();
     } else {
+      // Use variant's salesPrice if variant is selected, else product price
+      const finalPrice = variant ? parseFloat(variant.salesPrice) : parseFloat(product.price);
+      const finalMrp = variant ? parseFloat(variant.mrp) : null;
+
       cartItem = await CartItem.create({
         userId: req.user.id,
         productId,
@@ -73,7 +85,8 @@ const addToCart = async (req, res, next) => {
         selectedVariantId: selectedVariantId || null,
         productSnapshot: {
           name: product.name,
-          price: product.price,
+          price: finalPrice,  // ← Variant price takes priority
+          mrp: finalMrp,      // ← Store variant MRP for reference
           discount: product.discount,
           image: product.image,
           selectedVariantName: selectedVariantName || null,

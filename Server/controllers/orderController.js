@@ -65,17 +65,27 @@ const createOrder = async (req, res, next) => {
 
       if (item.selectedVariantId) {
         const variant = await Variant.findByPk(item.selectedVariantId, { transaction });
+        const product = await Product.findByPk(item.productId, { transaction });
         if (!variant) {
           await transaction.rollback();
           return res.status(404).json({ message: `Variant ${item.selectedVariantId} not found` });
+        }
+        if (!product) {
+          await transaction.rollback();
+          return res.status(404).json({ message: `Product ${item.productId} not found` });
         }
         if (variant.stock < item.quantity) {
           await transaction.rollback();
           return res.status(400).json({ message: `Insufficient stock for variant ${variant.variantName}` });
         }
         itemPrice = parseFloat(variant.salesPrice || variant.mrp || 0);
-        itemData.productName = variant.variantName;
-        itemData.image = variant.image || [];
+        itemData.productName = `${product.name}${variant.variantName ? ` (${variant.variantName})` : ''}`;
+        itemData.selectedVariantId = variant.id;
+        itemData.selectedVariantName = variant.variantName || null;
+        itemData.variantAttributes = variant.attributes || [];
+        itemData.image = variant.image || product.image || [];
+        itemData.mrp = variant.mrp || null;
+        itemData.salesPrice = variant.salesPrice || null;
         await variant.decrement('stock', { by: item.quantity, transaction });
       } else {
         const product = await Product.findByPk(item.productId, { transaction });
@@ -89,6 +99,9 @@ const createOrder = async (req, res, next) => {
         }
         itemPrice = parseFloat(item.price || product.price || 0);
         itemData.productName = product.name;
+        itemData.selectedVariantId = null;
+        itemData.selectedVariantName = null;
+        itemData.variantAttributes = [];
         itemData.image = product.image || [];
         await product.decrement('stock', { by: item.quantity, transaction });
       }

@@ -179,7 +179,7 @@ const OrderConfirmation = () => {
           {/* CTA Buttons */}
           <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
             <Link
-              to={process.env.PUBLIC_URL + "/my-account"}
+              to={process.env.PUBLIC_URL + "/my-account?tab=orders"}
               style={{
                 background: "#c0622a",
                 color: "#fff",

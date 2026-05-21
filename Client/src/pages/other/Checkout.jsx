@@ -80,7 +80,8 @@ const Checkout = () => {
       const price = disc !== null ? disc : item.price;
       sub += price * (currency.currencyRate || 1) * item.quantity;
     });
-    const ship = sub >= 999 ? 0 : 60;
+    // Delivery cost will be added later — for now set to 0
+    const ship = 0;
     return {
       subtotal: sub,
       shipping: ship,
@@ -152,8 +153,8 @@ const Checkout = () => {
 
   /* ── Derived values ────────────────────────────────────────────────────── */
   const selectedAddr = addresses.find((a) => a.id === selectedAddrId);
-  const grandTotalWithCOD =
-    paymentMethod === "cod" ? pricing.grandTotal + 77: pricing.grandTotal;
+  // COD charges no longer applicable — total is final price
+  const grandTotalWithCOD = pricing.grandTotal;
 
   const [razorpayOrderId, setRazorpayOrderId] = useState(null);
   const [processingRazorpay, setProcessingRazorpay] = useState(false);

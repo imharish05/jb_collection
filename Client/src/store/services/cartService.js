@@ -47,6 +47,8 @@ export const addToCartService = async (dispatchOrProduct, optionalProduct) => {
     const variants = cartItem.product?.Variants || cartItem.product?.variants || product.Variants || [];
     const matchedVariant = variants.find(v => String(v.id) === String(cartItem.selectedVariantId));
     const resolvedStock = matchedVariant?.stock ?? cartItem.product?.stock ?? product.stock ?? 999;
+    const resolvedPrice = matchedVariant?.salesPrice ?? cartItem.productSnapshot?.price ?? cartItem.product?.price ?? product.price;
+    const resolvedDiscount = cartItem.productSnapshot?.discount ?? cartItem.product?.discount ?? product.discount ?? 0;
 
     const formattedProduct = {
       id: cartItem.productId,
@@ -57,10 +59,8 @@ export const addToCartService = async (dispatchOrProduct, optionalProduct) => {
       selectedVariantId: cartItem.selectedVariantId || null,
       selectedVariantName: cartItem.productSnapshot?.selectedVariantName || product.selectedVariantName || null,
       name: cartItem.productSnapshot?.name || cartItem.product?.name || product.name,
-      price: cartItem.productSnapshot?.price || cartItem.product?.price || product.price,
-      discount: cartItem.productSnapshot?.discount !== undefined
-        ? cartItem.productSnapshot.discount
-        : (cartItem.product?.discount || product.discount || 0),
+      price: typeof resolvedPrice === "string" ? parseFloat(resolvedPrice) : resolvedPrice,
+      discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
       image: cartItem.productSnapshot?.image || cartItem.product?.image || product.image || [],
       variation: cartItem.product?.variation || product.variation || [],
       stock: resolvedStock,

@@ -17,8 +17,14 @@ export const addToWishlistService = async (product) => {
         } else {
             store.dispatch(addToWishlist(product));
         }
+        cogoToast.success("Added to wishlist!", { position: "top-center" });
     } catch (err) {
-        cogoToast.error("Could not add to wishlist", { position: "top-center" });
+        // Handle 409 Conflict (already in wishlist)
+        if (err.response?.status === 409) {
+            cogoToast.info("Already in your wishlist", { position: "top-center" });
+        } else {
+            cogoToast.error("Could not add to wishlist", { position: "top-center" });
+        }
         console.log(err);
     }
 };
@@ -27,6 +33,7 @@ export const deleteFromWishlistService = async (productId) => {
     try {
         await api.delete(`/wishlist/remove/${productId}`);
         store.dispatch(deleteFromWishlist(productId));
+        cogoToast.success("Removed from wishlist", { position: "top-center" });
     } catch (err) {
         cogoToast.error("Could not remove from wishlist", { position: "top-center" });
         console.log(err);
