@@ -1,0 +1,187 @@
+/* Sidebar.module.css — Infinus Tech Design */
+
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  background-color: var(--white);
+  border-right: 1px solid var(--neutral-200);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-secondary-light);
+  z-index: 100;
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+/* ── LOGO AREA ── */
+.logoArea {
+  height: var(--topbar-height);
+  padding: 0.875rem 1rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--neutral-200);
+  flex-shrink: 0;
+}
+
+.logoText {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoK {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--primary-50);
+  border: 1px solid var(--primary-100);
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.logoK img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: 8px;
+}
+
+.logoName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary-light);
+  letter-spacing: -0.3px;
+}
+
+.logoSub {
+  font-size: 10px;
+  color: var(--brand);
+  letter-spacing: 2px;
+  font-weight: 600;
+  margin-top: -2px;
+  text-transform: uppercase;
+}
+
+/* ── NAVIGATION ── */
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem 1rem;
+}
+
+.nav::-webkit-scrollbar { width: 4px; }
+.nav::-webkit-scrollbar-thumb {
+  background: var(--neutral-200);
+  border-radius: 10px;
+}
+
+.navSection {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--neutral-400);
+  letter-spacing: 1.2px;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem 0.75rem;
+  white-space: nowrap;
+}
+
+.navSection:first-child {
+  margin-top: 0.5rem;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--text-secondary-light);
+  transition: all 0.2s ease;
+  margin-bottom: 2px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none !important;
+}
+
+.navItem:hover {
+  background-color: var(--neutral-100);
+  color: var(--brand);
+}
+
+.navIcon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.navIcon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+}
+
+/* Active State — mirrors Infinus brand highlight */
+.active {
+  background-color: var(--brand) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.active .navIcon svg {
+  stroke: #fff;
+}
+
+.active:hover {
+  color: #fff !important;
+  background-color: var(--brand) !important;
+}
+
+/* ── FOOTER & LOGOUT ── */
+.sidebarFooter {
+  padding: 1rem;
+  border-top: 1px solid var(--neutral-200);
+  flex-shrink: 0;
+}
+
+.logoutBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--danger-50);
+  border: 1px solid var(--danger-100);
+  border-radius: var(--radius-sm);
+  color: var(--danger-600);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logoutBtn:hover {
+  background: var(--danger-600);
+  color: #fff;
+  border-color: var(--danger-600);
+}
+
+.logoutIcon {
+  width: 16px;
+  height: 16px;
+}
+

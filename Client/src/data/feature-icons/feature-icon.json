@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "image": "/assets/img/icon-img/support-1.png",
+    "title": "Free Shipping",
+    "subtitle": "On orders above ₹999"
+  },
+  {
+    "id": 2,
+    "image": "/assets/img/icon-img/support-2.png",
+    "title": "Easy Returns",
+    "subtitle": "7-day return policy"
+  },
+  {
+    "id": 3,
+    "image": "/assets/img/icon-img/support-3.png",
+    "title": "Customisation",
+    "subtitle": "Personalised gifts available"
+  },
+  {
+    "id": 4,
+    "image": "/assets/img/icon-img/support-4.png",
+    "title": "Secure Payment",
+    "subtitle": "UPI, Card, COD accepted"
+  }
+]

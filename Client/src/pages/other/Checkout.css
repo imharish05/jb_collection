@@ -1,0 +1,898 @@
+/* ═══════════════════════════════════════════════════
+   Checkout Page — Responsive CSS
+   Kamali Gifts
+═══════════════════════════════════════════════════ */
+
+/* ── Page ─────────────────────────────────────────── */
+.kco-page {
+  background: #f7f8fa;
+  min-height: 100vh;
+  padding: 32px 0 90px;
+}
+
+.kco-container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ── Step Bar ─────────────────────────────────────── */
+.kco-step-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 28px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 28px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  overflow-x: auto;
+}
+
+.kco-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.kco-step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  transition: all 0.25s;
+}
+
+.kco-step-label {
+  font-size: 13px;
+  white-space: nowrap;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.kco-step-line {
+  flex: 1;
+  height: 2px;
+  margin: 0 12px;
+  min-width: 24px;
+  transition: background 0.3s;
+}
+
+/* ── Layout ───────────────────────────────────────── */
+.kco-layout {
+  display: grid;
+  grid-template-columns: 1fr 330px;
+  gap: 24px;
+  align-items: start;
+}
+
+.kco-left { }
+.kco-right { }
+
+/* ── Card ─────────────────────────────────────────── */
+.kco-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #f0f0f0;
+  padding: 28px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  margin-bottom: 0;
+}
+
+.kco-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.kco-card-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #111;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.kco-add-new-btn {
+  background: none;
+  border: 1.5px solid #db1a5d;
+  color: #db1a5d;
+  border-radius: 8px;
+  padding: 7px 15px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.kco-add-new-btn:hover {
+  background: #db1a5d;
+  color: #fff;
+}
+
+/* ── Address Cards ────────────────────────────────── */
+.kco-addr-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  border: 2px solid #ececec;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+}
+
+.kco-addr-card:hover {
+  border-color: #f0a0bc;
+  box-shadow: 0 2px 8px rgba(219,26,93,0.08);
+}
+
+.kco-addr-card.selected {
+  border-color: #db1a5d;
+  background: #fff5f8;
+  box-shadow: 0 2px 12px rgba(219,26,93,0.12);
+}
+
+.kco-radio-outer {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: border-color 0.15s;
+}
+
+.kco-addr-card.selected .kco-radio-outer {
+  border-color: #db1a5d;
+}
+
+.kco-radio-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #db1a5d;
+}
+
+.kco-addr-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.kco-addr-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  flex-wrap: wrap;
+}
+
+.kco-addr-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+}
+
+.kco-addr-type-badge {
+  font-size: 10px;
+  background: #f3f4f6;
+  color: #555;
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.kco-default-badge {
+  font-size: 10px;
+  background: #fef9c3;
+  color: #92400e;
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+
+.kco-addr-line {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.65;
+}
+
+.kco-addr-phone {
+  font-size: 12px;
+  color: #888;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── New Address Form ─────────────────────────────── */
+.kco-new-addr-form {
+  border: 1.5px dashed #db1a5d;
+  border-radius: 14px;
+  padding: 22px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  background: #fff9fb;
+}
+
+.kco-new-addr-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #111;
+  margin: 0 0 18px;
+}
+
+.kco-type-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.kco-type-btn {
+  flex: 1;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 9px 0;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #f5f5f7;
+  color: #555;
+}
+
+.kco-type-btn.active {
+  background: #db1a5d;
+  color: #fff;
+  border-color: #db1a5d;
+}
+
+.kco-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.kco-field {
+  margin-bottom: 14px;
+}
+
+.kco-field-label {
+  font-size: 11px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.kco-input {
+  width: 100%;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 9px;
+  padding: 11px 13px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+  box-sizing: border-box;
+  color: #333;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.kco-input:focus {
+  border-color: #db1a5d;
+}
+
+.kco-input.error {
+  border-color: #dc2626;
+}
+
+.kco-field-err {
+  font-size: 11px;
+  color: #dc2626;
+  margin-top: 4px;
+}
+
+.kco-default-check-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #555;
+}
+
+.kco-form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.kco-save-addr-btn {
+  background: linear-gradient(135deg, #db1a5d, #c01550);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: 12px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.kco-save-addr-btn:hover {
+  opacity: 0.9;
+}
+
+.kco-cancel-btn {
+  background: #f5f5f7;
+  color: #555;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 9px;
+  padding: 12px 18px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-weight: 600;
+}
+
+.kco-cancel-btn:hover {
+  background: #ebebeb;
+}
+
+/* ── Gift Section ─────────────────────────────────── */
+.kco-gift-section {
+  margin: 18px 0 0;
+  padding: 16px;
+  background: #fdf7ff;
+  border: 1px dashed #d8b4fe;
+  border-radius: 10px;
+}
+
+.kco-gift-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: #7c3aed;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+}
+
+.kco-gift-textarea {
+  width: 100%;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 9px;
+  padding: 11px 13px;
+  font-size: 13px;
+  margin-top: 12px;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  color: #333;
+  transition: border-color 0.2s;
+}
+
+.kco-gift-textarea:focus {
+  border-color: #7c3aed;
+}
+
+/* ── Navigation Buttons ───────────────────────────── */
+.kco-next-btn {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, #db1a5d, #c01550);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 15px 20px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 22px;
+  letter-spacing: 0.3px;
+  transition: opacity 0.2s, transform 0.15s;
+  box-shadow: 0 4px 14px rgba(219,26,93,0.28);
+}
+
+.kco-next-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.kco-btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.kco-back-btn {
+  background: #f5f5f7;
+  color: #555;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 15px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.kco-back-btn:hover {
+  background: #ebebeb;
+}
+
+/* ── Payment Cards ────────────────────────────────── */
+.kco-pay-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 2px solid #ececec;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.kco-pay-card:hover {
+  border-color: #f0a0bc;
+  box-shadow: 0 2px 8px rgba(219,26,93,0.08);
+}
+
+.kco-pay-card.selected {
+  border-color: #db1a5d;
+  background: #fff5f8;
+  box-shadow: 0 2px 12px rgba(219,26,93,0.12);
+}
+
+.kco-pay-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.kco-pay-label {
+  font-weight: 700;
+  font-size: 14px;
+  color: #111;
+}
+
+.kco-pay-desc {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.kco-pay-note {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 9px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: #0369a1;
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+/* ── Review Section ───────────────────────────────── */
+.kco-review-section {
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 14px;
+  background: #fafafa;
+}
+
+.kco-review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.kco-review-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kco-edit-link {
+  background: none;
+  border: none;
+  color: #db1a5d;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.kco-review-addr-box {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.7;
+}
+
+.kco-review-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.kco-review-item:last-child {
+  border-bottom: none;
+}
+
+.kco-review-item-img {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #f5f5f5;
+  flex-shrink: 0;
+}
+
+.kco-place-order-btn {
+  flex: 1;
+  background: linear-gradient(135deg, #db1a5d, #c01550);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 15px 20px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: opacity 0.2s, transform 0.15s;
+  box-shadow: 0 4px 14px rgba(219,26,93,0.28);
+}
+
+.kco-place-order-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.kco-place-order-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── Price Summary (Right) ────────────────────────── */
+.kco-price-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #f0f0f0;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 20px;
+}
+
+.kco-price-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111;
+  margin: 0 0 18px;
+  padding-bottom: 15px;
+  border-bottom: 1.5px solid #f5f5f5;
+  letter-spacing: -0.3px;
+}
+
+.kco-sum-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1.5px solid #f5f5f5;
+}
+
+.kco-sum-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  color: #555;
+}
+
+.kco-total-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 14px;
+  letter-spacing: -0.3px;
+}
+
+.kco-savings-banner {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.kco-items-preview {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.kco-preview-img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1.5px solid #f0f0f0;
+  background: #f8f8f8;
+}
+
+.kco-more-items {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #f5f5f7;
+  border: 1.5px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #555;
+}
+
+.kco-secure-note {
+  font-size: 11.5px;
+  color: #aaa;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ── No Address State ─────────────────────────────── */
+.kco-no-addr {
+  text-align: center;
+  padding: 36px 20px;
+  font-size: 14px;
+  color: #888;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.kco-add-first-btn {
+  background: linear-gradient(135deg, #db1a5d, #c01550);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: 11px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.kco-add-first-btn:hover { opacity: 0.9; }
+
+/* ── Gift note preview ────────────────────────────── */
+.kco-gift-note-preview {
+  font-size: 12.5px;
+  color: #7c3aed;
+  font-style: italic;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fdf7ff;
+  border-radius: 8px;
+  border: 1px dashed #d8b4fe;
+}
+
+/* ── Success Screen ───────────────────────────────── */
+.kco-success-page {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: #f7f8fa;
+}
+
+.kco-success-card {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid #f0f0f0;
+  padding: 48px 40px;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+}
+
+.kco-success-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #111;
+  margin: 20px 0 8px;
+  letter-spacing: -0.5px;
+}
+
+.kco-success-sub {
+  font-size: 15px;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.kco-success-order-id {
+  display: inline-block;
+  background: #f7f8fa;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 20px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+}
+
+.kco-success-msg {
+  font-size: 13.5px;
+  color: #777;
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.kco-success-addr {
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  padding: 14px 18px;
+  text-align: left;
+  margin-bottom: 28px;
+}
+
+.kco-success-addr-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.kco-success-addr-text {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.6;
+}
+
+.kco-success-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #db1a5d, #c01550);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 13px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  transition: opacity 0.2s;
+  box-shadow: 0 4px 12px rgba(219,26,93,0.25);
+}
+
+.kco-success-btn-primary:hover { opacity: 0.9; }
+
+.kco-success-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  background: #f5f5f7;
+  color: #333;
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 13px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 0.2s;
+  border: 1.5px solid #e0e0e0;
+}
+
+.kco-success-btn-secondary:hover { background: #ebebeb; }
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════ */
+@media (max-width: 940px) {
+  .kco-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .kco-price-card {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .kco-page {
+    padding: 20px 0 60px;
+  }
+
+  .kco-container {
+    padding: 0 14px;
+  }
+
+  .kco-step-bar {
+    padding: 16px 18px;
+  }
+
+  .kco-step-label {
+    display: none;
+  }
+
+  .kco-card {
+    padding: 20px 16px;
+  }
+
+  .kco-field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kco-type-row {
+    flex-wrap: wrap;
+  }
+
+  .kco-success-card {
+    padding: 32px 22px;
+  }
+
+  .kco-success-title {
+    font-size: 22px;
+  }
+
+  .kco-btn-row {
+    flex-direction: column;
+  }
+
+  .kco-back-btn {
+    order: 2;
+  }
+
+  .kco-place-order-btn {
+    order: 1;
+  }
+}
+
+@media (max-width: 380px) {
+  .kco-addr-card {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

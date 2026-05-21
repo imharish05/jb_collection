@@ -1,0 +1,846 @@
+/* ═══════════════════════════════════════════════════
+   Cart Page — Responsive CSS
+   Kamali Gifts
+═══════════════════════════════════════════════════ */
+
+/* ── Page Wrapper ────────────────────────────────── */
+.kg-cart-page {
+  background: #f7f8fa;
+  min-height: 100vh;
+  padding: 40px 0 90px;
+}
+
+.kg-cart-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ── Page Header ─────────────────────────────────── */
+.kg-cart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.kg-cart-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #111;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.kg-cart-badge {
+  font-size: 13px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #db1a5d, #c01550);
+  color: #fff;
+  border-radius: 20px;
+  padding: 3px 12px;
+  letter-spacing: 0;
+}
+
+.kg-clear-btn {
+  background: none;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 13px;
+  color: #777;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.kg-clear-btn:hover {
+  border-color: #dc2626;
+  color: #dc2626;
+  background: #fff5f5;
+}
+
+/* ── Two-column layout ───────────────────────────── */
+.kg-cart-layout {
+  display: grid;
+  grid-template-columns: 1fr 370px;
+  gap: 24px;
+  align-items: start;
+}
+
+.kg-cart-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kg-cart-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 20px;
+}
+
+/* ── Shipping Bar ────────────────────────────────── */
+.kg-shipping-bar {
+  background: #fff9f5;
+  border: 1.5px solid #ffe4d0;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.kg-shipping-bar.success {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.kg-shipping-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #444;
+  margin-bottom: 10px;
+}
+
+.kg-progress-track {
+  height: 5px;
+  background: #ffe4d0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.kg-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #db1a5d, #ff6b35);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+/* ── Items Card ──────────────────────────────────── */
+.kg-items-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #f0f0f0;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+.kg-cart-item {
+  display: flex;
+  gap: 18px;
+  padding: 22px 22px;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background 0.15s;
+}
+
+.kg-cart-item:last-child {
+  border-bottom: none;
+}
+
+.kg-cart-item:hover {
+  background: #fafafa;
+}
+
+/* ── Item Image ──────────────────────────────────── */
+.kg-item-img-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 110px;
+  height: 110px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8f8f8;
+  display: block;
+  text-decoration: none;
+}
+
+.kg-item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.kg-item-img-wrap:hover .kg-item-img {
+  transform: scale(1.05);
+}
+
+.kg-disc-badge {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  background: linear-gradient(135deg, #db1a5d, #c01550);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 5px;
+  padding: 3px 6px;
+  letter-spacing: 0.3px;
+}
+
+/* ── Item Details ────────────────────────────────── */
+.kg-item-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kg-item-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #111;
+  text-decoration: none;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.2s;
+}
+
+.kg-item-name:hover {
+  color: #db1a5d;
+}
+
+.kg-variant-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.kg-variant-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  background: #f5f5f7;
+  border: 1px solid #e8e8e8;
+  border-radius: 5px;
+  padding: 3px 9px;
+  color: #555;
+  font-weight: 500;
+}
+
+.kg-price-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.kg-price-old {
+  font-size: 12px;
+  color: #bbb;
+  text-decoration: line-through;
+}
+
+.kg-price-final {
+  font-size: 16px;
+  font-weight: 800;
+  color: #db1a5d;
+}
+
+/* ── Item Actions ────────────────────────────────── */
+.kg-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 8px;
+  flex-wrap: wrap;
+}
+
+.kg-qty-control {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 9px;
+  overflow: hidden;
+  height: 36px;
+  background: #fff;
+}
+
+.kg-qty-btn {
+  width: 34px;
+  height: 36px;
+  background: #f8f8f8;
+  border: none;
+  cursor: pointer;
+  font-size: 17px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.kg-qty-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.kg-qty-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.kg-qty-num {
+  width: 38px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  border-left: 1.5px solid #e8e8e8;
+  border-right: 1.5px solid #e8e8e8;
+  line-height: 36px;
+}
+
+.kg-line-total {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111;
+  margin-left: auto;
+}
+
+.kg-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ccc;
+  padding: 7px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s, background 0.2s;
+}
+
+.kg-remove-btn:hover {
+  color: #dc2626;
+  background: #fff0f0;
+}
+
+/* ── Continue Shopping ───────────────────────────── */
+.kg-continue-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #db1a5d;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 4px 0;
+  transition: gap 0.2s;
+}
+
+.kg-continue-link:hover {
+  gap: 10px;
+}
+
+/* ── Coupons Card (Secondary Look) ───────────────── */
+.kg-coupons-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1.5px dashed #dde0e5;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.kg-coupons-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
+.kg-coupons-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kg-coupon-icon-wrap {
+  width: 34px;
+  height: 34px;
+  background: #fff0f5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.kg-coupons-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+}
+
+.kg-coupons-subtitle {
+  font-size: 12px;
+  color: #888;
+  margin-top: 1px;
+}
+
+.kg-coupons-toggle-icon {
+  font-size: 12px;
+  color: #aaa;
+  transition: transform 0.25s;
+}
+
+.kg-coupons-toggle-icon.open {
+  transform: rotate(180deg);
+}
+
+/* Applied coupon chip */
+.kg-coupon-applied-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.kg-coupon-remove-btn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 0 0 6px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* Available coupon cards grid */
+.kg-coupon-body {
+  margin-top: 18px;
+}
+
+.kg-coupon-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.kg-coupon-card {
+  border: 1.5px dashed #e0e0e0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fafafa;
+  position: relative;
+  overflow: hidden;
+}
+
+.kg-coupon-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #db1a5d, #ff6b35);
+  border-radius: 2px 0 0 2px;
+}
+
+.kg-coupon-card:hover {
+  border-color: #db1a5d;
+  background: #fff5f8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(219,26,93,0.12);
+}
+
+.kg-coupon-card.applied {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.kg-coupon-card.applied::before {
+  background: #22c55e;
+}
+
+.kg-coupon-card-code {
+  font-size: 14px;
+  font-weight: 800;
+  color: #db1a5d;
+  letter-spacing: 0.5px;
+  font-family: 'Courier New', monospace;
+  margin-bottom: 4px;
+}
+
+.kg-coupon-card.applied .kg-coupon-card-code {
+  color: #16a34a;
+}
+
+.kg-coupon-card-desc {
+  font-size: 12px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 3px;
+}
+
+.kg-coupon-card-cond {
+  font-size: 10.5px;
+  color: #888;
+  line-height: 1.4;
+}
+
+.kg-coupon-card-tap {
+  font-size: 10px;
+  color: #db1a5d;
+  font-weight: 600;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Manual input row */
+.kg-coupon-manual-label {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.kg-coupon-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.kg-coupon-input {
+  flex: 1;
+  border: 1.5px solid #ddd;
+  border-radius: 9px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1.5px;
+  outline: none;
+  background: #fff;
+  color: #111;
+  transition: border-color 0.2s;
+  text-transform: uppercase;
+}
+
+.kg-coupon-input:focus {
+  border-color: #db1a5d;
+}
+
+.kg-coupon-apply-btn {
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.kg-coupon-apply-btn:hover:not(:disabled) {
+  background: #333;
+}
+
+.kg-coupon-apply-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.kg-coupon-err {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.kg-coupons-loading {
+  text-align: center;
+  padding: 20px;
+  color: #aaa;
+  font-size: 13px;
+}
+
+/* ── Order Summary Card ──────────────────────────── */
+.kg-summary-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #f0f0f0;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+
+.kg-summary-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111;
+  margin: 0 0 20px;
+  padding-bottom: 16px;
+  border-bottom: 1.5px solid #f5f5f5;
+  letter-spacing: -0.3px;
+}
+
+.kg-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1.5px solid #f5f5f5;
+}
+
+.kg-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  color: #555;
+}
+
+.kg-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 19px;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 6px;
+  letter-spacing: -0.3px;
+}
+
+.kg-tax-note {
+  font-size: 11px;
+  color: #bbb;
+  margin-bottom: 20px;
+  text-align: right;
+}
+
+.kg-checkout-btn {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, #db1a5d, #c01550);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: opacity 0.2s, transform 0.15s;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 14px rgba(219,26,93,0.3);
+}
+
+.kg-checkout-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+/* Trust badges */
+.kg-trust-row {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 14px;
+  border-top: 1px solid #f5f5f5;
+}
+
+.kg-trust-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #777;
+  font-weight: 500;
+}
+
+.kg-trust-item span:first-child {
+  font-size: 18px;
+}
+
+/* ── Info Card ───────────────────────────────────── */
+.kg-info-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #f0f0f0;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.kg-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.kg-info-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.kg-info-label {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+}
+
+.kg-info-value {
+  font-size: 13px;
+  color: #333;
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+.kg-info-divider {
+  height: 1px;
+  background: #f5f5f5;
+}
+
+/* ── Empty Cart ──────────────────────────────────── */
+.kg-empty-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.kg-empty-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #222;
+  margin: 20px 0 8px;
+}
+
+.kg-empty-text {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 28px;
+}
+
+.kg-shop-btn {
+  background: linear-gradient(135deg, #db1a5d, #c01550);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 14px 32px;
+  font-size: 15px;
+  font-weight: 700;
+  transition: opacity 0.2s, transform 0.15s;
+  box-shadow: 0 4px 14px rgba(219,26,93,0.3);
+}
+
+.kg-shop-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+══════════════════════════════════════════════════ */
+
+/* Tablet */
+@media (max-width: 960px) {
+  .kg-cart-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .kg-cart-right {
+    position: static;
+  }
+
+  .kg-coupon-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .kg-cart-page {
+    padding: 24px 0 60px;
+  }
+
+  .kg-cart-container {
+    padding: 0 14px;
+  }
+
+  .kg-cart-title {
+    font-size: 20px;
+  }
+
+  .kg-cart-item {
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .kg-item-img-wrap {
+    width: 85px;
+    height: 85px;
+  }
+
+  .kg-item-name {
+    font-size: 13.5px;
+  }
+
+  .kg-price-final {
+    font-size: 14px;
+  }
+
+  .kg-item-actions {
+    gap: 10px;
+  }
+
+  .kg-line-total {
+    font-size: 14px;
+  }
+
+  .kg-coupon-cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .kg-summary-card {
+    padding: 18px;
+  }
+
+  .kg-checkout-btn {
+    font-size: 14px;
+    padding: 14px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 380px) {
+  .kg-cart-item {
+    flex-direction: column;
+  }
+
+  .kg-item-img-wrap {
+    width: 100%;
+    height: 180px;
+  }
+
+  .kg-coupon-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

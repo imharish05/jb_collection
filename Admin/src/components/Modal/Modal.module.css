@@ -1,0 +1,117 @@
+/* Modal.module.css — Infinus Tech Design */
+
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay.open {
+  display: flex;
+}
+
+.modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  width: 440px;
+  max-width: 92vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.modalTitle {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--text-primary-light);
+}
+
+.formGroup {
+  margin-bottom: 14px;
+}
+
+.formLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary-light);
+  margin-bottom: 5px;
+  display: block;
+}
+
+.required {
+  color: var(--danger-600);
+}
+
+.formInput,
+.formSelect {
+  width: 100%;
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--text-primary-light);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+  background: var(--white);
+}
+
+.formInput:focus,
+.formSelect:focus {
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 3px var(--primary-50);
+}
+
+.formInput.error {
+  border-color: var(--danger-600);
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--neutral-200);
+}
+
+.btnCancel {
+  padding: 9px 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--neutral-300);
+  background: var(--white);
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-secondary-light);
+  transition: background 0.15s;
+}
+
+.btnCancel:hover { background: var(--neutral-100); }
+
+.btnSave {
+  padding: 9px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, transform 0.15s;
+  box-shadow: 0 2px 8px rgba(234, 139, 12, 0.25);
+}
+
+.btnSave:hover {
+  background: #d97b08;
+  transform: translateY(-1px);
+}
+

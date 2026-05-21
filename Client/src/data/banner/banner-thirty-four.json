@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "image": "/assets/img/banner/banner-51.png",
+    "title": "-70% Off",
+    "subtitle": "Easy Chair",
+    "url": "/shop"
+  },
+  {
+    "id": 2,
+    "image": "/assets/img/banner/banner-52.png",
+    "title": "-70% Off",
+    "subtitle": "Soft Sofa",
+    "url": "/shop"
+  },
+  {
+    "id": 3,
+    "image": "/assets/img/banner/banner-53.png",
+    "title": "-70% Off",
+    "subtitle": "Office Chair",
+    "url": "/shop"
+  }
+]
+

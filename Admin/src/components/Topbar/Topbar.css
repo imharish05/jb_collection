@@ -1,0 +1,163 @@
+/* Topbar.css — Infinus Tech Design */
+
+.topbar {
+  height: var(--topbar-height);
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--neutral-200);
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  transition: all 0.3s ease;
+}
+
+/* ── TITLE ── */
+.topbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.topbarTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary-light);
+  letter-spacing: -0.3px;
+}
+
+/* ── ACTIONS ── */
+.topbarActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── ADD BUTTON ── */
+.tbBtn {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+}
+
+.btnPrimary {
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(234, 139, 12, 0.25);
+}
+
+.btnPrimary:hover {
+  background: #d97b08;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(234, 139, 12, 0.35);
+}
+
+/* ── NOTIFICATION BELL ── */
+.notifWrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--neutral-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.notifWrapper:hover {
+  background: var(--neutral-200);
+}
+
+.notifWrapper svg {
+  stroke: var(--text-secondary-light);
+  transition: stroke 0.2s;
+  width: 20px;
+  height: 20px;
+}
+
+.notifWrapper:hover svg {
+  stroke: var(--brand);
+}
+
+/* Notification Badge */
+.badgeNotif {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--danger-600);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--white);
+  line-height: 1;
+}
+
+/* ── ADMIN PROFILE ── */
+.adminProfile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 50px;
+  background: var(--primary-50);
+  border: 1px solid var(--primary-100);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.adminProfile:hover {
+  background: var(--primary-100);
+}
+
+.adminLogo {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--brand);
+  background: var(--white);
+  flex-shrink: 0;
+}
+
+.adminInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+}
+
+.adminName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary-light);
+  font-family: 'Inter', sans-serif;
+}
+
+.adminRole {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--brand);
+  font-family: 'Inter', sans-serif;
+}
+

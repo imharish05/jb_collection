@@ -1,0 +1,26 @@
+[
+  {
+    "id": "1",
+    "iconClass": "pe-7s-gift",
+    "countNum": 1200,
+    "title": "gifts delivered"
+  },
+  {
+    "id": "2",
+    "iconClass": "pe-7s-smile",
+    "countNum": 850,
+    "title": "happy customers"
+  },
+  {
+    "id": "3",
+    "iconClass": "pe-7s-star",
+    "countNum": 25,
+    "title": "event categories"
+  },
+  {
+    "id": "4",
+    "iconClass": "pe-7s-like2",
+    "countNum": 500,
+    "title": "5 star reviews"
+  }
+]

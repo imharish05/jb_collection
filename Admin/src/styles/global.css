@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Root Variables (Infinus Tech Design System) ── */
+:root {
+  /* Primary palette */
+  --primary-50:  #e4f1ff;
+  --primary-100: #bfdcff;
+  --primary-200: #95c7ff;
+  --primary-300: #6bb1ff;
+  --primary-400: #519fff;
+  --primary-500: #458eff;
+  --primary-600: #487fff;
+  --primary-700: #486cea;
+  --primary-800: #4759d6;
+  --primary-900: #4536b6;
+
+  /* Neutral palette */
+  --neutral-50:  #f5f6fa;
+  --neutral-100: #f3f4f6;
+  --neutral-200: #ebecef;
+  --neutral-300: #d1d5db;
+  --neutral-400: #9ca3af;
+  --neutral-500: #6b7280;
+  --neutral-600: #4b5563;
+  --neutral-700: #374151;
+  --neutral-800: #1f2937;
+  --neutral-900: #111827;
+
+  /* Semantic colours */
+  --success-main:    #45b369;
+  --success-surface: #daf0e1;
+  --success-border:  #b5e1c3;
+  --success-50:      #f0fdf4;
+  --success-100:     #dcfce7;
+  --success-500:     #22c55e;
+  --success-600:     #16a34a;
+
+  --warning-main:    #ff9f29;
+  --warning-surface: #fff9e2;
+  --warning-border:  #ffeba6;
+  --warning-50:      #fefce8;
+  --warning-100:     #fef9c3;
+  --warning-500:     #eab308;
+  --warning-600:     #ff9f29;
+
+  --danger-main:    #ef4a00;
+  --danger-surface: #fcdae2;
+  --danger-border:  #f9b5c6;
+  --danger-50:      #fef2f2;
+  --danger-100:     #fee2e2;
+  --danger-400:     #f87171;
+  --danger-500:     #ef4444;
+  --danger-600:     #dc2626;
+
+  --info-main:    #144bd6;
+  --info-surface: #e7eefc;
+  --info-border:  #aecafc;
+  --info-50:      #eff6ff;
+  --info-100:     #dbeafe;
+  --info-500:     #3b82f6;
+  --info-600:     #2563eb;
+
+  /* Dark shades */
+  --dark-1: #1b2431;
+  --dark-2: #273142;
+  --dark-3: #323d4e;
+
+  /* Brand accent (Teal) */
+  --brand: #db1a5d;
+
+  /* Semantic aliases */
+  --base:                #fff;
+  --black:               var(--dark-2);
+  --white:               var(--base);
+  --bg-color:            var(--neutral-50);
+  --text-primary-light:  var(--neutral-900);
+  --text-secondary-light: var(--neutral-600);
+  --border-color:        #d1d5db80;
+
+  /* Shadows */
+  --shadow-4: 4px 8px 24px 0 rgba(182, 182, 182, 0.2);
+  --shadow-5: 4px 12px 32px 0 rgba(0, 169, 158, 0.1);
+
+  /* Layout */
+  --sidebar-width: 275px;
+  --sidebar-collapsed-width: 86px;
+  --topbar-height: 72px;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+
+  /* Legacy km- vars remapped to Infinus tokens */
+  --km-orange:       var(--brand);
+  --km-orange-light: var(--primary-50);
+  --km-orange-mid:   var(--warning-600);
+  --km-blue:         var(--primary-800);
+  --km-blue-light:   var(--primary-100);
+  --km-blue-xl:      var(--primary-50);
+  --km-blue-mid:     var(--primary-700);
+  --km-blue-bright:  var(--primary-600);
+  --km-green:        var(--success-600);
+  --km-green-light:  var(--success-surface);
+  --km-green-mid:    var(--success-main);
+  --km-yellow:       var(--warning-main);
+  --km-yellow-light: var(--warning-surface);
+  --km-red:          var(--danger-600);
+  --km-red-light:    var(--danger-50);
+  --km-text:         var(--neutral-900);
+  --km-muted:        var(--neutral-500);
+  --km-border:       var(--neutral-300);
+  --km-bg:           var(--neutral-50);
+  --km-white:        var(--base);
+  --km-shadow:       var(--shadow-4);
+  --km-shadow-lg:    4px 16px 40px rgba(12, 61, 122, 0.14);
+  --km-radius:       var(--radius);
+  --km-radius-sm:    var(--radius-sm);
+}
+
+/* ── Body ── */
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-color);
+  color: var(--text-secondary-light);
+  min-height: 100vh;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* ── Layout ── */
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-left: var(--sidebar-width);
+  transition: margin-left 0.3s ease;
+}
+
+.content {
+  flex: 1;
+  padding: 28px;
+  overflow-y: auto;
+}
+
+/* ── Section Header ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary-light);
+  letter-spacing: -0.01em;
+}
+
+/* ── Search Input ── */
+.search-input {
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--text-primary-light);
+  background: var(--base);
+  width: 220px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.search-input:focus {
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 3px var(--primary-50);
+}
+
+/* ── Data Table shared styles ── */
+.table-wrapper {
+  background: var(--base);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: var(--shadow-4);
+}
+

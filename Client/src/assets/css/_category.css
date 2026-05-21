@@ -1,0 +1,218 @@
+/* --- Wrapper Layout --- */
+.modern-slider-wrapper {
+  position: relative;
+  padding: 0 45px; /* Creates gutter space for arrows */
+}
+
+/* --- Category Cards --- */
+.modern-cat-card {
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.modern-cat-card:hover {
+  transform: translateY(-5px);
+}
+
+.image-holder {
+  width: 100%;
+  aspect-ratio: 1/1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  margin-bottom: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.image-holder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cat-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  display: block;
+}
+
+/* --- Navigation Arrows (Positioned Outside) --- */
+.nav-arrow {
+  position: absolute;
+  top: 40%; /* Aligns with the center of circles */
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  background: #ffffff;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  cursor: pointer;
+  color: #c8826a; /* Brand copper color */
+  transition: all 0.3s ease;
+}
+
+.nav-arrow:hover {
+  background: #c8826a;
+  color: #fff;
+}
+
+.prev-arrow { left: 0; }
+.next-arrow { right: 0; }
+
+.nav-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* --- Custom Indicators (Pill Style) --- */
+.modern-pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 35px;
+}
+
+.modern-pagination .swiper-pagination-bullet {
+  display: none;
+}
+
+
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 991px) {
+  .modern-slider-wrapper { padding: 0 36px; }
+  .nav-arrow {
+    width: 28px;
+    height: 28px;
+  }
+  .nav-arrow svg {
+    width: 14px;
+    height: 14px;
+  }
+  .prev-arrow { left: 0; }
+  .next-arrow { right: 0; }
+}
+/* ── Category page grid ── */
+.modern-category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+@media (min-width: 768px) {
+  .modern-category-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 1024px) {
+  .modern-category-grid { grid-template-columns: repeat(7, 1fr); gap: 30px; }
+}
+
+/* Disabled nav arrow */
+.nav-arrow--disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Dot indicators */
+.modern-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+.cat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: #ccc;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s ease;
+}
+.cat-dot--active {
+  background: #1a2e6e;
+}
+
+/* Remove the .modern-category-grid styles as Swiper handles the layout now */
+
+.modern-swiper-container {
+  padding: 10px 0; /* Prevents shadow clipping on hover */
+}
+
+/* Ensure the grab cursor is explicit */
+.swiper-grabCursor {
+  cursor: grab;
+}
+
+.swiper-grabbing {
+  cursor: grabbing;
+}
+
+/* Fix for custom pagination buttons in Swiper */
+.modern-pagination .cat-dot {
+  display: inline-block; /* Override your previous display:none */
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: #ccc;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s ease;
+  margin: 0 4px;
+}
+
+.modern-pagination .cat-dot--active {
+  background: #1a2e6e;
+}
+
+/* Container for the grid */
+.modern-category-grid {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Desktop View */
+@media (min-width: 768px) {
+  .modern-cat-card {
+    flex: 0 0 calc(14.28% - 15px); /* roughly 1/7th of the width */
+  }
+}
+
+/* Mobile View: Shows 2 items side-by-side */
+@media (max-width: 767px) {
+  .modern-category-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Forces exactly 2 columns */
+    padding: 0 10px;
+  }
+
+  .modern-cat-card {
+    width: 100%;
+    text-align: center;
+  }
+
+  .image-holder img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+}
+
+/* Hide arrows on very small screens if they overlap */
+@media (max-width: 480px) {
+  .nav-arrow {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+

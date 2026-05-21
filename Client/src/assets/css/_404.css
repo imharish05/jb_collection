@@ -1,0 +1,108 @@
+/* updated */
+/* updated */
+/* was purple, now soft pink */
+/* navy blue */
+/* hot pink */
+/* navy blue */
+.error h1 {
+  font-size: 17rem;
+  font-weight: bold;
+  letter-spacing: 1rem;
+  line-height: 1.1;
+  margin-bottom: 30px;
+  color: #db1a5d;
+}
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+  .error h1 {
+    font-size: 15rem;
+    margin-bottom: 4px;
+  }
+}
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  .error h1 {
+    font-size: 12rem;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .error h1 {
+    font-size: 7rem;
+    line-height: 88px;
+  }
+}
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  .error h1 {
+    font-size: 9rem;
+    line-height: 100px;
+  }
+}
+.error h2 {
+  font-size: 25px;
+  font-weight: 600;
+}
+
+.error-btn {
+  position: relative;
+  transition: all 0.3s;
+  color: #fff;
+  font-size: 16px;
+  min-width: 184px;
+  min-height: 55px;
+  line-height: 55px;
+  margin-bottom: 6px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 0;
+  background-color: #db1a5d;
+  display: inline-block;
+}
+.error-btn:after {
+  position: absolute;
+  content: "";
+  left: 0;
+  bottom: -6px;
+  height: 3px;
+  width: 100%;
+  background-color: #db1a5d;
+  transition: all 0.3s;
+}
+.error-btn:hover {
+  background-color: #111111;
+  color: #fff;
+}
+.error-btn:hover:after {
+  background-color: #111111;
+}
+
+.searchform {
+  position: relative;
+}
+.searchform input {
+  border: 1px solid #eeeeee;
+  height: 45px;
+  width: 100%;
+  padding-left: 15px;
+  padding-right: 80px;
+  background-color: transparent;
+}
+.searchform button {
+  border: none;
+  background-color: #db1a5d;
+  width: 70px;
+  color: #fff;
+  cursor: pointer;
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+}
+.searchform button:hover {
+  background-color: #000;
+}
+@media only screen and (max-width: 767px) {
+  .searchform.mb-50 {
+    margin-bottom: 20px;
+  }
+}
+
+
+

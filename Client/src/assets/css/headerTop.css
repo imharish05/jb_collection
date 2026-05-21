@@ -1,0 +1,51 @@
+/* 1. The Parent: This must be exactly the width of the screen */
+.header-offer {
+  width: 100%;
+  overflow: hidden; /* CRITICAL: This hides the scrollbar */
+  background: #f8f8f8; /* Optional background */
+  position: relative;
+}
+
+/* 2. The Wrapper: Contains both sets of messages */
+.marquee-wrapper {
+  display: flex;
+  width: max-content; /* Allows content to be as long as it needs to be */
+}
+
+/* 3. The Content: The individual sliding blocks */
+.marquee-content {
+  display: flex;
+  flex-shrink: 0; /* Prevents the text from squishing */
+  align-items: center;
+  /* Adjust 20s to change speed */
+  animation: scroll-infinite 20s linear infinite; 
+}
+
+.marquee-item {
+  padding: 0 60px; /* Increased spacing for better flow */
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap; /* Ensures text never wraps to a second line */
+}
+
+.marquee-item span {
+  font-weight: bold;
+}
+
+/* 4. The Loop logic */
+@keyframes scroll-infinite {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    /* Moves exactly one full set of messages to the left */
+    transform: translateX(-100%); 
+  }
+}
+
+/* Pause on hover */
+.marquee-wrapper:hover .marquee-content {
+  animation-play-state: paused;
+}
+
+

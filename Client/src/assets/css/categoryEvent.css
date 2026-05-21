@@ -1,0 +1,86 @@
+:root {
+  --ev-navy: #001d3d;
+  --ev-pink: #db1a5d;
+  --ev-bg-soft: #e8f5f1; /* Very light teal tint */
+  --ev-glass-bg: rgba(255, 255, 255, 0.8);
+}
+
+.event-section-wrapper {
+  background-color: #fff; /* Keep it clean */
+}
+
+.event-title {
+  color: var(--ev-navy);
+  font-weight: 700;
+  font-size: 26px;
+}
+
+.event-subtitle {
+  color: #888;
+  font-size: 15px;
+}
+
+/* Flex Container */
+.event-flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* The Pill Design */
+.event-pill {
+  display: flex;
+  align-items: center;
+  padding: 8px 20px;
+  background: var(--ev-glass-bg);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 50px;
+  color: var(--ev-navy);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+/* Small dot decoration */
+.event-dot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--ev-pink);
+  border-radius: 50%;
+  margin-right: 10px;
+  transition: transform 0.3s ease;
+}
+
+/* --- HOVER EFFECTS --- */
+.event-pill:hover {
+  background: var(--ev-navy);
+  color: #fff;
+  border-color: var(--ev-navy);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(0, 29, 61, 0.15);
+}
+
+.event-pill:hover .event-dot {
+  transform: scale(1.5);
+  background-color: #fff; /* Dot turns white when pill turns navy */
+}
+
+/* --- MOBILE VIEW --- */
+@media (max-width: 767px) {
+  .event-pill {
+    padding: 6px 15px;
+    font-size: 13px;
+  }
+  
+  .event-flex-container {
+    gap: 8px;
+    padding: 0 10px;
+  }
+}
+
+

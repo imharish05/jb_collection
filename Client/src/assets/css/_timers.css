@@ -1,0 +1,279 @@
+/* updated */
+/* updated */
+/* was purple, now soft pink */
+/* navy blue */
+/* hot pink */
+/* navy blue */
+/*------ 15. Timer style  -----*/
+.funfact-area.bg-img {
+  position: relative;
+}
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  .funfact-area.bg-img {
+    background-position: 15%;
+  }
+  .funfact-area.bg-img:before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    content: "";
+    opacity: 0.7;
+    background-color: #fff;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .funfact-area.bg-img {
+    background-position: 15%;
+  }
+  .funfact-area.bg-img:before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    content: "";
+    opacity: 0.7;
+    background-color: #fff;
+  }
+}
+
+.funfact-content {
+  position: relative;
+  z-index: 9;
+}
+.funfact-content h2 {
+  font-size: 48px;
+  margin: 0;
+  color: #010101;
+}
+@media only screen and (max-width: 767px) {
+  .funfact-content h2 {
+    font-size: 32px;
+  }
+}
+.funfact-content .timer {
+  margin: 65px 0 0;
+  text-align: center;
+}
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+  .funfact-content .timer {
+    margin: 44px 0 0;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .funfact-content .timer {
+    margin: 24px 0 0;
+  }
+}
+.funfact-content .timer span {
+  font-size: 48px;
+  font-weight: 300;
+  display: inline-block;
+  min-width: 75px;
+  margin: 0 32px;
+  color: #555;
+}
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+  .funfact-content .timer span {
+    font-size: 40px;
+    margin: 0 15px;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .funfact-content .timer span {
+    font-size: 22px;
+    min-width: 55px;
+    margin: 0 5px;
+  }
+}
+.funfact-content .timer span p {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 34px 0 0;
+  text-transform: uppercase;
+  color: #555;
+}
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+  .funfact-content .timer span p {
+    margin: 24px 0 0;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .funfact-content .timer span p {
+    font-size: 14px;
+    margin: 12px 0 0;
+  }
+}
+.funfact-content--style2 h2 {
+  font-family: "Josefin Sans", sans-serif;
+}
+.funfact-content .funfact-btn {
+  margin-top: 43px;
+}
+@media only screen and (max-width: 767px) {
+  .funfact-content .funfact-btn {
+    margin-top: 23px;
+  }
+}
+.funfact-content .funfact-btn a {
+  line-height: 1;
+  z-index: 1;
+  display: inline-block;
+  padding: 16px 56px;
+  color: #fff;
+  border: 1px solid transparent;
+  background-color: #000;
+}
+.funfact-content .funfact-btn a:hover {
+  border: 1px solid #db1a5d;
+}
+.funfact-content .funfact-btn.btn-only-round a {
+  overflow: hidden;
+  border-radius: 50px;
+}
+.funfact-content .funfact-btn.btn-only-round a:hover {
+  border: 1px solid #db1a5d;
+}
+.funfact-content .funfact-btn.funfact-btn-red a {
+  background-color: #c61a32;
+}
+.funfact-content .funfact-btn.funfact-btn-red a:hover {
+  border: 1px solid #db1a5d;
+}
+.funfact-content .funfact-btn.funfact-btn-red-2 a {
+  background-color: #c61a32;
+}
+.funfact-content .funfact-btn.funfact-btn-red-2 a:hover {
+  border: 1px solid #db1a5d;
+}
+.funfact-content .funfact-btn.funfact-btn-violet a {
+  background-color: #ab87cd;
+}
+.funfact-content .funfact-btn.funfact-btn-violet a:hover {
+  border: 1px solid #db1a5d;
+}
+.funfact-content .funfact-btn.funfact-btn-green a {
+  background-color: #6eab49;
+}
+.funfact-content .funfact-btn.funfact-btn-green a:hover {
+  border: 1px solid #db1a5d;
+}
+.funfact-content .funfact-btn.funfact-btn-brown a {
+  font-weight: 500;
+  color: #000;
+  border: 2px solid #000;
+  background-color: transparent;
+}
+.funfact-content .funfact-btn.funfact-btn-brown a:after {
+  background-color: #bca487;
+}
+.funfact-content .funfact-btn--round-shape a {
+  overflow: hidden;
+  border-radius: 30px;
+}
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+  .funfact-content.mt-90 {
+    margin-top: 0;
+  }
+}
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  .funfact-content.funfact-res h2 {
+    font-size: 35px;
+  }
+  .funfact-content.funfact-res .timer {
+    margin: 30px 0 0;
+  }
+  .funfact-content.funfact-res .timer span {
+    font-size: 30px;
+    margin: 0 9px;
+  }
+  .funfact-content.funfact-res .timer span p {
+    font-size: 15px;
+    margin: 14px 0 0;
+  }
+  .funfact-content.mt-90 {
+    margin-top: 0;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .funfact-content.mt-90 {
+    margin-top: 30px;
+  }
+}
+
+.gift-img {
+  margin: 0 10px;
+}
+.gift-img a {
+  display: block;
+}
+.gift-img a img {
+  width: 100%;
+}
+
+.fruits-deal-img {
+  margin: 0 90px;
+}
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+  .fruits-deal-img {
+    margin: 0 50px 0;
+  }
+}
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  .fruits-deal-img {
+    margin: 0 0 0;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .fruits-deal-img {
+    margin: 30px 0 0;
+  }
+}
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  .fruits-deal-img {
+    margin: 30px 30px 0;
+  }
+}
+.fruits-deal-img a {
+  display: block;
+}
+.fruits-deal-img a img {
+  width: 100%;
+}
+
+@media only screen and (max-width: 767px) {
+  .funfact-image {
+    margin: 30px 0 0;
+  }
+}
+
+.black-friday-deal-content h2 {
+  font-family: "Abril Fatface", cursive;
+  font-size: 60px;
+  line-height: 48px;
+  margin: 0 0 67px;
+  color: #fff;
+}
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  .black-friday-deal-content h2 {
+    font-size: 50px;
+    margin: 0 0 50px;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .black-friday-deal-content h2 {
+    font-size: 30px;
+    margin: 0 0 27px;
+  }
+}
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  .black-friday-deal-content h2 {
+    font-size: 40px;
+    margin: 0 0 35px;
+  }
+}
+
+
+

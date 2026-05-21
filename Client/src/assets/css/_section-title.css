@@ -1,0 +1,234 @@
+/* updated */
+/* updated */
+/* was purple, now soft pink */
+/* navy blue */
+/* hot pink */
+/* navy blue */
+/*------- 5. Section title style  -------*/
+@media only screen and (max-width: 767px) {
+  .section-title.mb-50 {
+    margin-bottom: 30px;
+  }
+}
+.section-title h2 {
+  font-size: 30px;
+  font-weight: 600;
+  position: relative;
+  display: inline-block;
+  margin: 0 0 0;
+}
+@media only screen and (max-width: 767px) {
+  .section-title h2 {
+    font-size: 24px;
+    line-height: 30px;
+  }
+  .section-title h2.mb-50 {
+    margin-bottom: 30px;
+  }
+}
+.section-title h2::before {
+  position: absolute;
+  top: 17px;
+  left: -100px;
+  width: 80px;
+  height: 2px;
+  content: "";
+  background-color: #000;
+}
+@media only screen and (max-width: 767px) {
+  .section-title h2::before {
+    left: -40px;
+    width: 30px;
+  }
+}
+.section-title h2::after {
+  position: absolute;
+  top: 17px;
+  right: -100px;
+  width: 80px;
+  height: 2px;
+  content: "";
+  background-color: #000;
+}
+@media only screen and (max-width: 767px) {
+  .section-title h2::after {
+    right: -40px;
+    width: 30px;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .section-title.mb-55 {
+    margin-bottom: 30px;
+  }
+}
+.section-title p {
+  font-size: 16px;
+  font-weight: 400;
+  margin-top: 10px;
+}
+.section-title p.grey {
+  color: #808080;
+}
+.section-title.no-border h2 {
+  font-size: 36px;
+}
+.section-title.no-border h2:before, .section-title.no-border h2:after {
+  display: none;
+}
+
+.section-title-2 h2 {
+  font-size: 30px;
+  font-weight: 600;
+  position: relative;
+  display: inline-block;
+  margin: 0 0 15px;
+  padding: 0 0 15px;
+  color: #000000;
+}
+.section-title-2 h2:before {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 80px;
+  height: 2px;
+  margin: 0 auto;
+  content: "";
+  background-color: #000000;
+}
+.section-title-2 p {
+  margin: 0;
+  color: #333;
+}
+@media only screen and (max-width: 767px) {
+  .section-title-2.mb-60 {
+    margin-bottom: 30px;
+  }
+}
+
+.section-title-3 h4 {
+  font-size: 24px;
+  font-weight: 500;
+  color: #000000;
+}
+@media only screen and (max-width: 767px) {
+  .section-title-3.mb-40 {
+    margin-bottom: 20px;
+  }
+}
+
+.section-border {
+  position: relative;
+  overflow: hidden;
+  margin-right: 94px;
+}
+@media only screen and (max-width: 767px) {
+  .section-border {
+    margin-right: 0;
+  }
+}
+.section-border::before {
+  position: absolute;
+  z-index: 1;
+  top: 11px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  content: "";
+  transition: all 0.4s ease 0s;
+  background-color: #d2d2d2;
+}
+@media only screen and (max-width: 767px) {
+  .section-border::before {
+    display: none;
+  }
+}
+
+.section-title-4 {
+  position: relative;
+  z-index: 999;
+}
+.section-title-4 h3 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  margin: 0;
+  padding-right: 45px;
+  letter-spacing: -0.25px;
+  color: #242424;
+}
+@media only screen and (max-width: 767px) {
+  .section-title-4 h3 {
+    padding-right: 0;
+  }
+}
+
+.section-title-5 h2 {
+  font-size: 48px;
+  line-height: 38px;
+  margin: 0;
+  color: #010101;
+}
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  .section-title-5 h2 {
+    font-size: 40px;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .section-title-5 h2 {
+    font-size: 30px;
+    line-height: 27px;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .section-title-5.mb-60 {
+    margin-bottom: 30px;
+  }
+}
+
+.section-title-6 h2 {
+  font-family: "Poppins", sans-serif;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 0;
+  text-transform: uppercase;
+  color: #010101;
+}
+
+.section-title-7 h2 {
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 29px;
+  margin: 0;
+  color: #010101;
+}
+
+.section-title-8 h2 {
+  font-family: "Josefin Sans", sans-serif;
+  font-size: 36px;
+  font-weight: 600;
+  color: #010101;
+}
+.section-title-8 p {
+  width: 600px;
+  max-width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+}
+.section-title-8.bottom-border {
+  position: relative;
+  padding-bottom: 15px;
+}
+.section-title-8.bottom-border:before {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 50px;
+  height: 1px;
+  content: "";
+  transform: translateX(-50%);
+  background-color: #000;
+}
+
+
+

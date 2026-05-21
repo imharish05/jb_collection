@@ -1,0 +1,258 @@
+/* updated */
+/* updated */
+/* was purple, now soft pink */
+/* navy blue */
+/* hot pink */
+/* navy blue */
+/*---- 17. Sidebar style  ------*/
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+  .sidebar-style.mr-30 {
+    margin-right: 0;
+  }
+}
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  .sidebar-style {
+    margin-top: 30px;
+  }
+  .sidebar-style.mr-30 {
+    margin-right: 0;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .sidebar-style {
+    margin-top: 30px;
+  }
+  .sidebar-style.mr-30 {
+    margin-right: 0;
+  }
+}
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+  .sidebar-style.ml-30 {
+    margin-left: 0;
+  }
+}
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  .sidebar-style {
+    margin-top: 30px;
+  }
+  .sidebar-style.ml-30 {
+    margin-left: 0;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .sidebar-style {
+    margin-top: 30px;
+  }
+  .sidebar-style.ml-30 {
+    margin-left: 0;
+  }
+}
+
+.sidebar-widget h4.pro-sidebar-title {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+  color: #333;
+}
+.sidebar-widget .sidebar-widget-list ul li {
+  position: relative;
+  align-items: center;
+  padding: 0 0 15px;
+}
+.sidebar-widget .sidebar-widget-list ul li:last-child {
+  padding: 0 0 0;
+}
+.sidebar-widget .sidebar-widget-list ul li .sidebar-widget-list-left input {
+  position: absolute;
+  z-index: 999;
+  width: auto;
+  cursor: pointer;
+  opacity: 0;
+}
+.sidebar-widget .sidebar-widget-list ul li .sidebar-widget-list-left input:checked ~ .checkmark {
+  border: 2px solid #db1a5d;
+  background-color: #db1a5d;
+}
+.sidebar-widget .sidebar-widget-list ul li .sidebar-widget-list-left input:checked ~ .checkmark::after {
+  display: block;
+}
+.sidebar-widget .sidebar-widget-list ul li .sidebar-widget-list-left .checkmark {
+  position: absolute;
+  left: 0;
+  width: 15px;
+  height: 15px;
+  border: 2px solid #888888;
+  border-radius: 3px;
+  background-color: #fff;
+}
+.sidebar-widget .sidebar-widget-list ul li .sidebar-widget-list-left .checkmark::after {
+  position: absolute;
+  display: none;
+  content: "";
+}
+.sidebar-widget .sidebar-widget-list ul li .sidebar-widget-list-left .checkmark::after {
+  top: 0;
+  left: 3px;
+  width: 5px;
+  height: 8px;
+  transform: rotate(45deg);
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  border-top-width: medium;
+  border-right-width: medium;
+  border-bottom-width: medium;
+  border-left-width: medium;
+}
+.sidebar-widget .sidebar-widget-list ul li a,
+.sidebar-widget .sidebar-widget-list ul li button {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  padding-left: 30px;
+  text-align: left;
+  text-transform: capitalize;
+  border: none;
+  background: none;
+}
+.sidebar-widget .sidebar-widget-list ul li a span,
+.sidebar-widget .sidebar-widget-list ul li button span {
+  font-weight: 500;
+  line-height: 20px;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: inline-block;
+  width: 30px;
+  height: 20px;
+  transition: all 0.3s ease 0s;
+  transform: translateY(-50%);
+  text-align: center;
+  color: #9a9a9a;
+  border-radius: 50px;
+  background-color: #eeeeee;
+}
+.sidebar-widget .sidebar-widget-list ul li a:hover span, .sidebar-widget .sidebar-widget-list ul li a.active span,
+.sidebar-widget .sidebar-widget-list ul li button:hover span,
+.sidebar-widget .sidebar-widget-list ul li button.active span {
+  color: #fff;
+  background-color: #db1a5d;
+}
+.sidebar-widget .sidebar-widget-list ul li a:hover > .checkmark, .sidebar-widget .sidebar-widget-list ul li a.active > .checkmark,
+.sidebar-widget .sidebar-widget-list ul li button:hover > .checkmark,
+.sidebar-widget .sidebar-widget-list ul li button.active > .checkmark {
+  border-color: #db1a5d;
+  background-color: #db1a5d;
+}
+.sidebar-widget .sidebar-widget-list ul li a:hover > .checkmark:after, .sidebar-widget .sidebar-widget-list ul li a.active > .checkmark:after,
+.sidebar-widget .sidebar-widget-list ul li button:hover > .checkmark:after,
+.sidebar-widget .sidebar-widget-list ul li button.active > .checkmark:after {
+  display: block;
+}
+.sidebar-widget .sidebar-widget-list--blog ul li .sidebar-widget-list-left .checkmark {
+  top: 5px;
+}
+.sidebar-widget .sidebar-widget-tag ul li {
+  display: inline-block;
+  margin: 0 10px 15px 0;
+}
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+  .sidebar-widget .sidebar-widget-tag ul li {
+    margin: 0 5px 15px 0;
+  }
+}
+.sidebar-widget .sidebar-widget-tag ul li a,
+.sidebar-widget .sidebar-widget-tag ul li button {
+  line-height: 1;
+  display: inline-block;
+  padding: 9px 17px 12px;
+  text-transform: capitalize;
+  color: #424242;
+  border: none;
+  border-radius: 50px;
+  background: none;
+  background-color: #f6f6f6;
+}
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+  .sidebar-widget .sidebar-widget-tag ul li a,
+  .sidebar-widget .sidebar-widget-tag ul li button {
+    padding: 9px 13px 12px;
+  }
+}
+.sidebar-widget .sidebar-widget-tag ul li a:hover, .sidebar-widget .sidebar-widget-tag ul li a.active,
+.sidebar-widget .sidebar-widget-tag ul li button:hover,
+.sidebar-widget .sidebar-widget-tag ul li button.active {
+  color: #fff;
+  background-color: #db1a5d;
+}
+
+.pro-sidebar-search .pro-sidebar-search-form {
+  position: relative;
+}
+.pro-sidebar-search .pro-sidebar-search-form input {
+  font-size: 14px;
+  height: 43px;
+  padding: 2px 55px 2px 18px;
+  color: #000;
+  border: 1px solid #e6e6e6;
+  background: transparent none repeat scroll 0 0;
+}
+.pro-sidebar-search .pro-sidebar-search-form button {
+  font-size: 20px;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  padding: 0 15px;
+  cursor: pointer;
+  transition: all 0.3s ease 0s;
+  transform: translateY(-50%);
+  color: #000;
+  border-width: medium medium medium 1px;
+  border-style: none none none solid;
+  border-color: #a1a5aa;
+  border-image: none;
+  background: transparent none repeat scroll 0 0;
+}
+.pro-sidebar-search .pro-sidebar-search-form button:hover {
+  color: #db1a5d;
+}
+
+.single-sidebar-blog {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0 0 20px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid #dee0e4;
+}
+.single-sidebar-blog:last-child {
+  border-bottom: none;
+}
+.single-sidebar-blog .sidebar-blog-img {
+  flex: 0 0 70px;
+  margin: 0 20px 0 0;
+}
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+  .single-sidebar-blog .sidebar-blog-img {
+    margin: 0 8px 0 0;
+  }
+}
+.single-sidebar-blog .sidebar-blog-img img {
+  width: 100%;
+}
+.single-sidebar-blog .sidebar-blog-content span {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+  display: block;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #333;
+}
+.single-sidebar-blog .sidebar-blog-content h4 {
+  font-size: 14px;
+  margin: 5px 0 0;
+}
+
+
+

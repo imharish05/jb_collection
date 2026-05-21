@@ -1,0 +1,43 @@
+/* updated */
+/* updated */
+/* was purple, now soft pink */
+/* navy blue */
+/* hot pink */
+/* navy blue */
+/*------- 14. Brand logo style  -------*/
+.brand-logo-active.owl-carousel .owl-item img,
+.brand-logo-active-2.owl-carousel .owl-item img {
+  display: inline-block;
+  width: auto;
+}
+.brand-logo-active .single-brand-logo,
+.brand-logo-active .single-brand-logo2,
+.brand-logo-active-2 .single-brand-logo,
+.brand-logo-active-2 .single-brand-logo2 {
+  text-align: center;
+}
+.brand-logo-active .single-brand-logo img,
+.brand-logo-active .single-brand-logo2 img,
+.brand-logo-active-2 .single-brand-logo img,
+.brand-logo-active-2 .single-brand-logo2 img {
+  filter: grayscale(100%);
+  transition: all 0.5s ease 0s;
+}
+.brand-logo-active .single-brand-logo:hover img,
+.brand-logo-active .single-brand-logo2:hover img,
+.brand-logo-active-2 .single-brand-logo:hover img,
+.brand-logo-active-2 .single-brand-logo2:hover img {
+  filter: grayscale(0%);
+}
+
+.brand-logo-wrap {
+  padding: 100px 90px;
+}
+@media only screen and (max-width: 767px) {
+  .brand-logo-wrap {
+    padding: 50px 20px;
+  }
+}
+
+
+

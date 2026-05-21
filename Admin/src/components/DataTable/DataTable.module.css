@@ -1,0 +1,105 @@
+.container {
+  background-color: var(--bg-main);
+  min-height: 100vh;
+  padding: 48px;
+  color: var(--text-pure);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Typography */
+.title { font-size: 28px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.03em; }
+.subtitle { color: var(--text-body); font-size: 15px; margin-bottom: 40px; }
+
+/* Stats */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.metricCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.metricCard:hover {
+  border-color: var(--border-bright);
+  transform: translateY(-2px);
+  background: var(--bg-card-hover);
+}
+
+.metricLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metricValue { font-size: 32px; font-weight: 700; margin: 8px 0; }
+.metricChange { font-size: 13px; font-weight: 600; }
+
+/* Table Section */
+.tableSection {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.table th {
+  text-align: left;
+  padding: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tableRow {
+  transition: background 0.2s;
+}
+
+.tableRow td {
+  padding: 16px 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tableRow td:first-child { border-radius: 12px 0 0 12px; }
+.tableRow td:last-child { border-radius: 0 12px 12px 0; }
+
+.tableRow:hover td {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Product Info Cell */
+.productName { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.productId { font-size: 11px; color: var(--text-muted); font-family: monospace; }
+
+/* Price Grouping */
+.priceGroup { display: flex; flex-direction: column; }
+.salePrice { font-weight: 700; color: var(--accent-success); font-size: 15px; }
+.mrp { font-size: 12px; color: var(--text-muted); text-decoration: line-through; }
+
+/* Buttons */
+.primaryBtn {
+  background: var(--text-pure);
+  color: var(--bg-main);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}

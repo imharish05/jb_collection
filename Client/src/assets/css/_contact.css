@@ -1,0 +1,205 @@
+:root {
+  /* This is your single source of truth for the brand color */
+  --primary-color: #db1a5d;
+  --primary-glow: rgba(250, 111, 254, 0.3);
+}
+
+/* Background & Shapes */
+.glass-contact-wrapper {
+  min-height: 100vh;
+  padding: 100px 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4efe9 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.glass-shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+}
+
+.shape-1 {
+  width: 400px;
+  height: 400px;
+  /* Using the variable with low opacity for the background blur */
+  background: var(--primary-glow);
+  top: -100px;
+  right: -100px;
+}
+
+.shape-2 {
+  width: 300px;
+  height: 300px;
+  background: rgba(255, 174, 205, 0.3);
+  bottom: -50px;
+  left: -50px;
+}
+
+/* The Main Glass Card */
+.glass-card-container {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+/* Left Side Styling */
+.glass-info-side {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 60px;
+  border-right: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.glass-tag {
+  color: var(--primary-color);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 13px;
+}
+
+.glass-title {
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 20px 0;
+  color: #2d3436;
+  line-height: 1.1;
+}
+
+.glass-title span {
+  color: var(--primary-color);
+}
+
+.glass-text {
+  color: #636e72;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+/* Form Styling */
+.glass-form-side {
+  padding: 60px;
+}
+
+.glass-input-group {
+  margin-bottom: 25px;
+}
+
+.glass-input-group label {
+  display: block;
+  font-weight: 600;
+  color: #2d3436;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.glass-input-group input, 
+.glass-input-group textarea {
+  width: 100%;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  color: #2d3436;
+  transition: all 0.3s ease;
+}
+
+.glass-input-group input:focus, 
+.glass-input-group textarea:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--primary-color);
+  /* Use glow variable for focus shadow */
+  box-shadow: 0 5px 15px var(--primary-glow);
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Button */
+.glass-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-button:hover {
+  /* Brightens the color slightly on hover using filter */
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px var(--primary-glow);
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .input-row { grid-template-columns: 1fr; }
+  .glass-info-side { border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.4); }
+}
+
+/* Map Section Specific Styles */
+.glass-map-wrapper {
+  position: relative;
+  line-height: 0; /* Removes bottom gap in some browsers */
+  overflow: hidden;
+}
+
+.glass-map-wrapper iframe {
+  filter: grayscale(0.2) contrast(0.9); /* Subtly desaturates to match soft UI */
+}
+
+/* Optional: This overlay makes the map feel "under" the glass */
+.map-glass-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Allows you to still interact with the map */
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 20%,
+    transparent 80%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Icon circle styling (missing from your previous snippet) */
+.icon-circle {
+  width: 45px;
+  height: 45px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+
+/* Margin utility if not using Bootstrap */
+.mt-5 {
+  margin-top: 3rem !important;
+}
+
+

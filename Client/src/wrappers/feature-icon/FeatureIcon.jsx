@@ -1,0 +1,34 @@
+import PropTypes from "prop-types";
+import clsx from "clsx";
+import featureIconData from "../../data/feature-icons/feature-icon.json";
+import FeatureIconSingle from "../../components/feature-icon/FeatureIconSingle";
+
+const FeatureIcon = ({ spaceTopClass, spaceBottomClass }) => {
+  return (
+    <div className={clsx("support-area glass-feature-section", spaceTopClass, spaceBottomClass)}>
+      <div className="container">
+        <div className="section-title text-center mb-40">
+          <h2>Designed For You..!</h2>
+          <p>Premium quality, seamless delivery, and dedicated support—always.</p>
+        </div>
+        {/* g-2 adds a small, professional gap between cards */}
+        <div className="row g-4 justify-content-around">
+          {featureIconData?.map(singleFeature => (
+            /* col-5 makes them 2-per-row with a bit of centered breathing room */
+            <div className="col-6 col-lg-3 col-md-6" key={singleFeature.id}>
+              <FeatureIconSingle
+                singleFeature={singleFeature}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+FeatureIcon.propTypes = {
+  spaceBottomClass: PropTypes.string,
+  spaceTopClass: PropTypes.string
+};
+
+export default FeatureIcon;

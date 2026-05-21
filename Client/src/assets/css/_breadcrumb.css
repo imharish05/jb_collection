@@ -1,0 +1,27 @@
+/* updated */
+/* updated */
+/* was purple, now soft pink */
+/* navy blue */
+/* hot pink */
+/* navy blue */
+/*------ 16. Breadcrumb style  --------*/
+.breadcrumb {
+  --bs-breadcrumb-margin-bottom: 0;
+  --bs-breadcrumb-divider-color: #000000;
+  --bs-breadcrumb-item-active-color: #000000;
+  --bs-breadcrumb-item-padding-x: 15px;
+  justify-content: center;
+}
+.breadcrumb-item {
+  color: #5b5858;
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+.breadcrumb-item a {
+  color: inherit;
+}
+
+
+
