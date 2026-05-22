@@ -130,10 +130,15 @@ export const getSortedProducts = (products, sortType, sortValue) => {
     }
     if (sortType === "combo") {
       if (sortValue === "all") {
-        return products.filter(product => product.combo && product.combo.length > 0);
+        return products.filter(
+          product => (Array.isArray(product.combo) && product.combo.length > 0) || product.comboId
+        );
       }
       return products.filter(
-        product => product.combo && product.combo.filter(single => single === sortValue)[0]
+        product =>
+          (Array.isArray(product.combo) && product.combo.includes(sortValue)) ||
+          (product.comboId && String(product.comboId) === String(sortValue)) ||
+          (product.Combo && (String(product.Combo.id) === String(sortValue) || product.Combo.value === sortValue))
       );
     }
     if (sortType === "tag") {

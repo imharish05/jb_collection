@@ -13,7 +13,7 @@ const PRODUCT_INCLUDE = [
   {
     model: Category,
     foreignKey: "category_id",
-    attributes: ["id", ["label", "name"]],
+    attributes: ["id", ["label", "name"], "value"],
     required: false,
   },
   {

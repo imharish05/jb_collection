@@ -40,6 +40,7 @@ const ShopGridStandard = () => {
   const [priceRange, setPriceRange] = useState(null);
 
   const { products } = useSelector((state) => state.product);
+  const { combos: navCombos = [] } = useSelector((state) => state.navMenu || {});
   const { search, pathname } = useLocation();
   const navigate = useNavigate();
 
@@ -82,7 +83,28 @@ const ShopGridStandard = () => {
   }, [search]);
 
   useEffect(() => {
-    let sorted = getSortedProducts(products, sortType, sortValue);
+    let source = products;
+    let comboHandled = false;
+
+    if (sortType === 'combo' && sortValue) {
+      const combo = navCombos.find(c => c.value === sortValue || String(c.id) === String(sortValue));
+      if (sortValue === 'all') {
+        source = products.filter(product => product.comboId || (Array.isArray(product.combo) && product.combo.length > 0));
+        comboHandled = true;
+      } else if (combo) {
+        if (Array.isArray(combo.productIds) && combo.productIds.length) {
+          source = products.filter(
+            p => combo.productIds.includes(p.id) || (p.comboId && String(p.comboId) === String(combo.id))
+          );
+          comboHandled = true;
+        } else {
+          source = getSortedProducts(products, 'combo', sortValue);
+          comboHandled = true;
+        }
+      }
+    }
+
+    let sorted = comboHandled ? source : getSortedProducts(source, sortType, sortValue);
     sorted = getSortedProducts(sorted, filterSortType, filterSortValue);
     if (priceRange) {
       sorted = sorted.filter(p => p.price >= priceRange.min && p.price <= priceRange.max);
