@@ -49,7 +49,7 @@ const getOrderById = async (req, res, next) => {
 const createOrder = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
-    const { items, totalAmount, shippingAddress, paymentMethod, couponCode, notes } = req.body;
+    const { items, totalAmount, shippingAddress, billingAddress, paymentMethod, couponCode, notes } = req.body;
 
     if (!items || !items.length || !totalAmount || !shippingAddress) {
       return res.status(400).json({
@@ -129,6 +129,7 @@ const createOrder = async (req, res, next) => {
       userId: req.user.id,
       totalAmount: parseFloat(totalAmount),
       shippingAddress,
+      billingAddress: billingAddress || null,
       paymentMethod: paymentMethod || "cod",
       paymentStatus: "pending",
       couponCode,

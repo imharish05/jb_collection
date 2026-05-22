@@ -35,6 +35,12 @@ const Order = sequelize.define(
       field: "shipping_address",
       // {name, phone, addressLine1, addressLine2, city, state, pincode}
     },
+    billingAddress: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: "billing_address",
+      // {name, phone, addressLine1, addressLine2, city, state, pincode}
+    },
     paymentMethod: {
       type: DataTypes.STRING,
       field: "payment_method",

@@ -6,7 +6,7 @@ const Logo = ({ imageUrl, logoClass }) => {
   return (
     <div>
       <Link to={process.env.PUBLIC_URL + "/"}>
-        <img alt="" src={process.env.PUBLIC_URL + imageUrl} className="img-fluid" style={{maxWidth : "85px"}}/>
+        <img alt="" src={process.env.PUBLIC_URL + imageUrl} className="img-fluid" id="logo"/>
       </Link>
     </div>
   );

@@ -72,9 +72,6 @@
   align-items: start;
 }
 
-.kco-left { }
-.kco-right { }
-
 /* ── Card ─────────────────────────────────────────── */
 .kco-card {
   background: #fff;
@@ -82,7 +79,6 @@
   border: 1px solid #f0f0f0;
   padding: 28px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-  margin-bottom: 0;
 }
 
 .kco-card-header {
@@ -115,6 +111,155 @@
 .kco-add-new-btn:hover {
   background: #db1a5d;
   color: #fff;
+}
+
+/* ── Panel header row (label + collapse btn) ──────── */
+.kco-panel-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.kco-panel-header-row .kco-section-label {
+  margin-bottom: 0;
+}
+
+.kco-collapse-btn {
+  background: #f5f5f7;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.kco-collapse-btn:hover {
+  background: #ebebeb;
+  border-color: #ccc;
+}
+
+.kco-chevron {
+  font-size: 20px;
+  color: #666;
+  line-height: 1;
+  display: inline-block;
+  transform: rotate(-90deg);
+  transition: transform 0.22s ease;
+  font-style: normal;
+}
+
+.kco-chevron.collapsed {
+  transform: rotate(90deg);
+}
+
+/* ── Collapsed summary line ───────────────────────── */
+.kco-collapsed-summary {
+  font-size: 13px;
+  color: #555;
+  padding: 10px 14px;
+  background: #f7f8fa;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+/* ── Billing disabled state ───────────────────────── */
+.kco-billing-panel {
+  position: relative;
+  transition: opacity 0.2s;
+}
+
+.kco-billing-panel.disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.kco-billing-disabled-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: #f7f8fa;
+  border: 1.5px dashed #d1d5db;
+  border-radius: 10px;
+}
+
+.kco-billing-disabled-msg {
+  font-size: 13px;
+  color: #888;
+  font-weight: 600;
+}
+
+
+.kco-address-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 18px;
+}
+
+.kco-address-panel {
+  padding: 0;
+  background: transparent;
+}
+
+.kco-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 0 0 12px;
+}
+
+/* ── Billing Divider (checkbox centered between panels) ── */
+.kco-billing-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.kco-billing-divider-line {
+  flex: 1;
+  height: 1px;
+  background: #ececec;
+}
+
+.kco-same-billing-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  padding: 9px 18px;
+  background: #f7f8fa;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 24px;
+  white-space: nowrap;
+  font-weight: 600;
+  transition: border-color 0.2s, background 0.2s;
+  user-select: none;
+}
+
+.kco-same-billing-pill:hover {
+  border-color: #db1a5d;
+  background: #fff5f8;
+}
+
+.kco-same-billing-pill input {
+  accent-color: #db1a5d;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 /* ── Address Cards ────────────────────────────────── */
@@ -204,6 +349,15 @@
   font-weight: 700;
 }
 
+.kco-mirrored-badge {
+  font-size: 10px;
+  background: #fce7f3;
+  color: #db1a5d;
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+
 .kco-addr-line {
   font-size: 13px;
   color: #555;
@@ -219,115 +373,15 @@
   gap: 4px;
 }
 
+.kco-addr-note {
+  border-radius: 12px;
+  background: #fbfbfb;
+  padding: 14px 16px;
+  color: #666;
+  font-size: 13px;
+}
+
 /* ── New Address Form ─────────────────────────────── */
-.kco-address-sections {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 18px;
-}
-
-.kco-address-panel {
-  border: 1px solid #f0f0f0;
-  border-radius: 16px;
-  padding: 24px;
-  background: #fff;
-}
-
-.kco-address-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 18px;
-}
-
-.kco-address-panel-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #111;
-  margin: 0;
-}
-
-.kco-same-billing-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: #444;
-  margin-bottom: 16px;
-}
-
-.kco-same-billing-row input {
-  accent-color: #db1a5d;
-  width: 16px;
-  height: 16px;
-}
-
-.kco-addr-note {
-  border-radius: 12px;
-  background: #fbfbfb;
-  padding: 14px 16px;
-  color: #666;
-  font-size: 13px;
-}
-
-.kco-address-sections {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 18px;
-}
-
-.kco-address-panel {
-  border: 1px solid #f0f0f0;
-  border-radius: 16px;
-  padding: 24px;
-  background: #fff;
-}
-
-.kco-address-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 18px;
-}
-
-.kco-address-panel-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #111;
-  margin: 0;
-}
-
-.kco-same-billing-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: #444;
-  margin-bottom: 16px;
-}
-
-.kco-same-billing-row input {
-  accent-color: #db1a5d;
-  width: 16px;
-  height: 16px;
-}
-
-.kco-addr-note {
-  border-radius: 12px;
-  background: #fbfbfb;
-  padding: 14px 16px;
-  color: #666;
-  font-size: 13px;
-}
-
-@media only screen and (max-width: 991px) {
-  .kco-address-sections {
-    grid-template-columns: 1fr;
-  }
-}
-
 .kco-new-addr-form {
   border: 1.5px dashed #db1a5d;
   border-radius: 14px;
@@ -810,7 +864,9 @@
   transition: opacity 0.2s;
 }
 
-.kco-add-first-btn:hover { opacity: 0.9; }
+.kco-add-first-btn:hover {
+  opacity: 0.9;
+}
 
 /* ── Gift note preview ────────────────────────────── */
 .kco-gift-note-preview {
@@ -917,7 +973,9 @@
   box-shadow: 0 4px 12px rgba(219,26,93,0.25);
 }
 
-.kco-success-btn-primary:hover { opacity: 0.9; }
+.kco-success-btn-primary:hover {
+  opacity: 0.9;
+}
 
 .kco-success-btn-secondary {
   display: inline-flex;
@@ -933,7 +991,9 @@
   border: 1.5px solid #e0e0e0;
 }
 
-.kco-success-btn-secondary:hover { background: #ebebeb; }
+.kco-success-btn-secondary:hover {
+  background: #ebebeb;
+}
 
 /* ══════════════════════════════════════════════════
    RESPONSIVE
@@ -996,6 +1056,11 @@
   .kco-place-order-btn {
     order: 1;
   }
+
+  .kco-same-billing-pill {
+    font-size: 12px;
+    padding: 8px 14px;
+  }
 }
 
 @media (max-width: 380px) {
@@ -1003,4 +1068,14 @@
     flex-direction: column;
     gap: 10px;
   }
+}
+
+.kco-default-check-row input{
+  width: 3%;
+}
+
+@media (max-width : 762px){
+  .kco-default-check-row input{
+  width: 5%;
+}
 }
