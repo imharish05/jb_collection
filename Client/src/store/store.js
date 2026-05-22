@@ -21,6 +21,7 @@ import navMenuReducer from './slices/navMenuSlice';
 import offerReducer from './slices/offerSlice';
 import authReducer from "./slices/authSlice"
 import addressReducer from "./slices/addressSlice"
+import orderReducer from "./slices/order-slice"
 
 const persistConfig = {
     key: "flone",
@@ -41,6 +42,7 @@ export const rootReducer = combineReducers({
     offerBanner: offerReducer,
     auth : authReducer,
     address: addressReducer,
+    order: orderReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

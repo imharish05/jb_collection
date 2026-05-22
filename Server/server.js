@@ -98,7 +98,7 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log("✅ MySQL database connected");
 
-    await sequelize.sync({ alter: true });
+    await sequelize.sync();
     console.log("✅ Models synced");
 
     const { seedCoupons } = require("./controllers/couponController");

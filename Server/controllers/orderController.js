@@ -1,5 +1,5 @@
 // controllers/orderController.js
-const { Order, CartItem, User, Product, Variant } = require("../models");
+const { Order, CartItem, User, Product, Variant, OrderItem } = require("../models");
 const sequelize = require("../config/database");
 
 // Dashboard sends these status values in the URL:
@@ -22,6 +22,7 @@ const getMyOrders = async (req, res, next) => {
   try {
     const orders = await Order.findAll({
       where: { userId: req.user.id },
+      include: [{ model: OrderItem, as: "items" }],
       order: [["createdAt", "DESC"]],
     });
     return res.json(orders);
@@ -35,6 +36,7 @@ const getOrderById = async (req, res, next) => {
   try {
     const order = await Order.findOne({
       where: { id: req.params.id, userId: req.user.id },
+      include: [{ model: OrderItem, as: "items" }],
     });
     if (!order) return res.status(404).json({ message: "Order not found" });
     return res.json(order);
@@ -125,7 +127,6 @@ const createOrder = async (req, res, next) => {
 
     const order = await Order.create({
       userId: req.user.id,
-      items: itemsWithDetails,
       totalAmount: parseFloat(totalAmount),
       shippingAddress,
       paymentMethod: paymentMethod || "cod",
@@ -134,11 +135,37 @@ const createOrder = async (req, res, next) => {
       notes,
     }, { transaction });
 
+    // Create OrderItem records for each item
+    for (const itemData of itemsWithDetails) {
+      await OrderItem.create({
+        orderId: order.id,
+        productId: itemData.productId,
+        productName: itemData.productName,
+        selectedVariantId: itemData.selectedVariantId || null,
+        selectedVariantName: itemData.selectedVariantName || null,
+        variantAttributes: itemData.variantAttributes || null,
+        quantity: itemData.quantity,
+        price: itemData.price,
+        mrp: itemData.mrp || null,
+        salesPrice: itemData.salesPrice || null,
+        discount: itemData.discount || 0,
+        image: itemData.image || null,
+        selectedProductColor: itemData.selectedProductColor || null,
+        selectedProductSize: itemData.selectedProductSize || null,
+      }, { transaction });
+    }
+
     // Clear cart after successful order
     await CartItem.destroy({ where: { userId: req.user.id }, transaction });
 
     await transaction.commit();
-    return res.status(201).json(order);
+
+    // Fetch the order with items to return
+    const createdOrder = await Order.findByPk(order.id, {
+      include: [{ model: OrderItem, as: "items" }],
+    });
+
+    return res.status(201).json(createdOrder);
   } catch (err) {
     await transaction.rollback();
     next(err);
@@ -150,7 +177,10 @@ const getAllOrders = async (req, res, next) => {
   try {
     const orders = await Order.findAll({
       order: [["createdAt", "DESC"]],
-      include: [{ model: User, attributes: ["id", "name", "email", "phone"] }],
+      include: [
+        { model: User, attributes: ["id", "name", "email", "phone"] },
+        { model: OrderItem, as: "items" }
+      ],
     });
     return res.json({ orders });
   } catch (err) {
@@ -175,7 +205,7 @@ const getOrdersByStatus = async (req, res, next) => {
     const orders = await Order.findAll({
       where: { status: dbStatus },
       order: [["createdAt", "DESC"]],
-      attributes: ["id", "status", "totalAmount", "createdAt"],
+      include: [{ model: OrderItem, as: "items" }],
     });
 
     return res.json(orders); // array — frontend reads .length
@@ -195,7 +225,12 @@ const updateOrderStatus = async (req, res, next) => {
     if (paymentStatus) order.paymentStatus = paymentStatus;
     await order.save();
 
-    return res.json(order);
+    // Fetch the order with items to return
+    const updatedOrder = await Order.findByPk(order.id, {
+      include: [{ model: OrderItem, as: "items" }],
+    });
+
+    return res.json(updatedOrder);
   } catch (err) {
     next(err);
   }

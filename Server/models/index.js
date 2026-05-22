@@ -17,6 +17,7 @@ const Variant     = require("./Variant");
 const Review      = require("./Review");
 const Coupon      = require("./Coupon");
 const Contact     = require("./Contact");
+const OrderItem   = require("./OrderItem");
 
 // ── User ↔ Cart / Wishlist / Order ───────────────────────────────────────────
 User.hasMany(CartItem,     { foreignKey: "user_id", as: "cartItems",     onDelete: "CASCADE" });
@@ -56,6 +57,10 @@ Review.belongsTo(Product,  { foreignKey: "product_id", as: "product" });
 User.hasMany(Review,    { foreignKey: "customer_id", as: "reviews", onDelete: "CASCADE" });
 Review.belongsTo(User,  { foreignKey: "customer_id", as: "Customer" });
 
+// ── Order ↔ OrderItem ────────────────────────────────────────────────────────
+Order.hasMany(OrderItem, { foreignKey: "order_id", as: "items", onDelete: "CASCADE" });
+OrderItem.belongsTo(Order, { foreignKey: "order_id" });
+
 module.exports = {
   sequelize,
   User,
@@ -77,4 +82,5 @@ module.exports = {
   Review,
   Coupon,
   Contact,
+  OrderItem,
 };

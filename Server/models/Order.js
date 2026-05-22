@@ -14,12 +14,6 @@ const Order = sequelize.define(
       allowNull: false,
       field: "user_id",
     },
-    // MySQL uses JSON (not JSONB)
-    items: {
-      type: DataTypes.JSON,
-      allowNull: false,
-      // [{productId, name, price, quantity, selectedProductColor, selectedProductSize, image}]
-    },
     totalAmount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,

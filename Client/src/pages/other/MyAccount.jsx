@@ -14,7 +14,7 @@ import {
   deleteAddressService,
   setDefaultAddressService,
 } from "../../store/services/addressService";
-import api from "../../api/axios";
+import { fetchOrders } from "../../store/services/orderService";
 import cogoToast from "cogo-toast";
 
 const ADDRESS_TYPES = ["Home", "Work", "Other"];
@@ -46,6 +46,7 @@ const inp = {
 const MyAccount = () => {
   const user = useSelector((state) => state.auth?.user);
   const { addresses, activeAddressId, loading: addrLoading } = useSelector((state) => state.address);
+  const { orders, loading: ordersLoading } = useSelector((state) => state.order);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
@@ -59,10 +60,6 @@ const MyAccount = () => {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [addrErrors, setAddrErrors] = useState({});
-
-  // Orders States
-  const [orders, setOrders] = useState([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
 
   // Profile States
   const [formData, setFormData] = useState({
@@ -88,18 +85,9 @@ const MyAccount = () => {
 
   useEffect(() => {
     if (activeTab === "orders" && user?.id) {
-      setOrdersLoading(true);
-      api.get("/orders")
-        .then((res) => {
-          setOrders(res.data || []);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch orders:", err);
-          cogoToast.error("Could not load orders", { position: "top-center" });
-        })
-        .finally(() => setOrdersLoading(false));
+      dispatch(fetchOrders());
     }
-  }, [activeTab, user?.id]);
+  }, [activeTab, user?.id, dispatch]);
 
   useEffect(() => { if (tabFromUrl) setActiveTab(tabFromUrl); }, [tabFromUrl]);
 

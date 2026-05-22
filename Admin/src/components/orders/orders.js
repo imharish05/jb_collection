@@ -87,7 +87,7 @@ export default function Orders({ showToast, status = null }) {
                     <div className="td-sub">{order.customer_email}</div>
                     <div className="td-sub">{order.customer_phone}</div>
                   </td>
-                  <td><span className="km-count-badge">{order.OrderItems?.length || 0} items</span></td>
+                  <td><span className="km-count-badge">{order.items?.length || 0} items</span></td>
                   <td className="td-price">₹{Number(order.total).toFixed(2)}</td>
                   <td>
                     {order.coupon_code
@@ -123,14 +123,14 @@ export default function Orders({ showToast, status = null }) {
                         <div className="km-order-detail-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                           <div>
                             <div className="km-detail-section-title">Items Ordered</div>
-                            {order.OrderItems?.length > 0
-                              ? order.OrderItems.map((item, i) => (
+                            {order.items?.length > 0
+                              ? order.items.map((item, i) => (
                                 <div key={i} className="km-order-item-row">
                                   <span>
-                                    {item.name}
-                                    {item.weight && (
+                                    {item.productName}
+                                    {item.selectedVariantName && (
                                       <span style={{ marginLeft: 5, fontSize: 10, fontWeight: 700, background: '#e8f0ff', color: '#1A52A8', padding: '1px 6px', borderRadius: 10, whiteSpace: 'nowrap' }}>
-                                        {item.weight}
+                                        {item.selectedVariantName}
                                       </span>
                                     )}
                                     <span className="td-muted"> × {item.quantity}</span>
