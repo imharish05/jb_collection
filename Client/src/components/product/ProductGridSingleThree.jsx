@@ -101,9 +101,9 @@ const ProductGridSingleThree = ({
               </button>
             )}
 
-            <button onClick={() => setModalShow(true)} title="Quick View">
+            {/* <button onClick={() => setModalShow(true)} title="Quick View">
               <i className="fa fa-eye"></i>
-            </button>
+            </button> */}
 
             <button
               className={compareItem !== undefined ? "active" : ""}

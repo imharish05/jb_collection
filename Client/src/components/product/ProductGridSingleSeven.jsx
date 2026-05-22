@@ -103,9 +103,9 @@ const ProductGridSingleSeven = ({
                 </button>
               )}
 
-              <button onClick={() => setModalShow(true)} title="Quick View">
+              {/* <button onClick={() => setModalShow(true)} title="Quick View">
                 <i className="fa fa-eye"></i>
-              </button>
+              </button> */}
 
             </div>
             <div className="pro-wishlist-2">

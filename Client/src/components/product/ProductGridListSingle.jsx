@@ -136,9 +136,9 @@ const ProductGridListSingle = ({
               >
                 <i className="pe-7s-like" />
               </button>
-              <button title="Quick View" onClick={() => setModalShow(true)}>
+              {/* <button title="Quick View" onClick={() => setModalShow(true)}>
                 <i className="pe-7s-look" />
-              </button>
+              </button> */}
             </div>
             <div className="cart-action-overlay">
               {hasVariants ? (

@@ -220,6 +220,114 @@
 }
 
 /* ── New Address Form ─────────────────────────────── */
+.kco-address-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.kco-address-panel {
+  border: 1px solid #f0f0f0;
+  border-radius: 16px;
+  padding: 24px;
+  background: #fff;
+}
+
+.kco-address-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.kco-address-panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+}
+
+.kco-same-billing-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #444;
+  margin-bottom: 16px;
+}
+
+.kco-same-billing-row input {
+  accent-color: #db1a5d;
+  width: 16px;
+  height: 16px;
+}
+
+.kco-addr-note {
+  border-radius: 12px;
+  background: #fbfbfb;
+  padding: 14px 16px;
+  color: #666;
+  font-size: 13px;
+}
+
+.kco-address-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.kco-address-panel {
+  border: 1px solid #f0f0f0;
+  border-radius: 16px;
+  padding: 24px;
+  background: #fff;
+}
+
+.kco-address-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.kco-address-panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+}
+
+.kco-same-billing-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #444;
+  margin-bottom: 16px;
+}
+
+.kco-same-billing-row input {
+  accent-color: #db1a5d;
+  width: 16px;
+  height: 16px;
+}
+
+.kco-addr-note {
+  border-radius: 12px;
+  background: #fbfbfb;
+  padding: 14px 16px;
+  color: #666;
+  font-size: 13px;
+}
+
+@media only screen and (max-width: 991px) {
+  .kco-address-sections {
+    grid-template-columns: 1fr;
+  }
+}
+
 .kco-new-addr-form {
   border: 1.5px dashed #db1a5d;
   border-radius: 14px;

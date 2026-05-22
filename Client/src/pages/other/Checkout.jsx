@@ -92,7 +92,9 @@ const Checkout = () => {
   });
 
   /* ── State ─────────────────────────────────────────────────────────────── */
-  const [selectedAddrId, setSelectedAddrId] = useState(activeAddressId);
+  const [selectedShippingAddrId, setSelectedShippingAddrId] = useState(activeAddressId);
+  const [selectedBillingAddrId, setSelectedBillingAddrId] = useState(null);
+  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [showNewAddrForm, setShowNewAddrForm] = useState(false);
   const [addrForm, setAddrForm] = useState(EMPTY_ADDR);
@@ -109,11 +111,17 @@ const Checkout = () => {
 
   /* ── Auto-select default/first address ────────────────────────────────── */
   useEffect(() => {
-    if (!selectedAddrId && addresses.length > 0) {
-      const def = addresses.find((a) => a.isDefault) || addresses[0];
-      setSelectedAddrId(def.id);
+    if (addresses.length === 0) return;
+
+    const def = addresses.find((a) => a.isDefault) || addresses[0];
+    setSelectedShippingAddrId((prev) => prev || def.id);
+
+    if (billingSameAsShipping) {
+      setSelectedBillingAddrId((prev) => prev || selectedShippingAddrId || def.id);
+    } else {
+      setSelectedBillingAddrId((prev) => prev || def.id);
     }
-  }, [addresses, selectedAddrId]);
+  }, [addresses, billingSameAsShipping, selectedShippingAddrId]);
 
   /* ── Address validation ────────────────────────────────────────────────── */
   const validateAddr = () => {
@@ -146,13 +154,28 @@ const Checkout = () => {
     }
   };
 
-  const handleSelectAddr = (id) => {
-    setSelectedAddrId(id);
+  const handleSelectShippingAddr = (id) => {
+    setSelectedShippingAddrId(id);
     dispatch(setActiveAddress(id));
+    if (billingSameAsShipping) setSelectedBillingAddrId(id);
+  };
+
+  const handleSelectBillingAddr = (id) => {
+    setSelectedBillingAddrId(id);
+  };
+
+  const handleToggleBillingSame = (checked) => {
+    setBillingSameAsShipping(checked);
+    if (checked) setSelectedBillingAddrId(selectedShippingAddrId);
   };
 
   /* ── Derived values ────────────────────────────────────────────────────── */
-  const selectedAddr = addresses.find((a) => a.id === selectedAddrId);
+  const selectedShippingAddr = addresses.find(
+    (a) => a.id === selectedShippingAddrId
+  );
+  const selectedBillingAddr = billingSameAsShipping
+    ? selectedShippingAddr
+    : addresses.find((a) => a.id === selectedBillingAddrId);
   // COD charges no longer applicable — total is final price
   const grandTotalWithCOD = pricing.grandTotal;
 
@@ -161,8 +184,14 @@ const Checkout = () => {
 
   /* ── Place order ───────────────────────────────────────────────────────── */
   const handlePlaceOrder = async () => {
-    if (!selectedAddr) {
-      cogoToast.warn("Please select a delivery address", {
+    if (!selectedShippingAddr) {
+      cogoToast.warn("Please select a shipping address", {
+        position: "top-center",
+      });
+      return;
+    }
+    if (!billingSameAsShipping && !selectedBillingAddr) {
+      cogoToast.warn("Please select a billing address", {
         position: "top-center",
       });
       return;
@@ -180,7 +209,8 @@ const Checkout = () => {
           selectedProductSize: item.selectedProductSize || null,
         })),
         totalAmount: pricing.grandTotal,
-        shippingAddress: selectedAddr,
+        shippingAddress: selectedShippingAddr,
+        billingAddress: selectedBillingAddr,
         paymentMethod,
         couponCode: pricing.couponCode || null,
         notes: giftNote.trim() || null,
@@ -197,7 +227,13 @@ const Checkout = () => {
         dispatch(deleteAllFromCart());
         setTimeout(() => {
           navigate(`/order-confirmation`, {
-            state: { orderId: id, selectedAddr, paymentMethod, cartItems }
+            state: {
+              orderId: id,
+              selectedShippingAddr,
+              billingAddress: selectedBillingAddr,
+              paymentMethod,
+              cartItems,
+            },
           });
         }, 1000);
       }
@@ -241,7 +277,7 @@ const Checkout = () => {
         prefill: {
           name: user?.name || "",
           email: user?.email || "",
-          contact: selectedAddr?.phone || "",
+          contact: selectedShippingAddr?.phone || "",
         },
         theme: {
           color: "#f15a24",
@@ -261,7 +297,13 @@ const Checkout = () => {
               dispatch(deleteAllFromCart());
               setTimeout(() => {
                 navigate(`/order-confirmation`, {
-                  state: { orderId: dbOrderId, selectedAddr, paymentMethod, cartItems }
+                  state: {
+                    orderId: dbOrderId,
+                    selectedShippingAddr,
+                    billingAddress: selectedBillingAddr,
+                    paymentMethod,
+                    cartItems,
+                  },
                 });
               }, 1500);
             }
@@ -311,7 +353,7 @@ const Checkout = () => {
 
             {/* ── Step Indicator ─────────────────────────────────── */}
             <div className="kco-step-bar">
-              {["Delivery Address", "Payment", "Review & Place"].map(
+              {["Shipping & Billing", "Payment", "Review & Place"].map(
                 (label, i) => {
                   const n = i + 1;
                   const active = step === n;
@@ -367,11 +409,11 @@ const Checkout = () => {
               {/* ══ LEFT COLUMN ══════════════════════════════════════ */}
               <div className="kco-left">
 
-                {/* ── STEP 1: Delivery Address ──────────────────── */}
+                {/* ── STEP 1: Shipping & Billing Address ──────────────────── */}
                 {step === 1 && (
                   <div className="kco-card">
                     <div className="kco-card-header">
-                      <h3 className="kco-card-title">Delivery Address</h3>
+                      <h3 className="kco-card-title">Shipping & Billing Address</h3>
                       <button
                         className="kco-add-new-btn"
                         onClick={() => setShowNewAddrForm((p) => !p)}
@@ -410,57 +452,165 @@ const Checkout = () => {
                         </div>
                       )}
 
-                    {/* Saved address list */}
-                    {addresses.map((addr) => (
-                      <div
-                        key={addr.id}
-                        className={`kco-addr-card ${
-                          selectedAddrId === addr.id ? "selected" : ""
-                        }`}
-                        onClick={() => handleSelectAddr(addr.id)}
-                      >
-                        {/* Radio */}
-                        <div className="kco-radio-outer">
-                          {selectedAddrId === addr.id && (
-                            <div className="kco-radio-dot" />
-                          )}
+                    {/* Shipping + Billing sections */}
+                    <div className="kco-address-sections">
+                      <div className="kco-address-panel">
+                        <div className="kco-address-panel-header">
+                          <h4 className="kco-address-panel-title">
+                            Shipping Address
+                          </h4>
                         </div>
-
-                        {/* Body */}
-                        <div className="kco-addr-body">
-                          <div className="kco-addr-top">
-                            <span className="kco-addr-name">
-                              {addr.fullName}
-                            </span>
-                            <span className="kco-addr-type-badge">
-                              {addr.addressType}
-                            </span>
-                            {addr.isDefault && (
-                              <span className="kco-default-badge">
-                                ★ Default
-                              </span>
-                            )}
+                        {addresses.map((addr) => (
+                          <div
+                            key={addr.id}
+                            className={`kco-addr-card ${
+                              selectedShippingAddrId === addr.id
+                                ? "selected"
+                                : ""
+                            }`}
+                            onClick={() => handleSelectShippingAddr(addr.id)}
+                          >
+                            <div className="kco-radio-outer">
+                              {selectedShippingAddrId === addr.id && (
+                                <div className="kco-radio-dot" />
+                              )}
+                            </div>
+                            <div className="kco-addr-body">
+                              <div className="kco-addr-top">
+                                <span className="kco-addr-name">
+                                  {addr.fullName}
+                                </span>
+                                <span className="kco-addr-type-badge">
+                                  {addr.addressType}
+                                </span>
+                                {addr.isDefault && (
+                                  <span className="kco-default-badge">
+                                    ★ Default
+                                  </span>
+                                )}
+                              </div>
+                              <div className="kco-addr-line">
+                                {addr.street}
+                                {addr.apartment ? ", " + addr.apartment : ""}
+                              </div>
+                              <div className="kco-addr-line">
+                                {addr.city}, {addr.state} – {addr.pincode}
+                              </div>
+                              <div className="kco-addr-line">{addr.country}</div>
+                              <div className="kco-addr-phone">
+                                📞 {addr.phone}
+                              </div>
+                            </div>
                           </div>
-                          <div className="kco-addr-line">
-                            {addr.street}
-                            {addr.apartment ? ", " + addr.apartment : ""}
-                          </div>
-                          <div className="kco-addr-line">
-                            {addr.city}, {addr.state} – {addr.pincode}
-                          </div>
-                          <div className="kco-addr-line">{addr.country}</div>
-                          <div className="kco-addr-phone">
-                            📞 {addr.phone}
-                          </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
+
+                      <div className="kco-address-panel">
+                        <div className="kco-address-panel-header">
+                          <h4 className="kco-address-panel-title">
+                            Billing Address
+                          </h4>
+                        </div>
+                        <label className="kco-same-billing-row">
+                          <input
+                            type="checkbox"
+                            checked={billingSameAsShipping}
+                            onChange={(e) =>
+                              handleToggleBillingSame(e.target.checked)
+                            }
+                          />
+                          Billing address same as shipping address
+                        </label>
+                        {billingSameAsShipping ? (
+                          selectedShippingAddr ? (
+                            <div className="kco-addr-card selected">
+                              <div className="kco-radio-outer">
+                                <div className="kco-radio-dot" />
+                              </div>
+                              <div className="kco-addr-body">
+                                <div className="kco-addr-top">
+                                  <span className="kco-addr-name">
+                                    {selectedShippingAddr.fullName}
+                                  </span>
+                                  <span className="kco-addr-type-badge">
+                                    {selectedShippingAddr.addressType}
+                                  </span>
+                                </div>
+                                <div className="kco-addr-line">
+                                  {selectedShippingAddr.street}
+                                  {selectedShippingAddr.apartment
+                                    ? ", " + selectedShippingAddr.apartment
+                                    : ""}
+                                </div>
+                                <div className="kco-addr-line">
+                                  {selectedShippingAddr.city}, {selectedShippingAddr.state} – {selectedShippingAddr.pincode}
+                                </div>
+                                <div className="kco-addr-line">
+                                  {selectedShippingAddr.country}
+                                </div>
+                                <div className="kco-addr-phone">
+                                  📞 {selectedShippingAddr.phone}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="kco-addr-note">
+                              Select a shipping address first to mirror it for billing.
+                            </div>
+                          )
+                        ) : (
+                          addresses.map((addr) => (
+                            <div
+                              key={addr.id}
+                              className={`kco-addr-card ${
+                                selectedBillingAddrId === addr.id
+                                  ? "selected"
+                                  : ""
+                              }`}
+                              onClick={() => handleSelectBillingAddr(addr.id)}
+                            >
+                              <div className="kco-radio-outer">
+                                {selectedBillingAddrId === addr.id && (
+                                  <div className="kco-radio-dot" />
+                                )}
+                              </div>
+                              <div className="kco-addr-body">
+                                <div className="kco-addr-top">
+                                  <span className="kco-addr-name">
+                                    {addr.fullName}
+                                  </span>
+                                  <span className="kco-addr-type-badge">
+                                    {addr.addressType}
+                                  </span>
+                                  {addr.isDefault && (
+                                    <span className="kco-default-badge">
+                                      ★ Default
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="kco-addr-line">
+                                  {addr.street}
+                                  {addr.apartment ? ", " + addr.apartment : ""}
+                                </div>
+                                <div className="kco-addr-line">
+                                  {addr.city}, {addr.state} – {addr.pincode}
+                                </div>
+                                <div className="kco-addr-line">{addr.country}</div>
+                                <div className="kco-addr-phone">
+                                  📞 {addr.phone}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
 
                     {/* New Address Form */}
                     {showNewAddrForm && (
                       <div className="kco-new-addr-form">
                         <h4 className="kco-new-addr-title">
-                          ➕ New Delivery Address
+                          ➕ New Address
                         </h4>
 
                         {/* Type selector */}
@@ -637,7 +787,7 @@ const Checkout = () => {
                             }
                             style={{ accentColor: "#db1a5d" }}
                           />
-                          Set as my default delivery address
+                          Set as my default address
                         </label>
 
                         <div className="kco-form-actions">
@@ -687,22 +837,33 @@ const Checkout = () => {
                     {/* Continue button */}
                     <button
                       className="kco-next-btn"
-                      disabled={!selectedAddr && !showNewAddrForm}
+                      disabled={
+                        !selectedShippingAddr ||
+                        (!billingSameAsShipping && !selectedBillingAddr)
+                      }
                       style={{
-                        opacity: (!selectedAddr && !showNewAddrForm) ? 0.5 : 1,
-                        cursor: (!selectedAddr && !showNewAddrForm) ? "not-allowed" : "pointer",
+                        opacity:
+                          !selectedShippingAddr ||
+                          (!billingSameAsShipping && !selectedBillingAddr)
+                            ? 0.5
+                            : 1,
+                        cursor:
+                          !selectedShippingAddr ||
+                          (!billingSameAsShipping && !selectedBillingAddr)
+                            ? "not-allowed"
+                            : "pointer",
                       }}
                       onClick={() => {
-                        if (!selectedAddr) {
-                          if (addresses.length > 0) {
-                            cogoToast.warn("Please select a delivery address", {
-                              position: "top-center",
-                            });
-                          } else {
-                            cogoToast.warn("Please add a delivery address first", {
-                              position: "top-center",
-                            });
-                          }
+                        if (!selectedShippingAddr) {
+                          cogoToast.warn("Please select a shipping address", {
+                            position: "top-center",
+                          });
+                          return;
+                        }
+                        if (!billingSameAsShipping && !selectedBillingAddr) {
+                          cogoToast.warn("Please select a billing address", {
+                            position: "top-center",
+                          });
                           return;
                         }
                         if (!showNewAddrForm) setStep(2);
@@ -785,20 +946,37 @@ const Checkout = () => {
                           Edit
                         </button>
                       </div>
-                      {selectedAddr && (
+                      {selectedShippingAddr && (
                         <div className="kco-review-addr-box">
-                          <strong>{selectedAddr.fullName}</strong> ·{" "}
-                          {selectedAddr.phone}
+                          <strong>{selectedShippingAddr.fullName}</strong> ·{" "}
+                          {selectedShippingAddr.phone}
                           <br />
-                          {selectedAddr.street}
-                          {selectedAddr.apartment
-                            ? ", " + selectedAddr.apartment
+                          {selectedShippingAddr.street}
+                          {selectedShippingAddr.apartment
+                            ? ", " + selectedShippingAddr.apartment
                             : ""}
-                          , {selectedAddr.city}, {selectedAddr.state} –{" "}
-                          {selectedAddr.pincode}
+                          , {selectedShippingAddr.city}, {selectedShippingAddr.state} –{" "}
+                          {selectedShippingAddr.pincode}
                           <br />
                           <span style={{ color: "#888", fontSize: 12 }}>
-                            {selectedAddr.addressType} Address
+                            Shipping Address
+                          </span>
+                        </div>
+                      )}
+                      {selectedBillingAddr && (
+                        <div className="kco-review-addr-box" style={{ marginTop: 12 }}>
+                          <strong>{selectedBillingAddr.fullName}</strong> ·{" "}
+                          {selectedBillingAddr.phone}
+                          <br />
+                          {selectedBillingAddr.street}
+                          {selectedBillingAddr.apartment
+                            ? ", " + selectedBillingAddr.apartment
+                            : ""}
+                          , {selectedBillingAddr.city}, {selectedBillingAddr.state} –{" "}
+                          {selectedBillingAddr.pincode}
+                          <br />
+                          <span style={{ color: "#888", fontSize: 12 }}>
+                            Billing Address
                           </span>
                         </div>
                       )}
@@ -938,14 +1116,22 @@ const Checkout = () => {
                       <button
                         className="kco-place-order-btn"
                         onClick={handlePlaceOrder}
-                        disabled={placing || !selectedAddr || !paymentMethod}
+                        disabled={
+                          placing || !selectedShippingAddr || !paymentMethod
+                        }
                         style={{
-                          opacity: (placing || !selectedAddr || !paymentMethod) ? 0.5 : 1,
-                          cursor: (!selectedAddr || !paymentMethod) ? "not-allowed" : "pointer",
+                          opacity:
+                            placing || !selectedShippingAddr || !paymentMethod
+                              ? 0.5
+                              : 1,
+                          cursor:
+                            !selectedShippingAddr || !paymentMethod
+                              ? "not-allowed"
+                              : "pointer",
                         }}
                         title={
-                          !selectedAddr
-                            ? "Please select a delivery address first"
+                          !selectedShippingAddr
+                            ? "Please select a shipping address first"
                             : !paymentMethod
                             ? "Please select a payment method"
                             : ""

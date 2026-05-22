@@ -109,11 +109,11 @@ const ProductGridSingleFour = ({
             </div>
 
 
-            <div className="pro-same-action pro-quickview">
+            {/* <div className="pro-same-action pro-quickview">
               <button onClick={() => setModalShow(true)} title="Quick View">
                 <i className="fa fa-eye"></i>
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
         <div className="product-content-5 text-center">

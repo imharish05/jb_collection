@@ -115,11 +115,11 @@ const ProductGridSingle = ({
                     </button>
                     )}
                 </div>
-                <div className="pro-same-action pro-quickview">
+                {/* <div className="pro-same-action pro-quickview">
                     <button title="Quick View" onClick={() => setModalShow(true)}>
                     <i className="pe-7s-look" />
                     </button>
-                </div>
+                </div> */}
                 </div>
             </div>
             <div className="product-content text-center">
