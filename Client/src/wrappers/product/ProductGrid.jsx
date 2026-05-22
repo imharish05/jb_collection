@@ -21,7 +21,7 @@ const ProductGrid = ({
     <Fragment>
       {prods?.map(product => {
         return (
-          <div className="col-xl-3 col-md-6 col-lg-4 col-sm-6" key={product.id}>
+          <div className="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12" key={product.id}>
             <ProductGridSingle
               spaceBottomClass={spaceBottomClass}
               product={product}

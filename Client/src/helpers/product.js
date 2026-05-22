@@ -14,9 +14,23 @@ export const getProducts = (products, category, type, limit) => {
       )
     : products;
 
-  if (type && type === "new") {
-    const newProducts = finalProducts.filter(single => single.isNew || single.new);
+  if (type && type === "customisable") {
+    const customProducts = finalProducts.filter(single =>
+      (single.tag && single.tag.some(t => /custom/i.test(t))) || single.isCustomisable
+    );
+    return customProducts.slice(0, limit ? limit : customProducts.length);
+  }
+  if (type && type === "newArrival") {
+    const newProducts = finalProducts.filter(single =>
+      (single.tag && single.tag.some(t => /new arrival|✨|\bnew\b/i.test(t))) || single.isNew || single.new
+    );
     return newProducts.slice(0, limit ? limit : newProducts.length);
+  }
+  if (type && (type === "hotDeal" || type === "hotDeals")) {
+    const hotProducts = finalProducts.filter(single =>
+      single.tag && single.tag.some(t => /hot deal|🔥|\bhot\b/i.test(t))
+    );
+    return hotProducts.slice(0, limit ? limit : hotProducts.length);
   }
   if (type && type === "bestSeller") {
     return [...finalProducts]
