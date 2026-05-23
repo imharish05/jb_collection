@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SEO from "../../components/seo";
 import { getDiscountPrice } from "../../helpers/product";
+import { getImgUrl } from "../../helpers/imageUrl";
 import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
 import {
@@ -272,11 +273,9 @@ const Cart = () => {
                           className="kg-item-img-wrap"
                         >
                           <img
-                            src={
-                              item.image?.[0]?.startsWith("http")
-                                ? item.image[0]
-                                : `${process.env.REACT_APP_IMG_URL || ""}/uploads/${(item.image?.[0] || "").replace(/^\/?uploads\//, "")}`
-                            }
+                            src={getImgUrl(
+                              Array.isArray(item.image) ? item.image[0] : item.image
+                            ) || "/assets/img/products/products-1.jpeg"}
                             alt={item.name}
                             className="kg-item-img"
                             onError={(e) => {

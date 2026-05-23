@@ -305,7 +305,7 @@ const ProductDescriptionInfo = ({
   finalDiscountedPrice,
   finalProductPrice,
   cartItems,
-  wishlistItem,
+  wishlistItems,         // all wishlist items for this product (filtered by productId)
   onVariantImageChange,   // callback → parent lifts image for gallery
 }) => {
   const dispatch = useDispatch();
@@ -481,8 +481,18 @@ const ProductDescriptionInfo = ({
       redirectToLogin();
       return;
     }
-    addToWishlistService(product);
+    // Pass the currently selected variant id so the wishlist entry is variant-specific
+    addToWishlistService(product, selectedVariant?.id ?? null);
   };
+
+  // Find if this specific variant (or product if no variants) is already in wishlist
+  const wishlistItems_ = Array.isArray(wishlistItems) ? wishlistItems : (wishlistItems ? [wishlistItems] : []);
+  const wishlistItem = wishlistItems_.find(item => {
+    const a = item.selectedVariantId ?? null;
+    const b = selectedVariant?.id ?? null;
+    return String(a) === String(b);
+  });
+  const isInWishlist = wishlistItem !== undefined;
 
   return (
     <div className="product-details-content ml-70">
@@ -622,20 +632,27 @@ const ProductDescriptionInfo = ({
             <button onClick={() => setQuantityCount(q => q < effectiveStock - productCartQty ? q + 1 : q)} className="inc qtybutton">+</button>
           </div>
           <div className="pro-details-cart btn-hover">
-            {effectiveStock > 0 ? (
-              <button onClick={handleAddToCart} disabled={isAuthenticated && productCartQty >= effectiveStock}>
-                Add To Cart
-              </button>
-            ) : (
+            {effectiveStock > 0 ? (() => {
+              const inCart = isAuthenticated && productCartQty > 0;
+              return (
+                <button
+                  onClick={handleAddToCart}
+                  disabled={inCart || (isAuthenticated && productCartQty >= effectiveStock)}
+                  style={inCart ? { background: "#22c55e", cursor: "not-allowed" } : {}}
+                >
+                  {inCart ? "In Cart ✓" : "Add To Cart"}
+                </button>
+              );
+            })() : (
               <button disabled>Out of Stock</button>
             )}
           </div>
           <ErrorMsg field="quantity" />
           <div className="pro-details-wishlist">
             <button
-              className={wishlistItem !== undefined ? "active" : ""}
-              disabled={isAuthenticated && wishlistItem !== undefined}
-              title={wishlistItem !== undefined ? "Added to wishlist" : "Add to wishlist"}
+              className={isInWishlist ? "active" : ""}
+              disabled={isAuthenticated && isInWishlist}
+              title={isInWishlist ? "Added to wishlist" : "Add to wishlist"}
               onClick={handleWishlist}
             >
               <i className="pe-7s-like" />
@@ -728,7 +745,7 @@ ProductDescriptionInfo.propTypes = {
   finalDiscountedPrice: PropTypes.number,
   finalProductPrice: PropTypes.number,
   product: PropTypes.shape({}),
-  wishlistItem: PropTypes.shape({}),
+  wishlistItems: PropTypes.array,
   onVariantImageChange: PropTypes.func,
 };
 

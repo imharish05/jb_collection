@@ -6,521 +6,293 @@ import {
   deleteAllFromWishlistService,
 } from "../../store/services";
 import { Link, useLocation } from "react-router-dom";
-import { getProductPrice } from "../../helpers/product";
 import { getImgUrl } from "../../helpers/imageUrl";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
 
+// ── helpers ───────────────────────────────────────────────────────────────────
 const parseJson = (val) => {
   if (!val || typeof val !== "string") return val;
-  try {
-    return JSON.parse(val);
-  } catch {
-    return val;
-  }
+  try { return JSON.parse(val); } catch { return val; }
 };
-
 const getFirstImage = (img) => {
   const arr = Array.isArray(img) ? img : parseJson(img);
   return Array.isArray(arr) ? arr[0] : arr || "";
 };
+const getSecondImage = (img) => {
+  const arr = Array.isArray(img) ? img : parseJson(img);
+  return Array.isArray(arr) && arr.length > 1 ? arr[1] : null;
+};
 
-/* ─── Inline styles ─────────────────────────────────────────────────────── */
-const S = {
-  page: {
-    background: "#f7f8fa",
-    minHeight: "60vh",
-  },
-  container: {
-    maxWidth: 1100,
-    margin: "0 auto",
-    padding: "0 20px",
-  },
-  pageTitle: {
-    fontSize: 22,
-    fontWeight: 800,
-    color: "#111",
-    marginBottom: 24,
-    letterSpacing: "-0.4px",
-  },
-  /* ── Grid of cards ── */
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-    gap: 20,
-    marginBottom: 32,
-  },
-  /* ── Single card ── */
-  card: {
-    background: "#fff",
-    borderRadius: 16,
-    border: "1px solid #f0f0f0",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
-    overflow: "hidden",
-    display: "flex",
-    flexDirection: "column",
-    transition: "box-shadow 0.2s, transform 0.2s",
-    position: "relative",
-  },
-  imgWrap: {
-    position: "relative",
-    width: "100%",
-    paddingBottom: "100%",
-    background: "#f9f9f9",
-    overflow: "hidden",
-  },
-  img: {
-    position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    transition: "transform 0.35s ease",
-  },
-  removeBtn: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    width: 32,
-    height: 32,
-    borderRadius: "50%",
-    background: "rgba(255,255,255,0.92)",
-    border: "1.5px solid #f0f0f0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    fontSize: 14,
-    color: "#db1a5d",
-    boxShadow: "0 1px 6px rgba(0,0,0,0.1)",
-    zIndex: 2,
-    transition: "background 0.15s, transform 0.15s",
-  },
-  cardBody: {
-    padding: "14px 16px 16px",
-    display: "flex",
-    flexDirection: "column",
-    flex: 1,
-    gap: 8,
-  },
-  productName: {
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#111",
-    textDecoration: "none",
-    lineHeight: 1.4,
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
-  },
-  priceRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  },
-  priceDiscounted: {
-    fontSize: 16,
-    fontWeight: 800,
-    color: "#db1a5d",
-  },
-  priceOriginal: {
-    fontSize: 13,
-    color: "#aaa",
-    textDecoration: "line-through",
-  },
-  priceNormal: {
-    fontSize: 16,
-    fontWeight: 800,
-    color: "#111",
-  },
-  addToCartBtn: {
-    marginTop: "auto",
-    width: "100%",
-    padding: "11px 0",
-    borderRadius: 10,
-    border: "none",
-    background: "linear-gradient(135deg, #db1a5d, #c01550)",
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: "pointer",
-    transition: "opacity 0.2s, transform 0.15s",
-    boxShadow: "0 3px 10px rgba(219,26,93,0.25)",
-    letterSpacing: "0.2px",
-  },
-  addToCartBtnAdded: {
-    background: "#e5e7eb",
-    color: "#888",
-    boxShadow: "none",
-    cursor: "not-allowed",
-  },
-  selectOptionBtn: {
-    marginTop: "auto",
-    display: "block",
-    width: "100%",
-    padding: "11px 0",
-    borderRadius: 10,
-    border: "1.5px solid #db1a5d",
-    background: "#fff",
-    color: "#db1a5d",
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: "pointer",
-    textAlign: "center",
-    textDecoration: "none",
-    transition: "background 0.15s, color 0.15s",
-    boxSizing: "border-box",
-  },
-  outOfStockBtn: {
-    marginTop: "auto",
-    width: "100%",
-    padding: "11px 0",
-    borderRadius: 10,
-    border: "none",
-    background: "#f3f4f6",
-    color: "#aaa",
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: "not-allowed",
-  },
-  /* ── Footer row ── */
-  footer: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    gap: 12,
-    marginTop: 8,
-  },
-  continueShopping: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 7,
-    padding: "11px 22px",
-    background: "#fff",
-    border: "1.5px solid #e0e0e0",
-    borderRadius: 10,
-    fontSize: 13,
-    fontWeight: 700,
-    color: "#333",
-    textDecoration: "none",
-    transition: "border-color 0.2s, background 0.2s",
-  },
-  clearBtn: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 7,
-    padding: "11px 22px",
-    background: "#fff5f8",
-    border: "1.5px solid #fca5a5",
-    borderRadius: 10,
-    fontSize: 13,
-    fontWeight: 700,
-    color: "#db1a5d",
-    cursor: "pointer",
-    transition: "background 0.15s",
-  },
-  /* ── Empty state ── */
-  emptyWrap: {
-    textAlign: "center",
-    padding: "80px 20px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 16,
-  },
-  emptyIconCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: "50%",
-    background: "#fff5f8",
-    border: "2px solid #fce7f3",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 38,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 800,
-    color: "#111",
-    margin: 0,
-  },
-  emptySub: {
-    fontSize: 14,
-    color: "#888",
-    margin: 0,
-  },
-  emptyShopBtn: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "13px 28px",
-    background: "linear-gradient(135deg, #db1a5d, #c01550)",
-    color: "#fff",
-    borderRadius: 12,
-    fontSize: 14,
-    fontWeight: 700,
-    textDecoration: "none",
-    boxShadow: "0 4px 14px rgba(219,26,93,0.28)",
-    transition: "opacity 0.2s",
-    marginTop: 4,
-  },
-  itemCount: {
-    fontSize: 13,
-    color: "#888",
-    marginBottom: 20,
-    fontWeight: 500,
-  },
+// Get display price + strike price from item (respects selectedVariant)
+const getPrices = (item, rate = 1) => {
+  const v = item.selectedVariant;
+  if (v) {
+    const sp = parseFloat(v.salesPrice);
+    const mrp = parseFloat(v.mrp);
+    return {
+      price:  +(sp  * rate).toFixed(2),
+      strike: mrp > sp ? +(mrp * rate).toFixed(2) : null,
+    };
+  }
+  const price  = parseFloat(item.price || 0);
+  const disc   = parseFloat(item.discount || 0);
+  const strike = disc > 0 ? +(price * rate).toFixed(2) : null;
+  const final  = disc > 0 ? +((price - price * disc / 100) * rate).toFixed(2) : +(price * rate).toFixed(2);
+  return { price: final, strike };
+};
+
+// Get stock from item's selected variant or product directly
+const getStock = (item) => {
+  if (item.selectedVariant) return Number(item.selectedVariant.stock ?? 0);
+  return Number(item.stock ?? 0);
+};
+
+// Parse variant attributes for display: [{key, value}, ...]
+const safeAttrs = (raw) => {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") { try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; } }
+  return [];
+};
+const getVariantAttrs = (variant) => {
+  if (!variant) return [];
+  return safeAttrs(variant.attributes).filter(a => a.key && a.value && a.key !== "Custom Note");
 };
 
 /* ══════════════════════════════════════════════════════════════════════════
-   Wishlist Component
+   Wishlist Page — 4-column, compact, variant-aware
 ══════════════════════════════════════════════════════════════════════════ */
 const Wishlist = () => {
   const { pathname } = useLocation();
-
   const currency = useSelector(
-    (state) =>
-      state.currency || { currencyName: "INR", currencyRate: 1, currencySymbol: "₹" }
+    (state) => state.currency || { currencyName: "INR", currencyRate: 1, currencySymbol: "₹" }
   );
   const { wishlistItems } = useSelector((state) => state.wishlist);
+  const { cartItems }     = useSelector((state) => state.cart);
 
-  console.log(wishlistItems,"This is the wishlist items");
-  
-  
-  const { cartItems } = useSelector((state) => state.cart);
-  
   return (
     <Fragment>
-      <SEO
-        titleTemplate="Wishlist — Kamali Gifts"
-        description="Your saved wishlist items."
-      />
+      <SEO titleTemplate="Wishlist — Kamali Gifts" description="Your saved wishlist items." />
       <LayoutOne headerTop="visible">
         <Breadcrumb
           pages={[
-            { label: "Home", path: process.env.PUBLIC_URL + "/" },
+            { label: "Home",     path: process.env.PUBLIC_URL + "/" },
             { label: "Wishlist", path: process.env.PUBLIC_URL + pathname },
           ]}
         />
 
-        <div style={S.page}>
-          <div style={S.container}>
+        {/* Scoped styles: compact image + smaller text for 4-col grid */}
+        <style>{`
+          .wl-grid .product-img-container { aspect-ratio: 1 / 0.9 !important; }
+          .wl-grid .product-details-premium { padding: 10px 12px 12px !important; }
+          .wl-grid .product-details-premium h4 { font-size: 12px !important; margin-bottom: 4px !important; }
+          .wl-grid .product-details-premium .new-price { font-size: 13px !important; }
+          .wl-grid .product-details-premium .old-price { font-size: 11px !important; }
+          .wl-grid .product-cat-tag { font-size: 10px !important; margin-bottom: 3px !important; }
+          .wl-grid .cart-action-overlay button,
+          .wl-grid .cart-action-overlay a.cart-action-btn { padding: 8px !important; font-size: 10px !important; }
+          .wl-variant-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+          .wl-variant-chip {
+            display:inline-flex; align-items:center; gap:2px;
+            font-size:10px; font-weight:600; padding:2px 7px;
+            border-radius:4px; background:#f3f4f6; color:#374151;
+            border:1px solid #e5e7eb;
+          }
+          .wl-variant-chip span.k { color:#9ca3af; font-weight:500; }
+        `}</style>
 
-            {wishlistItems && wishlistItems.length >= 1 ? (
-              <Fragment>
-                <h3 style={S.pageTitle}>My Wishlist</h3>
-                <p style={S.itemCount}>
-                  {wishlistItems.length} {wishlistItems.length === 1 ? "item" : "items"} saved
-                </p>
+        {wishlistItems && wishlistItems.length >= 1 ? (
+          <div className="shop-area pt-60 pb-80">
+            <div className="container">
 
-                {/* ── Card Grid ── */}
-                <div style={S.grid} >
-                  {wishlistItems.map((item, key) => {
-                    // ── Prices straight from backend via getProductPrice ──
-                    const { displayPrice, strikePrice } = getProductPrice(item);
+              {/* ── Header ── */}
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:28 }}>
+                <div>
+                  <h4 style={{ margin:0, fontSize:22, fontWeight:800, color:"#111" }}>My Wishlist</h4>
+                  <p style={{ margin:"4px 0 0", fontSize:13, color:"#888" }}>
+                    {wishlistItems.length} {wishlistItems.length === 1 ? "item" : "items"} saved
+                  </p>
+                </div>
+                <div style={{ display:"flex", gap:10 }}>
+                  <Link
+                    to={process.env.PUBLIC_URL + "/shop"}
+                    style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"10px 20px", background:"#fff", border:"1.5px solid #e0e0e0", borderRadius:10, fontSize:13, fontWeight:700, color:"#333", textDecoration:"none" }}
+                  >
+                    ← Continue Shopping
+                  </Link>
+                  <button
+                    onClick={() => deleteAllFromWishlistService()}
+                    style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"10px 20px", background:"#fff5f8", border:"1.5px solid #fca5a5", borderRadius:10, fontSize:13, fontWeight:700, color:"#db1a5d", cursor:"pointer" }}
+                  >
+                    🗑 Clear Wishlist
+                  </button>
+                </div>
+              </div>
+
+              {/* ── 4-column grid ── */}
+              <div className="shop-bottom-area mt-10 wl-grid">
+                <div className="row grid three-column">
+                  {wishlistItems.map((item) => {
                     const rate        = currency?.currencyRate || 1;
-                    const finalPrice  = +(displayPrice * rate).toFixed(2);
-                    const finalStrike = strikePrice ? +(strikePrice * rate).toFixed(2) : null;
-                    const cartItem = cartItems.find((c) => c.id === item.id);
+                    const { price, strike } = getPrices(item, rate);
+                    const stock       = getStock(item);
+                    const hasVariants = Array.isArray(item.Variants) && item.Variants.length > 0;
+
+                    // Image: prefer variant image if set, else product image
+                    const variantImg  = item.selectedVariant?.image || null;
+                    const rawImg      = variantImg || getFirstImage(item.image);
+                    const mainImage   = getImgUrl(rawImg);
+                    const hoverRaw    = !variantImg ? getSecondImage(item.image) : null;
+                    const hoverImage  = hoverRaw ? getImgUrl(hoverRaw) : null;
+
+                    // Variant attribute chips
+                    const attrs       = getVariantAttrs(item.selectedVariant);
+
+                    // Cart state — match by productId + variantId
+                    const cartItem    = cartItems.find(c =>
+                      c.id === item.id &&
+                      (item.selectedVariantId != null
+                        ? String(c.selectedVariantId) === String(item.selectedVariantId)
+                        : !c.selectedVariantId)
+                    );
                     const inCart = cartItem !== undefined && cartItem.quantity > 0;
 
+                    // Build the product payload for addToCartService
+                    const cartPayload = {
+                      ...item,
+                      selectedVariantId:   item.selectedVariantId ?? null,
+                      selectedVariantName: item.selectedVariant?.variantName ?? null,
+                      price: item.selectedVariant
+                        ? parseFloat(item.selectedVariant.salesPrice)
+                        : parseFloat(item.price || 0),
+                      stock,
+                    };
+
                     return (
-                      <div
-                        key={key}
-                        style={S.card}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.boxShadow =
-                            "0 8px 28px rgba(219,26,93,0.13)";
-                          e.currentTarget.style.transform = "translateY(-3px)";
-                          const img = e.currentTarget.querySelector(".wl-img");
-                          if (img) img.style.transform = "scale(1.05)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.boxShadow =
-                            "0 2px 12px rgba(0,0,0,0.05)";
-                          e.currentTarget.style.transform = "translateY(0)";
-                          const img = e.currentTarget.querySelector(".wl-img");
-                          if (img) img.style.transform = "scale(1)";
-                        }}
-                      >
-                        {/* Remove button */}
-                        <button
-                          style={S.removeBtn}
-                          onClick={() => deleteFromWishlistService(item.id)}
-                          title="Remove from wishlist"
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "#db1a5d";
-                            e.currentTarget.style.color = "#fff";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background =
-                              "rgba(255,255,255,0.92)";
-                            e.currentTarget.style.color = "#db1a5d";
-                          }}
-                        >
-                          ✕
-                        </button>
+                      <div className="col-xl-3 col-sm-6 col-12" key={item.wishlistItemId || `${item.id}-${item.selectedVariantId}`}>
+                        <div className={`product-card-premium mb-25${!hoverImage ? " single-image-card" : ""}`}>
 
-                        {/* Image */}
-                        <Link
-                          to={`${process.env.PUBLIC_URL}/product/${item.id}`}
-                          style={S.imgWrap}
-                        >
-                          <img
-                            className="wl-img"
-                            style={S.img}
-                            src={getImgUrl(getFirstImage(item.image))}
-                            alt={item.name}
-                            onError={(e) => {
-                              e.target.src = "/assets/img/products/products-1.jpeg";
-                            }}
-                          />
-                        </Link>
+                          {/* Image */}
+                          <div className="product-img-container">
+                            <Link to={`${process.env.PUBLIC_URL}/product/${item.id}`}>
+                              <img
+                                className="main-img"
+                                src={mainImage}
+                                alt={item.name}
+                                onError={(e) => { e.target.src = "/assets/img/products/products-1.jpeg"; }}
+                              />
+                              {hoverImage && (
+                                <img
+                                  className="secondary-img"
+                                  src={hoverImage}
+                                  alt={item.name}
+                                  onError={(e) => { e.target.style.display = "none"; }}
+                                />
+                              )}
+                            </Link>
 
-                        {/* Body */}
-                        <div style={S.cardBody}>
-                          <Link
-                            to={`${process.env.PUBLIC_URL}/product/${item.id}`}
-                            style={S.productName}
-                          >
-                            {item.name}
-                          </Link>
+                            {/* Badges */}
+                            <div className="premium-badges">
+                              {strike && <span className="badge-pink">SALE</span>}
+                              {item.new === true && <span className="badge-navy">NEW</span>}
+                              {stock <= 0 && <span className="badge-pink">OUT OF STOCK</span>}
+                            </div>
 
-                          {/* Price */}
-                          <div style={S.priceRow}>
-                            {finalStrike ? (
-                              <>
-                                <span style={S.priceDiscounted}>₹{finalPrice}</span>
-                                <span style={S.priceOriginal}>₹{finalStrike}</span>
-                              </>
-                            ) : (
-                              <span style={S.priceNormal}>₹{finalPrice}</span>
-                            )}
+                            {/* Remove button */}
+                            <div className="premium-action-list">
+                              <button
+                                onClick={() => deleteFromWishlistService(item.wishlistItemId)}
+                                title="Remove from wishlist"
+                                className="active"
+                              >
+                                <i className="pe-7s-close" />
+                              </button>
+                            </div>
+
+                            {/* Cart overlay */}
+                            <div className="cart-action-overlay">
+                              {item.affiliateLink ? (
+                                <a href={item.affiliateLink} rel="noopener noreferrer" target="_blank" className="cart-action-btn">
+                                  BUY NOW ↗
+                                </a>
+                              ) : hasVariants && !item.selectedVariantId ? (
+                                // Product has variants but none selected — send to product page
+                                <Link to={`${process.env.PUBLIC_URL}/product/${item.id}`} className="cart-action-btn">
+                                  SELECT OPTIONS
+                                </Link>
+                              ) : stock > 0 ? (
+                                <button
+                                  onClick={() => !inCart && addToCartService(cartPayload)}
+                                  disabled={inCart}
+                                  className={inCart ? "in-cart" : ""}
+                                >
+                                  {inCart ? "IN CART ✓" : "ADD TO CART"}
+                                </button>
+                              ) : (
+                                <button disabled className="out-of-stock">OUT OF STOCK</button>
+                              )}
+                            </div>
                           </div>
 
-                          {/* CTA */}
-                          {item.affiliateLink ? (
-                            <a
-                              href={item.affiliateLink}
-                              rel="noopener noreferrer"
-                              target="_blank"
-                              style={S.addToCartBtn}
-                            >
-                              Buy Now ↗
-                            </a>
-                          ) : item.variation && item.variation.length >= 1 ? (
-                            <Link
-                              to={`${process.env.PUBLIC_URL}/product/${item.id}`}
-                              style={S.selectOptionBtn}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "#db1a5d";
-                                e.currentTarget.style.color = "#fff";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "#fff";
-                                e.currentTarget.style.color = "#db1a5d";
-                              }}
-                            >
-                              Select Options
-                            </Link>
-                          ) : item.stock && item.stock > 0 ? (
-                            <button
-                              style={
-                                inCart
-                                  ? { ...S.addToCartBtn, ...S.addToCartBtnAdded }
-                                  : S.addToCartBtn
-                              }
-                              onClick={() => !inCart && addToCartService(item)}
-                              disabled={inCart}
-                              onMouseEnter={(e) => {
-                                if (!inCart) e.currentTarget.style.opacity = "0.88";
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!inCart) e.currentTarget.style.opacity = "1";
-                              }}
-                            >
-                              {inCart ? "✓ Added to Cart" : "Add to Cart"}
-                            </button>
-                          ) : (
-                            <button style={S.outOfStockBtn} disabled>
-                              Out of Stock
-                            </button>
-                          )}
+                          {/* Details */}
+                          <div className="product-details-premium">
+                            <span className="product-cat-tag">Collection</span>
+                            <h4>
+                              <Link to={`${process.env.PUBLIC_URL}/product/${item.id}`}>
+                                {item.name}
+                              </Link>
+                            </h4>
+
+                            {/* Variant attribute chips */}
+                            {attrs.length > 0 && (
+                              <div className="wl-variant-chips">
+                                {attrs.map((a, i) => (
+                                  <span key={i} className="wl-variant-chip">
+                                    <span className="k">{a.key}: </span>{a.value}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="price-rating-row" style={{ marginTop: attrs.length ? 6 : 0 }}>
+                              <div className="premium-price">
+                                {strike ? (
+                                  <>
+                                    <span className="new-price">₹{price}</span>
+                                    <span className="old-price">₹{strike}</span>
+                                  </>
+                                ) : (
+                                  <span className="new-price">₹{price}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
                         </div>
                       </div>
                     );
                   })}
                 </div>
-
-                {/* ── Footer actions ── */}
-                <div style={S.footer}>
-                  <Link
-                    to={process.env.PUBLIC_URL + "/shop"}
-                    style={S.continueShopping}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "#db1a5d";
-                      e.currentTarget.style.background = "#fff5f8";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "#e0e0e0";
-                      e.currentTarget.style.background = "#fff";
-                    }}
-                  >
-                    ← Continue Shopping
-                  </Link>
-                  <button
-                    style={S.clearBtn}
-                    onClick={() => deleteAllFromWishlistService()}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#fee2e2";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#fff5f8";
-                    }}
-                  >
-                    🗑 Clear Wishlist
-                  </button>
-                </div>
-              </Fragment>
-            ) : (
-              /* ── Empty State ── */
-              <div style={S.emptyWrap}>
-                <div style={S.emptyIconCircle}>🤍</div>
-                <h3 style={S.emptyTitle}>Your wishlist is empty</h3>
-                <p style={S.emptySub}>
-                  Save items you love and come back to them anytime.
-                </p>
-                <Link
-                  to={process.env.PUBLIC_URL + "/shop"}
-                  style={S.emptyShopBtn}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-                >
-                  Explore Products →
-                </Link>
               </div>
-            )}
+            </div>
           </div>
-        </div>
-
-        {/* ── Responsive overrides via <style> tag ── */}
-        <style>{`
-          @media (max-width: 600px) {
-            .wl-grid {
-              grid-template-columns: repeat(2, 1fr) !important;
-              gap: 12px !important;
-            }
-          }
-          @media (max-width: 360px) {
-            .wl-grid {
-              grid-template-columns: 1fr !important;
-            }
-          }
-        `}</style>
+        ) : (
+          /* ── Empty State ── */
+          <div style={{ textAlign:"center", padding:"100px 20px", display:"flex", flexDirection:"column", alignItems:"center", gap:18 }}>
+            <div style={{ width:90, height:90, borderRadius:"50%", background:"#fff5f8", border:"2px solid #fce7f3", display:"flex", alignItems:"center", justifyContent:"center", fontSize:38 }}>
+              🤍
+            </div>
+            <h3 style={{ fontSize:22, fontWeight:800, color:"#111", margin:0 }}>Your wishlist is empty</h3>
+            <p style={{ fontSize:14, color:"#888", margin:0 }}>Save items you love and come back to them anytime.</p>
+            <Link
+              to={process.env.PUBLIC_URL + "/shop"}
+              style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"13px 28px", background:"linear-gradient(135deg,#db1a5d,#c01550)", color:"#fff", borderRadius:12, fontSize:14, fontWeight:700, textDecoration:"none", boxShadow:"0 4px 14px rgba(219,26,93,0.28)", marginTop:4 }}
+            >
+              Explore Products →
+            </Link>
+          </div>
+        )}
       </LayoutOne>
     </Fragment>
   );

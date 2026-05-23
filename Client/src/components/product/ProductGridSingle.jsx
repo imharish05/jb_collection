@@ -87,6 +87,14 @@ const ProductGridSingle = ({
     addToCartService(dispatch, product);
   };
 
+  // Wishlist icon active only when this specific variant is wishlisted
+  // (Using the 'firstVariant' declaration from line 42)
+  const isWishlisted = wishlistItem !== undefined && (
+    firstVariant
+      ? String(wishlistItem.selectedVariantId) === String(firstVariant.id)
+      : true
+  );
+
   const handleWishlist = () => {
     if (!isAuthenticated) {
       cogoToast.warn("Please login to save to wishlist", { position: "top-center" });
@@ -94,7 +102,7 @@ const ProductGridSingle = ({
       navigate(`${process.env.PUBLIC_URL}/login?redirect=${redirect}`);
       return;
     }
-    addToWishlistService(product);
+    addToWishlistService(product, firstVariant?.id ?? null);
   };
 
   return (
@@ -133,8 +141,8 @@ const ProductGridSingle = ({
           <div className="premium-action-list">
             <button
               onClick={handleWishlist}
-              className={wishlistItem !== undefined ? "active" : ""}
-              title={wishlistItem !== undefined ? "Added to Wishlist" : "Add to Wishlist"}
+              className={isWishlisted ? "active" : ""}
+              title={isWishlisted ? "Added to Wishlist" : "Add to Wishlist"}
             >
               <i className="pe-7s-like" />
             </button>
@@ -147,18 +155,18 @@ const ProductGridSingle = ({
                 <button onClick={handleAddToCart}>
                   SELECT OPTIONS
                 </button>
-              ) : (
-                <button
-                  onClick={handleAddToCart}
-                  disabled={
-                    isAuthenticated && cartItem !== undefined && cartItem.quantity > 0
-                  }
-                >
-                  {isAuthenticated && cartItem !== undefined && cartItem.quantity > 0
-                    ? "IN CART"
-                    : "ADD TO CART"}
-                </button>
-              )
+              ) : (() => {
+                const inCart = cartItem !== undefined && cartItem.quantity > 0;
+                return (
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={inCart}
+                    className={inCart ? "in-cart" : ""}
+                  >
+                    {inCart ? "IN CART ✓" : "ADD TO CART"}
+                  </button>
+                );
+              })()
             ) : (
               <button disabled className="out-of-stock">
                 OUT OF STOCK

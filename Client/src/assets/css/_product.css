@@ -3489,11 +3489,13 @@
 .cart-action-overlay button:hover,
 .cart-action-overlay a.cart-action-btn:hover { background: var(--p-pink); }
 
+.cart-action-overlay button:disabled { opacity: 1; cursor: not-allowed; }
+
 /* In Cart state — green confirmation */
 .cart-action-overlay button.in-cart,
 .cart-action-overlay button.in-cart:hover {
     background: #22c55e;
-    cursor: default;
+    cursor: not-allowed;
     letter-spacing: 0.5px;
 }
 
@@ -3768,12 +3770,12 @@
 
 .cart-action-overlay button:hover,
 .cart-action-overlay a.cart-action-btn:hover { background: var(--p-pink); }
-.cart-action-overlay button:disabled { opacity: 0.7; cursor: not-allowed; }
+.cart-action-overlay button:disabled { opacity: 1; cursor: not-allowed; }
 /* In Cart state — green confirmation */
 .cart-action-overlay button.in-cart,
 .cart-action-overlay button.in-cart:hover {
     background: #22c55e;
-    cursor: default;
+    cursor: not-allowed;
     letter-spacing: 0.5px;
 }
 

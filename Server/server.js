@@ -114,3 +114,12 @@ const startServer = async () => {
 };
 
 startServer();
+
+/**
+ * ONE-TIME migration: add variant_id column to wishlist_items
+ * and update the unique index to (user_id, product_id, variant_id).
+ *
+ * Run ONCE before starting the server after this update:
+ *   node migrate_wishlist_variant.js
+ */
+

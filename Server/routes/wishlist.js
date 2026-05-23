@@ -12,7 +12,8 @@ router.use(protect);
 
 router.get("/", getWishlist);
 router.post("/add", addToWishlist);
-router.delete("/remove/:productId", removeFromWishlist);
+// :wishlistItemId is the UUID of the WishlistItem row (not productId)
+router.delete("/remove/:wishlistItemId", removeFromWishlist);
 router.delete("/clear", clearWishlist);
 
 module.exports = router;

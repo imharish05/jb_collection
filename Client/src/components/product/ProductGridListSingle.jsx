@@ -14,6 +14,24 @@ const ProductGridListSingle = ({
 }) => {
   const [modalShow, setModalShow] = useState(false);
 
+  // For wishlist: auto-select first active variant (same as what user would see first)
+  const firstVariant = (Array.isArray(product.Variants) && product.Variants.length > 0)
+    ? product.Variants[0]
+    : (Array.isArray(product.variants) && product.variants.length > 0)
+      ? product.variants[0]
+      : null;
+
+  // Wishlist icon is "active" only if the first variant (or product) is already wishlisted
+  const isWishlisted = wishlistItem !== undefined && (
+    firstVariant
+      ? String(wishlistItem.selectedVariantId) === String(firstVariant.id)
+      : true
+  );
+
+  const handleWishlistClick = () => {
+    addToWishlistService(product, firstVariant?.id ?? null);
+  };
+
   const images = Array.isArray(product.image)
     ? product.image.filter(Boolean)
     : product.image ? [product.image] : [];
@@ -80,18 +98,21 @@ const ProductGridListSingle = ({
                     >
                       View Product
                     </Link>
-                  ) : (
-                    <button
-                      className="list-cart-btn"
-                      onClick={() => addToCartService(product)}
-                      disabled={cartItem !== undefined && cartItem.quantity > 0}
-                    >
-                      {cartItem !== undefined && cartItem.quantity > 0 ? "Added to Cart" : "Add to Cart"}
-                    </button>
-                  )}
+                  ) : (() => {
+                    const inCart = cartItem !== undefined && cartItem.quantity > 0;
+                    return (
+                      <button
+                        className={clsx("list-cart-btn", inCart && "in-cart")}
+                        onClick={() => !inCart && addToCartService(product)}
+                        disabled={inCart}
+                      >
+                        {inCart ? "Added to Cart ✓" : "Add to Cart"}
+                      </button>
+                    );
+                  })()}
                   <button
-                    className={clsx("list-icon-btn", wishlistItem && "active")}
-                    onClick={() => addToWishlistService(product)}
+                    className={clsx("list-icon-btn", isWishlisted && "active")}
+                    onClick={handleWishlistClick}
                   >
                     <i className="pe-7s-like" />
                   </button>
@@ -117,9 +138,9 @@ const ProductGridListSingle = ({
             </div>
             <div className="premium-action-list">
               <button
-                onClick={() => addToWishlistService(product)}
-                className={wishlistItem !== undefined ? "active" : ""}
-                title="Wishlist"
+                onClick={handleWishlistClick}
+                className={isWishlisted ? "active" : ""}
+                title="Add to Wishlist"
               >
                 <i className="pe-7s-like" />
               </button>
@@ -132,14 +153,18 @@ const ProductGridListSingle = ({
                 >
                   View Product
                 </Link>
-              ) : product.stock && product.stock > 0 ? (
-                <button
-                  onClick={() => addToCartService(product)}
-                  disabled={cartItem !== undefined && cartItem.quantity > 0}
-                >
-                  {cartItem !== undefined && cartItem.quantity > 0 ? "IN CART" : "ADD TO CART"}
-                </button>
-              ) : (
+              ) : product.stock && product.stock > 0 ? (() => {
+                const inCart = cartItem !== undefined && cartItem.quantity > 0;
+                return (
+                  <button
+                    onClick={() => !inCart && addToCartService(product)}
+                    disabled={inCart}
+                    className={inCart ? "in-cart" : ""}
+                  >
+                    {inCart ? "IN CART ✓" : "ADD TO CART"}
+                  </button>
+                );
+              })() : (
                 <button disabled className="out-of-stock">OUT OF STOCK</button>
               )}
             </div>
