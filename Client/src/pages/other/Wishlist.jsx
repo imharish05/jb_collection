@@ -6,7 +6,7 @@ import {
   deleteAllFromWishlistService,
 } from "../../store/services";
 import { Link, useLocation } from "react-router-dom";
-import { getDiscountPrice } from "../../helpers/product";
+import { getProductPrice } from "../../helpers/product";
 import { getImgUrl } from "../../helpers/imageUrl";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
@@ -286,7 +286,7 @@ const Wishlist = () => {
     (state) =>
       state.currency || { currencyName: "INR", currencyRate: 1, currencySymbol: "₹" }
   );
-  const { wishlistItems } = useSelector((state) => state.wishlist || []);
+  const { wishlistItems } = useSelector((state) => state.wishlist);
   const { cartItems } = useSelector((state) => state.cart);
 
   return (
@@ -316,26 +316,12 @@ const Wishlist = () => {
                 {/* ── Card Grid ── */}
                 <div style={S.grid}>
                   {wishlistItems.map((item, key) => {
-                    // ── Mirror variant-aware price logic from ProductGridListSingle ──
-                    const hasVariants = Array.isArray(item.Variants) && item.Variants.length > 0;
-                    const firstVariant = hasVariants ? item.Variants[0] : null;
-                    const firstVariantSalesPrice = firstVariant ? parseFloat(firstVariant.salesPrice || 0) : 0;
-                    const firstVariantMrp = firstVariant ? parseFloat(firstVariant.mrp || 0) : 0;
-
-                    // basePrice = first variant salesPrice if available, else item.price
-                    const basePrice = firstVariantSalesPrice > 0 ? firstVariantSalesPrice : item.price;
-                    // mrpPrice = show strikethrough only when mrp > salesPrice
-                    const mrpPrice = firstVariantMrp > firstVariantSalesPrice ? firstVariantMrp : null;
-
-                    const finalPrice = mrpPrice
-                      ? +(mrpPrice * currency.currencyRate).toFixed(2)
-                      : +(basePrice * currency.currencyRate).toFixed(2);
-
-                    const finalDiscounted = mrpPrice
-                      ? +(firstVariantSalesPrice * currency.currencyRate).toFixed(2)
-                      : getDiscountPrice(basePrice, item.discount)
-                        ? +(getDiscountPrice(basePrice, item.discount) * currency.currencyRate).toFixed(2)
-                        : null;
+                    // ── Prices straight from backend via getProductPrice ──
+                    const { displayPrice, strikePrice } = getProductPrice(item);
+                    const rate = currency?.currencyRate || 1;
+                    const finalPrice      = +(displayPrice * rate).toFixed(2);
+                    const finalDiscounted = strikePrice ? finalPrice : null;
+                    const finalStrike     = strikePrice ? +(strikePrice * rate).toFixed(2) : null;
                     const cartItem = cartItems.find((c) => c.id === item.id);
                     const inCart = cartItem !== undefined && cartItem.quantity > 0;
 
@@ -405,8 +391,8 @@ const Wishlist = () => {
                           <div style={S.priceRow}>
                             {finalDiscounted ? (
                               <>
-                                <span style={S.priceDiscounted}>₹{finalDiscounted}</span>
-                                <span style={S.priceOriginal}>₹{finalPrice}</span>
+                                <span style={S.priceDiscounted}>₹{finalPrice}</span>
+                                <span style={S.priceOriginal}>₹{finalStrike}</span>
                               </>
                             ) : (
                               <span style={S.priceNormal}>₹{finalPrice}</span>

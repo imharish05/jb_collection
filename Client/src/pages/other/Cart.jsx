@@ -79,9 +79,8 @@ const Cart = () => {
   /* ── Price Calculations ────────────────────────────────────────────────── */
   let subtotal = 0;
   cartItems.forEach((item) => {
-    const disc = getDiscountPrice(item.price, item.discount);
-    const price = disc !== null ? disc : item.price;
-    subtotal += price * currency.currencyRate * item.quantity;
+    // item.price = salesPrice stored at cart-add time (already final, no discount to apply)
+    subtotal += parseFloat(item.price || 0) * (currency.currencyRate || 1) * item.quantity;
   });
 
   const shipping = subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
@@ -232,14 +231,12 @@ const Cart = () => {
                 {/* Cart Items */}
                 <div className="kg-items-card">
                   {cartItems.map((item) => {
-                    const disc = getDiscountPrice(item.price, item.discount);
-                    const finalPrice = (item.price * currency.currencyRate).toFixed(2);
-                    const finalDisc = disc
-                      ? (disc * currency.currencyRate).toFixed(2)
-                      : null;
-                    const lineTotal = finalDisc
-                      ? (parseFloat(finalDisc) * item.quantity).toFixed(2)
-                      : (parseFloat(finalPrice) * item.quantity).toFixed(2);
+                    // item.price = salesPrice already final from backend
+                    const rate = currency.currencyRate || 1;
+                    const unitPrice = parseFloat(item.price || 0) * rate;
+                    const finalPrice = unitPrice.toFixed(2);
+                    const finalDisc = null;  // no client-side discount — price is already final
+                    const lineTotal = (unitPrice * item.quantity).toFixed(2);
 
                     // Use stock stored on item directly (set by cartService from variant or product)
                     const maxStock = item.stock || 999;

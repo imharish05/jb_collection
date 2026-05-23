@@ -4,11 +4,10 @@ import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
 import { addToCartService, addToWishlistService } from "../../store/services";
-import { getDiscountPrice } from "../../helpers/product";
+import { getProductPrice } from "../../helpers/product";
 import Rating from "./sub-components/ProductRating";
 import ProductModal from "./ProductModal";
 import { getImgUrl } from "../../helpers/imageUrl";
-
 
 const ProductGridListSingle = ({
   product, currency, cartItem, wishlistItem, spaceBottomClass, layout
@@ -17,49 +16,23 @@ const ProductGridListSingle = ({
 
   const images = Array.isArray(product.image)
     ? product.image.filter(Boolean)
-    : product.image
-      ? [product.image]
-      : [];
-  const mainImage = images[0] ? getImgUrl(images[0]) : "/assets/img/products/products-1.jpeg";
+    : product.image ? [product.image] : [];
+  const mainImage  = images[0] ? getImgUrl(images[0]) : "/assets/img/products/products-1.jpeg";
   const hoverImage = images.length > 1 ? getImgUrl(images[1]) : null;
-  const hasVariants = Array.isArray(product.Variants) && product.Variants.length > 0;
+  const hasVariants = (Array.isArray(product.Variants) && product.Variants.length > 0)
+                   || (Array.isArray(product.variants) && product.variants.length > 0);
 
-  const currencyRate = currency?.currencyRate || 1;
+  const rate = currency?.currencyRate || 1;
 
-  // ── Use first variant price (salesPrice / mrp), fall back to product.price ──
-  const firstVariant = hasVariants ? product.Variants[0] : null;
-  const firstVariantSalesPrice = firstVariant ? parseFloat(firstVariant.salesPrice || 0) : 0;
-  const firstVariantMrp = firstVariant ? parseFloat(firstVariant.mrp || 0) : 0;
-
-  // basePrice = first variant salesPrice if available, else product.price
-  const basePrice = firstVariantSalesPrice > 0 ? firstVariantSalesPrice : product.price;
-
-  // Compute discount from first variant's mrp vs salesPrice (real discount)
-  // Fall back to product.discount if no variant data
-  let variantDiscount = product.discount;
-  if (firstVariant && firstVariantMrp > 0 && firstVariantSalesPrice > 0 && firstVariantMrp > firstVariantSalesPrice) {
-    variantDiscount = Math.round((1 - firstVariantSalesPrice / firstVariantMrp) * 100);
-  }
-
-  // mrpPrice = first variant mrp for strikethrough display
-  const mrpPrice = firstVariantMrp > firstVariantSalesPrice ? firstVariantMrp : null;
-
-  const discountedPrice = mrpPrice
-    ? +(firstVariantSalesPrice * currencyRate).toFixed(2)
-    : getDiscountPrice(basePrice, product.discount)
-      ? +(getDiscountPrice(basePrice, product.discount) * currencyRate).toFixed(2)
-      : null;
-
-  const finalProductPrice = mrpPrice
-    ? +(mrpPrice * currencyRate).toFixed(2)
-    : +(basePrice * currencyRate).toFixed(2);
-
-  const finalDiscountedPrice = discountedPrice;
+  // ── Prices straight from backend ──────────────────────────────────────────
+  const { displayPrice, strikePrice, discountPct } = getProductPrice(product);
+  const finalPrice      = +(displayPrice * rate).toFixed(2);
+  const finalStrike     = strikePrice ? +(strikePrice * rate).toFixed(2) : null;
 
   return (
     <Fragment>
 
-      {/* ── LIST VIEW ── only when layout === "list" */}
+      {/* ── LIST VIEW ── */}
       {layout === "list" ? (
         <div className="shop-list-wrap-premium mb-30">
           <div className="row align-items-center">
@@ -68,11 +41,11 @@ const ProductGridListSingle = ({
                 <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
                   <img
                     className="default-img img-fluid"
-                    src={getImgUrl(product.image[0])}
+                    src={mainImage}
                     alt={product.name}
                   />
                 </Link>
-                {variantDiscount > 0 && <span className="list-badge">-{variantDiscount}%</span>}
+                {discountPct > 0 && <span className="list-badge">-{discountPct}%</span>}
               </div>
             </div>
             <div className="col-xl-8 col-md-7 col-sm-6">
@@ -85,13 +58,13 @@ const ProductGridListSingle = ({
                 </h3>
                 <div className="list-price-rating">
                   <div className="premium-price">
-                    {discountedPrice !== null ? (
+                    {finalStrike ? (
                       <>
-                        <span className="new-price">₹{finalDiscountedPrice}</span>
-                        <span className="old-price">₹{finalProductPrice}</span>
+                        <span className="new-price">₹{finalPrice}</span>
+                        <span className="old-price">₹{finalStrike}</span>
                       </>
                     ) : (
-                      <span className="new-price">₹{finalProductPrice}</span>
+                      <span className="new-price">₹{finalPrice}</span>
                     )}
                   </div>
                   {product.rating > 0 && <Rating ratingValue={product.rating} />}
@@ -129,7 +102,7 @@ const ProductGridListSingle = ({
         </div>
 
       ) : (
-        /* ── GRID VIEW ── for two-column and three-column */
+        /* ── GRID VIEW ── */
         <div className={clsx("product-card-premium", spaceBottomClass, !hoverImage && "single-image-card")}>
           <div className="product-img-container">
             <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
@@ -138,11 +111,10 @@ const ProductGridListSingle = ({
                 <img className="secondary-img" src={hoverImage} alt={product.name} />
               )}
             </Link>
-            {/* CORRECT - only renders when discount is actually > 0 */}
-<div className="premium-badges">
-  {variantDiscount > 0 && <span className="badge-pink">-{variantDiscount}%</span>}
-  {product.new === true && <span className="badge-navy">NEW</span>}
-</div>
+            <div className="premium-badges">
+              {discountPct > 0 && <span className="badge-pink">-{discountPct}%</span>}
+              {product.new === true && <span className="badge-navy">NEW</span>}
+            </div>
             <div className="premium-action-list">
               <button
                 onClick={() => addToWishlistService(product)}
@@ -151,9 +123,6 @@ const ProductGridListSingle = ({
               >
                 <i className="pe-7s-like" />
               </button>
-              {/* <button title="Quick View" onClick={() => setModalShow(true)}>
-                <i className="pe-7s-look" />
-              </button> */}
             </div>
             <div className="cart-action-overlay">
               {hasVariants ? (
@@ -184,13 +153,13 @@ const ProductGridListSingle = ({
             </h4>
             <div className="price-rating-row">
               <div className="premium-price">
-                {discountedPrice !== null ? (
+                {finalStrike ? (
                   <>
-                    <span className="new-price">₹{finalDiscountedPrice}</span>
-                    <span className="old-price">₹{finalProductPrice}</span>
+                    <span className="new-price">₹{finalPrice}</span>
+                    <span className="old-price">₹{finalStrike}</span>
                   </>
                 ) : (
-                  <span className="new-price">₹{finalProductPrice}</span>
+                  <span className="new-price">₹{finalPrice}</span>
                 )}
               </div>
               {product.rating > 0 && (
@@ -208,9 +177,9 @@ const ProductGridListSingle = ({
         onHide={() => setModalShow(false)}
         product={product}
         currency={currency}
-        discountedPrice={discountedPrice}
-        finalProductPrice={finalProductPrice}
-        finalDiscountedPrice={finalDiscountedPrice}
+        discountedPrice={finalStrike ? finalPrice : null}
+        finalProductPrice={finalStrike || finalPrice}
+        finalDiscountedPrice={finalStrike ? finalPrice : null}
         wishlistItem={wishlistItem}
       />
     </Fragment>

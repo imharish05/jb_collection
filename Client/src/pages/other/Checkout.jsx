@@ -31,12 +31,12 @@ const EMPTY_ADDR = {
 };
 
 const PAYMENT_METHODS = [
-  {
-    id: "cod",
-    label: "Cash on Delivery",
-    icon: "💵",
-    desc: "Pay when your order arrives (+₹77 handling)",
-  },
+  // {
+  //   id: "cod",
+  //   label: "Cash on Delivery",
+  //   icon: "💵",
+  //   desc: "Pay when your order arrives (+₹77 handling)",
+  // },
   {
     id: "upi",
     label: "UPI / QR Pay",
@@ -80,9 +80,8 @@ const Checkout = () => {
     if (navState) return navState;
     let sub = 0;
     cartItems.forEach((item) => {
-      const disc = getDiscountPrice(item.price, item.discount);
-      const price = disc !== null ? disc : item.price;
-      sub += price * (currency.currencyRate || 1) * item.quantity;
+      // item.price = final salesPrice from backend — no discount calculation
+      sub += parseFloat(item.price || 0) * (currency.currencyRate || 1) * item.quantity;
     });
     const ship = 0;
     return {
@@ -98,7 +97,7 @@ const Checkout = () => {
   const [selectedShippingAddrId, setSelectedShippingAddrId] = useState(activeAddressId);
   const [selectedBillingAddrId, setSelectedBillingAddrId] = useState(null);
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [paymentMethod, setPaymentMethod] = useState("upi");
   const [showNewAddrForm, setShowNewAddrForm] = useState(false);
   const [addrForm, setAddrForm] = useState(EMPTY_ADDR);
   const [addrErrors, setAddrErrors] = useState({});
@@ -823,9 +822,11 @@ const Checkout = () => {
                         </span>
                         <span>
                           {PAYMENT_METHODS.find((p) => p.id === paymentMethod)?.label}
+                          {/* COD handling label — disabled
                           {paymentMethod === "cod" && (
                             <span style={{ color: "#888", fontSize: 12 }}> (+₹30 handling fee)</span>
                           )}
+                          */}
                         </span>
                       </div>
                     </div>
@@ -836,8 +837,7 @@ const Checkout = () => {
                         🛍 Items ({cartItems.length})
                       </div>
                       {cartItems.map((item) => {
-                        const disc = getDiscountPrice(item.price, item.discount);
-                        const price = disc !== null ? disc : item.price;
+                        const price = parseFloat(item.price || 0);
                         return (
                           <div key={item.cartItemId} className="kco-review-item">
                             <img
@@ -920,12 +920,14 @@ const Checkout = () => {
                         <span>− ₹{pricing.couponDiscount.toFixed(2)}</span>
                       </div>
                     )}
+                    {/* COD handling fee — disabled
                     {paymentMethod === "cod" && (
                       <div className="kco-sum-row" style={{ color: "#888" }}>
                         <span>COD Handling</span>
                         <span>₹77</span>
                       </div>
                     )}
+                    */}
                   </div>
 
                   <div className="kco-total-line">

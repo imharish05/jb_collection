@@ -53,6 +53,59 @@ export const getDiscountPrice = (price, discount) => {
   return discount && discount > 0 ? price - price * (discount / 100) : null;
 };
 
+/**
+ * Single source of truth for product price display.
+ * Reads directly from backend fields — NO client-side discount computation.
+ *
+ * For variant products:  salesPrice = final price, mrp = strikethrough
+ * For non-variant products: uses product.price + product.discount (legacy)
+ *
+ * Returns: { displayPrice, strikePrice, discountPct }
+ *   displayPrice  — the price to show prominently (number)
+ *   strikePrice   — the crossed-out original price (number | null)
+ *   discountPct   — badge percentage (number | null)
+ */
+export const getProductPrice = (product, variantIndex = 0) => {
+  const variants = Array.isArray(product.Variants) ? product.Variants
+                 : Array.isArray(product.variants) ? product.variants
+                 : [];
+
+  if (variants.length > 0) {
+    const v = variants[variantIndex] || variants[0];
+    const salesPrice = parseFloat(v.salesPrice || 0);
+    const mrp        = parseFloat(v.mrp || 0);
+
+    const displayPrice  = salesPrice > 0 ? salesPrice : mrp;
+    const strikePrice   = mrp > salesPrice && salesPrice > 0 ? mrp : null;
+    const discountPct   = strikePrice
+      ? Math.round((1 - salesPrice / mrp) * 100)
+      : null;
+
+    return { displayPrice, strikePrice, discountPct };
+  }
+
+  // Non-variant fallback
+  const base    = parseFloat(product.price || 0);
+  const disc    = parseFloat(product.discount || 0);
+  const discounted = disc > 0 ? +(base - base * (disc / 100)).toFixed(2) : null;
+
+  return {
+    displayPrice: discounted !== null ? discounted : base,
+    strikePrice:  discounted !== null ? base : null,
+    discountPct:  disc > 0 ? disc : null,
+  };
+};
+
+/**
+ * Price for a cart item — item.price is already the final price (salesPrice
+ * stored in productSnapshot). Never apply discount on top.
+ */
+export const getCartItemPrice = (item) => {
+  return parseFloat(item.price || 0);
+};
+
+
+
 // get product cart quantity
 export const getProductCartQuantity = (cartItems, product, color, size) => {
   let productInCart = cartItems.find(
