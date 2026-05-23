@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getProductCartQuantity } from "../../helpers/product";
 import Rating from "./sub-components/ProductRating";
 import cogoToast from "cogo-toast";
+import { Icon } from "@iconify/react";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -644,7 +645,7 @@ const ProductDescriptionInfo = ({
       )}
 
       {/* ── Category meta ── */}
-      {product.category?.length > 0 && (
+      {/* {product.category?.length > 0 && (
         <div className="pro-details-meta">
           <span>Categories :</span>
           <ul>
@@ -657,10 +658,10 @@ const ProductDescriptionInfo = ({
             )}
           </ul>
         </div>
-      )}
+      )} */}
 
       {/* ── Tags meta ── */}
-      {product.tag?.length > 0 && (
+      {/* {product.tag?.length > 0 && (
         <div className="pro-details-meta">
           <span>Tags :</span>
           <ul>
@@ -669,7 +670,7 @@ const ProductDescriptionInfo = ({
             ))}
           </ul>
         </div>
-      )}
+      )} */}
 
       <div className="pro-details-social">
         <div className="pro-details-social">
@@ -683,16 +684,19 @@ const ProductDescriptionInfo = ({
                 <i className="fa fa-facebook" />
               </a>
             </li>
-            <li>
-              <a
-                href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(product.name)}`}
-                target="_blank" rel="noopener noreferrer"
-                title="Share on X (Twitter)"
-              >
-                <i className="fa fa-twitter" />
-              </a>
-            </li>
-            <li>
+<li>
+  <a
+    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+      `${product.name} ${window.location.href}`
+    )}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    title="Share on X"
+  >
+    <Icon icon="ri:twitter-x-fill" width="18" height="18" />
+  </a>
+</li>
+            {/* <li>
               <a
                 href={`https://www.instagram.com/`}
                 target="_blank" rel="noopener noreferrer"
@@ -700,7 +704,7 @@ const ProductDescriptionInfo = ({
               >
                 <i className="fa fa-instagram" />
               </a>
-            </li>
+            </li> */}
             <li>
               <a
                 href={`https://wa.me/?text=${encodeURIComponent(product.name + " " + window.location.href)}`}

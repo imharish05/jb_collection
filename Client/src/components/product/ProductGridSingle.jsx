@@ -23,9 +23,28 @@ const ProductGridSingle = ({
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   const currencyRate = currency?.currencyRate || 1;
-  const discountedPrice = getDiscountPrice(product.price, product.discount);
-  const finalProductPrice = +(product.price * currencyRate).toFixed(2);
-  const finalDiscountedPrice = +(discountedPrice * currencyRate).toFixed(2);
+
+  // For products with Variants, use Variants[0].salesPrice / mrp for accurate pricing
+  const hasVariants = Array.isArray(product.Variants) && product.Variants.length > 0;
+  const firstVariant = hasVariants ? product.Variants[0] : null;
+  const basePrice = firstVariant
+    ? parseFloat(firstVariant.salesPrice) || product.price
+    : product.price;
+  const baseMrp = firstVariant ? parseFloat(firstVariant.mrp) || null : null;
+
+  const discountedPrice = hasVariants
+    ? (baseMrp && baseMrp > basePrice ? basePrice : null)
+    : getDiscountPrice(product.price, product.discount);
+
+  const finalProductPrice = hasVariants
+    ? (baseMrp && baseMrp > basePrice
+        ? +(baseMrp * currencyRate).toFixed(2)
+        : +(basePrice * currencyRate).toFixed(2))
+    : +(product.price * currencyRate).toFixed(2);
+
+  const finalDiscountedPrice = hasVariants
+    ? (baseMrp && baseMrp > basePrice ? +(basePrice * currencyRate).toFixed(2) : null)
+    : (discountedPrice !== null ? +(discountedPrice * currencyRate).toFixed(2) : null);
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -35,7 +54,7 @@ const ProductGridSingle = ({
       return;
     }
     if (Array.isArray(product.Variants) && product.Variants.length > 0) {
-      cogoToast.warn("Please select product options first", { position: "top-center" });
+      // cogoToast.warn("Please select product options first", { position: "top-center" });
       navigate(process.env.PUBLIC_URL + "/product/" + product.id);
       return;
     }
@@ -60,10 +79,13 @@ const ProductGridSingle = ({
     <Fragment>
       <div className={clsx("product-card-premium", spaceBottomClass, product.image?.length === 1 && "single-image-card")}>
         <div className="product-img-container">
-          <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
+          <Link
+            to={process.env.PUBLIC_URL + "/product/" + product.id}
+            style={{ position: "relative", zIndex: 2, display: "block" }}
+          >
             <img
               className="main-img"
-              src={`${process.env.REACT_APP_IMG_URL}/uploads/${(product.image[0] || '').replace(/^\/?uploads\//, '')}`}
+              src={`${(product.image[0] || '').replace(/^\/?uploads\//, '')}`}
               alt={product.name}
               onError={e => { e.target.src = process.env.PUBLIC_URL + '/assets/img/products/products-1.jpeg'; }}
             />

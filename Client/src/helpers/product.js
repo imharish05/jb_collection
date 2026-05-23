@@ -22,13 +22,13 @@ export const getProducts = (products, category, type, limit) => {
   }
   if (type && type === "newArrival") {
     const newProducts = finalProducts.filter(single =>
-      (single.tag && single.tag.some(t => /new arrival|✨|\bnew\b/i.test(t))) || single.isNew || single.new
+      (single.tag && single.tag.some(t => /new.arrival|✨|\bnew\b/i.test(t))) || single.isNew || single.new
     );
     return newProducts.slice(0, limit ? limit : newProducts.length);
   }
   if (type && (type === "hotDeal" || type === "hotDeals")) {
     const hotProducts = finalProducts.filter(single =>
-      single.tag && single.tag.some(t => /hot deal|🔥|\bhot\b/i.test(t))
+      single.tag && single.tag.some(t => /hot.deal|🔥|\bhot\b/i.test(t))
     );
     return hotProducts.slice(0, limit ? limit : hotProducts.length);
   }
@@ -130,15 +130,12 @@ export const getSortedProducts = (products, sortType, sortValue) => {
     }
     if (sortType === "combo") {
       if (sortValue === "all") {
-        return products.filter(
-          product => (Array.isArray(product.combo) && product.combo.length > 0) || product.comboId
-        );
+        // match any product that belongs to a combo (comboId set)
+        return products.filter(product => product.comboId != null);
       }
+      // sortValue is the combo UUID id (navMenu returns combo.id now)
       return products.filter(
-        product =>
-          (Array.isArray(product.combo) && product.combo.includes(sortValue)) ||
-          (product.comboId && String(product.comboId) === String(sortValue)) ||
-          (product.Combo && (String(product.Combo.id) === String(sortValue) || product.Combo.value === sortValue))
+        product => product.comboId != null && String(product.comboId) === String(sortValue)
       );
     }
     if (sortType === "tag") {

@@ -1,9 +1,129 @@
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import clsx from "clsx";
 import Tab from "react-bootstrap/Tab";
 import Nav from "react-bootstrap/Nav";
+import { useSelector, useDispatch } from "react-redux";
+import { getProductReviews, submitReview } from "../../store/services/reviewService";
+import { clearReviews } from "../../store/slices/review-slice";
 
-const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc }) => {
+// ── Star picker ──────────────────────────────────────────────────────────────
+const StarPicker = ({ value, onChange }) => (
+  <div style={{ display: "flex", gap: 4, cursor: "pointer" }}>
+    {[1, 2, 3, 4, 5].map((n) => (
+      <i
+        key={n}
+        className={n <= value ? "fa fa-star" : "fa fa-star-o"}
+        style={{ color: n <= value ? "#f5a623" : "#ccc", fontSize: 20 }}
+        onClick={() => onChange(n)}
+      />
+    ))}
+  </div>
+);
+
+// ── Star display (read-only) ─────────────────────────────────────────────────
+const StarDisplay = ({ rating, size = 14 }) => {
+  const filled = Math.round(Number(rating) || 0);
+  return (
+    <span>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <i
+          key={n}
+          className={n <= filled ? "fa fa-star" : "fa fa-star-o"}
+          style={{ color: n <= filled ? "#f5a623" : "#ccc", fontSize: size, marginRight: 1 }}
+        />
+      ))}
+    </span>
+  );
+};
+
+// ── Single review card ───────────────────────────────────────────────────────
+const ReviewCard = ({ review }) => {
+  const name = review.Customer?.name || review.guestName || "Guest";
+  const date = new Date(review.createdAt).toLocaleDateString("en-IN", {
+    day: "2-digit", month: "short", year: "numeric",
+  });
+  return (
+    <div className="single-review" style={{ marginBottom: 28, paddingBottom: 24, borderBottom: "1px solid #f3f3f3" }}>
+      <div className="review-content">
+        <div className="review-top-wrap" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+          <div>
+            <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{name}</h4>
+            <div style={{ margin: "5px 0" }}>
+              <StarDisplay rating={review.rating} size={13} />
+            </div>
+            <span style={{ fontSize: 11, color: "#aaa" }}>{date}</span>
+          </div>
+        </div>
+        <p style={{ color: "#555", fontSize: 14, lineHeight: 1.7, margin: 0 }}>{review.feedback}</p>
+      </div>
+    </div>
+  );
+};
+
+// ── Average rating summary ───────────────────────────────────────────────────
+const RatingSummary = ({ reviews }) => {
+  if (!reviews.length) return null;
+  const avg = reviews.reduce((s, r) => s + Number(r.rating), 0) / reviews.length;
+  const rounded = Math.round(avg * 10) / 10;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24, padding: "16px 20px", background: "#fafafa", borderRadius: 10, border: "1px solid #f0f0f0" }}>
+      <span style={{ fontSize: 42, fontWeight: 800, color: "#222", lineHeight: 1 }}>{rounded}</span>
+      <div>
+        <StarDisplay rating={rounded} size={18} />
+        <p style={{ margin: "4px 0 0", fontSize: 12, color: "#888" }}>
+          Based on {reviews.length} review{reviews.length !== 1 ? "s" : ""}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ── Main component ───────────────────────────────────────────────────────────
+const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId }) => {
+  const dispatch = useDispatch();
+  const { reviews, loading, submitting } = useSelector((state) => state.review);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+
+  const INITIAL_SHOW = 1;
+  const [showAll, setShowAll]     = useState(false);
+  const [rating, setRating]       = useState(0);
+  const [feedback, setFeedback]   = useState("");
+  const [guestName, setGuestName] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [ratingErr, setRatingErr] = useState(false);
+
+  // reset collapse when product changes
+  useEffect(() => { setShowAll(false); }, [productId]);
+
+  // Fetch reviews when productId changes
+  useEffect(() => {
+    if (!productId) return;
+    dispatch(clearReviews());
+    getProductReviews(dispatch, productId);
+  }, [productId, dispatch]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!rating) { setRatingErr(true); return; }
+    setRatingErr(false);
+
+    const payload = {
+      productId,
+      feedback,
+      rating,
+      ...(isAuthenticated ? {} : { guestName: guestName || "Guest" }),
+    };
+
+    const ok = await submitReview(dispatch, payload);
+    if (ok) {
+      setSubmitted(true);
+      setRating(0);
+      setFeedback("");
+      setGuestName("");
+    }
+  };
+
   return (
     <div className={clsx("description-review-area", spaceBottomClass)}>
       <div className="container">
@@ -11,169 +131,185 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc }) => {
           <Tab.Container defaultActiveKey="productDescription">
             <Nav variant="pills" className="description-review-topbar">
               <Nav.Item>
-                <Nav.Link eventKey="additionalInfo">
-                  Additional Information
-                </Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
                 <Nav.Link eventKey="productDescription">Description</Nav.Link>
               </Nav.Item>
               <Nav.Item>
-                <Nav.Link eventKey="productReviews">Reviews(2)</Nav.Link>
+                <Nav.Link eventKey="productReviews">
+                  Reviews {reviews.length > 0 ? `(${reviews.length})` : ""}
+                </Nav.Link>
               </Nav.Item>
-              <Nav.Item>
+              {/* <Nav.Item>
                 <Nav.Link eventKey="returnsRefunds">Returns &amp; Refunds</Nav.Link>
-              </Nav.Item>
+              </Nav.Item> */}
             </Nav>
+
             <Tab.Content className="description-review-bottom">
-              <Tab.Pane eventKey="additionalInfo">
-                <div className="product-anotherinfo-wrapper">
-                  <ul>
-                    <li>
-                      <span>Weight</span> 400 g
-                    </li>
-                    <li>
-                      <span>Dimensions</span>10 x 10 x 15 cm{" "}
-                    </li>
-                    <li>
-                      <span>Materials</span> 60% cotton, 40% polyester
-                    </li>
-                    <li>
-                      <span>Other Info</span> American heirloom jean shorts pug
-                      seitan letterpress
-                    </li>
-                  </ul>
+
+              {/* ── Description ── */}
+              <Tab.Pane eventKey="productDescription">
+                <div style={{ lineHeight: 1.8, color: "#444", fontSize: 14 }}>
+                  {productFullDesc || <span style={{ color: "#aaa" }}>No description available.</span>}
                 </div>
               </Tab.Pane>
-              <Tab.Pane eventKey="productDescription">
-                {productFullDesc}
-              </Tab.Pane>
+
+              {/* ── Reviews ── */}
               <Tab.Pane eventKey="productReviews">
                 <div className="row">
+
+                  {/* Left: existing reviews */}
                   <div className="col-lg-7">
-                    <div className="review-wrapper">
-                      <div className="single-review">
-                        <div className="review-img">
-                          <img
-                            src={
-                              process.env.PUBLIC_URL +
-                              "/assets/img/testimonial/1.jpg"
-                            }
-                            alt=""
-                          />
-                        </div>
-                        <div className="review-content">
-                          <div className="review-top-wrap">
-                            <div className="review-left">
-                              <div className="review-name">
-                                <h4>White Lewis</h4>
-                              </div>
-                              <div className="review-rating">
-                                <i className="fa fa-star" />
-                                <i className="fa fa-star" />
-                                <i className="fa fa-star" />
-                                <i className="fa fa-star" />
-                                <i className="fa fa-star" />
-                              </div>
-                            </div>
-                            <div className="review-left">
-                              <button>Reply</button>
-                            </div>
-                          </div>
-                          <div className="review-bottom">
-                            <p>
-                              Vestibulum ante ipsum primis aucibus orci
-                              luctustrices posuere cubilia Curae Suspendisse
-                              viverra ed viverra. Mauris ullarper euismod
-                              vehicula. Phasellus quam nisi, congue id nulla.
-                            </p>
-                          </div>
-                        </div>
+                    {loading ? (
+                      <p style={{ color: "#aaa", padding: "20px 0" }}>Loading reviews…</p>
+                    ) : reviews.length === 0 ? (
+                      <div style={{ padding: "30px 0", textAlign: "center", color: "#bbb" }}>
+                        <i className="fa fa-comment-o" style={{ fontSize: 36, display: "block", marginBottom: 10 }} />
+                        <p style={{ margin: 0 }}>No reviews yet. Be the first!</p>
                       </div>
-                      <div className="single-review child-review">
-                        <div className="review-img">
-                          <img
-                            src={
-                              process.env.PUBLIC_URL +
-                              "/assets/img/testimonial/2.jpg"
-                            }
-                            alt=""
-                          />
-                        </div>
-                        <div className="review-content">
-                          <div className="review-top-wrap">
-                            <div className="review-left">
-                              <div className="review-name">
-                                <h4>White Lewis</h4>
-                              </div>
-                              <div className="review-rating">
-                                <i className="fa fa-star" />
-                                <i className="fa fa-star" />
-                                <i className="fa fa-star" />
-                                <i className="fa fa-star" />
-                                <i className="fa fa-star" />
+                    ) : (
+                      <div className="review-wrapper">
+                        <RatingSummary reviews={reviews} />
+
+                        {/* Always show first INITIAL_SHOW reviews */}
+                        {reviews.slice(0, INITIAL_SHOW).map((r) => (
+                          <ReviewCard key={r.id} review={r} />
+                        ))}
+
+                        {/* Remaining reviews — faded peek when collapsed, full when expanded */}
+                        {reviews.length > INITIAL_SHOW && (
+                          <>
+                            <div style={{ position: "relative" }}>
+                              {/* Fade overlay — only visible when collapsed */}
+                              {!showAll && (
+                                <div style={{
+                                  position: "absolute", top: 0, left: 0, right: 0,
+                                  height: "100%", zIndex: 2,
+                                  background: "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,1) 100%)",
+                                  pointerEvents: "none",
+                                }} />
+                              )}
+                              <div style={{
+                                maxHeight: showAll ? "none" : 110,
+                                overflow: "hidden",
+                                transition: "max-height 0.45s ease",
+                              }}>
+                                {reviews.slice(INITIAL_SHOW).map((r) => (
+                                  <ReviewCard key={r.id} review={r} />
+                                ))}
                               </div>
                             </div>
-                            <div className="review-left">
-                              <button>Reply</button>
+
+                            {/* Toggle button */}
+                            <div style={{ textAlign: "center", marginTop: showAll ? 8 : -10, position: "relative", zIndex: 3 }}>
+                              <button
+                                onClick={() => setShowAll(v => !v)}
+                                style={{
+                                  display: "inline-flex", alignItems: "center", gap: 6,
+                                  background: "#fff", border: "1.5px solid #e0e0e0",
+                                  borderRadius: 24, padding: "8px 22px",
+                                  fontSize: 13, fontWeight: 600, color: "#555",
+                                  cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                                  transition: "all 0.2s",
+                                }}
+                              >
+                                {showAll ? (
+                                  <><i className="fa fa-chevron-up" style={{ fontSize: 11 }} /> Show less</>
+                                ) : (
+                                  <><i className="fa fa-chevron-down" style={{ fontSize: 11 }} /> Show {reviews.length - INITIAL_SHOW} more review{reviews.length - INITIAL_SHOW !== 1 ? "s" : ""}</>
+                                )}
+                              </button>
                             </div>
-                          </div>
-                          <div className="review-bottom">
-                            <p>
-                              Vestibulum ante ipsum primis aucibus orci
-                              luctustrices posuere cubilia Curae Suspendisse
-                              viverra ed viverra. Mauris ullarper euismod
-                              vehicula. Phasellus quam nisi, congue id nulla.
-                            </p>
-                          </div>
-                        </div>
+                          </>
+                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
+
+                  {/* Right: submit form */}
                   <div className="col-lg-5">
                     <div className="ratting-form-wrapper pl-50">
                       <h3>Add a Review</h3>
-                      <div className="ratting-form">
-                        <form action="#">
-                          <div className="star-box">
-                            <span>Your rating:</span>
-                            <div className="ratting-star">
-                              <i className="fa fa-star" />
-                              <i className="fa fa-star" />
-                              <i className="fa fa-star" />
-                              <i className="fa fa-star" />
-                              <i className="fa fa-star" />
+
+                      {submitted ? (
+                        <div style={{ padding: "20px 0", color: "#4caf50", fontWeight: 600 }}>
+                          ✅ Thank you! Your review has been submitted and is pending approval.
+                          <button
+                            onClick={() => setSubmitted(false)}
+                            style={{ display: "block", marginTop: 12, background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "6px 16px", cursor: "pointer", fontSize: 13, color: "#555" }}
+                          >
+                            Write another
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="ratting-form">
+                          <form onSubmit={handleSubmit}>
+
+                            {/* Star rating */}
+                            <div className="star-box" style={{ marginBottom: 16 }}>
+                              <span style={{ display: "block", marginBottom: 8, fontWeight: 600, fontSize: 13 }}>
+                                Your rating: <span style={{ color: "#e74c3c" }}>*</span>
+                              </span>
+                              <StarPicker value={rating} onChange={(v) => { setRating(v); setRatingErr(false); }} />
+                              {ratingErr && (
+                                <span style={{ color: "#e74c3c", fontSize: 12, marginTop: 4, display: "block" }}>
+                                  Please select a rating
+                                </span>
+                              )}
                             </div>
-                          </div>
-                          <div className="row">
-                            <div className="col-md-6">
-                              <div className="rating-form-style mb-10">
-                                <input placeholder="Name" type="text" />
+
+                            <div className="row">
+                              {/* Guest name — only if not logged in */}
+                              {!isAuthenticated && (
+                                <div className="col-md-12">
+                                  <div className="rating-form-style mb-10">
+                                    <input
+                                      placeholder="Your name (optional)"
+                                      type="text"
+                                      value={guestName}
+                                      onChange={(e) => setGuestName(e.target.value)}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Show logged-in user's name */}
+                              {isAuthenticated && user?.name && (
+                                <div className="col-md-12">
+                                  <p style={{ fontSize: 13, color: "#777", marginBottom: 10 }}>
+                                    Reviewing as <strong>{user.name}</strong>
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Message */}
+                              <div className="col-md-12">
+                                <div className="rating-form-style form-submit">
+                                  <textarea
+                                    name="feedback"
+                                    placeholder="Share your experience with this product…"
+                                    value={feedback}
+                                    onChange={(e) => setFeedback(e.target.value)}
+                                    required
+                                    style={{ minHeight: 100 }}
+                                  />
+                                  <input
+                                    type="submit"
+                                    value={submitting ? "Submitting…" : "Submit Review"}
+                                    disabled={submitting}
+                                    style={{ opacity: submitting ? 0.7 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
+                                  />
+                                </div>
                               </div>
                             </div>
-                            <div className="col-md-6">
-                              <div className="rating-form-style mb-10">
-                                <input placeholder="Email" type="email" />
-                              </div>
-                            </div>
-                            <div className="col-md-12">
-                              <div className="rating-form-style form-submit">
-                                <textarea
-                                  name="Your Review"
-                                  placeholder="Message"
-                                  defaultValue={""}
-                                />
-                                <input type="submit" defaultValue="Submit" />
-                              </div>
-                            </div>
-                          </div>
-                        </form>
-                      </div>
+                          </form>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               </Tab.Pane>
-              <Tab.Pane eventKey="returnsRefunds">
+
+              {/* ── Returns & Refunds ── */}
+              {/* <Tab.Pane eventKey="returnsRefunds">
                 <div className="product-anotherinfo-wrapper">
                   <ul>
                     <li><span>Return Window</span> 7 days from delivery date</li>
@@ -184,7 +320,8 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc }) => {
                     <li><span>How to Return</span> WhatsApp us at +91 98765 43210 with your Order ID</li>
                   </ul>
                 </div>
-              </Tab.Pane>
+              </Tab.Pane> */}
+
             </Tab.Content>
           </Tab.Container>
         </div>
@@ -194,8 +331,9 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc }) => {
 };
 
 ProductDescriptionTab.propTypes = {
-  productFullDesc: PropTypes.string,
-  spaceBottomClass: PropTypes.string
+  spaceBottomClass: PropTypes.string,
+  productFullDesc:  PropTypes.string,
+  productId:        PropTypes.string.isRequired,
 };
 
 export default ProductDescriptionTab;

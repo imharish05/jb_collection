@@ -195,7 +195,7 @@ const Cart = () => {
               <div className="kg-cart-left">
 
                 {/* Free Shipping Progress */}
-                {subtotal < SHIPPING_THRESHOLD && (
+                {/* {subtotal < SHIPPING_THRESHOLD && (
                   <div className="kg-shipping-bar">
                     <div className="kg-shipping-bar-inner">
                       <span style={{ fontSize: 20 }}>🚚</span>
@@ -226,7 +226,7 @@ const Cart = () => {
                       </span>
                     </div>
                   </div>
-                )}
+                )} */}
 
                 {/* Cart Items */}
                 <div className="kg-items-card">

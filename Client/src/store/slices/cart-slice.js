@@ -67,9 +67,12 @@ const cartSlice = createSlice({
                     state.cartItems.push({ ...product, quantity: product.quantity || 1, cartItemId: newCartItemId });
                     cogoToast.success("Added To Cart", { position: "top-center" });
                 } else {
+                    // product.quantity is the authoritative total from the backend — set directly,
+                    // don't add on top of the local quantity (that causes double-increment).
                     state.cartItems = state.cartItems.map(item =>
                         item.id === cartItem.id
-                            ? { ...item, quantity: item.quantity + (product.quantity || 1) }
+                            ? { ...item, quantity: product.quantity != null ? product.quantity : item.quantity + 1,
+                                cartItemId: product.cartItemId || item.cartItemId }
                             : item
                     );
                 }
@@ -86,9 +89,11 @@ const cartSlice = createSlice({
                 state.cartItems.push({ ...product, quantity: product.quantity || 1, cartItemId: newCartItemId });
                 cogoToast.success("Added To Cart", { position: "top-center" });
             } else {
+                // Same fix: use backend total directly instead of adding to local quantity
                 state.cartItems = state.cartItems.map(item =>
                     item.cartItemId === cartItem.cartItemId
-                        ? { ...item, quantity: item.quantity + (product.quantity || 1) }
+                        ? { ...item, quantity: product.quantity != null ? product.quantity : item.quantity + 1,
+                            cartItemId: product.cartItemId || item.cartItemId }
                         : item
                 );
             }

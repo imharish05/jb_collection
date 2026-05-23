@@ -9,7 +9,7 @@ import "rc-slider/assets/index.css";
 const S = process.env.PUBLIC_URL + "/shop";
 
 const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
-  const { categories = [], events = [], combos: navCombos = [] } = useSelector((state) => state.navMenu || {});
+  const { categories = [], events = [], combos = [] } = useSelector((state) => state.navMenu);
 
   const { search } = useLocation();
   const navigate = useNavigate();
@@ -18,28 +18,6 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
   const activeEvent    = params.get("event")    || "";
   const activeCombo    = params.get("combo")    || "";
   const activeSubCat   = params.get("subcategory") || "";
-
-  // Helpers to match category/subcategory values against product fields.
-  const matchesCategory = (p, value) => {
-    if (!value) return false;
-    try {
-      if (Array.isArray(p.category) && p.category.includes(value)) return true;
-      if (p.categoryId && String(p.categoryId) === String(value)) return true;
-      if (p.Category && (p.Category.value === value || String(p.Category.id) === String(value))) return true;
-    } catch (e) {}
-    return false;
-  };
-
-  const matchesSubcategory = (p, value) => {
-    if (!value) return false;
-    try {
-      if (Array.isArray(p.subcategory) && p.subcategory.includes(value)) return true;
-      if (p.subCategoryName && String(p.subCategoryName) === String(value)) return true;
-      if (p.SubCategory && (p.SubCategory.value === value || String(p.SubCategory.id) === String(value) || p.SubCategory.name === value)) return true;
-      if (p.subCategoryId && String(p.subCategoryId) === String(value)) return true;
-    } catch (e) {}
-    return false;
-  };
 
   // ── Mobile Responsive State ──
   const [isMobile, setIsMobile] = useState(false);
@@ -220,7 +198,12 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
 
               const count = isAll
                 ? products.length
-                : products.filter(p => matchesCategory(p, cat.value)).length;
+                : products.filter(p =>
+                    // match by categoryId UUID (primary, what backend stores)
+                    (p.categoryId && String(p.categoryId) === String(cat.id)) ||
+                    // fallback: category array contains the slug value
+                    p.category?.includes(cat.value)
+                  ).length;
 
               return (
                 <li key={cat.value ?? "__all"}>
@@ -261,7 +244,7 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
                       </li>
 
                       {subcategories.map((sub) => {
-                        const subCount  = products.filter(p => matchesSubcategory(p, sub.value)).length;
+                        const subCount  = products.filter(p => p.subcategory?.includes(sub.value)).length;
                         const subActive = activeSubCat === sub.value;
                         return (
                           <li key={sub.value}>
@@ -321,7 +304,7 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
       </div>
 
       {/* ── Combos ── */}
-      {navCombos.length > 0 && (
+      {combos.length > 0 && (
         <div style={{ ...styles.section, borderBottom: "none", paddingBottom: 0 }}>
           <div className="mobile-accordion-header" onClick={() => toggleMobileSection("combos")}>
             <p style={{...styles.sectionTitle, margin: 0}}>
@@ -331,23 +314,17 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
           
           <div className={clsx("mobile-accordion-content", (mobileSections.combos || !isMobile) && "open")} style={(!mobileSections.combos && isMobile) ? {display: 'none'} : {marginTop: 14}}>
             <ul style={styles.filterList}>
-              {navCombos.map((combo) => {
-                  const isAll    = combo.value === null;
-                  const isActive = isAll ? activeCombo === "all" : activeCombo === combo.value;
-                  // combo.productIds is provided by the API; prefer mapping products via ids
-                  const comboProductIds = Array.isArray(combo.productIds) ? combo.productIds : [];
-                  const count    = isAll
-                    ? products.filter(p => (Array.isArray(p.combo) && p.combo.length > 0) || p.comboId || (p.id && navCombos && navCombos.some(cb => Array.isArray(cb.productIds) && cb.productIds.includes(p.id)))).length
-                    : products.filter(p => (
-                        (comboProductIds.length > 0 && comboProductIds.includes(p.id)) ||
-                        (Array.isArray(p.combo) && p.combo.includes(combo.value)) ||
-                        (p.comboId && String(p.comboId) === String(combo.id))
-                      )).length;
+              {combos.map((combo) => {
+                const isAll    = combo.value === null;
+                const isActive = isAll ? activeCombo === "all" : activeCombo === combo.id;
+                const count    = isAll
+                  ? products.filter(p => p.comboId != null).length
+                  : products.filter(p => p.comboId != null && String(p.comboId) === String(combo.id)).length;
                 if (!isAll && count === 0) return null;
                 return (
-                  <li key={combo.value ?? "__all-combos"}>
+                  <li key={combo.id ?? "__all-combos"}>
                     <button
-                      onClick={() => combo.value ? navigate(`${S}?combo=${combo.value}`) : navigate(`${S}?combo=all`)}
+                      onClick={() => combo.id ? navigate(`${S}?combo=${combo.id}`) : navigate(`${S}?combo=all`)}
                       style={{ ...styles.filterBtn, ...(isActive ? styles.filterBtnActive : {}) }}
                     >
                       <span>{combo.label}</span>

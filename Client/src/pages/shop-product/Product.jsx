@@ -57,10 +57,11 @@ const Product = () => {
           product={product}
         />
 
-        {/* product description tab */}
+        {/* product description tab — pass productId for dynamic reviews */}
         <ProductDescriptionTab
           spaceBottomClass="pb-90"
           productFullDesc={product.fullDescription}
+          productId={product.id}
         />
 
         {/* related product slider */}
@@ -76,5 +77,3 @@ const Product = () => {
 };
 
 export default Product;
-
-

@@ -10,3 +10,4 @@ export * from "./productService";
 // export * from "./testimonialService";
 export * from "./wishlistService";
 export * from "./orderService";
+export * from "./reviewService";   // ← added

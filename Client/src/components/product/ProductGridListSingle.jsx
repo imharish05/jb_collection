@@ -25,21 +25,36 @@ const ProductGridListSingle = ({
   const hasVariants = Array.isArray(product.Variants) && product.Variants.length > 0;
 
   const currencyRate = currency?.currencyRate || 1;
-  
-  // ── Get minimum variant price or product price ──
-  let basePrice = product.price;
-  if (hasVariants && product.Variants.length > 0) {
-    const minVariantPrice = Math.min(
-      ...product.Variants.map(v => parseFloat(v.salesPrice || v.mrp || 0)).filter(p => p > 0)
-    );
-    if (minVariantPrice > 0) {
-      basePrice = minVariantPrice;
-    }
+
+  // ── Use first variant price (salesPrice / mrp), fall back to product.price ──
+  const firstVariant = hasVariants ? product.Variants[0] : null;
+  const firstVariantSalesPrice = firstVariant ? parseFloat(firstVariant.salesPrice || 0) : 0;
+  const firstVariantMrp = firstVariant ? parseFloat(firstVariant.mrp || 0) : 0;
+
+  // basePrice = first variant salesPrice if available, else product.price
+  const basePrice = firstVariantSalesPrice > 0 ? firstVariantSalesPrice : product.price;
+
+  // Compute discount from first variant's mrp vs salesPrice (real discount)
+  // Fall back to product.discount if no variant data
+  let variantDiscount = product.discount;
+  if (firstVariant && firstVariantMrp > 0 && firstVariantSalesPrice > 0 && firstVariantMrp > firstVariantSalesPrice) {
+    variantDiscount = Math.round((1 - firstVariantSalesPrice / firstVariantMrp) * 100);
   }
-  
-  const discountedPrice = getDiscountPrice(basePrice, product.discount);
-  const finalProductPrice = +(basePrice * currencyRate).toFixed(2);
-  const finalDiscountedPrice = +(discountedPrice * currencyRate).toFixed(2);
+
+  // mrpPrice = first variant mrp for strikethrough display
+  const mrpPrice = firstVariantMrp > firstVariantSalesPrice ? firstVariantMrp : null;
+
+  const discountedPrice = mrpPrice
+    ? +(firstVariantSalesPrice * currencyRate).toFixed(2)
+    : getDiscountPrice(basePrice, product.discount)
+      ? +(getDiscountPrice(basePrice, product.discount) * currencyRate).toFixed(2)
+      : null;
+
+  const finalProductPrice = mrpPrice
+    ? +(mrpPrice * currencyRate).toFixed(2)
+    : +(basePrice * currencyRate).toFixed(2);
+
+  const finalDiscountedPrice = discountedPrice;
 
   return (
     <Fragment>
@@ -57,7 +72,7 @@ const ProductGridListSingle = ({
                     alt={product.name}
                   />
                 </Link>
-                {product.discount && <span className="list-badge">-{product.discount}%</span>}
+                {variantDiscount > 0 && <span className="list-badge">-{variantDiscount}%</span>}
               </div>
             </div>
             <div className="col-xl-8 col-md-7 col-sm-6">
@@ -125,7 +140,7 @@ const ProductGridListSingle = ({
             </Link>
             {/* CORRECT - only renders when discount is actually > 0 */}
 <div className="premium-badges">
-  {product.discount > 0 && <span className="badge-pink">-{product.discount}%</span>}
+  {variantDiscount > 0 && <span className="badge-pink">-{variantDiscount}%</span>}
   {product.new === true && <span className="badge-navy">NEW</span>}
 </div>
             <div className="premium-action-list">

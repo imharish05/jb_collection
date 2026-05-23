@@ -1,5 +1,6 @@
 import PropTypes from "prop-types";
 import { useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 import clsx from "clsx";
 import Swiper, { SwiperSlide } from "../../components/swiper";
 import SectionTitle from "../../components/section-title/SectionTitle";
@@ -29,12 +30,16 @@ const settings = {
 
 
 const RelatedProductSlider = ({ spaceBottomClass, category }) => {
+  const { id: currentProductId } = useParams();
   const { products } = useSelector((state) => state.product);
   const currency = useSelector((state) => state.currency || { currencyName: "INR", currencyRate: 1, currencySymbol: "₹" });
   const { cartItems } = useSelector((state) => state.cart);
   const { wishlistItems } = useSelector((state) => state.wishlist);
   const { compareItems } = useSelector((state) => state.compare);
-  const prods = getProducts(products, category, null, 6);
+  // Exclude the currently viewed product from related products
+  const prods = getProducts(products, category, null, 7).filter(
+    (p) => String(p.id) !== String(currentProductId)
+  ).slice(0, 6);
   
   return (
     <div className={clsx("related-product-area", spaceBottomClass)}>
@@ -80,4 +85,3 @@ RelatedProductSlider.propTypes = {
 };
 
 export default RelatedProductSlider;
-

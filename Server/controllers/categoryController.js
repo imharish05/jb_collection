@@ -35,7 +35,7 @@ const getNav = async (req, res) => {
       }),
       Combo.findAll({
         where: { isActive: true },
-        attributes: ["label", "value"],
+        attributes: ["id", "label", "value"],
         order: [["sortOrder", "ASC"]],
       }),
     ]);

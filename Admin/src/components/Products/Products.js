@@ -388,9 +388,12 @@ export default function Products({ showToast }) {
     if (formData.subCategoryId) fd.append('subCategoryId', formData.subCategoryId);
     if (formData.subCategoryName) fd.append('subCategoryName', formData.subCategoryName);
 
-    fd.append('tag', JSON.stringify(
-      formData.tag ? formData.tag.split(',').map(t => t.trim()).filter(Boolean) : []
-    ));
+    // Build tag array — merge manual event tags + feature flags as tags
+    const baseTags = formData.tag ? formData.tag.split(',').map(t => t.trim()).filter(Boolean) : [];
+    if (formData.isCustomisable && !baseTags.includes('customisable')) baseTags.push('customisable');
+    if (formData.isNewArrival   && !baseTags.includes('new-arrival'))  baseTags.push('new-arrival');
+    if (formData.isHotDeal      && !baseTags.includes('hot-deal'))      baseTags.push('hot-deal');
+    fd.append('tag', JSON.stringify(baseTags));
 
     // ── Map VariantBuilder state → API payload ────────────────────────────
     const mappedVariants = variants.map((v, idx) => {
