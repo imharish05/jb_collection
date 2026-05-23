@@ -3471,7 +3471,7 @@
 .cart-action-overlay button,
 .cart-action-overlay a.cart-action-btn {
     width: 100%;
-    background: var(--p-navy);
+    background: var(--p-pink);
     color: #fff;
     border: none;
     padding: 12px;
@@ -3488,6 +3488,15 @@
 
 .cart-action-overlay button:hover,
 .cart-action-overlay a.cart-action-btn:hover { background: var(--p-pink); }
+
+/* In Cart state — green confirmation */
+.cart-action-overlay button.in-cart,
+.cart-action-overlay button.in-cart:hover {
+    background: #22c55e;
+    cursor: default;
+    letter-spacing: 0.5px;
+}
+
 .product-details-premium {
     padding: 20px 15px;
     text-align: left;
@@ -3518,7 +3527,7 @@
     align-items: center;
 }
 
-.new-price { font-weight: 800; color: var(--p-navy); font-size: 18px; }
+.new-price { font-weight: 800; color: #db1a5d; font-size: 18px; }
 .old-price { text-decoration: line-through; color: #999; font-size: 14px; margin-left: 8px; }
 
 /* Mobile Adjustments */
@@ -3599,7 +3608,7 @@
 }
 
 .list-cart-btn {
-    background: var(--p-navy);
+    background: var(--p-pink);
     color: #fff;
     border: none;
     padding: 10px 25px;
@@ -3760,6 +3769,14 @@
 .cart-action-overlay button:hover,
 .cart-action-overlay a.cart-action-btn:hover { background: var(--p-pink); }
 .cart-action-overlay button:disabled { opacity: 0.7; cursor: not-allowed; }
+/* In Cart state — green confirmation */
+.cart-action-overlay button.in-cart,
+.cart-action-overlay button.in-cart:hover {
+    background: #22c55e;
+    cursor: default;
+    letter-spacing: 0.5px;
+}
+
 
 /* Product details area */
 .product-details-premium {
@@ -3794,7 +3811,7 @@
   align-items: center;
 }
 
-.new-price { font-weight: 800; color: var(--p-navy); font-size: 18px; }
+.new-price { font-weight: 800; color: #db1a5d; font-size: 18px; }
 .old-price { text-decoration: line-through; color: #999; font-size: 14px; margin-left: 8px; }
 
 /* ─── LIST VIEW ─────────────────────────────────────────────────── */
@@ -3867,7 +3884,7 @@
 }
 
 .list-cart-btn {
-  background: var(--p-navy);
+  background: var(--p-pink);
   color: #fff;
   border: none;
   padding: 10px 25px;

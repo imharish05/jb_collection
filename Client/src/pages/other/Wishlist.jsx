@@ -293,7 +293,6 @@ const Wishlist = () => {
   
   const { cartItems } = useSelector((state) => state.cart);
   
-  console.log(cartItems,"This is the cartItems");
   return (
     <Fragment>
       <SEO
@@ -319,7 +318,7 @@ const Wishlist = () => {
                 </p>
 
                 {/* ── Card Grid ── */}
-                <div style={S.grid}>
+                <div style={S.grid} >
                   {wishlistItems.map((item, key) => {
                     // ── Prices straight from backend via getProductPrice ──
                     const { displayPrice, strikePrice } = getProductPrice(item);

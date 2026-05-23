@@ -85,13 +85,14 @@ export const getProductPrice = (product, variantIndex = 0) => {
   }
 
   // Non-variant fallback
-  const base    = parseFloat(product.price || 0);
-  const disc    = parseFloat(product.discount || 0);
-  const discounted = disc > 0 ? +(base - base * (disc / 100)).toFixed(2) : null;
+  // product.price is ALREADY the final/sale price stored by the server.
+  // product.discount is a display-only badge (%) — never reapply it.
+  const base = parseFloat(product.price || 0);
+  const disc = parseFloat(product.discount || 0);
 
   return {
-    displayPrice: discounted !== null ? discounted : base,
-    strikePrice:  discounted !== null ? base : null,
+    displayPrice: base,
+    strikePrice:  null,   // no MRP stored for non-variant products
     discountPct:  disc > 0 ? disc : null,
   };
 };
