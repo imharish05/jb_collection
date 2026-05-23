@@ -4,6 +4,7 @@ const {
   getCart,
   addToCart,
   removeFromCart,
+  increaseQuantity,
   decreaseQuantity,
   clearCart,
 } = require("../controllers/cartController");
@@ -14,6 +15,7 @@ router.use(protect); // all cart routes require auth
 router.get("/", getCart);
 router.post("/add", addToCart);
 router.delete("/remove/:cartItemId", removeFromCart);
+router.patch("/increase/:cartItemId", increaseQuantity);
 router.patch("/decrease/:cartItemId", decreaseQuantity);
 router.delete("/clear", clearCart);
 

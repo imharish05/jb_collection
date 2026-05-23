@@ -7,6 +7,7 @@ import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
 import {
   addToCartService,
+  increaseQuantityService,
   deleteFromCartService,
   decreaseQuantityService,
   deleteAllFromCartService,
@@ -381,7 +382,7 @@ const Cart = () => {
                               <button
                                 className="kg-qty-btn"
                                 onClick={() =>
-                                  addToCartService({ ...item, quantity: 1 })
+                                  increaseQuantityService(item)
                                 }
                                 disabled={item.quantity >= maxStock}
                                 title={item.quantity >= maxStock ? `Max stock: ${maxStock}` : "Increase"}

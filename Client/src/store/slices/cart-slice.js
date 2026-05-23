@@ -99,6 +99,15 @@ const cartSlice = createSlice({
             }
         },
 
+        increaseQuantity(state, action) {
+            // action.payload = { cartItemId }
+            state.cartItems = state.cartItems.map(item =>
+                item.cartItemId === action.payload.cartItemId
+                    ? { ...item, quantity: item.quantity + 1 }
+                    : item
+            );
+        },
+
         deleteFromCart(state, action) {
             state.cartItems = state.cartItems.filter(item => item.cartItemId !== action.payload);
             cogoToast.error("Removed From Cart", { position: "top-center" });
@@ -128,5 +137,5 @@ const cartSlice = createSlice({
     },
 });
 
-export const { addToCart, deleteFromCart, decreaseQuantity, deleteAllFromCart, replaceCart } = cartSlice.actions;
+export const { addToCart, increaseQuantity, deleteFromCart, decreaseQuantity, deleteAllFromCart, replaceCart } = cartSlice.actions;
 export default cartSlice.reducer;

@@ -22,16 +22,16 @@ import offerReducer from './slices/offerSlice';
 import authReducer from "./slices/authSlice";
 import addressReducer from "./slices/addressSlice";
 import orderReducer from "./slices/order-slice";
-import reviewReducer from "./slices/review-slice";   // ← added
+import reviewReducer from "./slices/review-slice";
 
 const persistConfig = {
     key: "flone",
     version: 1.1,
     storage,
-    blacklist: ["product", "navMenu", "headerSlider", "review"]  // review not persisted
+    blacklist: ["product", "navMenu", "headerSlider", "review"]
 };
 
-export const rootReducer = combineReducers({
+const appReducer = combineReducers({
     marquee:      marqueeReducer,
     headerSlider: sliderReducer,
     product:      productReducer,
@@ -44,8 +44,18 @@ export const rootReducer = combineReducers({
     auth:         authReducer,
     address:      addressReducer,
     order:        orderReducer,
-    review:       reviewReducer,   // ← added
+    review:       reviewReducer,
 });
+
+// ── Root reducer: wipe cart+wishlist on logout ──────────────────────────────
+export const rootReducer = (state, action) => {
+    if (action.type === "auth/logoutAction") {
+        // Keep currency preference, wipe user-specific slices
+        const { currency, navMenu, product, marquee, headerSlider, offerBanner } = state;
+        state = { currency, navMenu, product, marquee, headerSlider, offerBanner };
+    }
+    return appReducer(state, action);
+};
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
@@ -55,12 +65,7 @@ export const store = configureStore({
         getDefaultMiddleware({
             serializableCheck: {
                 ignoredActions: [
-                    FLUSH,
-                    REHYDRATE,
-                    PAUSE,
-                    PERSIST,
-                    PURGE,
-                    REGISTER,
+                    FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER,
                 ],
             },
         }),

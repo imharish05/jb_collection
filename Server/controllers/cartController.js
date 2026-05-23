@@ -120,6 +120,22 @@ const removeFromCart = async (req, res, next) => {
   }
 };
 
+// PATCH /api/cart/increase/:cartItemId
+const increaseQuantity = async (req, res, next) => {
+  try {
+    const item = await CartItem.findOne({
+      where: { id: req.params.cartItemId, userId: req.user.id },
+    });
+    if (!item) return res.status(404).json({ message: "Cart item not found" });
+
+    item.quantity += 1;
+    await item.save();
+    return res.json({ quantity: item.quantity });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // PATCH /api/cart/decrease/:cartItemId
 const decreaseQuantity = async (req, res, next) => {
   try {
@@ -151,4 +167,4 @@ const clearCart = async (req, res, next) => {
   }
 };
 
-module.exports = { getCart, addToCart, removeFromCart, decreaseQuantity, clearCart };
+module.exports = { getCart, addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart };

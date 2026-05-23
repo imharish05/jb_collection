@@ -1,6 +1,6 @@
 import cogoToast from "cogo-toast";
 import api from "../../api/axios";
-import { addToCart, deleteFromCart, decreaseQuantity, deleteAllFromCart } from "../slices/cart-slice";
+import { addToCart, increaseQuantity, deleteFromCart, decreaseQuantity, deleteAllFromCart } from "../slices/cart-slice";
 import { store } from "../store";
 
 /**
@@ -83,6 +83,19 @@ export const deleteFromCartService = async (cartItemId) => {
     dispatch(deleteFromCart(cartItemId));
   } catch (err) {
     cogoToast.error("Could not remove item", { position: "top-center" });
+    console.log(err);
+  }
+};
+
+export const increaseQuantityService = async (product) => {
+  const dispatch = store.dispatch;
+  if (!requireAuth()) return;
+
+  try {
+    await api.patch(`/cart/increase/${product.cartItemId}`);
+    dispatch(increaseQuantity({ cartItemId: product.cartItemId }));
+  } catch (err) {
+    cogoToast.error("Could not update quantity", { position: "top-center" });
     console.log(err);
   }
 };

@@ -286,7 +286,7 @@ const Wishlist = () => {
     (state) =>
       state.currency || { currencyName: "INR", currencyRate: 1, currencySymbol: "₹" }
   );
-  const { wishlistItems } = useSelector((state) => state.wishlist);
+  const { wishlistItems } = useSelector((state) => state.wishlist || []);
   const { cartItems } = useSelector((state) => state.cart);
 
   return (
@@ -316,11 +316,26 @@ const Wishlist = () => {
                 {/* ── Card Grid ── */}
                 <div style={S.grid}>
                   {wishlistItems.map((item, key) => {
-                    const discountedPrice = getDiscountPrice(item.price, item.discount);
-                    const finalPrice = (item.price * currency.currencyRate).toFixed(2);
-                    const finalDiscounted = discountedPrice
-                      ? (discountedPrice * currency.currencyRate).toFixed(2)
-                      : null;
+                    // ── Mirror variant-aware price logic from ProductGridListSingle ──
+                    const hasVariants = Array.isArray(item.Variants) && item.Variants.length > 0;
+                    const firstVariant = hasVariants ? item.Variants[0] : null;
+                    const firstVariantSalesPrice = firstVariant ? parseFloat(firstVariant.salesPrice || 0) : 0;
+                    const firstVariantMrp = firstVariant ? parseFloat(firstVariant.mrp || 0) : 0;
+
+                    // basePrice = first variant salesPrice if available, else item.price
+                    const basePrice = firstVariantSalesPrice > 0 ? firstVariantSalesPrice : item.price;
+                    // mrpPrice = show strikethrough only when mrp > salesPrice
+                    const mrpPrice = firstVariantMrp > firstVariantSalesPrice ? firstVariantMrp : null;
+
+                    const finalPrice = mrpPrice
+                      ? +(mrpPrice * currency.currencyRate).toFixed(2)
+                      : +(basePrice * currency.currencyRate).toFixed(2);
+
+                    const finalDiscounted = mrpPrice
+                      ? +(firstVariantSalesPrice * currency.currencyRate).toFixed(2)
+                      : getDiscountPrice(basePrice, item.discount)
+                        ? +(getDiscountPrice(basePrice, item.discount) * currency.currencyRate).toFixed(2)
+                        : null;
                     const cartItem = cartItems.find((c) => c.id === item.id);
                     const inCart = cartItem !== undefined && cartItem.quantity > 0;
 

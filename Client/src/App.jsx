@@ -2,12 +2,15 @@ import { Suspense, lazy, useEffect } from "react";
 import ScrollToTop from "./helpers/scroll-top";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { getNavCategories } from "./store/services/navMenuService";
 import { getAllProducts } from "./store/services/productService";
 import { getMarqueeMessages } from "./store/services/marqueeService";
 import { getOfferBanners } from "./store/services/offerService";
 import { getHeroSlides } from "./store/services/heroSliderService";
+import { loadWishlistService } from "./store/services/wishlistService";
+import api from "./api/axios";
+import { replaceCart } from "./store/slices/cart-slice";
 
 // Main home
 const HomeFashion = lazy(() => import("./pages/home/HomeFashion"));
@@ -45,6 +48,7 @@ const NotFound = lazy(() => import("./pages/other/NotFound"));
 
 const App = () => {
   const dispatch = useDispatch();
+  const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
 
   useEffect(() => {
     Promise.all([
@@ -55,6 +59,40 @@ const App = () => {
       getHeroSlides(),
     ]);
   }, []);
+
+  // Sync cart + wishlist from server whenever auth state is active
+  // (covers page refresh with persisted token, not just fresh login)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Sync cart
+    api.get("/cart").then(res => {
+      const items = (res.data || []).map(cartItem => {
+        const variants = cartItem.product?.Variants || cartItem.product?.variants || [];
+        const matched = variants.find(v => String(v.id) === String(cartItem.selectedVariantId));
+        const resolvedPrice = matched?.salesPrice ?? cartItem.productSnapshot?.price ?? cartItem.product?.price ?? 0;
+        const resolvedDiscount = cartItem.productSnapshot?.discount ?? cartItem.product?.discount ?? 0;
+        return {
+          id: cartItem.productId,
+          cartItemId: cartItem.id,
+          quantity: cartItem.quantity,
+          selectedVariantId: cartItem.selectedVariantId || null,
+          selectedVariantName: cartItem.productSnapshot?.selectedVariantName || null,
+          selectedProductColor: cartItem.selectedProductColor || null,
+          selectedProductSize: cartItem.selectedProductSize || null,
+          name: cartItem.productSnapshot?.name || cartItem.product?.name,
+          price: typeof resolvedPrice === "string" ? parseFloat(resolvedPrice) : resolvedPrice,
+          discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
+          image: cartItem.productSnapshot?.image || cartItem.product?.image || [],
+          variation: cartItem.product?.variation || [],
+        };
+      });
+      dispatch(replaceCart(items));
+    }).catch(() => {});
+
+    // Sync wishlist
+    loadWishlistService();
+  }, [isAuthenticated]);
 
   return (
     <Router>
