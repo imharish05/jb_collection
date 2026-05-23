@@ -287,8 +287,13 @@ const Wishlist = () => {
       state.currency || { currencyName: "INR", currencyRate: 1, currencySymbol: "₹" }
   );
   const { wishlistItems } = useSelector((state) => state.wishlist);
-  const { cartItems } = useSelector((state) => state.cart);
 
+  console.log(wishlistItems,"This is the wishlist items");
+  
+  
+  const { cartItems } = useSelector((state) => state.cart);
+  
+  console.log(cartItems,"This is the cartItems");
   return (
     <Fragment>
       <SEO
@@ -318,10 +323,9 @@ const Wishlist = () => {
                   {wishlistItems.map((item, key) => {
                     // ── Prices straight from backend via getProductPrice ──
                     const { displayPrice, strikePrice } = getProductPrice(item);
-                    const rate = currency?.currencyRate || 1;
-                    const finalPrice      = +(displayPrice * rate).toFixed(2);
-                    const finalDiscounted = strikePrice ? finalPrice : null;
-                    const finalStrike     = strikePrice ? +(strikePrice * rate).toFixed(2) : null;
+                    const rate        = currency?.currencyRate || 1;
+                    const finalPrice  = +(displayPrice * rate).toFixed(2);
+                    const finalStrike = strikePrice ? +(strikePrice * rate).toFixed(2) : null;
                     const cartItem = cartItems.find((c) => c.id === item.id);
                     const inCart = cartItem !== undefined && cartItem.quantity > 0;
 
@@ -389,7 +393,7 @@ const Wishlist = () => {
 
                           {/* Price */}
                           <div style={S.priceRow}>
-                            {finalDiscounted ? (
+                            {finalStrike ? (
                               <>
                                 <span style={S.priceDiscounted}>₹{finalPrice}</span>
                                 <span style={S.priceOriginal}>₹{finalStrike}</span>

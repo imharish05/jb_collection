@@ -24,8 +24,31 @@ const ProductGridSingle = ({
 
   const currencyRate = currency?.currencyRate || 1;
 
-  // For products with Variants, use Variants[0].salesPrice / mrp for accurate pricing
+  // ── Image resolution ──────────────────────────────────────────────────────
+  // Priority: product.image[0] → product.image[1] → Variants[0].image → fallback
   const hasVariants = Array.isArray(product.Variants) && product.Variants.length > 0;
+
+  const productImages = Array.isArray(product.image)
+    ? product.image.filter(Boolean)
+    : [];
+
+  // If product has no main images, fall back to first variant's image
+  const variantFallbackImg =
+    productImages.length === 0 && hasVariants
+      ? (product.Variants.find(v => v.image)?.image || null)
+      : null;
+
+  const mainImage = productImages[0]
+    ? getImgUrl(productImages[0])
+    : variantFallbackImg
+      ? getImgUrl(variantFallbackImg)
+      : process.env.PUBLIC_URL + "/assets/img/products/products-1.jpeg";
+
+  const hoverImage = productImages.length > 1
+    ? getImgUrl(productImages[1])
+    : null;
+
+  // ── Pricing ───────────────────────────────────────────────────────────────
   const firstVariant = hasVariants ? product.Variants[0] : null;
   const basePrice = firstVariant
     ? parseFloat(firstVariant.salesPrice) || product.price
@@ -54,7 +77,6 @@ const ProductGridSingle = ({
       return;
     }
     if (Array.isArray(product.Variants) && product.Variants.length > 0) {
-      // cogoToast.warn("Please select product options first", { position: "top-center" });
       navigate(process.env.PUBLIC_URL + "/product/" + product.id);
       return;
     }
@@ -77,7 +99,7 @@ const ProductGridSingle = ({
 
   return (
     <Fragment>
-      <div className={clsx("product-card-premium", spaceBottomClass, product.image?.length === 1 && "single-image-card")}>
+      <div className={clsx("product-card-premium", spaceBottomClass, !hoverImage && "single-image-card")}>
         <div className="product-img-container">
           <Link
             to={process.env.PUBLIC_URL + "/product/" + product.id}
@@ -85,14 +107,14 @@ const ProductGridSingle = ({
           >
             <img
               className="main-img"
-              src={`${(product.image[0] || '').replace(/^\/?uploads\//, '')}`}
+              src={mainImage}
               alt={product.name}
               onError={e => { e.target.src = process.env.PUBLIC_URL + '/assets/img/products/products-1.jpeg'; }}
             />
-            {product.image.length > 1 && (
+            {hoverImage && (
               <img
                 className="secondary-img"
-                src={`${process.env.REACT_APP_IMG_URL}/uploads/${(product.image[1] || '').replace(/^\/?uploads\//, '')}`}
+                src={hoverImage}
                 alt={product.name}
                 onError={e => { e.target.style.display = 'none'; }}
               />
@@ -116,9 +138,6 @@ const ProductGridSingle = ({
             >
               <i className="pe-7s-like" />
             </button>
-            {/* <button title="Quick View" onClick={() => setModalShow(true)}>
-              <i className="pe-7s-look" />
-            </button> */}
           </div>
 
           {/* Add to Cart Overlay */}
