@@ -40,6 +40,32 @@ const formatCouponCond = (c) => {
   return parts.join(" · ") || "No minimum order";
 };
 
+// ── Variant helpers (same logic as Wishlist) ─────────────────────────────────
+const safeAttrs = (raw) => {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") { try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; } }
+  return [];
+};
+const getVariantAttrs = (variant) => {
+  if (!variant) return [];
+  return safeAttrs(variant.attributes).filter(a => a.key && a.value && a.key !== "Custom Note");
+};
+// Fallback: parse selectedVariantName string for items added before selectedVariant was attached
+const parseFallbackAttrs = (variantName) => {
+  if (!variantName) return [];
+  const seen = new Set();
+  return variantName.split(" · ").map(s => {
+    const [key, ...rest] = s.split(": ");
+    return { key: key?.trim(), value: rest.join(": ").trim() };
+  }).filter(a => {
+    if (!a.key || !a.value) return false;
+    const k = a.key.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+};
+
 /* ════════════════════════════════════════════════════════════════════════════
    Cart Component
 ════════════════════════════════════════════════════════════════════════════ */
@@ -233,6 +259,19 @@ const Cart = () => {
                 <div className="kg-items-card">
                   {cartItems.map((item) => {
                     // item.price = salesPrice already final from backend
+                    // ── Image resolution (handles JSON string, array, localhost URLs) ──
+                    const resolveItemImage = (raw) => {
+                      let arr = raw;
+                      if (!Array.isArray(arr)) {
+                        try { arr = JSON.parse(arr); } catch { arr = arr ? [arr] : []; }
+                      }
+                      const first = (Array.isArray(arr) ? arr[0] : null) || "";
+                      if (!first) return "/assets/img/products/products-1.jpeg";
+                      // Strip localhost base so getImgUrl re-resolves via REACT_APP_IMG_URL
+                      const stripped = first.replace(/^https?:\/\/[^/]*(:\d+)?/, "");
+                      return getImgUrl(stripped) || "/assets/img/products/products-1.jpeg";
+                    };
+                    const resolvedImgSrc = resolveItemImage(item.image);
                     const rate = currency.currencyRate || 1;
                     const unitPrice = parseFloat(item.price || 0) * rate;
                     const finalPrice = unitPrice.toFixed(2);
@@ -242,28 +281,18 @@ const Cart = () => {
                     // Use stock stored on item directly (set by cartService from variant or product)
                     const maxStock = item.stock || 999;
 
-                    // Parse variant attributes from selectedVariantName
-                    // Format: "Colour: bronze · Size: Small · Material: Gold-plated"
-                    const variantAttrs = item.selectedVariantName
-                      ? item.selectedVariantName.split(" · ").map(s => {
-                          const [key, ...rest] = s.split(": ");
-                          return { key: key?.trim(), value: rest.join(": ").trim() };
-                        }).filter(a => a.key && a.value)
-                      : [];
-
-                    // Deduplicate attrs — keep only FIRST occurrence of each key
-                    // e.g. "Size: Small · Size: Medium · Size: Large" → just "Size: Small"
-                    const seenKeys = new Set();
-                    const uniqueAttrs = variantAttrs.filter(a => {
-                      const k = a.key?.toLowerCase();
-                      if (seenKeys.has(k)) return false;
-                      seenKeys.add(k);
-                      return true;
-                    });
-
-                    const variantLabel = uniqueAttrs.length === 0 && item.selectedVariantName
-                      ? item.selectedVariantName
-                      : "";
+                    // ── Variant attrs (priority order, same resolution as Wishlist):
+                    // 1. selectedVariant.attributes  (set by new cartService/authService)
+                    // 2. find from item.Variants[] by selectedVariantId (existing Redux items)
+                    // 3. parse selectedVariantName string (legacy string format)
+                    const resolvedVariant =
+                      item.selectedVariant ||
+                      (item.selectedVariantId && Array.isArray(item.Variants)
+                        ? item.Variants.find(v => Number(v.id) === Number(item.selectedVariantId)) || null
+                        : null);
+                    const attrs = getVariantAttrs(resolvedVariant).length > 0
+                      ? getVariantAttrs(resolvedVariant)
+                      : parseFallbackAttrs(item.selectedVariantName);
 
                     return (
                       <div key={item.cartItemId} className="kg-cart-item">
@@ -273,9 +302,7 @@ const Cart = () => {
                           className="kg-item-img-wrap"
                         >
                           <img
-                            src={getImgUrl(
-                              Array.isArray(item.image) ? item.image[0] : item.image
-                            ) || "/assets/img/products/products-1.jpeg"}
+                            src={resolvedImgSrc}
                             alt={item.name}
                             className="kg-item-img"
                             onError={(e) => {
@@ -297,9 +324,9 @@ const Cart = () => {
                           </Link>
 
                           {/* Variant attributes — show all parsed key-value pairs */}
-                          {uniqueAttrs.length > 0 && (
+                          {attrs.length > 0 ? (
                             <div className="kg-variant-row">
-                              {uniqueAttrs.map((attr, i) => (
+                              {attrs.map((attr, i) => (
                                 <span key={i} className="kg-variant-chip">
                                   <span style={{ color: "#888", fontSize: 10, marginRight: 2 }}>
                                     {attr.key}:
@@ -308,31 +335,24 @@ const Cart = () => {
                                 </span>
                               ))}
                             </div>
-                          )}
-
-                          {variantLabel && (
-                            <div className="kg-variant-row">
-                              <span className="kg-variant-chip">{variantLabel}</span>
-                            </div>
-                          )}
-
-                          {/* Fallback: legacy color/size chips if no variantName */}
-                          {uniqueAttrs.length === 0 && !variantLabel && (item.selectedProductColor || item.selectedProductSize) && (
+                          ) : (item.selectedProductColor || item.selectedProductSize) ? (
                             <div className="kg-variant-row">
                               {item.selectedProductColor && (
                                 <span className="kg-variant-chip">
+                                  <span style={{ color: "#888", fontSize: 10, marginRight: 2 }}>Colour:</span>
                                   {item.selectedProductColor}
                                 </span>
                               )}
                               {item.selectedProductSize && (
                                 <span className="kg-variant-chip">
+                                  <span style={{ color: "#888", fontSize: 10, marginRight: 2 }}>Size:</span>
                                   {item.selectedProductSize}
                                 </span>
                               )}
                             </div>
-                          )}
+                          ) : null}
 
-                          {/* Stock warning when near limit */}
+                                                    {/* Stock warning when near limit */}
                           {maxStock < 10 && (
                             <div style={{ fontSize: 11, color: "#f59e0b", marginTop: 3 }}>
                               Only {maxStock} left in stock

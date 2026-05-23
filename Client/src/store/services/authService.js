@@ -34,6 +34,8 @@ const syncCartFromServer = async (dispatch) => {
         discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
         image: cartItem.productSnapshot?.image || cartItem.product?.image || [],
         variation: cartItem.product?.variation || [],
+        Variants: variants,
+        selectedVariant: matchedVariant || null,  // ← full variant object (same as wishlist)
       };
     });
     

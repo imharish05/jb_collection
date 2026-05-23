@@ -132,7 +132,7 @@ const cartSlice = createSlice({
         },
 
         replaceCart(state, action) {
-            state.cartItems = action.payload || [];
+            state.cartItems = (action.payload || []).map(normalizeProduct);
         }
     },
 });
