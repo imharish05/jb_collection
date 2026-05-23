@@ -27,7 +27,8 @@ const ProductGridList = ({ products, spaceBottomClass, layout }) => {
             product={product}
             currency={currency}
             cartItem={cartItems.find(i => i.id === product.id)}
-            wishlistItem={wishlistItems.find(i => i.id === product.id)}
+            cartItems={cartItems.filter(i => i.id === product.id)}
+            wishlistItems={wishlistItems.filter(i => i.id === product.id)}
             compareItem={compareItems.find(i => i.id === product.id)}
           />
         </div>

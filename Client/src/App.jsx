@@ -76,7 +76,7 @@ const App = () => {
           id: cartItem.productId,
           cartItemId: cartItem.id,
           quantity: cartItem.quantity,
-          selectedVariantId: cartItem.selectedVariantId || null,
+          selectedVariantId: cartItem.selectedVariantId != null ? Number(cartItem.selectedVariantId) : null,
           selectedVariantName: cartItem.productSnapshot?.selectedVariantName || null,
           selectedProductColor: cartItem.selectedProductColor || null,
           selectedProductSize: cartItem.selectedProductSize || null,

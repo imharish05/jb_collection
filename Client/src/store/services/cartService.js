@@ -56,7 +56,7 @@ export const addToCartService = async (dispatchOrProduct, optionalProduct) => {
       quantity: cartItem.quantity,
       selectedProductColor: cartItem.selectedProductColor,
       selectedProductSize: cartItem.selectedProductSize,
-      selectedVariantId: cartItem.selectedVariantId || null,
+      selectedVariantId: cartItem.selectedVariantId != null ? Number(cartItem.selectedVariantId) : null,
       selectedVariantName: cartItem.productSnapshot?.selectedVariantName || product.selectedVariantName || null,
       name: cartItem.productSnapshot?.name || cartItem.product?.name || product.name,
       price: typeof resolvedPrice === "string" ? parseFloat(resolvedPrice) : resolvedPrice,

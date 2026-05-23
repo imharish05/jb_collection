@@ -1,11 +1,20 @@
 const { CartItem, Product, Variant } = require("../models");
 
+// ── Shared include ────────────────────────────────────────────────────────────
+const cartInclude = [
+  {
+    model: Product,
+    as: "product",
+    include: [{ model: Variant, as: "variants" }],
+  },
+];
+
 // GET /api/cart
 const getCart = async (req, res, next) => {
   try {
     const items = await CartItem.findAll({
       where: { userId: req.user.id },
-      include: [{ model: Product, as: "product" }],
+      include: cartInclude,
       order: [["createdAt", "ASC"]],
     });
     return res.json(items);
@@ -15,6 +24,7 @@ const getCart = async (req, res, next) => {
 };
 
 // POST /api/cart/add
+// Body: { productId, variantId, quantity, selectedProductColor, selectedProductSize, selectedVariantName }
 const addToCart = async (req, res, next) => {
   try {
     const {
@@ -26,29 +36,22 @@ const addToCart = async (req, res, next) => {
       selectedVariantName,
     } = req.body;
 
-    if (!productId) {
-      return res.status(400).json({ message: "productId is required" });
-    }
+    if (!productId) return res.status(400).json({ message: "productId is required" });
 
     const product = await Product.findOne({ where: { id: productId, isActive: true } });
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    // ── Fetch variant if selectedVariantId provided (for correct pricing) ──────
+    // Validate + fetch variant
     let variant = null;
     if (selectedVariantId) {
-      variant = await Variant.findOne({
-        where: { id: selectedVariantId, productId },
-      });
+      variant = await Variant.findOne({ where: { id: selectedVariantId, productId } });
+      if (!variant) return res.status(404).json({ message: "Variant not found for this product" });
+      if (Number(variant.stock) < 1) return res.status(400).json({ message: "Variant out of stock" });
     }
 
-    // Deduplicate by EXACT combination:
-    // - backend variants: productId + selectedVariantId + selectedVariantName (full attr string)
-    //   → same variantId but different attribute combo = separate cart row
-    // - old-style: productId + color + size
+    // ── Dedup: variant items keyed by productId + variantId + variantName ────
     let cartItem = null;
-
     if (selectedVariantId) {
-      // selectedVariantName lives in productSnapshot JSON, not a column — filter in JS
       const candidates = await CartItem.findAll({
         where: { userId: req.user.id, productId, selectedVariantId },
       });
@@ -63,42 +66,42 @@ const addToCart = async (req, res, next) => {
           userId: req.user.id,
           productId,
           selectedProductColor: selectedProductColor || null,
-          selectedProductSize: selectedProductSize || null,
+          selectedProductSize:  selectedProductSize || null,
         },
       });
     }
 
     if (cartItem) {
+      // Stock check before increment
+      const maxStock = variant ? Number(variant.stock) : Number(product.stock ?? 999);
+      if (cartItem.quantity + quantity > maxStock) {
+        return res.status(400).json({ message: "Exceeds available stock" });
+      }
       cartItem.quantity += quantity;
       await cartItem.save();
     } else {
-      // Use variant's salesPrice if variant is selected, else product price
       const finalPrice = variant ? parseFloat(variant.salesPrice) : parseFloat(product.price);
-      const finalMrp = variant ? parseFloat(variant.mrp) : null;
+      const finalMrp   = variant ? parseFloat(variant.mrp) : null;
 
       cartItem = await CartItem.create({
         userId: req.user.id,
         productId,
         quantity,
         selectedProductColor: selectedProductColor || null,
-        selectedProductSize: selectedProductSize || null,
-        selectedVariantId: selectedVariantId || null,
+        selectedProductSize:  selectedProductSize || null,
+        selectedVariantId:    selectedVariantId   || null,
         productSnapshot: {
-          name: product.name,
-          price: finalPrice,  // ← Variant price takes priority
-          mrp: finalMrp,      // ← Store variant MRP for reference
-          discount: product.discount,
-          image: product.image,
+          name:               product.name,
+          price:              finalPrice,
+          mrp:                finalMrp,
+          discount:           variant ? 0 : (product.discount || 0), // variant price IS final
+          image:              product.image,
           selectedVariantName: selectedVariantName || null,
         },
       });
     }
 
-    // Return with product details
-    const result = await CartItem.findByPk(cartItem.id, {
-      include: [{ model: Product, as: "product" }],
-    });
-
+    const result = await CartItem.findByPk(cartItem.id, { include: cartInclude });
     return res.status(201).json({ cartItem: result });
   } catch (err) {
     next(err);
@@ -112,7 +115,6 @@ const removeFromCart = async (req, res, next) => {
       where: { id: req.params.cartItemId, userId: req.user.id },
     });
     if (!item) return res.status(404).json({ message: "Cart item not found" });
-
     await item.destroy();
     return res.json({ message: "Item removed from cart" });
   } catch (err) {
@@ -125,8 +127,18 @@ const increaseQuantity = async (req, res, next) => {
   try {
     const item = await CartItem.findOne({
       where: { id: req.params.cartItemId, userId: req.user.id },
+      include: [{ model: Product, as: "product", include: [{ model: Variant, as: "variants" }] }],
     });
     if (!item) return res.status(404).json({ message: "Cart item not found" });
+
+    // Stock validation before increase
+    const variant = item.selectedVariantId
+      ? (item.product?.variants || []).find(v => String(v.id) === String(item.selectedVariantId))
+      : null;
+    const maxStock = variant ? Number(variant.stock) : Number(item.product?.stock ?? 999);
+    if (item.quantity >= maxStock) {
+      return res.status(400).json({ message: "Exceeds available stock" });
+    }
 
     item.quantity += 1;
     await item.save();

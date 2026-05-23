@@ -123,3 +123,16 @@ startServer();
  *   node migrate_wishlist_variant.js
  */
 
+/**
+ * ONE-TIME migration script.
+ *
+ * Run ONCE from the Server directory before (re)starting the server:
+ *   node migrate_wishlist_variant.js
+ *
+ * What it does:
+ *  1. Adds variant_id column to wishlist_items (if missing)
+ *  2. Drops the old UNIQUE(user_id, product_id) index (if it exists)
+ *  3. Creates the correct UNIQUE(user_id, product_id, variant_id) index
+ */
+
+

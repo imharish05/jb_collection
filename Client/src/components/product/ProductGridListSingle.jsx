@@ -10,23 +10,29 @@ import ProductModal from "./ProductModal";
 import { getImgUrl } from "../../helpers/imageUrl";
 
 const ProductGridListSingle = ({
-  product, currency, cartItem, wishlistItem, spaceBottomClass, layout
+  product, currency, cartItem, cartItems, wishlistItems, spaceBottomClass, layout
 }) => {
   const [modalShow, setModalShow] = useState(false);
 
-  // For wishlist: auto-select first active variant (same as what user would see first)
-  const firstVariant = (Array.isArray(product.Variants) && product.Variants.length > 0)
-    ? product.Variants[0]
-    : (Array.isArray(product.variants) && product.variants.length > 0)
-      ? product.variants[0]
-      : null;
+  // All variants for this product
+  const variants = Array.isArray(product.Variants) ? product.Variants
+                 : Array.isArray(product.variants)  ? product.variants
+                 : [];
+  const firstVariant = variants.length > 0 ? variants[0] : null;
 
-  // Wishlist icon is "active" only if the first variant (or product) is already wishlisted
-  const isWishlisted = wishlistItem !== undefined && (
-    firstVariant
-      ? String(wishlistItem.selectedVariantId) === String(firstVariant.id)
-      : true
-  );
+  // All wishlist entries for this product (array)
+  const wishlistArr = Array.isArray(wishlistItems) ? wishlistItems : [];
+
+  // Wishlist icon active only if first variant (by id) is already wishlisted
+  const isWishlisted = firstVariant
+    ? wishlistArr.some(w => Number(w.selectedVariantId) === Number(firstVariant.id))
+    : wishlistArr.length > 0;
+
+  // Cart: variant-aware in-cart check
+  const allCartItems = Array.isArray(cartItems) ? cartItems : (cartItem ? [cartItem] : []);
+  const isInCart = firstVariant
+    ? allCartItems.some(c => c.id === product.id && Number(c.selectedVariantId) === Number(firstVariant.id))
+    : allCartItems.some(c => c.id === product.id && c.quantity > 0);
 
   const handleWishlistClick = () => {
     addToWishlistService(product, firstVariant?.id ?? null);
@@ -37,15 +43,13 @@ const ProductGridListSingle = ({
     : product.image ? [product.image] : [];
   const mainImage  = images[0] ? getImgUrl(images[0]) : "/assets/img/products/products-1.jpeg";
   const hoverImage = images.length > 1 ? getImgUrl(images[1]) : null;
-  const hasVariants = (Array.isArray(product.Variants) && product.Variants.length > 0)
-                   || (Array.isArray(product.variants) && product.variants.length > 0);
+  const hasVariants = variants.length > 0;
 
   const rate = currency?.currencyRate || 1;
 
-  // ── Prices straight from backend ──────────────────────────────────────────
   const { displayPrice, strikePrice, discountPct } = getProductPrice(product);
-  const finalPrice      = +(displayPrice * rate).toFixed(2);
-  const finalStrike     = strikePrice ? +(strikePrice * rate).toFixed(2) : null;
+  const finalPrice  = +(displayPrice * rate).toFixed(2);
+  const finalStrike = strikePrice ? +(strikePrice * rate).toFixed(2) : null;
 
   return (
     <Fragment>
@@ -57,11 +61,7 @@ const ProductGridListSingle = ({
             <div className="col-xl-4 col-md-5 col-sm-6">
               <div className="list-image-container">
                 <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
-                  <img
-                    className="default-img img-fluid"
-                    src={mainImage}
-                    alt={product.name}
-                  />
+                  <img className="default-img img-fluid" src={mainImage} alt={product.name} />
                 </Link>
                 {discountPct > 0 && <span className="list-badge">-{discountPct}%</span>}
               </div>
@@ -98,18 +98,15 @@ const ProductGridListSingle = ({
                     >
                       View Product
                     </Link>
-                  ) : (() => {
-                    const inCart = cartItem !== undefined && cartItem.quantity > 0;
-                    return (
-                      <button
-                        className={clsx("list-cart-btn", inCart && "in-cart")}
-                        onClick={() => !inCart && addToCartService(product)}
-                        disabled={inCart}
-                      >
-                        {inCart ? "Added to Cart ✓" : "Add to Cart"}
-                      </button>
-                    );
-                  })()}
+                  ) : (
+                    <button
+                      className={clsx("list-cart-btn", isInCart && "in-cart")}
+                      onClick={() => !isInCart && addToCartService(product)}
+                      disabled={isInCart}
+                    >
+                      {isInCart ? "In Cart ✓" : "Add to Cart"}
+                    </button>
+                  )}
                   <button
                     className={clsx("list-icon-btn", isWishlisted && "active")}
                     onClick={handleWishlistClick}
@@ -153,18 +150,15 @@ const ProductGridListSingle = ({
                 >
                   View Product
                 </Link>
-              ) : product.stock && product.stock > 0 ? (() => {
-                const inCart = cartItem !== undefined && cartItem.quantity > 0;
-                return (
-                  <button
-                    onClick={() => !inCart && addToCartService(product)}
-                    disabled={inCart}
-                    className={inCart ? "in-cart" : ""}
-                  >
-                    {inCart ? "IN CART ✓" : "ADD TO CART"}
-                  </button>
-                );
-              })() : (
+              ) : product.stock && product.stock > 0 ? (
+                <button
+                  onClick={() => !isInCart && addToCartService(product)}
+                  disabled={isInCart}
+                  className={isInCart ? "in-cart" : ""}
+                >
+                  {isInCart ? "IN CART ✓" : "ADD TO CART"}
+                </button>
+              ) : (
                 <button disabled className="out-of-stock">OUT OF STOCK</button>
               )}
             </div>
@@ -205,7 +199,7 @@ const ProductGridListSingle = ({
         discountedPrice={finalStrike ? finalPrice : null}
         finalProductPrice={finalStrike || finalPrice}
         finalDiscountedPrice={finalStrike ? finalPrice : null}
-        wishlistItem={wishlistItem}
+        wishlistItem={wishlistArr[0]}
       />
     </Fragment>
   );
@@ -213,10 +207,11 @@ const ProductGridListSingle = ({
 
 ProductGridListSingle.propTypes = {
   cartItem: PropTypes.shape({}),
+  cartItems: PropTypes.array,
   currency: PropTypes.shape({}),
   product: PropTypes.shape({}),
   spaceBottomClass: PropTypes.string,
-  wishlistItem: PropTypes.shape({}),
+  wishlistItems: PropTypes.array,
   layout: PropTypes.string,
 };
 

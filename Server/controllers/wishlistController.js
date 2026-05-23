@@ -1,6 +1,6 @@
+const { Op } = require("sequelize");
 const { WishlistItem, Product, Variant } = require("../models");
 
-// ── shared include for GET responses ─────────────────────────────────────────
 const wishlistInclude = [
   {
     model: Product,
@@ -23,40 +23,48 @@ const getWishlist = async (req, res, next) => {
   }
 };
 
-// POST /api/wishlist/add
-// Body: { productId, variantId? }
+// POST /api/wishlist/add  — body: { productId, variantId? }
 const addToWishlist = async (req, res, next) => {
   try {
-    const { productId, variantId = null } = req.body;
+    let { productId, variantId = null } = req.body;
+
     if (!productId) return res.status(400).json({ message: "productId is required" });
 
-    // Validate product
+    // Always coerce to integer — JSON may deliver as string
+    variantId = variantId != null ? parseInt(variantId, 10) : null;
+    if (variantId != null && isNaN(variantId)) {
+      return res.status(400).json({ message: "variantId must be an integer" });
+    }
+
     const product = await Product.findOne({ where: { id: productId, isActive: true } });
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    // Validate variant belongs to product (if provided)
     if (variantId != null) {
       const variant = await Variant.findOne({ where: { id: variantId, productId } });
       if (!variant) return res.status(404).json({ message: "Variant not found for this product" });
     }
 
-    // Dedup: same user + product + variant
-    const where = { userId: req.user.id, productId, variantId };
-    const existing = await WishlistItem.findOne({ where });
+    // NULL-safe dedup: Op.is null handles MySQL's NULL != NULL behaviour
+    const dedupWhere = {
+      userId:    req.user.id,
+      productId,
+      variantId: variantId != null ? variantId : { [Op.is]: null },
+    };
+
+    const existing = await WishlistItem.findOne({ where: dedupWhere });
     if (existing) {
       return res.status(409).json({ message: "Already in wishlist" });
     }
 
-    const item = await WishlistItem.create({ userId: req.user.id, productId, variantId });
+    const item   = await WishlistItem.create({ userId: req.user.id, productId, variantId });
     const result = await WishlistItem.findByPk(item.id, { include: wishlistInclude });
-
     return res.status(201).json({ item: result });
   } catch (err) {
     next(err);
   }
 };
 
-// DELETE /api/wishlist/remove/:wishlistItemId   (wishlist row UUID)
+// DELETE /api/wishlist/remove/:wishlistItemId
 const removeFromWishlist = async (req, res, next) => {
   try {
     const deleted = await WishlistItem.destroy({

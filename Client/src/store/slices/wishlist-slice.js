@@ -1,12 +1,13 @@
 import cogoToast from 'cogo-toast';
 const { createSlice } = require('@reduxjs/toolkit');
 
-// Two wishlist entries are the SAME only when both productId AND variantId match.
-// variantId=null means "no variant" (product has no variants).
+// Same entry = same productId (item.id) AND same variantId.
+// Both sides normalized to Number to prevent string/integer type mismatch
+// (Sequelize INTEGER columns may serialize differently over HTTP vs Redux persist).
 const isSameEntry = (item, payload) => {
   if (item.id !== payload.id) return false;
-  const a = item.selectedVariantId ?? null;
-  const b = payload.selectedVariantId ?? null;
+  const a = item.selectedVariantId != null ? Number(item.selectedVariantId) : null;
+  const b = payload.selectedVariantId != null ? Number(payload.selectedVariantId) : null;
   return a === b;
 };
 
@@ -14,6 +15,8 @@ const wishlistSlice = createSlice({
   name: "wishlist",
   initialState: { wishlistItems: [] },
   reducers: {
+
+    // ── User-initiated add — runs dedup check, shows toasts ──────────────────
     addToWishlist(state, action) {
       const already = state.wishlistItems.some(item => isSameEntry(item, action.payload));
       if (already) {
@@ -23,6 +26,16 @@ const wishlistSlice = createSlice({
         cogoToast.success("Added to wishlist!", { position: "top-center" });
       }
     },
+
+    // ── Silent bulk replace — used by loadWishlistService, NO toasts ─────────
+    // Replaces entire wishlist state without any dedup checks or toasts.
+    // Required because wishlist is redux-persist'd: on page refresh the persisted
+    // items are already in state; calling addToWishlist one-by-one would trigger
+    // "Already in your wishlist" toasts for every item.
+    setWishlist(state, action) {
+      state.wishlistItems = Array.isArray(action.payload) ? action.payload : [];
+    },
+
     // action.payload = wishlistItemId (UUID of the WishlistItem row)
     deleteFromWishlist(state, action) {
       state.wishlistItems = state.wishlistItems.filter(
@@ -30,11 +43,18 @@ const wishlistSlice = createSlice({
       );
       cogoToast.error("Removed from wishlist", { position: "top-center" });
     },
+
     deleteAllFromWishlist(state) {
       state.wishlistItems = [];
     },
   },
 });
 
-export const { addToWishlist, deleteFromWishlist, deleteAllFromWishlist } = wishlistSlice.actions;
+export const {
+  addToWishlist,
+  setWishlist,
+  deleteFromWishlist,
+  deleteAllFromWishlist,
+} = wishlistSlice.actions;
+
 export default wishlistSlice.reducer;

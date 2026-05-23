@@ -381,8 +381,12 @@ const ProductDescriptionInfo = ({
   // For old variations: use helper
   const productCartQty = useMemo(() => {
     if (hasNewVar && selectedVariant) {
+      // Number() normalises both sides — cart item selectedVariantId may be
+      // string or integer depending on API serialization; Variant.id is INTEGER.
       const match = cartItems?.find(
-        item => item.id === product.id && item.selectedVariantId === selectedVariant.id
+        item =>
+          item.id === product.id &&
+          Number(item.selectedVariantId) === Number(selectedVariant.id)
       );
       return match ? match.quantity : 0;
     }
@@ -488,9 +492,9 @@ const ProductDescriptionInfo = ({
   // Find if this specific variant (or product if no variants) is already in wishlist
   const wishlistItems_ = Array.isArray(wishlistItems) ? wishlistItems : (wishlistItems ? [wishlistItems] : []);
   const wishlistItem = wishlistItems_.find(item => {
-    const a = item.selectedVariantId ?? null;
-    const b = selectedVariant?.id ?? null;
-    return String(a) === String(b);
+    const a = item.selectedVariantId != null ? Number(item.selectedVariantId) : null;
+    const b = selectedVariant?.id != null ? Number(selectedVariant.id) : null;
+    return a === b;
   });
   const isInWishlist = wishlistItem !== undefined;
 
