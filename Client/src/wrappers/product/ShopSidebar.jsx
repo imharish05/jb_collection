@@ -317,9 +317,16 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
               {combos.map((combo) => {
                 const isAll    = combo.value === null;
                 const isActive = isAll ? activeCombo === "all" : activeCombo === combo.id;
+                const comboProductIds = new Set(Array.isArray(combo.productIds) ? combo.productIds : []);
                 const count    = isAll
-                  ? products.filter(p => p.comboId != null).length
-                  : products.filter(p => p.comboId != null && String(p.comboId) === String(combo.id)).length;
+                  ? (() => {
+                      const allIds = new Set(combos.flatMap(c => Array.isArray(c.productIds) ? c.productIds : []));
+                      return products.filter(p => p.comboId != null || allIds.has(p.id)).length;
+                    })()
+                  : products.filter(p =>
+                      (comboProductIds.size > 0 ? comboProductIds.has(p.id) : false) ||
+                      (p.comboId && String(p.comboId) === String(combo.id))
+                    ).length;
                 if (!isAll && count === 0) return null;
                 return (
                   <li key={combo.id ?? "__all-combos"}>

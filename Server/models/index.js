@@ -53,6 +53,10 @@ Product.belongsTo(Category,  { foreignKey: "category_id" });   // no alias — u
 Product.belongsTo(SubCategory, { foreignKey: "sub_category_id", as: "SubCategory", constraints: false });
 SubCategory.hasMany(Product,   { foreignKey: "sub_category_id", as: "products",    constraints: false });
 
+// ── Product ↔ Combo ───────────────────────────────────────────────────────────
+Combo.hasMany(Product,   { foreignKey: "combo_id", as: "comboProducts", constraints: false });
+Product.belongsTo(Combo, { foreignKey: "combo_id", as: "Combo",         constraints: false });
+
 // ── Product ↔ Variant ─────────────────────────────────────────────────────────
 Product.hasMany(Variant,    { foreignKey: "product_id", as: "variants", onDelete: "CASCADE" });
 Variant.belongsTo(Product,  { foreignKey: "product_id", as: "product" });

@@ -7,6 +7,7 @@ import { getProductCartQuantity } from "../../helpers/product";
 import Rating from "./sub-components/ProductRating";
 import cogoToast from "cogo-toast";
 import { Icon } from "@iconify/react";
+import { getImgUrl } from "../../helpers/imageUrl";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -297,6 +298,190 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
   );
 }
 
+// ─── Combo Products Section ───────────────────────────────────────────────────
+function ComboProductsSection({ combo, allProducts }) {
+  if (!combo) return null;
+
+  // Resolve combo products from productIds list
+  const productIds = Array.isArray(combo.productIds) ? combo.productIds : [];
+  const comboProducts = productIds.length > 0
+    ? productIds.map(id => allProducts.find(p => String(p.id) === String(id))).filter(Boolean)
+    : allProducts.filter(p => p.comboId && String(p.comboId) === String(combo.id));
+
+  if (!comboProducts.length) return null;
+
+  const discounted = combo.discountedPrice && parseFloat(combo.discountedPrice) > 0;
+  const saving = discounted
+    ? Math.round(((parseFloat(combo.price) - parseFloat(combo.discountedPrice)) / parseFloat(combo.price)) * 100)
+    : null;
+
+  return (
+    <div style={{
+      margin: "20px 0",
+      border: "1.5px solid #F15A24",
+      borderRadius: 12,
+      overflow: "hidden",
+      background: "#fff",
+    }}>
+      {/* Header */}
+      <div style={{
+        background: "linear-gradient(135deg, #F15A24 0%, #e04d19 100%)",
+        padding: "12px 16px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 8,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 16 }}>🎁</span>
+          <span style={{ color: "#fff", fontWeight: 700, fontSize: 14, letterSpacing: "0.03em" }}>
+            {combo.name || combo.label} — Combo Pack
+          </span>
+          <span style={{
+            background: "rgba(255,255,255,0.25)", color: "#fff",
+            fontSize: 11, fontWeight: 600, borderRadius: 10, padding: "2px 8px",
+          }}>
+            {comboProducts.length} items
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {discounted ? (
+            <>
+              <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, textDecoration: "line-through" }}>
+                ₹{parseFloat(combo.price).toLocaleString("en-IN")}
+              </span>
+              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>
+                ₹{parseFloat(combo.discountedPrice).toLocaleString("en-IN")}
+              </span>
+              {saving > 0 && (
+                <span style={{
+                  background: "#22c55e", color: "#fff",
+                  fontSize: 11, fontWeight: 700, borderRadius: 10, padding: "2px 8px",
+                }}>
+                  {saving}% OFF
+                </span>
+              )}
+            </>
+          ) : (
+            <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>
+              ₹{parseFloat(combo.price).toLocaleString("en-IN")}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Description */}
+      {combo.description && (
+        <div style={{
+          padding: "8px 16px",
+          background: "#FEF0EB",
+          fontSize: 12,
+          color: "#7C3D1A",
+          borderBottom: "1px solid #fdd5c0",
+        }}>
+          {combo.description}
+        </div>
+      )}
+
+      {/* Products grid */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+        gap: 1,
+        background: "#f3f4f6",
+      }}>
+        {comboProducts.map((p, idx) => {
+          const img = Array.isArray(p.image) ? p.image[0] : p.image;
+          const variants = Array.isArray(p.Variants) ? p.Variants : [];
+          const price = variants.length > 0
+            ? parseFloat(variants[0].salesPrice || 0)
+            : parseFloat(p.price || 0);
+
+          return (
+            <Link
+              key={p.id}
+              to={`${process.env.PUBLIC_URL}/product/${p.id}`}
+              style={{ textDecoration: "none" }}
+            >
+              <div style={{
+                background: "#fff",
+                padding: 10,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 6,
+                transition: "background 0.15s",
+                cursor: "pointer",
+                minHeight: 140,
+              }}
+                onMouseEnter={e => e.currentTarget.style.background = "#FEF0EB"}
+                onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+              >
+                {/* Item number badge */}
+                <div style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{
+                    width: 18, height: 18, borderRadius: "50%",
+                    background: "#F15A24", color: "#fff",
+                    fontSize: 10, fontWeight: 700,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                  }}>
+                    {idx + 1}
+                  </span>
+                </div>
+
+                {/* Image */}
+                <div style={{
+                  width: 72, height: 72,
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  background: "#f9fafb",
+                  border: "1px solid #e5e7eb",
+                  flexShrink: 0,
+                }}>
+                  {img ? (
+                    <img
+                      src={getImgUrl(img)}
+                      alt={p.name}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      onError={e => { e.target.style.display = "none"; }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: "100%", height: "100%",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 22, color: "#d1d5db",
+                    }}>🎁</div>
+                  )}
+                </div>
+
+                {/* Name */}
+                <div style={{
+                  fontSize: 11, fontWeight: 600, color: "#374151",
+                  textAlign: "center", lineHeight: 1.3,
+                  display: "-webkit-box", WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical", overflow: "hidden",
+                  width: "100%",
+                }}>
+                  {p.name}
+                </div>
+
+                {/* Price */}
+                {price > 0 && (
+                  <div style={{ fontSize: 11, color: "#F15A24", fontWeight: 700 }}>
+                    ₹{price.toLocaleString("en-IN")}
+                  </div>
+                )}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 const ProductDescriptionInfo = ({
   product,
@@ -311,6 +496,7 @@ const ProductDescriptionInfo = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
+  const allProducts = useSelector((state) => state.product.products || []);
   // Use direct selector so button always reflects current cart state
   const cartItemsFromStore = useSelector((state) => state.cart.cartItems);
   const cartItems = cartItemsFromStore || cartItemsProp || [];
@@ -333,7 +519,15 @@ const ProductDescriptionInfo = ({
   // selections: { Colour: "Red", Size: "M", ... }
   const [selections, setSelections] = useState(() => {
     if (!hasNewVar || !product.Variants.length) return {};
-    // Default to first variant's attributes
+    // Build the full option map first
+    const oMap = buildOptionMap(product.Variants);
+    const keys = Object.keys(oMap);
+    // If every key has exactly 1 option → auto-select all (single combo variant)
+    const allSingle = keys.length > 0 && keys.every(k => oMap[k].size === 1);
+    if (allSingle) {
+      return Object.fromEntries(keys.map(k => [k, [...oMap[k]][0]]));
+    }
+    // Otherwise default to first variant's attributes
     const first = product.Variants[0];
     return Object.fromEntries(
       safeAttrs(first.attributes)
@@ -533,6 +727,11 @@ const ProductDescriptionInfo = ({
       <div className="pro-details-list">
         <p>{product.shortDescription}</p>
       </div>
+
+      {/* ══════════════ COMBO PRODUCTS ══════════════ */}
+      {product.Combo && (
+        <ComboProductsSection combo={product.Combo} allProducts={allProducts} />
+      )}
 
       {/* ══════════════ BACKEND VARIANT SELECTOR ══════════════ */}
       {hasNewVar && (

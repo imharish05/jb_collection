@@ -35,14 +35,25 @@ const getNav = async (req, res) => {
       }),
       Combo.findAll({
         where: { isActive: true },
-        attributes: ["id", "label", "value"],
+        attributes: ["id", "name", "label", "value", "productIds", "price", "discountedPrice", "image"],
         order: [["sortOrder", "ASC"]],
       }),
     ]);
 
     return res.status(200).json({
       success: true,
-      data: { categories, events, combos },
+      data: {
+        categories,
+        events,
+        combos: combos.map(c => {
+          const row = c.toJSON();
+          if (typeof row.productIds === 'string') {
+            try { row.productIds = JSON.parse(row.productIds); } catch { row.productIds = []; }
+          }
+          if (!Array.isArray(row.productIds)) row.productIds = [];
+          return row;
+        }),
+      },
     });
   } catch (error) {
     console.error("getNav error:", error);

@@ -1,4 +1,4 @@
-const { Product, Variant, Category, Brand, SubCategory } = require("../models");
+const { Product, Variant, Category, Brand, SubCategory, Combo } = require("../models");
 const { Op }    = require("sequelize");
 const sequelize = require("../config/database");
 
@@ -20,6 +20,12 @@ const PRODUCT_INCLUDE = [
     model: SubCategory,
     as: "SubCategory",
     attributes: ["id", "label", "value"],
+    required: false,
+  },
+  {
+    model: Combo,
+    as: "Combo",
+    attributes: ["id", "name", "label", "value", "productIds", "price", "discountedPrice", "image", "description"],
     required: false,
   },
 ];
@@ -50,6 +56,13 @@ const shape = (p) => {
   row.tag       = safeParse(row.tag,       []);
   row.variation = safeParse(row.variation, []);
   row.category  = safeParse(row.category,  []);
+  // Parse Combo.productIds if it came back as a JSON string
+  if (row.Combo && typeof row.Combo.productIds === 'string') {
+    try { row.Combo.productIds = JSON.parse(row.Combo.productIds); } catch { row.Combo.productIds = []; }
+  }
+  if (row.Combo && !Array.isArray(row.Combo.productIds)) {
+    row.Combo.productIds = [];
+  }
   return row;
 };
 

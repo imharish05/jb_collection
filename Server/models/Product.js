@@ -102,9 +102,9 @@ const Product = sequelize.define(
       allowNull: true,
       field: "brand_id",
     },
-    // FK → combos.id  (fixed: was wrong type + wrong JS key name)
+    // FK → combos.id  (UUID, matches combos table primary key)
     comboId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
       field: "combo_id",
     },

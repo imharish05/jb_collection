@@ -89,18 +89,20 @@ const ShopGridStandard = () => {
     if (sortType === 'combo' && sortValue) {
       const combo = navCombos.find(c => c.value === sortValue || String(c.id) === String(sortValue));
       if (sortValue === 'all') {
-        source = products.filter(product => product.comboId || (Array.isArray(product.combo) && product.combo.length > 0));
+        // all products that belong to ANY combo (by comboId OR appear in any combo's productIds)
+        const allComboProductIds = new Set(navCombos.flatMap(c => Array.isArray(c.productIds) ? c.productIds : []));
+        source = products.filter(p => p.comboId != null || allComboProductIds.has(p.id));
         comboHandled = true;
       } else if (combo) {
-        if (Array.isArray(combo.productIds) && combo.productIds.length) {
-          source = products.filter(
-            p => combo.productIds.includes(p.id) || (p.comboId && String(p.comboId) === String(combo.id))
-          );
-          comboHandled = true;
+        // primary: match by productIds list in the combo
+        const ids = new Set(Array.isArray(combo.productIds) ? combo.productIds : []);
+        if (ids.size > 0) {
+          source = products.filter(p => ids.has(p.id) || (p.comboId && String(p.comboId) === String(combo.id)));
         } else {
-          source = getSortedProducts(products, 'combo', sortValue);
-          comboHandled = true;
+          // fallback: match by comboId FK on product
+          source = products.filter(p => p.comboId && String(p.comboId) === String(combo.id));
         }
+        comboHandled = true;
       }
     }
 
