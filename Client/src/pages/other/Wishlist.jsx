@@ -222,13 +222,15 @@ const Wishlist = () => {
                                   SELECT OPTIONS
                                 </Link>
                               ) : stock > 0 ? (
-                                <button
-                                  onClick={() => !inCart && addToCartService(cartPayload)}
-                                  disabled={inCart}
-                                  className={inCart ? "in-cart" : ""}
-                                >
-                                  {inCart ? "IN CART ✓" : "ADD TO CART"}
-                                </button>
+                                inCart ? (
+                                  <Link to="/cart" className="cart-action-btn in-cart">
+                                    GO TO CART →
+                                  </Link>
+                                ) : (
+                                  <button onClick={() => addToCartService(cartPayload)}>
+                                    ADD TO CART
+                                  </button>
+                                )
                               ) : (
                                 <button disabled className="out-of-stock">OUT OF STOCK</button>
                               )}

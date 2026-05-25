@@ -640,13 +640,20 @@ const ProductDescriptionInfo = ({
           <div className="pro-details-cart btn-hover">
             {effectiveStock > 0 ? (() => {
               const inCart = isAuthenticated && productCartQty > 0;
-              return (
+              return inCart ? (
+                <Link
+                  to="/cart"
+                  className="pro-details-cart-btn"
+                  style={{ background: "#22c55e", color: "#fff", display: "inline-block", padding: "0 30px", lineHeight: "44px", fontWeight: 600, borderRadius: "4px", textDecoration: "none" }}
+                >
+                  Go to cart →
+                </Link>
+              ) : (
                 <button
                   onClick={handleAddToCart}
-                  disabled={inCart || (isAuthenticated && productCartQty >= effectiveStock)}
-                  style={inCart ? { background: "#22c55e", cursor: "not-allowed" } : {}}
+                  disabled={isAuthenticated && productCartQty >= effectiveStock}
                 >
-                  {inCart ? "In Cart ✓" : "Add To Cart"}
+                  Add To Cart
                 </button>
               );
             })() : (

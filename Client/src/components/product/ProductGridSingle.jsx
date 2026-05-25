@@ -157,13 +157,13 @@ const ProductGridSingle = ({
                 </button>
               ) : (() => {
                 const inCart = cartItem !== undefined && cartItem.quantity > 0;
-                return (
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={inCart}
-                    className={inCart ? "in-cart" : ""}
-                  >
-                    {inCart ? "IN CART ✓" : "ADD TO CART"}
+                return inCart ? (
+                  <Link to="/cart" className="in-cart" style={{ display: "block", textAlign: "center" }}>
+                    GO TO CART →
+                  </Link>
+                ) : (
+                  <button onClick={handleAddToCart}>
+                    ADD TO CART
                   </button>
                 );
               })()

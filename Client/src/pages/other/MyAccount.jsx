@@ -18,14 +18,34 @@ import {
 import { fetchOrders } from "../../store/services/orderService";
 import { getImgUrl } from "../../helpers/imageUrl";
 
+const FALLBACK_IMG = "/assets/img/logo.png";
+
 const parseJson = (val) => {
   if (!val || typeof val !== "string") return val;
   try { return JSON.parse(val); } catch { return val; }
 };
+
+// Unwraps any level of JSON encoding until we get a real value
+const deepParse = (val) => {
+  let result = val;
+  for (let i = 0; i < 5; i++) {
+    if (typeof result !== "string") break;
+    const next = parseJson(result);
+    if (next === result) break; // no change, stop
+    result = next;
+  }
+  return result;
+};
+
 const getOrderItemImage = (img) => {
-  const arr = Array.isArray(img) ? img : parseJson(img);
-  const raw = Array.isArray(arr) ? arr[0] : (typeof img === "string" ? img : null);
-  return raw ? getImgUrl(raw) : "https://via.placeholder.com/80";
+  if (!img) return FALLBACK_IMG;
+  const unwrapped = deepParse(img);
+  // Could be array after unwrapping
+  const raw = Array.isArray(unwrapped) ? unwrapped[0] : (typeof unwrapped === "string" ? unwrapped : null);
+  if (!raw) return FALLBACK_IMG;
+  // Already absolute URL — return as-is, no getImgUrl processing
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  return getImgUrl(raw);
 };
 
 const ADDRESS_TYPES = ["Home", "Work", "Other"];
@@ -454,7 +474,7 @@ const toggleVisibility = (field) => {
                               {Array.isArray(order.items) && order.items.map((item, i) => (
                                 <div className="product-row" key={i}>
                                   <div className="product-img">
-                                    <img src={getOrderItemImage(item.image)} alt={item.productName || "Product"} onError={(e) => { e.target.src = "https://via.placeholder.com/80"; }} />
+                                    <img src={getOrderItemImage(item.image)} alt={item.productName || "Product"} onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_IMG; }} />
                                   </div>
                                   <div className="product-details">
                                     <h6>{item.productName || "Product"}</h6>
