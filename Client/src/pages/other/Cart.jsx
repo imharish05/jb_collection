@@ -505,7 +505,7 @@ const Cart = () => {
                         </div>
                       )}
 
-                      {!couponsLoading && availableCoupons.length > 0 && (
+                      {/* {!couponsLoading && availableCoupons.length > 0 && (
                         <>
                           <p
                             style={{
@@ -564,7 +564,7 @@ const Cart = () => {
                             })}
                           </div>
                         </>
-                      )}
+                      )} */}
 
                       {/* Manual input */}
                       <p className="kg-coupon-manual-label">
@@ -612,7 +612,7 @@ const Cart = () => {
               <div className="kg-cart-right">
 
                 {/* Saved Shipping Address */}
-                <div
+                {/* <div
                   className="kg-address-card"
                   style={{
                     marginBottom: 24,
@@ -703,7 +703,7 @@ const Cart = () => {
                       })}
                     </div>
                   )}
-                </div>
+                </div> */}
 
                 {/* Order Summary */}
                 <div className="kg-summary-card">

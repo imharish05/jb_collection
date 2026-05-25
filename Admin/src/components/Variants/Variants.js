@@ -1,10 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import DataTable from '../DataTable/DataTable';
 import { fetchVariants, createVariant, editVariant, removeVariant } from '../../redux/services/variantsService';
 import { fetchProducts } from '../../redux/services/productsService';
 import { AttributeRow } from '../Products/VariantBuilder';
+
+const IMG_URL = process.env.REACT_APP_IMG_URL;
+const getImg = (value) => {
+  if (!value) return null;
+  if (value.startsWith('http')) return value;
+  const base = IMG_URL ? IMG_URL.replace(/\/$/, '') : '';
+  return `${base}/${value.replace(/^\//, '')}`;
+};
 
 const KM = { orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B', green: '#39B54A', teal: '#00B4D8', border: '#E5E7EB', text: '#1A1A2E', muted: '#6B7280', bg: '#F9FAFB' };
 
@@ -26,6 +34,7 @@ function safeParseAttrs(raw) {
 const EMPTY_FORM = {
   productId: '', variantName: '', mrp: '', salesPrice: '',
   stock: '', status: 'Active', attributes: [blankAttr()],
+  imageFile: null, imagePreview: null,
 };
 
 const formCard   = { background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 20 };
@@ -65,6 +74,8 @@ export default function Variants({ showToast }) {
     dispatch(fetchProducts());
   }, []);
 
+  const imageInputRef = useRef();
+
   const openAdd = () => {
     setEditingId(null);
     setFormData(EMPTY_FORM);
@@ -83,10 +94,18 @@ export default function Variants({ showToast }) {
       stock:       v.stock       || '',
       status:      v.status      || 'Active',
       attributes:  safeParseAttrs(v.attributes),
+      imageFile:   null,
+      imagePreview: v.image ? getImg(v.image) : null,
     });
     setErrors({});
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFormData(prev => ({ ...prev, imageFile: file, imagePreview: URL.createObjectURL(file) }));
   };
 
   const set = (field) => (e) => setFormData(prev => ({ ...prev, [field]: e.target.value }));
@@ -152,13 +171,26 @@ export default function Variants({ showToast }) {
       attributes:  cleanAttrs,
     };
 
+    const hasFile = Boolean(formData.imageFile);
+    const data = hasFile ? new FormData() : payload;
+    if (hasFile) {
+      data.append('productId', formData.productId);
+      data.append('variantName', finalName);
+      data.append('mrp', formData.mrp);
+      data.append('salesPrice', formData.salesPrice);
+      data.append('stock', formData.stock);
+      data.append('status', formData.status);
+      data.append('attributes', JSON.stringify(cleanAttrs));
+      data.append('image', formData.imageFile);
+    }
+
     const id = showToast.loading(editingId ? 'Updating variant…' : 'Adding variant…');
     try {
       if (editingId) {
-        await dispatch(editVariant({ id: editingId, data: payload }));
+        await dispatch(editVariant({ id: editingId, data: data }));
         showToast.success('Variant updated!', id);
       } else {
-        await dispatch(createVariant(payload));
+        await dispatch(createVariant(data));
         showToast.success('Variant added!', id);
       }
       setShowForm(false);
@@ -320,6 +352,60 @@ export default function Variants({ showToast }) {
                       isOnly={formData.attributes.length === 1}
                     />
                   ))}
+                </div>
+
+                <div style={{ marginTop: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div
+                    onClick={() => imageInputRef.current.click()}
+                    style={{
+                      width: 100,
+                      height: 100,
+                      border: `2px dashed ${KM.teal}`,
+                      borderRadius: 12,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: '#F0FAFE',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={handleImageChange}
+                    />
+                    <span style={{ fontSize: 22 }}>➕</span>
+                    <span style={{ fontSize: 11, color: KM.teal, fontWeight: 600, marginTop: 4 }}>Upload</span>
+                  </div>
+
+                  {formData.imagePreview && (
+                    <div style={{ position: 'relative', width: 100, height: 100, borderRadius: 12, overflow: 'hidden', border: `1px solid ${KM.border}` }}>
+                      <img src={formData.imagePreview} alt="Variant" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, imageFile: null, imagePreview: null }))}
+                        style={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 6,
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          border: 'none',
+                          background: '#ef4444',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >✕</button>
+                    </div>
+                  )}
                 </div>
 
                 {autoName !== 'Default' && (

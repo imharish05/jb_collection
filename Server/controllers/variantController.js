@@ -1,8 +1,31 @@
+const fs = require("fs");
+const path = require("path");
 const Variant = require("../models/Variant");
 const Product = require("../models/Product");
 
 const generateSku = () =>
   `KMV-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+
+const buildImagePath = (file) => {
+  if (!file) return null;
+  return file.path.replace(/\\/g, "/").replace(/^.*uploads\//, "uploads/");
+};
+
+const deleteOldImage = (imagePath) => {
+  if (!imagePath) return;
+  const absPath = path.join(__dirname, "..", imagePath);
+  fs.unlink(absPath, (err) => {
+    if (err) console.warn("Could not delete old variant image:", err.message);
+  });
+};
+
+const parseAttributes = (attributes) => {
+  if (Array.isArray(attributes)) return attributes;
+  if (typeof attributes === 'string') {
+    try { return JSON.parse(attributes); } catch { return []; }
+  }
+  return attributes || [];
+};
 
 // Helper to sync variant details (variation JSON blob, price, stock) with the Product model
 const syncProductVariants = async (productId) => {
@@ -64,6 +87,8 @@ const getByProduct = async (req, res) => {
 const add = async (req, res) => {
   try {
     const { productId, variantName, mrp, salesPrice, stock, attributes, status } = req.body;
+    const parsedAttributes = parseAttributes(attributes);
+    const image = buildImagePath(req.file);
 
     if (!productId)   return res.status(400).json({ message: "productId is required" });
     if (!variantName) return res.status(400).json({ message: "variantName is required" });
@@ -81,8 +106,9 @@ const add = async (req, res) => {
       salesPrice,
       stock:      stock      ?? 0,
       sku:        generateSku(),
-      attributes: attributes || [],
+      attributes: parsedAttributes,
       status:     status     || "Active",
+      image,
     });
 
     await syncProductVariants(productId);
@@ -101,6 +127,8 @@ const update = async (req, res) => {
     if (!variant) return res.status(404).json({ message: "Not found" });
 
     const { productId, variantName, mrp, salesPrice, stock, attributes, status } = req.body;
+    const oldProductId = variant.productId;
+    const parsedAttributes = attributes !== undefined ? parseAttributes(attributes) : undefined;
 
     if (mrp !== undefined && Number(mrp) <= 0) return res.status(400).json({ message: "MRP must be greater than 0" });
     if (salesPrice !== undefined && Number(salesPrice) <= 0) return res.status(400).json({ message: "Sales price must be greater than 0" });
@@ -109,17 +137,25 @@ const update = async (req, res) => {
     }
     if (stock !== undefined && Number(stock) < 0) return res.status(400).json({ message: "Stock cannot be negative" });
 
-    await variant.update({
+    const updates = {
       ...(productId   !== undefined && { productId }),
       ...(variantName !== undefined && { variantName }),
       ...(mrp         !== undefined && { mrp }),
       ...(salesPrice  !== undefined && { salesPrice }),
       ...(stock       !== undefined && { stock }),
-      ...(attributes  !== undefined && { attributes }),
+      ...(parsedAttributes !== undefined && { attributes: parsedAttributes }),
       ...(status      !== undefined && { status }),
-    });
+    };
 
-    await syncProductVariants(variant.productId);
+    if (req.file) {
+      deleteOldImage(variant.image);
+      updates.image = buildImagePath(req.file);
+    }
+
+    await variant.update(updates);
+
+    await syncProductVariants(oldProductId);
+    if (variant.productId !== oldProductId) await syncProductVariants(variant.productId);
 
     const fresh = await Variant.findByPk(variant.id, {
       include: [{ model: Product, as: "product", attributes: ["id", "name"] }],
