@@ -1,5 +1,5 @@
 import { Fragment, useState, useCallback, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SEO from "../../components/seo";
 import { getDiscountPrice } from "../../helpers/product";
@@ -13,6 +13,8 @@ import {
   decreaseQuantityService,
   deleteAllFromCartService,
 } from "../../store/services";
+import { fetchAddresses } from "../../store/services/addressService";
+import { setActiveAddress } from "../../store/slices/addressSlice";
 import api from "../../api/axios";
 import "./Cart.css";
 
@@ -70,12 +72,15 @@ const parseFallbackAttrs = (variantName) => {
    Cart Component
 ════════════════════════════════════════════════════════════════════════════ */
 const Cart = () => {
+  const dispatch = useDispatch();
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const authUser = useSelector((state) => state.auth?.user);
   const currency = useSelector(
     (state) => state.currency || { currencyName: "INR", currencyRate: 1, currencySymbol: "₹" }
   );
   const { cartItems } = useSelector((state) => state.cart);
+  const { addresses, activeAddressId, loading: addrLoading } = useSelector((state) => state.address);
 
   /* ── Coupon state ──────────────────────────────────────────────────────── */
   const [couponInput, setCouponInput] = useState("");
@@ -102,6 +107,12 @@ const Cart = () => {
         });
     }
   }, [couponOpen, couponsLoaded]);
+
+  useEffect(() => {
+    if (authUser?.id) dispatch(fetchAddresses());
+  }, [authUser?.id, dispatch]);
+
+  const handleSelectAddress = (id) => dispatch(setActiveAddress(id));
 
   /* ── Price Calculations ────────────────────────────────────────────────── */
   let subtotal = 0;
@@ -599,6 +610,100 @@ const Cart = () => {
 
               {/* ══ RIGHT COLUMN ════════════════════════════════════ */}
               <div className="kg-cart-right">
+
+                {/* Saved Shipping Address */}
+                <div
+                  className="kg-address-card"
+                  style={{
+                    marginBottom: 24,
+                    padding: 20,
+                    borderRadius: 14,
+                    border: "1px solid #e8e8e8",
+                    background: "#fff",
+                  }}
+                >
+                  <h3 className="kg-summary-title" style={{ marginBottom: 14 }}>
+                    Shipping Address
+                  </h3>
+                  {addrLoading ? (
+                    <p style={{ color: "#666", fontSize: 13 }}>Loading saved addresses...</p>
+                  ) : addresses.length === 0 ? (
+                    <div style={{ color: "#555", fontSize: 13, lineHeight: 1.6 }}>
+                      <p>No saved shipping address was found.</p>
+                      <Link
+                        to={process.env.PUBLIC_URL + "/my-account?tab=address"}
+                        className="kg-continue-link"
+                        style={{ marginTop: 10, display: "inline-block" }}
+                      >
+                        Manage Addresses
+                      </Link>
+                    </div>
+                  ) : (
+                    <div style={{ display: "grid", gap: 12 }}>
+                      {addresses.map((addr) => {
+                        const isActive = addr.id === activeAddressId;
+                        return (
+                          <button
+                            key={addr.id}
+                            type="button"
+                            onClick={() => handleSelectAddress(addr.id)}
+                            style={{
+                              width: "100%",
+                              textAlign: "left",
+                              borderRadius: 12,
+                              border: `1px solid ${isActive ? "#db1a5d" : "#e0e0e0"}`,
+                              background: isActive ? "#fff0f8" : "#fff",
+                              padding: 18,
+                              cursor: "pointer",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 6,
+                            }}
+                          >
+                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                              <span style={{ fontWeight: 700, color: "#222" }}>{addr.fullName}</span>
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  color: "#555",
+                                  background: "#f5f5f5",
+                                  padding: "4px 10px",
+                                  borderRadius: 20,
+                                }}
+                              >
+                                {addr.addressType || "Home"}
+                              </span>
+                              {addr.isDefault && (
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    color: "#2e7d32",
+                                    background: "#ecfdf5",
+                                    padding: "4px 10px",
+                                    borderRadius: 20,
+                                  }}
+                                >
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>
+                              {addr.street}{addr.apartment ? `, ${addr.apartment}` : ""}
+                              <br />
+                              {addr.city}, {addr.state} - {addr.pincode}
+                              <br />
+                              {addr.country}
+                            </div>
+                            <div style={{ fontSize: 13, color: "#555" }}>
+                              <i className="fa fa-phone" style={{ marginRight: 6 }}></i>
+                              {addr.phone}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
 
                 {/* Order Summary */}
                 <div className="kg-summary-card">

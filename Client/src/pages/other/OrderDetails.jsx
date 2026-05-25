@@ -123,7 +123,7 @@ const OrderDetails = () => {
 
   const orderStatus = statusMap[order.status?.toLowerCase()] || order.status || "Pending";
   const currentIdx = Math.max(stages.findIndex((s) => s.label === orderStatus), -1);
-  // shippingAddress may be stored as a JSON string in DB
+  // shippingAddress is now loaded as a related Address instance; fallback for legacy stored JSON.
   let shippingAddr = order.shippingAddress || {};
   if (typeof shippingAddr === "string") {
     try { shippingAddr = JSON.parse(shippingAddr); } catch { shippingAddr = {}; }

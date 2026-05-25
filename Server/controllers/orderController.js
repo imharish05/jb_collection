@@ -1,5 +1,5 @@
 // controllers/orderController.js
-const { Order, CartItem, User, Product, Variant, OrderItem } = require("../models");
+const { Order, CartItem, User, Product, Variant, OrderItem, Address } = require("../models");
 const sequelize = require("../config/database");
 const { sendOrderConfirmationEmail } = require("../utils/mailer");
 
@@ -23,7 +23,11 @@ const getMyOrders = async (req, res, next) => {
   try {
     const orders = await Order.findAll({
       where: { userId: req.user.id },
-      include: [{ model: OrderItem, as: "items" }],
+      include: [
+        { model: OrderItem, as: "items" },
+        { model: Address, as: "shippingAddress" },
+        { model: Address, as: "billingAddress" },
+      ],
       order: [["createdAt", "DESC"]],
     });
     return res.json(orders);
@@ -37,7 +41,11 @@ const getOrderById = async (req, res, next) => {
   try {
     const order = await Order.findOne({
       where: { id: req.params.id, userId: req.user.id },
-      include: [{ model: OrderItem, as: "items" }],
+      include: [
+        { model: OrderItem, as: "items" },
+        { model: Address, as: "shippingAddress" },
+        { model: Address, as: "billingAddress" },
+      ],
     });
     if (!order) return res.status(404).json({ message: "Order not found" });
     return res.json(order);
@@ -50,12 +58,47 @@ const getOrderById = async (req, res, next) => {
 const createOrder = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
-    const { items, totalAmount, shippingAddress, billingAddress, paymentMethod, couponCode, notes } = req.body;
+    const {
+      items,
+      totalAmount,
+      shippingAddressId,
+      billingAddressId,
+      paymentMethod,
+      couponCode,
+      notes,
+    } = req.body;
 
-    if (!items || !items.length || !totalAmount || !shippingAddress) {
+    const shippingId = shippingAddressId || req.body.shippingAddress?.id;
+    const billingId = billingAddressId || req.body.billingAddress?.id || null;
+
+    if (!items || !items.length || !totalAmount || !shippingId) {
       return res.status(400).json({
-        message: "items, totalAmount and shippingAddress are required",
+        message: "items, totalAmount and shippingAddressId are required",
       });
+    }
+
+    const shippingAddress = await Address.findOne({
+      where: { id: shippingId, userId: req.user.id },
+      transaction,
+    });
+    if (!shippingAddress) {
+      await transaction.rollback();
+      return res.status(404).json({ message: "Shipping address not found" });
+    }
+
+    let billingAddress = null;
+    let billingAddressRef = billingId;
+    if (billingAddressRef) {
+      billingAddress = await Address.findOne({
+        where: { id: billingAddressRef, userId: req.user.id },
+        transaction,
+      });
+      if (!billingAddress) {
+        await transaction.rollback();
+        return res.status(404).json({ message: "Billing address not found" });
+      }
+    } else {
+      billingAddressRef = shippingAddress.id;
     }
 
     // Server-side validation: compute total from items and verify against client-submitted amount
@@ -129,8 +172,8 @@ const createOrder = async (req, res, next) => {
     const order = await Order.create({
       userId: req.user.id,
       totalAmount: parseFloat(totalAmount),
-      shippingAddress,
-      billingAddress: billingAddress || null,
+      shippingAddressId: shippingAddress.id,
+      billingAddressId: billingAddressRef,
       paymentMethod: paymentMethod || "cod",
       paymentStatus: "pending",
       couponCode,
@@ -164,7 +207,11 @@ const createOrder = async (req, res, next) => {
 
     // Fetch the order with items to return
     const createdOrder = await Order.findByPk(order.id, {
-      include: [{ model: OrderItem, as: "items" }],
+      include: [
+        { model: OrderItem, as: "items" },
+        { model: Address, as: "shippingAddress" },
+        { model: Address, as: "billingAddress" },
+      ],
     });
 
     // Send order confirmation email (non-blocking — don't fail order if email fails)
@@ -191,7 +238,9 @@ const getAllOrders = async (req, res, next) => {
       order: [["createdAt", "DESC"]],
       include: [
         { model: User, attributes: ["id", "name", "email", "phone"] },
-        { model: OrderItem, as: "items" }
+        { model: OrderItem, as: "items" },
+        { model: Address, as: "shippingAddress" },
+        { model: Address, as: "billingAddress" },
       ],
     });
     return res.json({ orders });
@@ -217,7 +266,11 @@ const getOrdersByStatus = async (req, res, next) => {
     const orders = await Order.findAll({
       where: { status: dbStatus },
       order: [["createdAt", "DESC"]],
-      include: [{ model: OrderItem, as: "items" }],
+      include: [
+        { model: OrderItem, as: "items" },
+        { model: Address, as: "shippingAddress" },
+        { model: Address, as: "billingAddress" },
+      ],
     });
 
     return res.json(orders); // array — frontend reads .length
@@ -239,7 +292,11 @@ const updateOrderStatus = async (req, res, next) => {
 
     // Fetch the order with items to return
     const updatedOrder = await Order.findByPk(order.id, {
-      include: [{ model: OrderItem, as: "items" }],
+      include: [
+        { model: OrderItem, as: "items" },
+        { model: Address, as: "shippingAddress" },
+        { model: Address, as: "billingAddress" },
+      ],
     });
 
     return res.json(updatedOrder);

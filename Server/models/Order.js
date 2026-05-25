@@ -30,16 +30,19 @@ const Order = sequelize.define(
       ),
       defaultValue: "pending",
     },
-    shippingAddress: {
-      type: DataTypes.JSON,
-      field: "shipping_address",
-      // {name, phone, addressLine1, addressLine2, city, state, pincode}
+    shippingAddressId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: "shipping_address_id",
+      references: { model: "addresses", key: "id" },
+      onDelete: "RESTRICT",
     },
-    billingAddress: {
-      type: DataTypes.JSON,
+    billingAddressId: {
+      type: DataTypes.UUID,
       allowNull: true,
-      field: "billing_address",
-      // {name, phone, addressLine1, addressLine2, city, state, pincode}
+      field: "billing_address_id",
+      references: { model: "addresses", key: "id" },
+      onDelete: "SET NULL",
     },
     paymentMethod: {
       type: DataTypes.STRING,

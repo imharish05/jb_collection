@@ -37,7 +37,7 @@ const sendOrderConfirmationEmail = async (order, user) => {
     })
     .join("");
 
-  // shippingAddress may be stored as a JSON string in DB — parse it
+  // shippingAddress may be an Address instance or legacy JSON blob
   let addr = order.shippingAddress || {};
   if (typeof addr === "string") {
     try { addr = JSON.parse(addr); } catch { addr = {}; }

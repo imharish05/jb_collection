@@ -52,7 +52,8 @@ const ADDRESS_TYPES = ["Home", "Work", "Other"];
 
 const EMPTY_FORM = {
   addressType: "Home",
-  fullName: "",
+  firstName: "",
+  lastName: "",
   phone: "",
   pincode: "",
   street: "",
@@ -208,10 +209,15 @@ const MyAccount = () => {
   };
 
   const openEditForm = (addr) => {
+    const nameParts = (addr.fullName || "").trim().split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
     setEditingId(addr.id);
     setForm({
       addressType: addr.addressType || "Home",
-      fullName: addr.fullName || "",
+      firstName,
+      lastName,
       phone: addr.phone || "",
       pincode: addr.pincode || "",
       street: addr.street || "",
@@ -234,7 +240,8 @@ const MyAccount = () => {
   // ── Address Validation ─────────────────────────────────────────────────────
   const validateAddressForm = () => {
     const newErrors = {};
-    if (!form.fullName?.trim()) newErrors.fullName = "Full name is required";
+    if (!form.firstName?.trim()) newErrors.firstName = "First name is required";
+    if (!form.lastName?.trim()) newErrors.lastName = "Last name is required";
     if (!form.phone?.trim()) {
       newErrors.phone = "Phone number is required";
     } else if (form.phone.length < 10) {
@@ -255,9 +262,14 @@ const MyAccount = () => {
   const handleFormSubmit = async () => {
     if (!validateAddressForm()) return;
 
+    const payload = {
+      ...form,
+      fullName: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
+    };
+
     const ok = editingId
-      ? await dispatch(updateAddressService(editingId, form))
-      : await dispatch(addAddressService(form));
+      ? await dispatch(updateAddressService(editingId, payload))
+      : await dispatch(addAddressService(payload));
 
     if (ok) {
       setShowForm(false);
@@ -623,15 +635,26 @@ const toggleVisibility = (field) => {
                           </div>
                           <div className="row g-3">
                             <div className="col-md-6">
-                              <label style={labelStyle}>Full Name *</label>
+                              <label style={labelStyle}>First Name *</label>
                               <input
-                                name="fullName"
-                                style={{ ...inp, ...(addrErrors.fullName ? { borderColor: "#d9534f", marginBottom: 4 } : {}) }}
-                                placeholder="Enter full name"
-                                value={form.fullName}
+                                name="firstName"
+                                style={{ ...inp, ...(addrErrors.firstName ? { borderColor: "#d9534f", marginBottom: 4 } : {}) }}
+                                placeholder="Enter first name"
+                                value={form.firstName}
                                 onChange={handleFormChange}
                               />
-                              <ErrorMsg field="fullName" errObj={addrErrors} />
+                              <ErrorMsg field="firstName" errObj={addrErrors} />
+                            </div>
+                            <div className="col-md-6">
+                              <label style={labelStyle}>Last Name *</label>
+                              <input
+                                name="lastName"
+                                style={{ ...inp, ...(addrErrors.lastName ? { borderColor: "#d9534f", marginBottom: 4 } : {}) }}
+                                placeholder="Enter last name"
+                                value={form.lastName}
+                                onChange={handleFormChange}
+                              />
+                              <ErrorMsg field="lastName" errObj={addrErrors} />
                             </div>
                             <div className="col-md-6">
                               <label style={labelStyle}>Phone Number *</label>

@@ -7,6 +7,7 @@ const CartItem     = require("./CartItem");
 const WishlistItem = require("./WishlistItem");
 const Blog         = require("./Blog");
 const HeroSlide    = require("./HeroSlide");
+const Address      = require("./Address");
 const { Category, Event, Combo, SubCategory }   = require("./Category");
 const { OfferBanner, MarqueeMessage }       = require("./Marketing");
 const Order        = require("./Order");
@@ -28,6 +29,12 @@ WishlistItem.belongsTo(User,   { foreignKey: "user_id" });
 
 User.hasMany(Order,   { foreignKey: "user_id", as: "orders", onDelete: "CASCADE" });
 Order.belongsTo(User, { foreignKey: "user_id" });
+
+User.hasMany(Address, { foreignKey: "userId", as: "addresses", onDelete: "CASCADE" });
+Address.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+Order.belongsTo(Address, { foreignKey: "shipping_address_id", as: "shippingAddress" });
+Order.belongsTo(Address, { foreignKey: "billing_address_id", as: "billingAddress" });
 
 // ── Product ↔ Cart / Wishlist ─────────────────────────────────────────────────
 Product.hasMany(CartItem,    { foreignKey: "product_id", as: "cartEntries",     onDelete: "CASCADE" });
@@ -76,6 +83,7 @@ module.exports = {
   OfferBanner,
   MarqueeMessage,
   Order,
+  Address,
   Category,
   Brand,
   Variant,
