@@ -354,58 +354,64 @@ export default function Variants({ showToast }) {
                   ))}
                 </div>
 
-                <div style={{ marginTop: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <div
-                    onClick={() => imageInputRef.current.click()}
-                    style={{
-                      width: 100,
-                      height: 100,
-                      border: `2px dashed ${KM.teal}`,
-                      borderRadius: 12,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: '#F0FAFE',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <input
-                      ref={imageInputRef}
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={handleImageChange}
-                    />
-                    <span style={{ fontSize: 22 }}>➕</span>
-                    <span style={{ fontSize: 11, color: KM.teal, fontWeight: 600, marginTop: 4 }}>Upload</span>
-                  </div>
-
-                  {formData.imagePreview && (
-                    <div style={{ position: 'relative', width: 100, height: 100, borderRadius: 12, overflow: 'hidden', border: `1px solid ${KM.border}` }}>
-                      <img src={formData.imagePreview} alt="Variant" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, imageFile: null, imagePreview: null }))}
-                        style={{
-                          position: 'absolute',
-                          top: 6,
-                          right: 6,
-                          width: 20,
-                          height: 20,
-                          borderRadius: '50%',
-                          border: 'none',
-                          background: '#ef4444',
-                          color: '#fff',
-                          cursor: 'pointer',
-                          fontSize: 12,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >✕</button>
+                <div style={{ marginTop: 16 }}>
+                  <label style={{ fontSize: 11, fontWeight: 500, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'block' }}>
+                    Variant Image
+                  </label>
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                    <div
+                      onClick={() => imageInputRef.current.click()}
+                      style={{
+                        width: 120,
+                        height: 120,
+                        border: `2px dashed ${KM.teal}`,
+                        borderRadius: 16,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: '#F0FAFE',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleImageChange}
+                      />
+                      <span style={{ fontSize: 26 }}>➕</span>
+                      <span style={{ fontSize: 12, color: KM.teal, fontWeight: 600, marginTop: 6 }}>Upload</span>
                     </div>
-                  )}
+
+                    {formData.imagePreview && (
+                      <div style={{ position: 'relative', width: 120, height: 120, borderRadius: 16, overflow: 'hidden', border: `1px solid ${KM.border}`, flexShrink: 0 }}>
+                        <img src={formData.imagePreview} alt="Variant" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, imageFile: null, imagePreview: null }))}
+                          style={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            border: 'none',
+                            background: '#ef4444',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            fontSize: 12,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >✕</button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {autoName !== 'Default' && (
