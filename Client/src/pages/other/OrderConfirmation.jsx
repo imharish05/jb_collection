@@ -1,12 +1,23 @@
 import { Fragment } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { getImgUrl } from "../../helpers/imageUrl";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
+
+const parseJson = (val) => {
+  if (!val || typeof val !== "string") return val;
+  try { return JSON.parse(val); } catch { return val; }
+};
+const getOrderItemImage = (img) => {
+  const arr = Array.isArray(img) ? img : parseJson(img);
+  const raw = Array.isArray(arr) ? arr[0] : (typeof img === "string" ? img : null);
+  return raw ? getImgUrl(raw) : "/assets/img/products/products-1.jpeg";
+};
 
 const OrderConfirmation = () => {
   const { state } = useLocation();
   const orderId = state?.orderId || "KG000000";
-  const selectedAddr = state?.selectedAddr || {};
+  const selectedAddr = state?.selectedShippingAddr || state?.selectedAddr || {};
   const paymentMethod = state?.paymentMethod || "cod";
   const cartItems = state?.cartItems || [];
 
@@ -81,7 +92,7 @@ const OrderConfirmation = () => {
                         <td style={tdStyle}>
                           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                             <img
-                              src={process.env.PUBLIC_URL + item.image[0]}
+                              src={getOrderItemImage(item.image)}
                               alt=""
                               style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8 }}
                             />

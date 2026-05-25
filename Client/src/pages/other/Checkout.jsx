@@ -11,10 +11,19 @@ import {
 import { setActiveAddress } from "../../store/slices/addressSlice";
 import { deleteAllFromCart } from "../../store/slices/cart-slice";
 import { getDiscountPrice } from "../../helpers/product";
+import { getImgUrl } from "../../helpers/imageUrl";
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
 import "./Checkout.css";
 import { useRef } from "react";
+
+// Resolve cart item image (array or JSON string) → full URL
+const parseJson = (v) => { try { return JSON.parse(v); } catch { return v; } };
+const resolveCartImg = (img) => {
+  const arr = Array.isArray(img) ? img : parseJson(img);
+  const raw = Array.isArray(arr) ? arr[0] : (typeof img === "string" ? img : null);
+  return raw ? getImgUrl(raw) : "/assets/img/products/products-1.jpeg";
+};
 
 /* ── Constants ───────────────────────────────────────────────────────────── */
 const EMPTY_ADDR = {
@@ -841,11 +850,7 @@ const Checkout = () => {
                         return (
                           <div key={item.cartItemId} className="kco-review-item">
                             <img
-                              src={
-                                item.image?.[0]?.startsWith("http")
-                                  ? item.image[0]
-                                  : `${process.env.REACT_APP_IMG_URL || ""}/uploads/${(item.image?.[0] || "").replace(/^\/?uploads\//, "")}`
-                              }
+                              src={resolveCartImg(item.image)}
                               alt={item.name}
                               className="kco-review-item-img"
                               onError={(e) => { e.target.src = "/assets/img/products/products-1.jpeg"; }}
@@ -898,40 +903,91 @@ const Checkout = () => {
                 )}
               </div>
 
-              {/* ══ RIGHT COLUMN — Price Summary ═════════════════════ */}
+              {/* ══ RIGHT COLUMN — Order Summary ═════════════════════ */}
               <div className="kco-right">
                 <div className="kco-price-card">
-                  <h3 className="kco-price-title">Price Details</h3>
+                  <h3 className="kco-price-title">
+                    Order Summary
+                    <span className="kco-price-title-count">
+                      {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
+                    </span>
+                  </h3>
 
+                  {/* ── Item Cards ── */}
+                  <div className="kco-item-list">
+                    {cartItems.map((item) => {
+                      const price = parseFloat(item.price || 0);
+                      const mrp   = parseFloat(item.selectedVariant?.mrp || item.variation?.[0]?.mrp || 0);
+                      const hasMrp = mrp > 0 && mrp > price;
+                      const discount = hasMrp ? Math.round((1 - price / mrp) * 100) : 0;
+
+                      // Variant label: use selectedVariantName or build from variation attributes
+                      const variantLabel = (() => {
+                        if (item.selectedVariantName) return item.selectedVariantName;
+                        const v = Array.isArray(item.variation) ? item.variation[0] : null;
+                        if (v?.variantName) return v.variantName;
+                        if (v?.attributes?.length) {
+                          return v.attributes.map(a => `${a.key}: ${a.value}`).join(" · ");
+                        }
+                        if (item.selectedProductColor || item.selectedProductSize) {
+                          return [item.selectedProductColor, item.selectedProductSize].filter(Boolean).join(" / ");
+                        }
+                        return null;
+                      })();
+
+                      return (
+                        <div className="kco-item-card" key={item.cartItemId}>
+                          <div className="kco-item-img-wrap">
+                            <img
+                              src={resolveCartImg(item.image)}
+                              alt={item.name}
+                              className="kco-item-img"
+                              onError={(e) => { e.target.src = "/assets/img/products/products-1.jpeg"; }}
+                            />
+                            <span className="kco-item-qty-badge">{item.quantity}</span>
+                          </div>
+                          <div className="kco-item-info">
+                            <div className="kco-item-name">{item.name}</div>
+                            {variantLabel && (
+                              <div className="kco-item-variant">{variantLabel}</div>
+                            )}
+                            <div className="kco-item-price-row">
+                              <span className="kco-item-price">₹{(price * item.quantity).toFixed(2)}</span>
+                              {hasMrp && (
+                                <span className="kco-item-mrp">₹{(mrp * item.quantity).toFixed(2)}</span>
+                              )}
+                              {discount > 0 && (
+                                <span className="kco-item-disc">{discount}% off</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* ── Price Breakdown ── */}
                   <div className="kco-sum-rows">
                     <div className="kco-sum-row">
-                      <span>Price ({cartItems.length} {cartItems.length === 1 ? "item" : "items"})</span>
+                      <span>Subtotal</span>
                       <span>₹{pricing.subtotal.toFixed(2)}</span>
                     </div>
                     <div className="kco-sum-row">
-                      <span>Delivery Charges</span>
+                      <span>Delivery</span>
                       <span style={pricing.shipping === 0 ? { color: "#16a34a", fontWeight: 700 } : {}}>
                         {pricing.shipping === 0 ? "FREE" : `₹${pricing.shipping}`}
                       </span>
                     </div>
                     {pricing.couponDiscount > 0 && (
-                      <div className="kco-sum-row" style={{ color: "#16a34a" }}>
+                      <div className="kco-sum-row kco-sum-row--green">
                         <span>Coupon ({pricing.couponCode})</span>
                         <span>− ₹{pricing.couponDiscount.toFixed(2)}</span>
                       </div>
                     )}
-                    {/* COD handling fee — disabled
-                    {paymentMethod === "cod" && (
-                      <div className="kco-sum-row" style={{ color: "#888" }}>
-                        <span>COD Handling</span>
-                        <span>₹77</span>
-                      </div>
-                    )}
-                    */}
                   </div>
 
                   <div className="kco-total-line">
-                    <span>Total Amount</span>
+                    <span>Total</span>
                     <span style={{ color: "#db1a5d" }}>₹{grandTotalWithCOD.toFixed(2)}</span>
                   </div>
 
@@ -941,30 +997,9 @@ const Checkout = () => {
                     </div>
                   )}
 
-                  <div className="kco-items-preview">
-                    {cartItems.slice(0, 3).map((item) => (
-                      <img
-                        key={item.cartItemId}
-                        src={
-                          item.image?.[0]?.startsWith("http")
-                            ? item.image[0]
-                            : `${process.env.REACT_APP_IMG_URL || ""}/uploads/${(item.image?.[0] || "").replace(/^\/?uploads\//, "")}`
-                        }
-                        alt={item.name}
-                        className="kco-preview-img"
-                        onError={(e) => { e.target.src = "/assets/img/products/products-1.jpeg"; }}
-                        title={item.name}
-                      />
-                    ))}
-                    {cartItems.length > 3 && (
-                      <div className="kco-more-items">+{cartItems.length - 3}</div>
-                    )}
-                  </div>
-
                   <div className="kco-secure-note">
-                    🔒 Safe &amp; secure payments
-                    <br />
-                    100% authentic products · Easy returns
+                    🔒 Safe &amp; secure payments · 100% authentic
+                    <br />Easy returns · Packed with love 💝
                   </div>
                 </div>
               </div>

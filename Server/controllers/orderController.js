@@ -1,6 +1,7 @@
 // controllers/orderController.js
 const { Order, CartItem, User, Product, Variant, OrderItem } = require("../models");
 const sequelize = require("../config/database");
+const { sendOrderConfirmationEmail } = require("../utils/mailer");
 
 // Dashboard sends these status values in the URL:
 //   new | confirmed | shipped | delivery | delivered | cancelled
@@ -165,6 +166,16 @@ const createOrder = async (req, res, next) => {
     const createdOrder = await Order.findByPk(order.id, {
       include: [{ model: OrderItem, as: "items" }],
     });
+
+    // Send order confirmation email (non-blocking — don't fail order if email fails)
+    try {
+      const userRecord = await User.findByPk(req.user.id, { attributes: ["name", "email"] });
+      if (userRecord?.email) {
+        await sendOrderConfirmationEmail(createdOrder, { name: userRecord.name, email: userRecord.email });
+      }
+    } catch (emailErr) {
+      console.error("[Mailer] Failed to send order confirmation:", emailErr.message);
+    }
 
     return res.status(201).json(createdOrder);
   } catch (err) {

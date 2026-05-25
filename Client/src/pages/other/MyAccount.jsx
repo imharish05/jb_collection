@@ -1,3 +1,4 @@
+import cogoToast from "cogo-toast";
 import { Fragment, useState, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import SEO from "../../components/seo";
@@ -15,7 +16,17 @@ import {
   setDefaultAddressService,
 } from "../../store/services/addressService";
 import { fetchOrders } from "../../store/services/orderService";
-import cogoToast from "cogo-toast";
+import { getImgUrl } from "../../helpers/imageUrl";
+
+const parseJson = (val) => {
+  if (!val || typeof val !== "string") return val;
+  try { return JSON.parse(val); } catch { return val; }
+};
+const getOrderItemImage = (img) => {
+  const arr = Array.isArray(img) ? img : parseJson(img);
+  const raw = Array.isArray(arr) ? arr[0] : (typeof img === "string" ? img : null);
+  return raw ? getImgUrl(raw) : "https://via.placeholder.com/80";
+};
 
 const ADDRESS_TYPES = ["Home", "Work", "Other"];
 
@@ -443,7 +454,7 @@ const toggleVisibility = (field) => {
                               {Array.isArray(order.items) && order.items.map((item, i) => (
                                 <div className="product-row" key={i}>
                                   <div className="product-img">
-                                    <img src={item.image?.[0] || "https://via.placeholder.com/80"} alt={item.productName || "Product"} onError={(e) => { e.target.src = "https://via.placeholder.com/80"; }} />
+                                    <img src={getOrderItemImage(item.image)} alt={item.productName || "Product"} onError={(e) => { e.target.src = "https://via.placeholder.com/80"; }} />
                                   </div>
                                   <div className="product-details">
                                     <h6>{item.productName || "Product"}</h6>

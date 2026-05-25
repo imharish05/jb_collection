@@ -14,6 +14,7 @@ const razorpay = new Razorpay({
 
 // POST /api/payment/create-order
 // Call BEFORE placing order — creates Razorpay order, returns order_id
+
 const createRazorpayOrder = async (req, res, next) => {
   try {
     const { amount, currency = 'INR' } = req.body;

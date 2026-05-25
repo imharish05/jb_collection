@@ -4,6 +4,17 @@ import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
+import { getImgUrl } from "../../helpers/imageUrl";
+
+const parseJson = (val) => {
+  if (!val || typeof val !== "string") return val;
+  try { return JSON.parse(val); } catch { return val; }
+};
+const getOrderItemImage = (img) => {
+  const arr = Array.isArray(img) ? img : parseJson(img);
+  const raw = Array.isArray(arr) ? arr[0] : (typeof img === "string" ? img : null);
+  return raw ? getImgUrl(raw) : "https://via.placeholder.com/80";
+};
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -95,7 +106,11 @@ const OrderDetails = () => {
 
   const orderStatus = statusMap[order.status?.toLowerCase()] || order.status || "Pending";
   const currentIdx = Math.max(stages.findIndex((s) => s.label === orderStatus), -1);
-  const shippingAddr = order.shippingAddress || {};
+  // shippingAddress may be stored as a JSON string in DB
+  let shippingAddr = order.shippingAddress || {};
+  if (typeof shippingAddr === "string") {
+    try { shippingAddr = JSON.parse(shippingAddr); } catch { shippingAddr = {}; }
+  }
   const orderItems = Array.isArray(order.items) ? order.items : [];
   const orderTotal = typeof order.totalAmount === "string" ? parseFloat(order.totalAmount) : order.totalAmount;
 
@@ -155,7 +170,7 @@ const OrderDetails = () => {
                           <div className="premium-product-row" key={index}>
                             <div className="prod-img">
                               <img
-                                src={Array.isArray(item.image) ? item.image[0] : item.image || "https://via.placeholder.com/80"}
+                                src={getOrderItemImage(item.image)}
                                 alt={item.productName || "Product"}
                                 onError={(e) => { e.target.src = "https://via.placeholder.com/80"; }}
                               />

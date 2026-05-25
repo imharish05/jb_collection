@@ -304,13 +304,16 @@ const ProductDescriptionInfo = ({
   currency,
   finalDiscountedPrice,
   finalProductPrice,
-  cartItems,
+  cartItems: cartItemsProp,
   wishlistItems,         // all wishlist items for this product (filtered by productId)
   onVariantImageChange,   // callback → parent lifts image for gallery
 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
+  // Use direct selector so button always reflects current cart state
+  const cartItemsFromStore = useSelector((state) => state.cart.cartItems);
+  const cartItems = cartItemsFromStore || cartItemsProp || [];
 
   const currencySymbol = currency?.currencySymbol || "₹";
   const hasNewVar = hasBackendVariants(product);
@@ -381,11 +384,10 @@ const ProductDescriptionInfo = ({
   // For old variations: use helper
   const productCartQty = useMemo(() => {
     if (hasNewVar && selectedVariant) {
-      // Number() normalises both sides — cart item selectedVariantId may be
-      // string or integer depending on API serialization; Variant.id is INTEGER.
+      // String() normalises both sides — product.id may be integer or UUID string
       const match = cartItems?.find(
         item =>
-          item.id === product.id &&
+          String(item.id) === String(product.id) &&
           Number(item.selectedVariantId) === Number(selectedVariant.id)
       );
       return match ? match.quantity : 0;
