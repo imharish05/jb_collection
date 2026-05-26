@@ -15,6 +15,9 @@ import { replaceCart } from "./store/slices/cart-slice";
 // Main home
 const HomeFashion = lazy(() => import("./pages/home/HomeFashion"));
 
+// Combo page
+const ComboPage = lazy(() => import("./pages/combo/ComboPage"));
+
 // Shop pages
 const ShopGridStandard = lazy(() => import("./pages/shop/ShopGridStandard"));
 
@@ -112,6 +115,7 @@ const App = () => {
             <Route path={process.env.PUBLIC_URL + "/"} element={<HomeFashion />} />
             <Route path={process.env.PUBLIC_URL + "/home-fashion"} element={<HomeFashion />} />
             <Route path={process.env.PUBLIC_URL + "/shop"} element={<ShopGridStandard />} />
+            <Route path={process.env.PUBLIC_URL + "/combo/:id"} element={<ComboPage />} />
 
             {/* Products */}
             <Route path={process.env.PUBLIC_URL + "/product/:id"} element={<Product />} />

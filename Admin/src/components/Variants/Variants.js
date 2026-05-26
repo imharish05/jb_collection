@@ -6,18 +6,16 @@ import { fetchVariants, createVariant, editVariant, removeVariant } from '../../
 import { fetchProducts } from '../../redux/services/productsService';
 import { AttributeRow } from '../Products/VariantBuilder';
 
-const IMG_URL = process.env.REACT_APP_IMG_URL;
-const getImg = (value) => {
-  if (!value) return null;
-  if (value.startsWith('http')) return value;
-  const base = IMG_URL ? IMG_URL.replace(/\/$/, '') : '';
-  return `${base}/${value.replace(/^\//, '')}`;
+const IMG_URL = process.env.REACT_APP_IMG_URL || '';
+const getImgSrc = (p) => {
+  if (!p) return null;
+  if (p.startsWith('http')) return p;
+  return `${IMG_URL}/uploads/${p.replace(/^\//, '').replace(/^uploads\//, '')}`;
 };
 
 const KM = { orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B', green: '#39B54A', teal: '#00B4D8', border: '#E5E7EB', text: '#1A1A2E', muted: '#6B7280', bg: '#F9FAFB' };
 
 function stockColor(qty) { return qty > 200 ? KM.green : qty > 50 ? '#F59E0B' : '#EF4444'; }
-
 function blankAttr() { return { key: '', value: '', customValue: '' }; }
 
 function safeParseAttrs(raw) {
@@ -42,7 +40,7 @@ const formHeader = { background: KM.blue, padding: '16px 24px', display: 'flex',
 const headerIcon = { width: 32, height: 32, background: 'rgba(255,255,255,0.15)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 15, fontWeight: 600 };
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 5 };
 const labelStyle = { fontSize: 11, fontWeight: 500, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em' };
-const inputStyle = { padding: '9px 12px', border: `1px solid ${KM.border}`, borderRadius: 8, fontSize: 13, color: KM.text, background: '#fff', fontFamily: 'inherit', outline: 'none', width: '100%' };
+const inputStyle = { padding: '9px 12px', border: `1px solid ${KM.border}`, borderRadius: 8, fontSize: 13, color: KM.text, background: '#fff', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' };
 const submitBtn  = { gridColumn: 'span 2', padding: 11, background: KM.orange, color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 };
 const errorStyle = { fontSize: 11, color: '#dc2626', fontWeight: 600, marginTop: 2 };
 
@@ -69,12 +67,12 @@ export default function Variants({ showToast }) {
   const [filterProduct, setFilterProduct] = useState('');
   const [errors,        setErrors]        = useState({});
 
+  const imgInputRef = useRef();
+
   useEffect(() => {
     dispatch(fetchVariants());
     dispatch(fetchProducts());
   }, []);
-
-  const imageInputRef = useRef();
 
   const openAdd = () => {
     setEditingId(null);
@@ -87,28 +85,37 @@ export default function Variants({ showToast }) {
   const openEdit = (v) => {
     setEditingId(v.id);
     setFormData({
-      productId:   v.productId   || '',
-      variantName: v.variantName || '',
-      mrp:         v.mrp         || '',
-      salesPrice:  v.salesPrice  || '',
-      stock:       v.stock       || '',
-      status:      v.status      || 'Active',
-      attributes:  safeParseAttrs(v.attributes),
-      imageFile:   null,
-      imagePreview: v.image ? getImg(v.image) : null,
+      productId:    v.productId   || '',
+      variantName:  v.variantName || '',
+      mrp:          v.mrp         || '',
+      salesPrice:   v.salesPrice  || '',
+      stock:        v.stock       || '',
+      status:       v.status      || 'Active',
+      attributes:   safeParseAttrs(v.attributes),
+      imageFile:    null,
+      imagePreview: v.image ? getImgSrc(v.image) : null,
     });
     setErrors({});
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const set = (field) => (e) => setFormData(prev => ({ ...prev, [field]: e.target.value }));
+
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setFormData(prev => ({ ...prev, imageFile: file, imagePreview: URL.createObjectURL(file) }));
+    setFormData(prev => ({
+      ...prev,
+      imageFile:    file,
+      imagePreview: URL.createObjectURL(file),
+    }));
   };
 
-  const set = (field) => (e) => setFormData(prev => ({ ...prev, [field]: e.target.value }));
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, imageFile: null, imagePreview: null }));
+    if (imgInputRef.current) imgInputRef.current.value = '';
+  };
 
   const ErrorMsg = ({ field }) => errors[field]
     ? <span style={errorStyle}>{errors[field]}</span>
@@ -132,24 +139,16 @@ export default function Variants({ showToast }) {
     if (!formData.variantName.trim() && !formData.attributes.some(a => a.key && (a.value || a.customValue))) {
       next.attributes = 'Add at least one attribute or enter a variant name';
     }
-
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
-  // ── Attribute helpers ─────────────────────────────────────────────────────
-  const updateAttr = (i, updated) => {
-    const attrs = [...formData.attributes];
-    attrs[i] = updated;
-    setFormData(prev => ({ ...prev, attributes: attrs }));
-  };
-  const addAttr    = () => setFormData(prev => ({ ...prev, attributes: [...prev.attributes, blankAttr()] }));
-  const removeAttr = (i) => setFormData(prev => ({ ...prev, attributes: prev.attributes.filter((_, j) => j !== i) }));
+  const updateAttr  = (i, updated) => { const a = [...formData.attributes]; a[i] = updated; setFormData(p => ({ ...p, attributes: a })); };
+  const addAttr     = () => setFormData(p => ({ ...p, attributes: [...p.attributes, blankAttr()] }));
+  const removeAttr  = (i) => setFormData(p => ({ ...p, attributes: p.attributes.filter((_, j) => j !== i) }));
 
-  // ── Auto-generated name from attributes ──────────────────────────────────
   const autoName = buildVariantName(formData.attributes);
 
-  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -158,7 +157,6 @@ export default function Variants({ showToast }) {
       .filter(a => a.key && (a.value || a.customValue))
       .map(a => ({ key: a.key, value: a.value === 'Custom' ? (a.customValue || 'Custom') : a.value }));
 
-    // Use manually entered name if provided, otherwise auto-generate from attributes
     const finalName = formData.variantName.trim() || autoName;
 
     const payload = {
@@ -169,40 +167,27 @@ export default function Variants({ showToast }) {
       stock:       formData.stock,
       status:      formData.status,
       attributes:  cleanAttrs,
+      imageFile:   formData.imageFile || undefined,
     };
 
-    const hasFile = Boolean(formData.imageFile);
-    const data = hasFile ? new FormData() : payload;
-    if (hasFile) {
-      data.append('productId', formData.productId);
-      data.append('variantName', finalName);
-      data.append('mrp', formData.mrp);
-      data.append('salesPrice', formData.salesPrice);
-      data.append('stock', formData.stock);
-      data.append('status', formData.status);
-      data.append('attributes', JSON.stringify(cleanAttrs));
-      data.append('image', formData.imageFile);
-    }
-
-    const id = showToast.loading(editingId ? 'Updating variant…' : 'Adding variant…');
+    const tid = showToast.loading(editingId ? 'Updating variant…' : 'Adding variant…');
     try {
       if (editingId) {
-        await dispatch(editVariant({ id: editingId, data: data }));
-        showToast.success('Variant updated!', id);
+        await dispatch(editVariant({ id: editingId, data: payload }));
+        showToast.success('Variant updated!', tid);
       } else {
-        await dispatch(createVariant(data));
-        showToast.success('Variant added!', id);
+        await dispatch(createVariant(payload));
+        showToast.success('Variant added!', tid);
       }
       setShowForm(false);
       setEditingId(null);
       setFormData(EMPTY_FORM);
       dispatch(fetchVariants());
     } catch (err) {
-      showToast.error(err?.response?.data?.message || err?.message || 'Operation failed', id);
+      showToast.error(err?.response?.data?.message || err?.message || 'Operation failed', tid);
     }
   };
 
-  // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = (variantId) => {
     const confirmId = showToast.loading('Delete this variant?');
     toast(
@@ -313,7 +298,7 @@ export default function Variants({ showToast }) {
                 <input required style={inputStyle} type="number" min="0" placeholder="0" value={formData.stock} onChange={set('stock')} />
                 <ErrorMsg field="stock" />
               </div>
-              <div style={{ ...fieldStyle }}>
+              <div style={fieldStyle}>
                 <label style={labelStyle}>Status</label>
                 <select style={inputStyle} value={formData.status} onChange={set('status')}>
                   <option value="Active">Active</option>
@@ -322,12 +307,23 @@ export default function Variants({ showToast }) {
                 <ErrorMsg field="status" />
               </div>
 
-              {/* ── Attributes ── */}
-              <div style={{ gridColumn: 'span 2', background: KM.bg, border: `1px solid ${KM.border}`, borderRadius: 10, padding: 16, minHeight: 220 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: KM.blue, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Attributes
-                  </span>
+              {/* ── Attributes + Image (same layout as Products VariantBuilder) ── */}
+              <div style={{ gridColumn: 'span 2', border: `1px solid ${KM.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                {/* Section header */}
+                <div style={{
+                  background: KM.bg,
+                  borderBottom: `1px solid ${KM.border}`,
+                  padding: '12px 16px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
+                  <div>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: KM.blue, letterSpacing: '0.02em' }}>
+                      🎁 Product Variants
+                    </span>
+                    <span style={{ fontSize: 11, color: KM.muted, marginLeft: 10 }}>
+                      Define custom attributes per variant (colour, size, material, etc.)
+                    </span>
+                  </div>
                   <button
                     type="button"
                     onClick={addAttr}
@@ -337,92 +333,102 @@ export default function Variants({ showToast }) {
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, marginBottom: 6, paddingRight: 30 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.06em', flex: '0 0 160px' }}>Key</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>Value</span>
-                </div>
+                <div style={{ padding: 16 }}>
+                  {/* Column headers */}
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 6, paddingRight: 30 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.06em', flex: '0 0 160px' }}>Attribute Key</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>Value</span>
+                  </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {formData.attributes.map((attr, i) => (
-                    <AttributeRow
-                      key={i}
-                      attr={attr}
-                      onChange={updated => updateAttr(i, updated)}
-                      onRemove={() => removeAttr(i)}
-                      isOnly={formData.attributes.length === 1}
-                    />
-                  ))}
-                </div>
-
-                <div style={{ marginTop: 16 }}>
-                  <label style={{ fontSize: 11, fontWeight: 500, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'block' }}>
-                    Variant Image
-                  </label>
-                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                    <div
-                      onClick={() => imageInputRef.current.click()}
-                      style={{
-                        width: 120,
-                        height: 120,
-                        border: `2px dashed ${KM.teal}`,
-                        borderRadius: 16,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: '#F0FAFE',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <input
-                        ref={imageInputRef}
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={handleImageChange}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {formData.attributes.map((attr, i) => (
+                      <AttributeRow
+                        key={i}
+                        attr={attr}
+                        onChange={updated => updateAttr(i, updated)}
+                        onRemove={() => removeAttr(i)}
+                        isOnly={formData.attributes.length === 1}
                       />
-                      <span style={{ fontSize: 26 }}>➕</span>
-                      <span style={{ fontSize: 12, color: KM.teal, fontWeight: 600, marginTop: 6 }}>Upload</span>
-                    </div>
+                    ))}
+                  </div>
 
-                    {formData.imagePreview && (
-                      <div style={{ position: 'relative', width: 120, height: 120, borderRadius: 16, overflow: 'hidden', border: `1px solid ${KM.border}`, flexShrink: 0 }}>
-                        <img src={formData.imagePreview} alt="Variant" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, imageFile: null, imagePreview: null }))}
-                          style={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 8,
-                            width: 24,
-                            height: 24,
-                            borderRadius: '50%',
-                            border: 'none',
-                            background: '#ef4444',
-                            color: '#fff',
-                            cursor: 'pointer',
-                            fontSize: 12,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >✕</button>
+                  {/* Auto-name preview */}
+                  {autoName !== 'Default' && (
+                    <div style={{ marginTop: 12, padding: '8px 12px', background: KM.orangeLight, borderRadius: 7, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, color: KM.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Variant Name</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: KM.orange, background: '#fff', padding: '2px 10px', borderRadius: 5, border: `1px solid ${KM.orange}20` }}>
+                        {autoName}
+                      </span>
+                    </div>
+                  )}
+                  <ErrorMsg field="attributes" />
+
+                  {/* ── Variant Image — inside same card, below attributes ── */}
+                  <div style={{ marginTop: 18, paddingTop: 16, borderTop: `1px solid ${KM.border}` }}>
+                    <div style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: KM.blue, letterSpacing: '0.02em' }}>Variant Image</span>
+                      <span style={{ fontSize: 11, color: KM.muted }}>Optional — shown when this variant is selected</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                      {/* Upload trigger */}
+                      <div
+                        onClick={() => imgInputRef.current?.click()}
+                        style={{
+                          width: 90, height: 90,
+                          border: `2px dashed ${KM.teal}`,
+                          borderRadius: 10,
+                          display: 'flex', flexDirection: 'column',
+                          alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', background: '#F0FAFE', flexShrink: 0,
+                        }}
+                      >
+                        <input
+                          ref={imgInputRef}
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={handleImageChange}
+                        />
+                        <span style={{ fontSize: 20 }}>➕</span>
+                        <span style={{ fontSize: 10, color: KM.teal, fontWeight: 600, marginTop: 3 }}>Upload</span>
                       </div>
-                    )}
+
+                      {/* Preview */}
+                      {formData.imagePreview && (
+                        <div style={{
+                          width: 90, height: 90, position: 'relative',
+                          borderRadius: 10, overflow: 'hidden',
+                          border: `1px solid ${KM.border}`, flexShrink: 0,
+                        }}>
+                          <img
+                            src={formData.imagePreview}
+                            alt="variant"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={removeImage}
+                            style={{
+                              position: 'absolute', top: 4, right: 4,
+                              background: '#ef4444', color: '#fff',
+                              border: 'none', borderRadius: '50%',
+                              width: 20, height: 20, cursor: 'pointer',
+                              fontSize: 11, display: 'flex',
+                              alignItems: 'center', justifyContent: 'center',
+                            }}
+                          >✕</button>
+                          <div style={{
+                            position: 'absolute', bottom: 0, width: '100%',
+                            background: 'rgba(0,0,0,0.55)', color: '#fff',
+                            fontSize: 10, textAlign: 'center', padding: '2px 0',
+                          }}>
+                            {formData.imageFile ? 'New' : 'Saved'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                {autoName !== 'Default' && (
-                  <div style={{ marginTop: 12, padding: '8px 12px', background: KM.orangeLight, borderRadius: 7, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 11, color: KM.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Preview</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: KM.orange, background: '#fff', padding: '2px 10px', borderRadius: 5, border: `1px solid ${KM.orange}20` }}>
-                      {autoName}
-                    </span>
-                  </div>
-                )}
-                <ErrorMsg field="attributes" />
               </div>
 
               <button type="submit" style={submitBtn}>{editingId ? 'Update Variant' : 'Save Variant'}</button>
@@ -435,11 +441,23 @@ export default function Variants({ showToast }) {
         <p style={{ color: KM.muted, fontSize: 13 }}>Loading...</p>
       ) : (
         <DataTable
-          columns={['No.', 'Product', 'Variant', 'MRP', 'Sale Price', 'Stock', 'SKU', 'Status', 'Actions']}
+          columns={['No.', 'Image', 'Product', 'Variant', 'MRP', 'Sale Price', 'Stock', 'SKU', 'Status', 'Actions']}
           initialRows={filtered}
           renderRow={(row, i) => (
             <tr key={row.id}>
               <td style={{ fontWeight: 600, color: KM.muted }}>{i + 1}</td>
+              <td>
+                {row.image ? (
+                  <img
+                    src={getImgSrc(row.image)}
+                    alt={row.variantName}
+                    width={38} height={38}
+                    style={{ borderRadius: 8, objectFit: 'cover', border: `1px solid ${KM.border}` }}
+                  />
+                ) : (
+                  <div style={{ width: 38, height: 38, borderRadius: 8, background: KM.bg, border: `1px solid ${KM.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: KM.muted }}>—</div>
+                )}
+              </td>
               <td style={{ fontWeight: 500 }}>{row.product ? row.product.name : row.productName}</td>
               <td style={{ fontWeight: 600 }}>{row.variantName}</td>
               <td>₹{row.mrp}</td>
