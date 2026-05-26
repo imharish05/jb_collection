@@ -55,6 +55,7 @@ const Product = () => {
           spaceTopClass="pt-100"
           spaceBottomClass="pb-100"
           product={product}
+          galleryType="leftThumb"
         />
 
         {/* product description tab — pass productId for dynamic reviews */}

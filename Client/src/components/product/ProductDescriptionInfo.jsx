@@ -181,8 +181,8 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
               <button
                 key={val}
                 title={val}
-                disabled={isDisabled || isSingle}
-                onClick={() => !isSingle && onSelect(isSelected ? null : val)}
+                disabled={isDisabled}
+                onClick={() => !isDisabled && onSelect(isSelected ? null : val)}
                 className={`pdp-swatch${isSelected ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}${isLight ? " is-light" : ""}${isSingle ? " is-single" : ""}`}
                 style={{ "--swatch-color": hex }}
               >
@@ -198,8 +198,8 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
           return (
             <button
               key={val}
-              disabled={isDisabled || isSingle}
-              onClick={() => !isSingle && onSelect(isSelected ? null : val)}
+              disabled={isDisabled}
+              onClick={() => !isDisabled && onSelect(isSelected ? null : val)}
               className={`${chipClass}${isSelected ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}${isSingle ? " is-single" : ""}`}
             >
               {isDisabled && <span className="pdp-chip__line" />}
@@ -341,8 +341,25 @@ const ProductDescriptionInfo = ({
   );
 
   const handleSelect = (key, value) => {
-    const next = { ...selections, [key]: value };
-    if (!value) delete next[key];
+    // Start with just the clicked selection (or clear if deselecting)
+    const partial = { ...selections, [key]: value };
+    if (!value) delete partial[key];
+
+    // Find the best-matching variant for this partial selection
+    const matched = findMatchingVariant(product.Variants, partial);
+
+    // Auto-fill ALL attributes from the matched variant so nothing is left unselected
+    let next = { ...partial };
+    if (matched) {
+      safeAttrs(matched.attributes)
+        .filter(a => a.key && a.value && a.key !== "Custom Note")
+        .forEach(a => {
+          const k = normalKey(a.key);
+          // Only fill keys that aren't already explicitly set by the user
+          if (!next[k]) next[k] = a.value;
+        });
+    }
+
     setSelections(next);
     setErrors(prev => ({ ...prev, variant: "" }));
     if (onVariantImageChange) {
