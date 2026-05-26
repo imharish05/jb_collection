@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import React, { Fragment, useState, useMemo } from "react";
+import React, { Fragment, useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { addToWishlistService, addToCartService } from "../../store/services";
 import { useDispatch, useSelector } from "react-redux";
@@ -147,8 +147,16 @@ function CustomNoteSection({ variant }) {
   );
 }
 
+const SIZE_KEYS = /^size$/i;
+const COMPACT_SIZE_VALS = /^(xs|s|sm|m|md|l|lg|xl|xxl|2xl|3xl|4xl|5xl|6xl)$/i;
+
 function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSelect }) {
   const isColour = /colou?r/i.test(attrKey);
+  const isSize   = SIZE_KEYS.test(attrKey);
+  const isSingle = allValues.size === 1;
+
+  // For sizes: use compact square chips if all values are standard abbreviations
+  const allCompact = isSize && [...allValues].every(v => COMPACT_SIZE_VALS.test(v));
 
   return (
     <div className="pdp-attr-group">
@@ -157,8 +165,11 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
         {selectedValue && (
           <span className="pdp-attr-selected">— {selectedValue}</span>
         )}
+        {isSingle && (
+          <span className="pdp-attr-auto-tag">auto‑selected</span>
+        )}
       </div>
-      <div className={`pdp-attr-options${isColour ? " is-colour" : ""}`}>
+      <div className={`pdp-attr-options${isColour ? " is-colour" : ""}${allCompact ? " is-size" : ""}`}>
         {[...allValues].map(val => {
           const isSelected = selectedValue === val;
           const isDisabled = !compatibleSet.has(val);
@@ -170,9 +181,9 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
               <button
                 key={val}
                 title={val}
-                disabled={isDisabled}
-                onClick={() => onSelect(isSelected ? null : val)}
-                className={`pdp-swatch${isSelected ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}${isLight ? " is-light" : ""}`}
+                disabled={isDisabled || isSingle}
+                onClick={() => !isSingle && onSelect(isSelected ? null : val)}
+                className={`pdp-swatch${isSelected ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}${isLight ? " is-light" : ""}${isSingle ? " is-single" : ""}`}
                 style={{ "--swatch-color": hex }}
               >
                 {isDisabled && <span className="pdp-swatch__cross" />}
@@ -183,12 +194,13 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
             );
           }
 
+          const chipClass = allCompact ? "pdp-size-chip" : "pdp-chip";
           return (
             <button
               key={val}
-              disabled={isDisabled}
-              onClick={() => onSelect(isSelected ? null : val)}
-              className={`pdp-chip${isSelected ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}`}
+              disabled={isDisabled || isSingle}
+              onClick={() => !isSingle && onSelect(isSelected ? null : val)}
+              className={`${chipClass}${isSelected ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}${isSingle ? " is-single" : ""}`}
             >
               {isDisabled && <span className="pdp-chip__line" />}
               {val}
@@ -287,10 +299,21 @@ const ProductDescriptionInfo = ({
 
   const [selections, setSelections] = useState(() => {
     if (!hasNewVar || !product.Variants.length) return {};
+    // Single variant → always auto-select all its attributes
+    if (product.Variants.length === 1) {
+      const first = product.Variants[0];
+      return Object.fromEntries(
+        safeAttrs(first.attributes)
+          .filter(a => a.key && a.value && a.key !== "Custom Note")
+          .map(a => [normalKey(a.key), a.value])
+      );
+    }
     const oMap = buildOptionMap(product.Variants);
     const keys = Object.keys(oMap);
+    // Every attribute key has only one option → auto-select all
     const allSingle = keys.length > 0 && keys.every(k => oMap[k].size === 1);
     if (allSingle) return Object.fromEntries(keys.map(k => [k, [...oMap[k]][0]]));
+    // Multiple variants: pre-select first variant's attributes
     const first = product.Variants[0];
     return Object.fromEntries(
       safeAttrs(first.attributes)
@@ -303,6 +326,14 @@ const ProductDescriptionInfo = ({
     () => hasNewVar ? findMatchingVariant(product.Variants, selections) : null,
     [selections, product.Variants, hasNewVar]
   );
+
+  // Notify parent of auto-selected variant image on mount
+  useEffect(() => {
+    if (onVariantImageChange && selectedVariant?.image) {
+      onVariantImageChange(selectedVariant.image);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const customNoteVariant = useMemo(() =>
     hasNewVar ? product.Variants.find(v => safeAttrs(v.attributes).every(a => a.key === "Custom Note")) : null,
@@ -830,6 +861,18 @@ const ProductDescriptionInfo = ({
           font-weight: 900;
         }
 
+        /* ── Auto-selected badge ── */
+        .pdp-attr-auto-tag {
+          font-size: 10px;
+          font-weight: 600;
+          color: #10b981;
+          background: #d1fae5;
+          border-radius: 4px;
+          padding: 1px 7px;
+          letter-spacing: 0.02em;
+          text-transform: lowercase;
+        }
+
         /* ── Text chip ── */
         .pdp-chip {
           position: relative;
@@ -861,6 +904,55 @@ const ProductDescriptionInfo = ({
           cursor: not-allowed;
           background: #f9fafb;
         }
+        .pdp-chip.is-single {
+          cursor: default;
+        }
+
+        /* ── Size chip (compact square) ── */
+        .pdp-attr-options.is-size { gap: 6px; }
+        .pdp-size-chip {
+          position: relative;
+          min-width: 44px;
+          height: 40px;
+          padding: 0 10px;
+          border: 1.5px solid #d1d5db;
+          border-radius: 6px;
+          background: #fff;
+          color: #374151;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          font-family: inherit;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          overflow: hidden;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .pdp-size-chip:hover:not(:disabled) {
+          border-color: #db1a5d;
+          color: #db1a5d;
+          background: #fdf2f5;
+        }
+        .pdp-size-chip.is-selected {
+          border-color: #db1a5d;
+          background: #db1a5d;
+          color: #fff;
+          font-weight: 700;
+          box-shadow: 0 2px 8px rgba(219,26,93,0.25);
+        }
+        .pdp-size-chip.is-disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+          background: #f9fafb;
+        }
+        .pdp-size-chip.is-single {
+          cursor: default;
+        }
+        /* Single-option swatches: no cursor change */
+        .pdp-swatch.is-single { cursor: default; }
         .pdp-chip__line {
           position: absolute;
           left: 50%; top: 50%;

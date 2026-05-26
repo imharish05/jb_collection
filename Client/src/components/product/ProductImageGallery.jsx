@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import PropTypes from "prop-types";
 import AnotherLightbox from "yet-another-react-lightbox";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
@@ -14,6 +14,13 @@ const ProductImageGallery = ({ product }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
 
+  // Reset to first image when product images change (e.g. variant switch)
+  useEffect(() => {
+    setActiveIdx(0);
+    setImgLoaded(false);
+    setImgError(false);
+  }, [images[0]]);
+
   const slides = images.map((img) => ({ src: getImgUrl(img) }));
 
   const handleThumbClick = useCallback((idx) => {
@@ -21,6 +28,20 @@ const ProductImageGallery = ({ product }) => {
     setImgLoaded(false);
     setImgError(false);
   }, []);
+
+  const goPrev = useCallback((e) => {
+    e.stopPropagation();
+    setActiveIdx(i => (i - 1 + images.length) % images.length);
+    setImgLoaded(false);
+    setImgError(false);
+  }, [images.length]);
+
+  const goNext = useCallback((e) => {
+    e.stopPropagation();
+    setActiveIdx(i => (i + 1) % images.length);
+    setImgLoaded(false);
+    setImgError(false);
+  }, [images.length]);
 
   const openLightbox = (idx) => {
     setLightboxIdx(idx);
@@ -46,6 +67,22 @@ const ProductImageGallery = ({ product }) => {
           {isNew && <span className="pdp-badge pdp-badge--new">New</span>}
         </div>
 
+        {/* Prev / Next arrows */}
+        {images.length > 1 && (
+          <>
+            <button className="pdp-gallery__arrow pdp-gallery__arrow--prev" onClick={goPrev} aria-label="Previous image">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <button className="pdp-gallery__arrow pdp-gallery__arrow--next" onClick={goNext} aria-label="Next image">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </>
+        )}
+
         {/* Zoom hint */}
         <div className="pdp-gallery__zoom-hint">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -57,12 +94,11 @@ const ProductImageGallery = ({ product }) => {
 
         {images.length > 0 ? (
           <>
-            {/* Skeleton while loading */}
             {!imgLoaded && !imgError && (
               <div className="pdp-gallery__skeleton" />
             )}
             <img
-              key={activeIdx}
+              key={`${activeIdx}-${images[activeIdx]}`}
               src={getImgUrl(images[activeIdx])}
               alt={product?.name || "Product"}
               className={`pdp-gallery__main-img${imgLoaded ? " is-loaded" : ""}`}
@@ -151,6 +187,40 @@ const ProductImageGallery = ({ product }) => {
         .pdp-gallery__main:hover {
           box-shadow: 0 8px 40px rgba(0,0,0,0.10);
         }
+
+        /* Arrow nav buttons */
+        .pdp-gallery__arrow {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          z-index: 5;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.9);
+          border: 1px solid rgba(0,0,0,0.08);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          padding: 0;
+          color: #374151;
+          opacity: 0;
+          transition: opacity 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
+          backdrop-filter: blur(4px);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        .pdp-gallery__main:hover .pdp-gallery__arrow {
+          opacity: 1;
+        }
+        .pdp-gallery__arrow--prev { left: 12px; }
+        .pdp-gallery__arrow--next { right: 12px; }
+        .pdp-gallery__arrow:hover {
+          background: rgba(255,255,255,1);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+        }
+        .pdp-gallery__arrow--prev:hover { transform: translateY(-50%) translateX(-2px); }
+        .pdp-gallery__arrow--next:hover { transform: translateY(-50%) translateX(2px); }
 
         /* Skeleton shimmer */
         .pdp-gallery__skeleton {
@@ -318,6 +388,11 @@ const ProductImageGallery = ({ product }) => {
           .pdp-gallery__thumb {
             width: 58px;
             height: 58px;
+          }
+          .pdp-gallery__arrow {
+            opacity: 1;
+            width: 32px;
+            height: 32px;
           }
         }
       `}</style>
