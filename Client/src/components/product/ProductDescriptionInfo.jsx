@@ -9,7 +9,7 @@ import cogoToast from "cogo-toast";
 import { Icon } from "@iconify/react";
 import { getImgUrl } from "../../helpers/imageUrl";
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
 function safeAttrs(raw) {
   if (Array.isArray(raw)) return raw;
@@ -25,41 +25,35 @@ const hasBackendVariants = (p) =>
 const hasOldVariation = (p) =>
   Array.isArray(p.variation) && p.variation.length > 0 && p.variation[0].color !== undefined;
 
-// color name → CSS hex
 const COLOR_MAP = {
-  // Red family
-  red: "#e53935", crimson: "#c62828", maroon: "#800000",
-  scarlet: "#FF2400", ruby: "#9B111E", cherry: "#DE3163", carmine: "#960018",
-  orange: "#fb8c00", coral: "#ff7043", tangerine: "#F28500",
-  "burnt orrgba(141, 131, 118, 1)": "#CC5500", peach: "#FFCBA4", salmon: "#FA8072", apricot: "#FBCEB1",
-  yellow: "#fdd835", gold: "#ffc107", amber: "#ffb300",
-  lemon: "#FFF44F", canary: "#FFEF00", saffron: "#F4C430", khaki: "#C3B091",
-  green: "#43a047", olive: "#827717", lime: "#cddc39",
-  emerald: "#50C878", forest: "#228B22", sage: "#BCB88A", mint: "#98FF98",
-  moss: "#8A9A5B", chartreuse: "#7FFF00", jade: "#00A36C",
-  teal: "#00897b", cyan: "#00bcd4", turquoise: "#26c6da",
-  aquamarine: "#7FFFD4", seafoam: "#93E9BE", viridian: "#40826D",
+  red: "#e53935", crimson: "#c62828", maroon: "#800000", scarlet: "#FF2400", ruby: "#9B111E",
+  cherry: "#DE3163", carmine: "#960018", orange: "#fb8c00", coral: "#ff7043",
+  tangerine: "#F28500", peach: "#FFCBA4", salmon: "#FA8072", apricot: "#FBCEB1",
+  yellow: "#fdd835", gold: "#ffc107", amber: "#ffb300", lemon: "#FFF44F",
+  canary: "#FFEF00", saffron: "#F4C430", khaki: "#C3B091",
+  green: "#43a047", olive: "#827717", lime: "#cddc39", emerald: "#50C878",
+  forest: "#228B22", sage: "#BCB88A", mint: "#98FF98", moss: "#8A9A5B",
+  chartreuse: "#7FFF00", jade: "#00A36C", teal: "#00897b", cyan: "#00bcd4",
+  turquoise: "#26c6da", aquamarine: "#7FFFD4", seafoam: "#93E9BE", viridian: "#40826D",
   blue: "#1e88e5", navy: "#1a237e", skyblue: "#29b6f6", "sky blue": "#29b6f6",
   cobalt: "#0047AB", cerulean: "#007BA7", denim: "#1560BD", "royal blue": "#4169E1",
   "steel blue": "#4682B4", "powder blue": "#B0E0E6", "baby blue": "#89CFF0",
   "midnight blue": "#191970", periwinkle: "#CCCCFF",
   indigo: "#3949ab", purple: "#7b1fa2", violet: "#6a1b9a", lavender: "#b39ddb",
-  magenta: "#8e24aa", lilac: "#C8A2C8", plum: "#DDA0DD",
-  amethyst: "#9966CC", orchid: "#DA70D6", byzantium: "#702963",
-  pink: "#e91e63", rose: "#f48fb1", blush: "#DE5D83", "hot pink": "#FF69B4",
-  fuchsia: "#FF00FF", flamingo: "#FC8EAC", "rose gold": "#b76e79",
-  bubblegum: "#FFC1CC", carnation: "#FF7BA9",
-  white: "#ffffff", ivory: "#fffff0", cream: "#fffde7",
-  "off-white": "#FAF9F6", snow: "#FFFAFA", silver: "#bdbdbd",
-  grey: "#757575", gray: "#757575", charcoal: "#424242",
-  black: "#212121", jet: "#343434", onyx: "#353839", ash: "#B2BEB5",
-  brown: "#795548", tan: "#a1887f", beige: "#f5f5dc",
-  sienna: "#A0522D", mahogany: "#C04000", chestnut: "#954535",
-  coffee: "#6F4E37", caramel: "#C68642", umber: "#635147",
-  walnut: "#773F1A", hazel: "#8E7618", bronze: "#CD7F32",
+  magenta: "#8e24aa", lilac: "#C8A2C8", plum: "#DDA0DD", amethyst: "#9966CC",
+  orchid: "#DA70D6", byzantium: "#702963", pink: "#e91e63", rose: "#f48fb1",
+  blush: "#DE5D83", "hot pink": "#FF69B4", fuchsia: "#FF00FF", flamingo: "#FC8EAC",
+  "rose gold": "#b76e79", bubblegum: "#FFC1CC", carnation: "#FF7BA9",
+  white: "#ffffff", ivory: "#fffff0", cream: "#fffde7", "off-white": "#FAF9F6",
+  snow: "#FFFAFA", silver: "#bdbdbd", grey: "#757575", gray: "#757575",
+  charcoal: "#424242", black: "#212121", jet: "#343434", onyx: "#353839",
+  ash: "#B2BEB5", brown: "#795548", tan: "#a1887f", beige: "#f5f5dc",
+  sienna: "#A0522D", mahogany: "#C04000", chestnut: "#954535", coffee: "#6F4E37",
+  caramel: "#C68642", umber: "#635147", walnut: "#773F1A", hazel: "#8E7618",
+  bronze: "#CD7F32",
   multicolour: "linear-gradient(135deg,#f06,#0cf,#fc0)",
 };
-const LIGHT_COLORS = new Set(["white", "ivory", "cream", "yellow", "lime", "gold", "amber", "silver", "bronze"]);
+const LIGHT_COLORS = new Set(["white","ivory","cream","yellow","lime","gold","amber","silver","bronze","lemon","canary"]);
 
 function toHex(name) {
   if (!name) return null;
@@ -68,15 +62,10 @@ function toHex(name) {
   return COLOR_MAP[l] || null;
 }
 
-// Canonical key normalisation so "Colour"/"Color" both → "Colour"
 const KEY_ALIASES = { color: "Colour", colour: "Colour", size: "Size", material: "Material", finish: "Finish", capacity: "Capacity" };
 function normalKey(k) { return KEY_ALIASES[k?.toLowerCase()] || k; }
-
-// DISPLAY ORDER for attribute sections
 const KEY_ORDER = ["Colour", "Size", "Material", "Finish", "Capacity"];
 
-// ─── core logic: build grouped option map from all variants ──────────────────
-// Returns: { [key]: Set<value> }  — all values that exist across variants
 function buildOptionMap(variants) {
   const map = {};
   variants.forEach(v => {
@@ -90,84 +79,52 @@ function buildOptionMap(variants) {
   return map;
 }
 
-// Given current selections (partial), find which values are COMPATIBLE for a given key.
-// A value is compatible if there exists at least one variant that matches all OTHER
-// currently-selected keys AND this value for the given key.
 function compatibleValues(variants, selections, targetKey) {
   const compatible = new Set();
   variants.forEach(v => {
     const attrs = {};
     safeAttrs(v.attributes)
       .filter(a => a.key && a.value && a.key !== "Custom Note")
-      .forEach(a => {
-        const k = normalKey(a.key);
-        if (!attrs[k]) attrs[k] = [];
-        attrs[k].push(a.value);
-      });
-
-    // Check all OTHER selected keys match this variant
+      .forEach(a => { const k = normalKey(a.key); if (!attrs[k]) attrs[k] = []; attrs[k].push(a.value); });
     const othersMatch = Object.entries(selections).every(([k, val]) => {
       if (k === targetKey || !val) return true;
       return attrs[k] && attrs[k].includes(val);
     });
-    if (othersMatch && attrs[targetKey]) {
-      attrs[targetKey].forEach(val => compatible.add(val));
-    }
+    if (othersMatch && attrs[targetKey]) attrs[targetKey].forEach(val => compatible.add(val));
   });
   return compatible;
 }
 
-// Find the best matching variant given current selections
 function findMatchingVariant(variants, selections) {
   const entries = Object.entries(selections).filter(([, v]) => v);
   if (!entries.length) return variants[0] || null;
-
-  // Exact match first
   const exact = variants.find(v => {
     const attrs = {};
-    safeAttrs(v.attributes)
-      .filter(a => a.key && a.value)
-      .forEach(a => {
-        const k = normalKey(a.key);
-        if (!attrs[k]) attrs[k] = [];
-        attrs[k].push(a.value);
-      });
+    safeAttrs(v.attributes).filter(a => a.key && a.value)
+      .forEach(a => { const k = normalKey(a.key); if (!attrs[k]) attrs[k] = []; attrs[k].push(a.value); });
     return entries.every(([k, val]) => attrs[k] && attrs[k].includes(val));
   });
   if (exact) return exact;
-
-  // Best partial match (most keys matched)
   let best = null, bestScore = -1;
   variants.forEach(v => {
     const attrs = {};
-    safeAttrs(v.attributes)
-      .filter(a => a.key && a.value)
-      .forEach(a => {
-        const k = normalKey(a.key);
-        if (!attrs[k]) attrs[k] = [];
-        attrs[k].push(a.value);
-      });
+    safeAttrs(v.attributes).filter(a => a.key && a.value)
+      .forEach(a => { const k = normalKey(a.key); if (!attrs[k]) attrs[k] = []; attrs[k].push(a.value); });
     const score = entries.filter(([k, val]) => attrs[k] && attrs[k].includes(val)).length;
-    if (score > bestScore) {
-      bestScore = score;
-      best = v;
-    }
+    if (score > bestScore) { bestScore = score; best = v; }
   });
   return best;
 }
 
-// ─── styles ───────────────────────────────────────────────────────────────────
-const ORANGE = "#F15A24";
-const ORANGE_LIGHT = "#FEF0EB";
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-// ─── Custom Note display ──────────────────────────────────────────────────────
 function CustomNoteSection({ variant }) {
   const attrs = safeAttrs(variant.attributes).filter(a => a.key === "Custom Note");
   if (!attrs.length) return null;
   return (
-    <div style={{ marginTop: 14, padding: "10px 14px", background: "#FEF9F0", border: "1px solid #F8D9B8", borderRadius: 8 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#8B5E1A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
-        ✏️ Customisation Info
+    <div style={{ marginTop: 12, padding: "12px 16px", background: "#FEF9F0", border: "1px solid #F8D9B8", borderRadius: 10 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#8B5E1A", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+        <span>✏️</span> Customisation Info
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
         {attrs.flatMap((attr, i) =>
@@ -177,12 +134,12 @@ function CustomNoteSection({ variant }) {
               const k = part.slice(0, ci).trim();
               const val = part.slice(ci + 1).trim();
               return (
-                <span key={`${i}-${j}`} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, padding: "3px 10px", borderRadius: 5, background: "#fff", border: "1px solid #F0C080", color: "#5C3D0E", fontWeight: 500 }}>
+                <span key={`${i}-${j}`} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, padding: "3px 10px", borderRadius: 6, background: "#fff", border: "1px solid #F0C080", color: "#5C3D0E", fontWeight: 500 }}>
                   <span style={{ color: "#C57D20", fontWeight: 700 }}>{k}:</span>{val}
                 </span>
               );
             }
-            return <span key={`${i}-${j}`} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 5, background: "#fff", border: "1px solid #F0C080", color: "#5C3D0E" }}>{part}</span>;
+            return <span key={`${i}-${j}`} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, background: "#fff", border: "1px solid #F0C080", color: "#5C3D0E" }}>{part}</span>;
           })
         )}
       </div>
@@ -190,24 +147,20 @@ function CustomNoteSection({ variant }) {
   );
 }
 
-// ─── Single attribute group (one row: label + swatches/chips) ─────────────────
 function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSelect }) {
   const isColour = /colou?r/i.test(attrKey);
+  const ACCENT = "#F15A24";
+  const ACCENT_BG = "#FEF0EB";
 
   return (
-    <div style={{ marginBottom: 16 }}>
-      {/* Label row */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#444", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          {attrKey}
-        </span>
+    <div className="pdp-attr-group">
+      <div className="pdp-attr-label">
+        <span className="pdp-attr-key">{attrKey}</span>
         {selectedValue && (
-          <span style={{ fontSize: 12, color: ORANGE, fontWeight: 600 }}>— {selectedValue}</span>
+          <span className="pdp-attr-selected">— {selectedValue}</span>
         )}
       </div>
-
-      {/* Swatches / chips */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: isColour ? 10 : 8 }}>
+      <div className={`pdp-attr-options${isColour ? " is-colour" : ""}`}>
         {[...allValues].map(val => {
           const isSelected = selectedValue === val;
           const isDisabled = !compatibleSet.has(val);
@@ -215,80 +168,31 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
           const isLight = LIGHT_COLORS.has(val.toLowerCase());
 
           if (isColour && hex) {
-            // ── Color swatch circle ──────────────────────────────────────────
             return (
               <button
                 key={val}
                 title={val}
                 disabled={isDisabled}
                 onClick={() => onSelect(isSelected ? null : val)}
-                style={{
-                  position: "relative",
-                  width: 34, height: 34, borderRadius: "50%",
-                  background: hex,
-                  border: isSelected
-                    ? `3px solid ${ORANGE}`
-                    : isLight ? "2px solid #ccc" : "2px solid transparent",
-                  boxShadow: isSelected
-                    ? `0 0 0 2px ${ORANGE_LIGHT}, 0 0 0 4px ${ORANGE}`
-                    : "0 1px 4px rgba(0,0,0,0.18)",
-                  cursor: isDisabled ? "not-allowed" : "pointer",
-                  opacity: isDisabled ? 0.35 : 1,
-                  transition: "box-shadow 0.15s, border 0.15s",
-                  flexShrink: 0,
-                  padding: 0,
-                  overflow: "hidden",
-                }}
+                className={`pdp-swatch${isSelected ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}${isLight ? " is-light" : ""}`}
+                style={{ "--swatch-color": hex }}
               >
-                {/* diagonal strikethrough for disabled */}
-                {isDisabled && (
-                  <span style={{
-                    position: "absolute", inset: 0, borderRadius: "50%",
-                    background: "repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(0,0,0,0.25) 4px,rgba(0,0,0,0.25) 5px)",
-                  }} />
-                )}
-                {/* checkmark for selected */}
+                {isDisabled && <span className="pdp-swatch__cross" />}
                 {isSelected && (
-                  <span style={{
-                    position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                    color: isLight ? "#333" : "#fff", fontSize: 14, fontWeight: 900,
-                  }}>✓</span>
+                  <span className="pdp-swatch__check" style={{ color: isLight ? "#333" : "#fff" }}>✓</span>
                 )}
               </button>
             );
           }
 
-          // ── Text chip ────────────────────────────────────────────────────────
           return (
             <button
               key={val}
               disabled={isDisabled}
               onClick={() => onSelect(isSelected ? null : val)}
-              style={{
-                position: "relative",
-                padding: "6px 14px",
-                border: `2px solid ${isSelected ? ORANGE : isDisabled ? "#e5e7eb" : "#d1d5db"}`,
-                borderRadius: 6,
-                background: isSelected ? ORANGE_LIGHT : isDisabled ? "#f9fafb" : "#fff",
-                color: isSelected ? ORANGE : isDisabled ? "#c0c4cc" : "#374151",
-                fontWeight: isSelected ? 700 : 400,
-                fontSize: 13,
-                cursor: isDisabled ? "not-allowed" : "pointer",
-                transition: "all 0.15s",
-                fontFamily: "inherit",
-                letterSpacing: "0.01em",
-                overflow: "hidden",
-              }}
+              className={`pdp-chip${isSelected ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}`}
             >
-              {/* strikethrough line for disabled */}
-              {isDisabled && (
-                <span style={{
-                  position: "absolute", left: "50%", top: "50%",
-                  transform: "translate(-50%,-50%) rotate(-15deg)",
-                  width: "110%", height: 1,
-                  background: "#d1d5db", pointerEvents: "none",
-                }} />
-              )}
+              {isDisabled && <span className="pdp-chip__line" />}
               {val}
             </button>
           );
@@ -298,182 +202,52 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
   );
 }
 
-// ─── Combo Products Section ───────────────────────────────────────────────────
 function ComboProductsSection({ combo, allProducts }) {
   if (!combo) return null;
-
-  // Resolve combo products from productIds list
   const productIds = Array.isArray(combo.productIds) ? combo.productIds : [];
   const comboProducts = productIds.length > 0
     ? productIds.map(id => allProducts.find(p => String(p.id) === String(id))).filter(Boolean)
     : allProducts.filter(p => p.comboId && String(p.comboId) === String(combo.id));
-
   if (!comboProducts.length) return null;
-
   const discounted = combo.discountedPrice && parseFloat(combo.discountedPrice) > 0;
-  const saving = discounted
-    ? Math.round(((parseFloat(combo.price) - parseFloat(combo.discountedPrice)) / parseFloat(combo.price)) * 100)
-    : null;
+  const saving = discounted ? Math.round(((parseFloat(combo.price) - parseFloat(combo.discountedPrice)) / parseFloat(combo.price)) * 100) : null;
 
   return (
-    <div style={{
-      margin: "20px 0",
-      border: "1.5px solid #F15A24",
-      borderRadius: 12,
-      overflow: "hidden",
-      background: "#fff",
-    }}>
-      {/* Header */}
-      <div style={{
-        background: "linear-gradient(135deg, #F15A24 0%, #e04d19 100%)",
-        padding: "12px 16px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: 8,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 16 }}>🎁</span>
-          <span style={{ color: "#fff", fontWeight: 700, fontSize: 14, letterSpacing: "0.03em" }}>
-            {combo.name || combo.label} — Combo Pack
-          </span>
-          <span style={{
-            background: "rgba(255,255,255,0.25)", color: "#fff",
-            fontSize: 11, fontWeight: 600, borderRadius: 10, padding: "2px 8px",
-          }}>
-            {comboProducts.length} items
-          </span>
+    <div className="pdp-combo">
+      <div className="pdp-combo__header">
+        <div className="pdp-combo__title">
+          <span>🎁</span>
+          <span>{combo.name || combo.label} — Combo Pack</span>
+          <span className="pdp-combo__count">{comboProducts.length} items</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="pdp-combo__price">
           {discounted ? (
             <>
-              <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, textDecoration: "line-through" }}>
-                ₹{parseFloat(combo.price).toLocaleString("en-IN")}
-              </span>
-              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>
-                ₹{parseFloat(combo.discountedPrice).toLocaleString("en-IN")}
-              </span>
-              {saving > 0 && (
-                <span style={{
-                  background: "#22c55e", color: "#fff",
-                  fontSize: 11, fontWeight: 700, borderRadius: 10, padding: "2px 8px",
-                }}>
-                  {saving}% OFF
-                </span>
-              )}
+              <span className="pdp-combo__price-old">₹{parseFloat(combo.price).toLocaleString("en-IN")}</span>
+              <span className="pdp-combo__price-new">₹{parseFloat(combo.discountedPrice).toLocaleString("en-IN")}</span>
+              {saving > 0 && <span className="pdp-combo__saving">{saving}% OFF</span>}
             </>
           ) : (
-            <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>
-              ₹{parseFloat(combo.price).toLocaleString("en-IN")}
-            </span>
+            <span className="pdp-combo__price-new">₹{parseFloat(combo.price).toLocaleString("en-IN")}</span>
           )}
         </div>
       </div>
-
-      {/* Description */}
-      {combo.description && (
-        <div style={{
-          padding: "8px 16px",
-          background: "#FEF0EB",
-          fontSize: 12,
-          color: "#7C3D1A",
-          borderBottom: "1px solid #fdd5c0",
-        }}>
-          {combo.description}
-        </div>
-      )}
-
-      {/* Products grid */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
-        gap: 1,
-        background: "#f3f4f6",
-      }}>
+      {combo.description && <div className="pdp-combo__desc">{combo.description}</div>}
+      <div className="pdp-combo__grid">
         {comboProducts.map((p, idx) => {
           const img = Array.isArray(p.image) ? p.image[0] : p.image;
           const variants = Array.isArray(p.Variants) ? p.Variants : [];
-          const price = variants.length > 0
-            ? parseFloat(variants[0].salesPrice || 0)
-            : parseFloat(p.price || 0);
-
+          const price = variants.length > 0 ? parseFloat(variants[0].salesPrice || 0) : parseFloat(p.price || 0);
           return (
-            <Link
-              key={p.id}
-              to={`${process.env.PUBLIC_URL}/product/${p.id}`}
-              style={{ textDecoration: "none" }}
-            >
-              <div style={{
-                background: "#fff",
-                padding: 10,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 6,
-                transition: "background 0.15s",
-                cursor: "pointer",
-                minHeight: 140,
-              }}
-                onMouseEnter={e => e.currentTarget.style.background = "#FEF0EB"}
-                onMouseLeave={e => e.currentTarget.style.background = "#fff"}
-              >
-                {/* Item number badge */}
-                <div style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 4 }}>
-                  <span style={{
-                    width: 18, height: 18, borderRadius: "50%",
-                    background: "#F15A24", color: "#fff",
-                    fontSize: 10, fontWeight: 700,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0,
-                  }}>
-                    {idx + 1}
-                  </span>
-                </div>
-
-                {/* Image */}
-                <div style={{
-                  width: 72, height: 72,
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  background: "#f9fafb",
-                  border: "1px solid #e5e7eb",
-                  flexShrink: 0,
-                }}>
-                  {img ? (
-                    <img
-                      src={getImgUrl(img)}
-                      alt={p.name}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      onError={e => { e.target.style.display = "none"; }}
-                    />
-                  ) : (
-                    <div style={{
-                      width: "100%", height: "100%",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 22, color: "#d1d5db",
-                    }}>🎁</div>
-                  )}
-                </div>
-
-                {/* Name */}
-                <div style={{
-                  fontSize: 11, fontWeight: 600, color: "#374151",
-                  textAlign: "center", lineHeight: 1.3,
-                  display: "-webkit-box", WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical", overflow: "hidden",
-                  width: "100%",
-                }}>
-                  {p.name}
-                </div>
-
-                {/* Price */}
-                {price > 0 && (
-                  <div style={{ fontSize: 11, color: "#F15A24", fontWeight: 700 }}>
-                    ₹{price.toLocaleString("en-IN")}
-                  </div>
-                )}
+            <Link key={p.id} to={`${process.env.PUBLIC_URL}/product/${p.id}`} className="pdp-combo__item">
+              <div className="pdp-combo__item-num">{idx + 1}</div>
+              <div className="pdp-combo__item-img">
+                {img ? (
+                  <img src={getImgUrl(img)} alt={p.name} onError={e => { e.target.style.display = "none"; }} />
+                ) : <span>🎁</span>}
               </div>
+              <div className="pdp-combo__item-name">{p.name}</div>
+              {price > 0 && <div className="pdp-combo__item-price">₹{price.toLocaleString("en-IN")}</div>}
             </Link>
           );
         })}
@@ -483,6 +257,7 @@ function ComboProductsSection({ combo, allProducts }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
+
 const ProductDescriptionInfo = ({
   product,
   discountedPrice,
@@ -490,14 +265,13 @@ const ProductDescriptionInfo = ({
   finalDiscountedPrice,
   finalProductPrice,
   cartItems: cartItemsProp,
-  wishlistItems,         // all wishlist items for this product (filtered by productId)
-  onVariantImageChange,   // callback → parent lifts image for gallery
+  wishlistItems,
+  onVariantImageChange,
 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
   const allProducts = useSelector((state) => state.product.products || []);
-  // Use direct selector so button always reflects current cart state
   const cartItemsFromStore = useSelector((state) => state.cart.cartItems);
   const cartItems = cartItemsFromStore || cartItemsProp || [];
 
@@ -505,10 +279,7 @@ const ProductDescriptionInfo = ({
   const hasNewVar = hasBackendVariants(product);
   const hasOldVar = !hasNewVar && hasOldVariation(product);
 
-  // ── Backend variants: grouped attribute selection ──────────────────────────
   const optionMap = useMemo(() => hasNewVar ? buildOptionMap(product.Variants) : {}, [product]);
-
-  // ordered keys present in this product
   const attrKeys = useMemo(() => {
     const present = Object.keys(optionMap);
     const ordered = KEY_ORDER.filter(k => present.includes(k));
@@ -516,18 +287,12 @@ const ProductDescriptionInfo = ({
     return [...ordered, ...rest];
   }, [optionMap]);
 
-  // selections: { Colour: "Red", Size: "M", ... }
   const [selections, setSelections] = useState(() => {
     if (!hasNewVar || !product.Variants.length) return {};
-    // Build the full option map first
     const oMap = buildOptionMap(product.Variants);
     const keys = Object.keys(oMap);
-    // If every key has exactly 1 option → auto-select all (single combo variant)
     const allSingle = keys.length > 0 && keys.every(k => oMap[k].size === 1);
-    if (allSingle) {
-      return Object.fromEntries(keys.map(k => [k, [...oMap[k]][0]]));
-    }
-    // Otherwise default to first variant's attributes
+    if (allSingle) return Object.fromEntries(keys.map(k => [k, [...oMap[k]][0]]));
     const first = product.Variants[0];
     return Object.fromEntries(
       safeAttrs(first.attributes)
@@ -541,48 +306,34 @@ const ProductDescriptionInfo = ({
     [selections, product.Variants, hasNewVar]
   );
 
-  // ── Custom-note-only variant (no selectable attrs) ─────────────────────────
   const customNoteVariant = useMemo(() =>
-    hasNewVar
-      ? product.Variants.find(v =>
-          safeAttrs(v.attributes).every(a => a.key === "Custom Note")
-        )
-      : null,
-  [product.Variants, hasNewVar]);
+    hasNewVar ? product.Variants.find(v => safeAttrs(v.attributes).every(a => a.key === "Custom Note")) : null,
+    [product.Variants, hasNewVar]
+  );
 
   const handleSelect = (key, value) => {
     const next = { ...selections, [key]: value };
     if (!value) delete next[key];
     setSelections(next);
-    setErrors(prev => ({ ...prev, variant: '' }));
-
-    // if the new variant has its own image, tell the gallery
+    setErrors(prev => ({ ...prev, variant: "" }));
     if (onVariantImageChange) {
       const v = findMatchingVariant(product.Variants, next);
       onVariantImageChange(v?.image || null);
     }
   };
 
-  // ── Old variation ──────────────────────────────────────────────────────────
   const [selectedProductColor, setSelectedProductColor] = useState(hasOldVar ? product.variation[0].color : "");
   const [selectedProductSize, setSelectedProductSize] = useState(hasOldVar ? product.variation[0].size[0].name : "");
   const [productStock, setProductStock] = useState(hasOldVar ? product.variation[0].size[0].stock : product.stock ?? 10);
   const [quantityCount, setQuantityCount] = useState(1);
   const [errors, setErrors] = useState({});
 
-  const effectiveStock = selectedVariant
-    ? Number(selectedVariant.stock ?? 0)
-    : productStock;
+  const effectiveStock = selectedVariant ? Number(selectedVariant.stock ?? 0) : productStock;
 
-  // For backend variants: qty in cart for this specific variant
-  // For old variations: use helper
   const productCartQty = useMemo(() => {
     if (hasNewVar && selectedVariant) {
-      // String() normalises both sides — product.id may be integer or UUID string
       const match = cartItems?.find(
-        item =>
-          String(item.id) === String(product.id) &&
-          Number(item.selectedVariantId) === Number(selectedVariant.id)
+        item => String(item.id) === String(product.id) && Number(item.selectedVariantId) === Number(selectedVariant.id)
       );
       return match ? match.quantity : 0;
     }
@@ -595,51 +346,35 @@ const ProductDescriptionInfo = ({
   };
 
   const ErrorMsg = ({ field }) => errors[field] ? (
-    <div style={{ color: '#dc2626', fontSize: 12, fontWeight: 600, marginTop: 6 }}>
-      {errors[field]}
+    <div style={{ color: "#dc2626", fontSize: 12, fontWeight: 600, marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
+      <span>⚠</span> {errors[field]}
     </div>
   ) : null;
 
   const validateCart = () => {
     const next = {};
-
     if (hasNewVar) {
-      // Find variants compatible with current (possibly partial) selections
       const compatibleVariants = product.Variants.filter(v => {
         const attrs = {};
-        safeAttrs(v.attributes)
-          .filter(a => a.key && a.value && a.key !== "Custom Note")
-          .forEach(a => {
-            const k = normalKey(a.key);
-            if (!attrs[k]) attrs[k] = [];
-            attrs[k].push(a.value);
-          });
+        safeAttrs(v.attributes).filter(a => a.key && a.value && a.key !== "Custom Note")
+          .forEach(a => { const k = normalKey(a.key); if (!attrs[k]) attrs[k] = []; attrs[k].push(a.value); });
         return Object.entries(selections).every(([k, val]) => {
           if (!val) return true;
           return attrs[k] && attrs[k].includes(val);
         });
       });
-
-      // Only require keys that actually exist in compatible variants
       const requiredKeys = new Set();
       compatibleVariants.forEach(v => {
-        safeAttrs(v.attributes)
-          .filter(a => a.key && a.value && a.key !== "Custom Note")
+        safeAttrs(v.attributes).filter(a => a.key && a.value && a.key !== "Custom Note")
           .forEach(a => requiredKeys.add(normalKey(a.key)));
       });
-
       const missing = [...requiredKeys].filter(key => !selections[key]);
-      if (missing.length > 0) {
-        next.variant = `Please select: ${missing.join(', ')}`;
-      } else if (!selectedVariant) {
-        next.variant = 'Please select a valid variant';
-      }
+      if (missing.length > 0) next.variant = `Please select: ${missing.join(", ")}`;
+      else if (!selectedVariant) next.variant = "Please select a valid variant";
     }
-
-    if (!quantityCount || quantityCount < 1) next.quantity = 'Please select at least 1 quantity';
-    if (effectiveStock <= 0) next.quantity = 'This product is out of stock';
-    if (quantityCount + productCartQty > effectiveStock) next.quantity = 'Selected quantity exceeds available stock';
-
+    if (!quantityCount || quantityCount < 1) next.quantity = "Please select at least 1 quantity";
+    if (effectiveStock <= 0) next.quantity = "This product is out of stock";
+    if (quantityCount + productCartQty > effectiveStock) next.quantity = "Selected quantity exceeds available stock";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -651,8 +386,6 @@ const ProductDescriptionInfo = ({
       return;
     }
     if (!validateCart()) return;
-
-    // Extract color & size from selected variant's attributes for server dedup
     let variantColor = selectedProductColor || null;
     let variantSize = selectedProductSize || null;
     if (selectedVariant) {
@@ -663,7 +396,6 @@ const ProductDescriptionInfo = ({
         if (k === "Size") variantSize = a.value;
       });
     }
-
     addToCartService(dispatch, {
       ...product,
       selectedVariantId: selectedVariant?.id || null,
@@ -681,11 +413,9 @@ const ProductDescriptionInfo = ({
       redirectToLogin();
       return;
     }
-    // Pass the currently selected variant id so the wishlist entry is variant-specific
     addToWishlistService(product, selectedVariant?.id ?? null);
   };
 
-  // Find if this specific variant (or product if no variants) is already in wishlist
   const wishlistItems_ = Array.isArray(wishlistItems) ? wishlistItems : (wishlistItems ? [wishlistItems] : []);
   const wishlistItem = wishlistItems_.find(item => {
     const a = item.selectedVariantId != null ? Number(item.selectedVariantId) : null;
@@ -694,89 +424,82 @@ const ProductDescriptionInfo = ({
   });
   const isInWishlist = wishlistItem !== undefined;
 
-  return (
-    <div className="product-details-content ml-70">
-      <h2>{product.name}</h2>
+  // ── Price display ──────────────────────────────────────────────────────────
+  const currentPrice = selectedVariant
+    ? parseFloat(selectedVariant.salesPrice)
+    : (discountedPrice !== null ? finalDiscountedPrice : finalProductPrice);
+  const oldPrice = selectedVariant && Number(selectedVariant.mrp) > Number(selectedVariant.salesPrice)
+    ? parseFloat(selectedVariant.mrp)
+    : (discountedPrice !== null ? finalProductPrice : null);
+  const savePct = selectedVariant && Number(selectedVariant.mrp) > Number(selectedVariant.salesPrice)
+    ? Math.round((1 - selectedVariant.salesPrice / selectedVariant.mrp) * 100)
+    : (product.discount > 0 ? product.discount : null);
 
-      {/* ── Price ── */}
-      <div className="product-details-price">
-        {selectedVariant ? (
-          <Fragment>
-            <span>{currencySymbol}{parseFloat(selectedVariant.salesPrice).toFixed(2)}</span>
-            {Number(selectedVariant.mrp) > Number(selectedVariant.salesPrice) && (
-              <>{" "}<span className="old">{currencySymbol}{parseFloat(selectedVariant.mrp).toFixed(2)}</span></>
-            )}
-          </Fragment>
-        ) : discountedPrice !== null ? (
-          <Fragment>
-            <span>{currencySymbol}{finalDiscountedPrice}</span>{" "}
-            <span className="old">{currencySymbol}{finalProductPrice}</span>
-          </Fragment>
-        ) : (
-          <span>{currencySymbol}{finalProductPrice}</span>
-        )}
-      </div>
+  return (
+    <div className="pdp-info">
+
+      {/* ── Product name ── */}
+      <h1 className="pdp-info__name">{product.name}</h1>
 
       {/* ── Rating ── */}
       {product.rating > 0 && (
-        <div className="pro-details-rating-wrap">
-          <div className="pro-details-rating"><Rating ratingValue={product.rating} /></div>
+        <div className="pdp-info__rating">
+          <Rating ratingValue={product.rating} />
+          <span className="pdp-info__rating-num">{Number(product.rating).toFixed(1)}</span>
         </div>
       )}
 
-      <div className="pro-details-list">
-        <p>{product.shortDescription}</p>
+      {/* ── Price block ── */}
+      <div className="pdp-info__price-block">
+        <span className="pdp-info__price">
+          {currencySymbol}{currentPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+        {oldPrice && (
+          <span className="pdp-info__price-old">
+            {currencySymbol}{oldPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        )}
+        {savePct > 0 && (
+          <span className="pdp-info__save-badge">{savePct}% OFF</span>
+        )}
       </div>
 
-      {/* ══════════════ COMBO PRODUCTS ══════════════ */}
-      {product.Combo && (
-        <ComboProductsSection combo={product.Combo} allProducts={allProducts} />
+      {/* ── Short description ── */}
+      {product.shortDescription && (
+        <p className="pdp-info__short-desc">{product.shortDescription}</p>
       )}
 
-      {/* ══════════════ BACKEND VARIANT SELECTOR ══════════════ */}
+      <div className="pdp-info__divider" />
+
+      {/* ── Combo ── */}
+      {product.Combo && <ComboProductsSection combo={product.Combo} allProducts={allProducts} />}
+
+      {/* ── Backend variant selector ── */}
       {hasNewVar && (
-        <div style={{ marginBottom: 20 }}>
-          {attrKeys.map(key => {
-            const allValues = optionMap[key];
-            const compatible = compatibleValues(product.Variants, selections, key);
-            return (
-              <AttributeGroup
-                key={key}
-                attrKey={key}
-                allValues={allValues}
-                selectedValue={selections[key] || null}
-                compatibleSet={compatible}
-                onSelect={(val) => handleSelect(key, val)}
-              />
-            );
-          })}
+        <div className="pdp-info__variants">
+          {attrKeys.map(key => (
+            <AttributeGroup
+              key={key}
+              attrKey={key}
+              allValues={optionMap[key]}
+              selectedValue={selections[key] || null}
+              compatibleSet={compatibleValues(product.Variants, selections, key)}
+              onSelect={(val) => handleSelect(key, val)}
+            />
+          ))}
 
-          {/* Stock indicator */}
+          {/* Stock status */}
           {selectedVariant && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, marginTop: -4 }}>
-              <span style={{
-                width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-                background: effectiveStock > 0 ? "#16a34a" : "#dc2626",
-              }} />
-              <span style={{ fontSize: 13, color: effectiveStock > 0 ? "#16a34a" : "#dc2626", fontWeight: 600 }}>
-                {effectiveStock > 0 ? `In Stock` : "Out of Stock"}
+            <div className="pdp-info__stock">
+              <span className={`pdp-info__stock-dot${effectiveStock > 0 ? " is-in" : " is-out"}`} />
+              <span className={`pdp-info__stock-label${effectiveStock > 0 ? " is-in" : " is-out"}`}>
+                {effectiveStock > 0 ? `In Stock (${effectiveStock} available)` : "Out of Stock"}
               </span>
             </div>
           )}
 
-          {/* Discount badge */}
-          {selectedVariant && Number(selectedVariant.mrp) > Number(selectedVariant.salesPrice) && (
-            <div style={{ marginBottom: 10 }}>
-              <span style={{ display: "inline-block", padding: "2px 10px", background: "#dcfce7", color: "#15803d", borderRadius: 4, fontSize: 12, fontWeight: 700 }}>
-                {Math.round((1 - selectedVariant.salesPrice / selectedVariant.mrp) * 100)}% OFF
-              </span>
-            </div>
-          )}
-
-          {/* Custom Note section — from selected variant */}
+          {/* Custom note */}
           {selectedVariant && <CustomNoteSection variant={selectedVariant} />}
-
-          {/* Custom Note section — from standalone custom-note-only variant */}
           {customNoteVariant && customNoteVariant !== selectedVariant && (
             <CustomNoteSection variant={customNoteVariant} />
           )}
@@ -784,36 +507,58 @@ const ProductDescriptionInfo = ({
         </div>
       )}
 
-      {/* ══════════════ OLD VARIATION SELECTOR ══════════════ */}
+      {/* ── Old variation selector ── */}
       {hasOldVar && (
-        <div className="pro-details-size-color">
-          <div className="pro-details-color-wrap">
-            <span>Color</span>
-            <div className="pro-details-color-content">
-              {product.variation.map((single, key) => (
-                <label className={`pro-details-color-content--single ${single.color}`} key={key}>
-                  <input type="radio" value={single.color} name="product-color"
-                    checked={single.color === selectedProductColor}
-                    onChange={() => { setSelectedProductColor(single.color); setSelectedProductSize(single.size[0].name); setProductStock(single.size[0].stock); setQuantityCount(1); }}
-                  />
-                  <span className="checkmark" />
-                </label>
-              ))}
+        <div className="pdp-info__variants">
+          <div className="pdp-attr-group">
+            <div className="pdp-attr-label">
+              <span className="pdp-attr-key">Colour</span>
+              {selectedProductColor && <span className="pdp-attr-selected">— {selectedProductColor}</span>}
+            </div>
+            <div className="pdp-attr-options is-colour">
+              {product.variation.map((single, key) => {
+                const hex = toHex(single.color);
+                const isLight = LIGHT_COLORS.has(single.color?.toLowerCase());
+                const isSelected = single.color === selectedProductColor;
+                return hex ? (
+                  <button
+                    key={key}
+                    title={single.color}
+                    onClick={() => { setSelectedProductColor(single.color); setSelectedProductSize(single.size[0].name); setProductStock(single.size[0].stock); setQuantityCount(1); }}
+                    className={`pdp-swatch${isSelected ? " is-selected" : ""}${isLight ? " is-light" : ""}`}
+                    style={{ "--swatch-color": hex }}
+                  >
+                    {isSelected && <span className="pdp-swatch__check" style={{ color: isLight ? "#333" : "#fff" }}>✓</span>}
+                  </button>
+                ) : (
+                  <button
+                    key={key}
+                    onClick={() => { setSelectedProductColor(single.color); setSelectedProductSize(single.size[0].name); setProductStock(single.size[0].stock); setQuantityCount(1); }}
+                    className={`pdp-chip${isSelected ? " is-selected" : ""}`}
+                  >
+                    {single.color}
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <div className="pro-details-size">
-            <span>Size</span>
-            <div className="pro-details-size-content">
+
+          <div className="pdp-attr-group">
+            <div className="pdp-attr-label">
+              <span className="pdp-attr-key">Size</span>
+              {selectedProductSize && <span className="pdp-attr-selected">— {selectedProductSize}</span>}
+            </div>
+            <div className="pdp-attr-options">
               {product.variation.map(single =>
                 single.color === selectedProductColor
                   ? single.size.map((singleSize, key) => (
-                    <label className="pro-details-size-content--single" key={key}>
-                      <input type="radio" value={singleSize.name}
-                        checked={singleSize.name === selectedProductSize}
-                        onChange={() => { setSelectedProductSize(singleSize.name); setProductStock(singleSize.stock); setQuantityCount(1); }}
-                      />
-                      <span className="size-name">{singleSize.name}</span>
-                    </label>
+                    <button
+                      key={key}
+                      onClick={() => { setSelectedProductSize(singleSize.name); setProductStock(singleSize.stock); setQuantityCount(1); }}
+                      className={`pdp-chip${singleSize.name === selectedProductSize ? " is-selected" : ""}`}
+                    >
+                      {singleSize.name}
+                    </button>
                   ))
                   : null
               )}
@@ -822,130 +567,604 @@ const ProductDescriptionInfo = ({
         </div>
       )}
 
-      {/* ── Add to cart ── */}
+      <div className="pdp-info__divider" />
+
+      {/* ── Add to cart / Affiliate ── */}
       {product.affiliateLink ? (
-        <div className="pro-details-quality">
-          <div className="pro-details-cart btn-hover ml-0">
-            <a href={product.affiliateLink} rel="noopener noreferrer" target="_blank">Buy Now</a>
-          </div>
+        <div className="pdp-info__actions">
+          <a href={product.affiliateLink} rel="noopener noreferrer" target="_blank" className="pdp-btn pdp-btn--primary">
+            Buy Now
+          </a>
         </div>
       ) : (
-        <div className="pro-details-quality">
-          <div className="cart-plus-minus">
-            <button onClick={() => setQuantityCount(q => Math.max(1, q - 1))} className="dec qtybutton">-</button>
-            <input className="cart-plus-minus-box" type="text" value={quantityCount} readOnly />
-            <button onClick={() => setQuantityCount(q => q < effectiveStock - productCartQty ? q + 1 : q)} className="inc qtybutton">+</button>
-          </div>
-          <div className="pro-details-cart btn-hover">
-            {effectiveStock > 0 ? (() => {
-              const inCart = isAuthenticated && productCartQty > 0;
-              return inCart ? (
-                <Link
-                  to="/cart"
-                  className="pro-details-cart-btn"
-                  style={{ background: "#22c55e", color: "#fff", display: "inline-block", padding: "0 30px", lineHeight: "44px", fontWeight: 600, borderRadius: "4px", textDecoration: "none" }}
-                >
-                  Go to cart →
-                </Link>
-              ) : (
-                <button
-                  onClick={handleAddToCart}
-                  disabled={isAuthenticated && productCartQty >= effectiveStock}
-                >
-                  Add To Cart
-                </button>
-              );
-            })() : (
-              <button disabled>Out of Stock</button>
-            )}
-          </div>
-          <ErrorMsg field="quantity" />
-          <div className="pro-details-wishlist">
+        <div className="pdp-info__actions">
+          {/* Qty */}
+          <div className="pdp-qty">
             <button
-              className={isInWishlist ? "active" : ""}
-              disabled={isAuthenticated && isInWishlist}
-              title={isInWishlist ? "Added to wishlist" : "Add to wishlist"}
-              onClick={handleWishlist}
+              className="pdp-qty__btn"
+              onClick={() => setQuantityCount(q => Math.max(1, q - 1))}
+              disabled={quantityCount <= 1}
             >
-              <i className="pe-7s-like" />
+              <svg width="14" height="2" viewBox="0 0 14 2"><line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="2"/></svg>
+            </button>
+            <span className="pdp-qty__count">{quantityCount}</span>
+            <button
+              className="pdp-qty__btn"
+              onClick={() => setQuantityCount(q => q < effectiveStock - productCartQty ? q + 1 : q)}
+              disabled={quantityCount >= effectiveStock - productCartQty}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14"><line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" strokeWidth="2"/><line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" strokeWidth="2"/></svg>
             </button>
           </div>
+
+          {/* Cart / Go to cart */}
+          {effectiveStock > 0 ? (
+            isAuthenticated && productCartQty > 0 ? (
+              <Link to="/cart" className="pdp-btn pdp-btn--success">
+                View Cart
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </Link>
+            ) : (
+              <button
+                className="pdp-btn pdp-btn--primary"
+                onClick={handleAddToCart}
+                disabled={isAuthenticated && productCartQty >= effectiveStock}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+                Add to Cart
+              </button>
+            )
+          ) : (
+            <button className="pdp-btn pdp-btn--disabled" disabled>Out of Stock</button>
+          )}
+
+          {/* Wishlist */}
+          <button
+            className={`pdp-btn pdp-btn--wishlist${isInWishlist ? " is-active" : ""}`}
+            disabled={isAuthenticated && isInWishlist}
+            title={isInWishlist ? "In your wishlist" : "Add to wishlist"}
+            onClick={handleWishlist}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={isInWishlist ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </button>
         </div>
       )}
 
-      {/* ── Category meta ── */}
-      {/* {product.category?.length > 0 && (
-        <div className="pro-details-meta">
-          <span>Categories :</span>
-          <ul>
-            {product.Category ? (
-              <li><Link to={process.env.PUBLIC_URL + "/shop"}>{product.Category.name || product.Category.label}</Link></li>
-            ) : (
-              product.category.map((single, key) => (
-                <li key={key}><Link to={process.env.PUBLIC_URL + "/shop"}>{single}</Link></li>
-              ))
-            )}
-          </ul>
-        </div>
-      )} */}
+      <ErrorMsg field="quantity" />
 
-      {/* ── Tags meta ── */}
-      {/* {product.tag?.length > 0 && (
-        <div className="pro-details-meta">
-          <span>Tags :</span>
-          <ul>
-            {product.tag.map((single, key) => (
-              <li key={key}><Link to={process.env.PUBLIC_URL + "/shop"}>{single}</Link></li>
-            ))}
-          </ul>
-        </div>
-      )} */}
+      <div className="pdp-info__divider" />
 
-      <div className="pro-details-social">
-        <div className="pro-details-social">
-          <ul>
-            <li>
-              <a
-                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
-                target="_blank" rel="noopener noreferrer"
-                title="Share on Facebook"
-              >
-                <i className="fa fa-facebook" />
-              </a>
-            </li>
-<li>
-  <a
-    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-      `${product.name} ${window.location.href}`
-    )}`}
-    target="_blank"
-    rel="noopener noreferrer"
-    title="Share on X"
-  >
-    <Icon icon="ri:twitter-x-fill" width="18" height="18" />
-  </a>
-</li>
-            {/* <li>
-              <a
-                href={`https://www.instagram.com/`}
-                target="_blank" rel="noopener noreferrer"
-                title="Open Instagram"
-              >
-                <i className="fa fa-instagram" />
-              </a>
-            </li> */}
-            <li>
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(product.name + " " + window.location.href)}`}
-                target="_blank" rel="noopener noreferrer"
-                title="Share on WhatsApp"
-              >
-                <i className="fa fa-whatsapp" />
-              </a>
-            </li>
-          </ul>
+      {/* ── Share ── */}
+      <div className="pdp-info__share">
+        <span className="pdp-info__share-label">Share:</span>
+        <div className="pdp-info__share-links">
+          <a
+            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+            target="_blank" rel="noopener noreferrer" title="Facebook"
+            className="pdp-share-btn pdp-share-btn--fb"
+          >
+            <i className="fa fa-facebook" />
+          </a>
+          <a
+            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(product.name + " " + window.location.href)}`}
+            target="_blank" rel="noopener noreferrer" title="X / Twitter"
+            className="pdp-share-btn pdp-share-btn--x"
+          >
+            <Icon icon="ri:twitter-x-fill" width="15" height="15" />
+          </a>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(product.name + " " + window.location.href)}`}
+            target="_blank" rel="noopener noreferrer" title="WhatsApp"
+            className="pdp-share-btn pdp-share-btn--wa"
+          >
+            <i className="fa fa-whatsapp" />
+          </a>
         </div>
       </div>
+
+      {/* ── Styles ── */}
+      <style>{`
+        /* ── Info panel ── */
+        .pdp-info {
+          padding-left: 32px;
+        }
+        @media (max-width: 767px) {
+          .pdp-info { padding-left: 0; margin-top: 28px; }
+        }
+
+        .pdp-info__name {
+          font-size: clamp(22px, 2.5vw, 30px);
+          font-weight: 700;
+          color: #1a1a1a;
+          line-height: 1.3;
+          margin: 0 0 12px;
+          letter-spacing: -0.02em;
+        }
+
+        .pdp-info__rating {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 16px;
+        }
+        .pdp-info__rating-num {
+          font-size: 13px;
+          font-weight: 700;
+          color: #555;
+          background: #f7f7f5;
+          border-radius: 20px;
+          padding: 2px 8px;
+        }
+
+        /* ── Price ── */
+        .pdp-info__price-block {
+          display: flex;
+          align-items: baseline;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-bottom: 14px;
+        }
+        .pdp-info__price {
+          font-size: 28px;
+          font-weight: 800;
+          color: #1a1a1a;
+          letter-spacing: -0.02em;
+          line-height: 1;
+        }
+        .pdp-info__price-old {
+          font-size: 16px;
+          color: #aaa;
+          text-decoration: line-through;
+          font-weight: 500;
+        }
+        .pdp-info__save-badge {
+          display: inline-flex;
+          align-items: center;
+          background: #F15A24;
+          color: #fff;
+          font-size: 11px;
+          font-weight: 800;
+          padding: 3px 10px;
+          border-radius: 20px;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+
+        .pdp-info__short-desc {
+          font-size: 14px;
+          line-height: 1.75;
+          color: #666;
+          margin: 0 0 4px;
+        }
+
+        .pdp-info__divider {
+          height: 1px;
+          background: #f0ede8;
+          margin: 20px 0;
+        }
+
+        /* ── Variants ── */
+        .pdp-info__variants {
+          margin-bottom: 4px;
+        }
+
+        /* ── Attribute group ── */
+        .pdp-attr-group {
+          margin-bottom: 18px;
+        }
+        .pdp-attr-label {
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+          margin-bottom: 10px;
+        }
+        .pdp-attr-key {
+          font-size: 11px;
+          font-weight: 800;
+          color: #333;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+        .pdp-attr-selected {
+          font-size: 12px;
+          color: #F15A24;
+          font-weight: 600;
+        }
+        .pdp-attr-options {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .pdp-attr-options.is-colour {
+          gap: 10px;
+        }
+
+        /* ── Color swatch ── */
+        .pdp-swatch {
+          position: relative;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: var(--swatch-color);
+          border: 2.5px solid transparent;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+          cursor: pointer;
+          padding: 0;
+          transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s;
+          flex-shrink: 0;
+          overflow: hidden;
+        }
+        .pdp-swatch:hover:not(:disabled) {
+          transform: scale(1.1);
+          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .pdp-swatch.is-light {
+          border-color: #ddd;
+        }
+        .pdp-swatch.is-selected {
+          border-color: #F15A24 !important;
+          box-shadow: 0 0 0 3px rgba(241,90,36,0.2), 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .pdp-swatch.is-disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
+        .pdp-swatch__cross {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background: repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(0,0,0,0.2) 4px,rgba(0,0,0,0.2) 5px);
+        }
+        .pdp-swatch__check {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 15px;
+          font-weight: 900;
+        }
+
+        /* ── Text chip ── */
+        .pdp-chip {
+          position: relative;
+          padding: 7px 16px;
+          border: 1.5px solid #e0ddd8;
+          border-radius: 8px;
+          background: #fff;
+          color: #333;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s;
+          font-family: inherit;
+          letter-spacing: 0.01em;
+          overflow: hidden;
+        }
+        .pdp-chip:hover:not(:disabled) {
+          border-color: #F15A24;
+          color: #F15A24;
+          background: #FEF0EB;
+        }
+        .pdp-chip.is-selected {
+          border-color: #F15A24;
+          background: #FEF0EB;
+          color: #F15A24;
+          font-weight: 700;
+        }
+        .pdp-chip.is-disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+          background: #f9f9f7;
+        }
+        .pdp-chip__line {
+          position: absolute;
+          left: 50%; top: 50%;
+          transform: translate(-50%,-50%) rotate(-15deg);
+          width: 110%; height: 1px;
+          background: #ccc;
+          pointer-events: none;
+        }
+
+        /* ── Stock ── */
+        .pdp-info__stock {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: -6px;
+          margin-bottom: 10px;
+          padding: 5px 12px;
+          border-radius: 20px;
+          background: #f7f7f5;
+        }
+        .pdp-info__stock-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+        .pdp-info__stock-dot.is-in  { background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,0.2); }
+        .pdp-info__stock-dot.is-out { background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.2); }
+        .pdp-info__stock-label { font-size: 12px; font-weight: 600; }
+        .pdp-info__stock-label.is-in  { color: #15803d; }
+        .pdp-info__stock-label.is-out { color: #dc2626; }
+
+        /* ── Actions row ── */
+        .pdp-info__actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        /* ── Qty stepper ── */
+        .pdp-qty {
+          display: inline-flex;
+          align-items: center;
+          border: 1.5px solid #e0ddd8;
+          border-radius: 10px;
+          overflow: hidden;
+          background: #fff;
+        }
+        .pdp-qty__btn {
+          width: 40px;
+          height: 46px;
+          border: none;
+          background: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #333;
+          transition: background 0.15s, color 0.15s;
+          flex-shrink: 0;
+        }
+        .pdp-qty__btn:hover:not(:disabled) { background: #f5f3f0; color: #F15A24; }
+        .pdp-qty__btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .pdp-qty__count {
+          min-width: 44px;
+          text-align: center;
+          font-size: 16px;
+          font-weight: 700;
+          color: #1a1a1a;
+          border-left: 1.5px solid #e0ddd8;
+          border-right: 1.5px solid #e0ddd8;
+          height: 46px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        /* ── Buttons ── */
+        .pdp-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          height: 46px;
+          padding: 0 24px;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          border: none;
+          transition: all 0.18s;
+          text-decoration: none;
+          letter-spacing: 0.01em;
+          white-space: nowrap;
+          font-family: inherit;
+        }
+        .pdp-btn--primary {
+          background: #F15A24;
+          color: #fff;
+          box-shadow: 0 4px 16px rgba(241,90,36,0.28);
+          flex: 1;
+          min-width: 0;
+        }
+        .pdp-btn--primary:hover {
+          background: #d94d1a;
+          box-shadow: 0 6px 20px rgba(241,90,36,0.38);
+          transform: translateY(-1px);
+          color: #fff;
+        }
+        .pdp-btn--success {
+          background: #1a1a1a;
+          color: #fff;
+          flex: 1;
+          min-width: 0;
+        }
+        .pdp-btn--success:hover { background: #333; color: #fff; }
+        .pdp-btn--disabled {
+          background: #f3f3f0;
+          color: #aaa;
+          cursor: not-allowed;
+          flex: 1;
+        }
+        .pdp-btn--wishlist {
+          width: 46px;
+          height: 46px;
+          padding: 0;
+          border-radius: 10px;
+          background: #f7f7f5;
+          color: #aaa;
+          border: 1.5px solid #e0ddd8;
+          flex-shrink: 0;
+        }
+        .pdp-btn--wishlist:hover:not(:disabled) {
+          background: #fff0ef;
+          color: #ef4444;
+          border-color: #ef4444;
+        }
+        .pdp-btn--wishlist.is-active {
+          background: #fff0ef;
+          color: #ef4444;
+          border-color: #ef4444;
+        }
+
+        /* ── Share ── */
+        .pdp-info__share {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .pdp-info__share-label {
+          font-size: 12px;
+          font-weight: 700;
+          color: #888;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+        }
+        .pdp-info__share-links {
+          display: flex;
+          gap: 8px;
+        }
+        .pdp-share-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 34px;
+          height: 34px;
+          border-radius: 8px;
+          color: #fff;
+          font-size: 14px;
+          text-decoration: none;
+          transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .pdp-share-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .pdp-share-btn--fb { background: #1877f2; }
+        .pdp-share-btn--x  { background: #000; }
+        .pdp-share-btn--wa { background: #25d366; }
+
+        /* ── Combo ── */
+        .pdp-combo {
+          margin-bottom: 20px;
+          border: 1.5px solid #F15A24;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+        .pdp-combo__header {
+          background: linear-gradient(135deg, #F15A24 0%, #e04d19 100%);
+          padding: 12px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .pdp-combo__title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #fff;
+          font-weight: 700;
+          font-size: 14px;
+        }
+        .pdp-combo__count {
+          background: rgba(255,255,255,0.25);
+          color: #fff;
+          font-size: 11px;
+          font-weight: 600;
+          border-radius: 10px;
+          padding: 2px 8px;
+        }
+        .pdp-combo__price {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .pdp-combo__price-old {
+          color: rgba(255,255,255,0.65);
+          font-size: 12px;
+          text-decoration: line-through;
+        }
+        .pdp-combo__price-new {
+          color: #fff;
+          font-weight: 800;
+          font-size: 16px;
+        }
+        .pdp-combo__saving {
+          background: #22c55e;
+          color: #fff;
+          font-size: 11px;
+          font-weight: 700;
+          border-radius: 10px;
+          padding: 2px 8px;
+        }
+        .pdp-combo__desc {
+          padding: 8px 16px;
+          background: #FEF0EB;
+          font-size: 12px;
+          color: #7C3D1A;
+          border-bottom: 1px solid #fdd5c0;
+        }
+        .pdp-combo__grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+          gap: 1px;
+          background: #f3f4f6;
+        }
+        .pdp-combo__item {
+          background: #fff;
+          padding: 10px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          text-decoration: none;
+          transition: background 0.15s;
+          cursor: pointer;
+          min-height: 130px;
+        }
+        .pdp-combo__item:hover { background: #FEF0EB; }
+        .pdp-combo__item-num {
+          align-self: flex-start;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: #F15A24;
+          color: #fff;
+          font-size: 10px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .pdp-combo__item-img {
+          width: 68px;
+          height: 68px;
+          border-radius: 8px;
+          overflow: hidden;
+          background: #f9fafb;
+          border: 1px solid #e5e7eb;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 22px;
+          flex-shrink: 0;
+        }
+        .pdp-combo__item-img img { width: 100%; height: 100%; object-fit: cover; }
+        .pdp-combo__item-name {
+          font-size: 11px;
+          font-weight: 600;
+          color: #374151;
+          text-align: center;
+          line-height: 1.3;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          width: 100%;
+        }
+        .pdp-combo__item-price { font-size: 11px; color: #F15A24; font-weight: 700; }
+      `}</style>
     </div>
   );
 };
