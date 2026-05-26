@@ -12,6 +12,23 @@ const Variant = sequelize.define("Variant", {
   attributes:  { type: DataTypes.JSON,           defaultValue: [], allowNull: true },
   status:      { type: DataTypes.STRING,         defaultValue: "Active" },
   image:       { type: DataTypes.STRING,         allowNull: true },
-}, { tableName: "variants" });
+  
+  // Moved inside the column definitions block
+  createdAt: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
+    field: "createdAt" 
+  },
+  updatedAt: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
+    field: "updatedAt"
+  }
+}, { 
+  tableName: "variants",
+  timestamps: true // This tells Sequelize to manage them, but it will use our custom definitions above
+});
 
 module.exports = Variant;
