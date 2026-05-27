@@ -24,6 +24,7 @@ import addressReducer from "./slices/addressSlice";
 import orderReducer from "./slices/order-slice";
 import reviewReducer from "./slices/review-slice";
 import testimonialReducer from "./slices/testimonialSlice";
+import contactReducer from "./slices/contactSlice";
 
 const persistConfig = {
     key: "flone",
@@ -47,6 +48,7 @@ const appReducer = combineReducers({
     order:         orderReducer,
     review:        reviewReducer,
     testimonial:   testimonialReducer,
+    contact:       contactReducer,
 });
 
 // ── Root reducer: wipe cart+wishlist on logout ──────────────────────────────

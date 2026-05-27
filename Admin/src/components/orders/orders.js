@@ -29,7 +29,7 @@ const AddressBlock = ({ addr, phone, email }) => {
   );
 };
 
-export default function Orders({ showToast, status = null }) {
+export default function Orders({ status = null }) {
   const dispatch = useDispatch();
   const { items: allOrders, loading } = useSelector(state => state.orders);
   const [expanded, setExpanded] = useState(null);
@@ -38,22 +38,14 @@ export default function Orders({ showToast, status = null }) {
 
   useEffect(() => {
     setExpanded(null);
-    const id = showToast.loading('Loading orders…', { id: 'orders-load' });
-    dispatch(fetchOrders())
-      .then(() => showToast.success('Orders loaded', id))
-      .catch((err) => showToast.error(err?.response?.data?.message || err?.message || 'Failed to load orders', id));
-  }, [status]);
+    dispatch(fetchOrders());
+  }, [dispatch, status]);
 
   const updateStatus = async (orderId, newStatus) => {
-    const toastId = showToast.loading('Updating order status…');
     try {
       await dispatch(changeOrderStatus({ id: orderId, status: newStatus }));
-      if (status && newStatus !== status) {
-        // remove from local view - handled by selector filter
-      }
-      showToast.success('Order status updated', toastId);
     } catch (err) {
-      showToast.error(err?.response?.data?.message || err?.message || 'Failed to update status', toastId);
+      console.error('Failed to update status:', err);
     }
   };
 

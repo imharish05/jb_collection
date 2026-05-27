@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchCoupons, createCoupon, editCoupon, removeCoupon } from '../../redux/services/couponsService';
+import { confirmDelete } from '../../utils/sweetalert';
 
 export default function Coupons({ showToast }) {
   const dispatch = useDispatch();
@@ -60,14 +61,17 @@ export default function Coupons({ showToast }) {
   };
 
   const handleDelete = async (couponId) => {
-    if (!window.confirm('Delete coupon?')) return;
-    const toastId = showToast.loading('Deleting coupon…');
-    try {
-      await dispatch(removeCoupon(couponId));
-      showToast.success('Deleted', toastId);
-    } catch (err) {
-      showToast.error(err?.response?.data?.message || err?.message || 'Failed to delete', toastId);
-    }
+    confirmDelete({
+      title: 'Delete Coupon?',
+      message: 'Are you sure you want to delete this coupon?',
+      onConfirm: async () => {
+        try {
+          await dispatch(removeCoupon(couponId));
+        } catch (err) {
+          console.error('Failed to delete coupon:', err);
+        }
+      },
+    });
   };
 
   return (

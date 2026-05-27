@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
-import toast from 'react-hot-toast';
 import {
   fetchHeroSlides,
   createHeroSlide,
   editHeroSlide,
   removeHeroSlide,
 } from '../../redux/services/herosliderservice';
+import { confirmDelete } from '../../utils/sweetalert';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -73,38 +73,17 @@ export default function HeroSlider({ showToast }) {
   };
 
   const handleDelete = (rowId, rowTitle) => {
-    const confirmId = showToast.loading('Delete this slide?');
-    toast(
-      (t) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span>Are you sure you want to delete <b>"{rowTitle}"</b>?</span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-            <button
-              style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={async () => {
-                toast.dismiss(t.id);
-                const toastId = showToast.loading('Deleting slide...');
-                try {
-                  await dispatch(removeHeroSlide(rowId));
-                  showToast.success('Slide deleted', toastId);
-                } catch (err) {
-                  showToast.error(err?.response?.data?.message || 'Failed to delete', toastId);
-                }
-              }}
-            >
-              Yes, Delete
-            </button>
-            <button
-              style={{ background: '#444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ),
-      { id: confirmId, duration: Infinity }
-    );
+    confirmDelete({
+      title: 'Delete Slide?',
+      message: `Are you sure you want to delete "${rowTitle}"?`,
+      onConfirm: async () => {
+        try {
+          await dispatch(removeHeroSlide(rowId));
+        } catch (err) {
+          console.error('Failed to delete slide:', err);
+        }
+      },
+    });
   };
 
   const handleSubmit = async (e) => {

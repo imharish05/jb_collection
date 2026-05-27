@@ -1,8 +1,72 @@
-import { Fragment } from "react";
+import { Fragment, useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
+import { submitContactForm } from "../../store/services/contactService";
+import { resetContactForm } from "../../store/slices/contactSlice";
 
 const Contact = () => {
+  const dispatch = useDispatch();
+  const { loading, error, success, message } = useSelector((state) => state.contact);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+
+  const [formErrors, setFormErrors] = useState({});
+
+  // Clear success message after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        dispatch(resetContactForm());
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success, dispatch]);
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.name.trim()) errors.name = "Full name is required";
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Please enter a valid email";
+    }
+    if (!formData.message.trim()) errors.message = "Message is required";
+    if (formData.message.trim().length < 10) errors.message = "Message must be at least 10 characters";
+    return errors;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errors = validateForm();
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    try {
+      await dispatch(submitContactForm(formData));
+      setFormData({ name: "", email: "", phone: "", message: "" });
+      setFormErrors({});
+    } catch (err) {
+      console.error("Contact form error:", err);
+    }
+  };
+
   return (
     <Fragment>
       <SEO titleTemplate="Contact Us" description="Customer Support & Inquiries" />
@@ -46,22 +110,106 @@ const Contact = () => {
                 {/* Form Section */}
                 <div className="col-lg-7">
                   <div className="glass-form-side">
-                    <form className="glass-form" onSubmit={(e) => e.preventDefault()}>
+                    {/* Success Message */}
+                    {success && (
+                      <div style={{
+                        background: 'rgba(34, 197, 94, 0.1)',
+                        border: '1px solid rgba(34, 197, 94, 0.3)',
+                        color: '#22c55e',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        marginBottom: '16px',
+                        fontSize: '14px',
+                        animation: 'slideIn 0.3s ease-out'
+                      }}>
+                        ✓ {message}
+                      </div>
+                    )}
+
+                    {/* Error Message */}
+                    {error && (
+                      <div style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        color: '#ef4444',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        marginBottom: '16px',
+                        fontSize: '14px',
+                        animation: 'slideIn 0.3s ease-out'
+                      }}>
+                        ✕ {error}
+                      </div>
+                    )}
+
+                    <form className="glass-form" onSubmit={handleSubmit}>
                       <div className="input-row">
                         <div className="glass-input-group">
-                          <label>Full Name</label>
-                          <input type="text" placeholder="e.g. Jane Doe" />
+                          <label>Full Name {formErrors.name && <span style={{ color: '#ef4444', fontSize: '12px' }}>- {formErrors.name}</span>}</label>
+                          <input
+                            type="text"
+                            name="name"
+                            placeholder="e.g. Jane Doe"
+                            value={formData.name}
+                            onChange={handleChange}
+                            style={{
+                              borderColor: formErrors.name ? '#ef4444' : 'rgba(0, 0, 0, 0.1)',
+                              background: formErrors.name ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.7)'
+                            }}
+                          />
                         </div>
                         <div className="glass-input-group">
-                          <label>Email Address</label>
-                          <input type="email" placeholder="jane@example.com" />
+                          <label>Email Address {formErrors.email && <span style={{ color: '#ef4444', fontSize: '12px' }}>- {formErrors.email}</span>}</label>
+                          <input
+                            type="email"
+                            name="email"
+                            placeholder="jane@example.com"
+                            value={formData.email}
+                            onChange={handleChange}
+                            style={{
+                              borderColor: formErrors.email ? '#ef4444' : 'rgba(0, 0, 0, 0.1)',
+                              background: formErrors.email ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.7)'
+                            }}
+                          />
                         </div>
                       </div>
+
                       <div className="glass-input-group">
-                        <label>Message</label>
-                        <textarea rows="4" placeholder="How can we help?"></textarea>
+                        <label>Phone Number (Optional)</label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          placeholder="+1 (555) 123-4567"
+                          value={formData.phone}
+                          onChange={handleChange}
+                        />
                       </div>
-                      <button type="submit" className="glass-button">Send Inquiry</button>
+
+                      <div className="glass-input-group">
+                        <label>Message {formErrors.message && <span style={{ color: '#ef4444', fontSize: '12px' }}>- {formErrors.message}</span>}</label>
+                        <textarea
+                          rows="4"
+                          name="message"
+                          placeholder="How can we help?"
+                          value={formData.message}
+                          onChange={handleChange}
+                          style={{
+                            borderColor: formErrors.message ? '#ef4444' : 'rgba(0, 0, 0, 0.1)',
+                            background: formErrors.message ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.7)',
+                            resize: 'vertical',
+                            minHeight: '120px'
+                          }}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="glass-button"
+                        disabled={loading}
+                        style={{ opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+                      >
+                        {loading ? 'Sending...' : 'Send Inquiry'}
+                      </button>
                     </form>
                   </div>
                 </div>
@@ -86,6 +234,19 @@ const Contact = () => {
               </div>
             </div>
           </div>
+
+          <style>{`
+            @keyframes slideIn {
+              from {
+                opacity: 0;
+                transform: translateY(-10px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `}</style>
         </div>
       </LayoutOne>
     </Fragment>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchMarquees, createMarquee, editMarquee, removeMarquee } from '../../redux/services/marqueeService';
-import toast from 'react-hot-toast';
+import { confirmDelete } from '../../utils/sweetalert';
 
 const KM = {
   orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B',
@@ -68,38 +68,17 @@ export default function Marquee({ showToast }) {
   };
 
   const handleDelete = (marqueeId) => {
-    const confirmId = showToast.loading('Delete this message?');
-    toast(
-      (t) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span>Are you sure you want to delete this marquee message?</span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-            <button
-              style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={async () => {
-                toast.dismiss(t.id);
-                const toastId = showToast.loading('Deleting message...');
-                try {
-                  await dispatch(removeMarquee(marqueeId));
-                  showToast.success('Message deleted', toastId);
-                } catch (err) {
-                  showToast.error(err?.response?.data?.message || 'Failed to delete', toastId);
-                }
-              }}
-            >
-              Yes, Delete
-            </button>
-            <button
-              style={{ background: '#444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ),
-      { id: confirmId, duration: Infinity }
-    );
+    confirmDelete({
+      title: 'Delete Marquee Message?',
+      message: 'Are you sure you want to delete this message?',
+      onConfirm: async () => {
+        try {
+          await dispatch(removeMarquee(marqueeId));
+        } catch (err) {
+          console.error('Failed to delete message:', err);
+        }
+      },
+    });
   };
 
   const rows = Array.isArray(marquees) ? marquees : [];

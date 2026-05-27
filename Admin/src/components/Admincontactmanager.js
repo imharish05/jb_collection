@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from './DataTable/DataTable';
-import toast from 'react-hot-toast';
 import { fetchContacts, removeContact } from '../redux/services/contactsService';
+import { confirmDelete } from '../utils/sweetalert';
 
 const KM = { orange: '#F15A24', blue: '#1A3A6B', teal: '#00B4D8', text: '#1A1A2E', muted: '#6B7280', border: '#E5E7EB' };
 const fmtDate = (iso) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -14,13 +14,17 @@ export default function AdminContacts() {
   useEffect(() => { dispatch(fetchContacts()); }, []);
 
   const deleteContact = async (id) => {
-    if (!window.confirm('Delete this contact request permanently?')) return;
-    try {
-      await dispatch(removeContact(id))
-      toast.success('Contact deleted');
-    } catch {
-      toast.error('Failed to delete contact');
-    }
+    confirmDelete({
+      title: 'Delete Contact Request?',
+      message: 'Are you sure you want to delete this contact request?',
+      onConfirm: async () => {
+        try {
+          await dispatch(removeContact(id));
+        } catch (err) {
+          console.error('Failed to delete contact:', err);
+        }
+      },
+    });
   };
 
   if (loading) return <p style={{ padding: 20, color: KM.muted }}>Loading contacts...</p>;

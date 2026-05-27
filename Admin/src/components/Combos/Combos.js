@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchCombos, createCombo, editCombo, removeCombo } from '../../redux/services/comboService';
 import { fetchProducts } from '../../redux/services/productsService';
-import toast from 'react-hot-toast';
+import { confirmDelete } from '../../utils/sweetalert';
 
 const IMG_URL = process.env.REACT_APP_IMG_URL;
 
@@ -122,33 +122,17 @@ export default function Combos({ showToast }) {
 
 
    const handleDelete = (id) => {
-      toast(
-        (t) => (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span>Are you sure you want to delete this event?</span>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-              <button
-                style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-                onClick={async () => {
-                  toast.dismiss(t.id);
-                  const toastId = showToast.loading('Deleting combo...');
-                  try {
-                     await dispatch(removeCombo(id));
-                    showToast.success('Combo deleted!', toastId);
-                  } catch (err) {
-                    showToast.error(err?.response?.data?.message || 'Failed to delete', toastId);
-                  }
-                }}
-              >Yes, Delete</button>
-              <button
-                style={{ background: '#555', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-                onClick={() => toast.dismiss(t.id)}
-              >Cancel</button>
-            </div>
-          </div>
-        ),
-        { duration: Infinity }
-      );
+      confirmDelete({
+        title: 'Delete Combo?',
+        message: 'Are you sure you want to delete this combo?',
+        onConfirm: async () => {
+          try {
+            await dispatch(removeCombo(id));
+          } catch (err) {
+            console.error('Failed to delete combo:', err);
+          }
+        },
+      });
     };
   
 

@@ -7,7 +7,7 @@ import { fetchCategories } from '../../redux/services/categoriesService';
 import { fetchBrands } from '../../redux/services/brandsService';
 import { fetchEvents } from '../../redux/services/eventService';
 import VariantBuilder from './VariantBuilder'; // ← make sure VariantBuilder.jsx is in the same folder
-import toast from 'react-hot-toast';
+import { confirmDelete } from '../../utils/sweetalert';
 
 const BASE_URL = process.env.REACT_APP_API_URL;
 const IMG_URL = process.env.REACT_APP_IMG_URL;
@@ -475,41 +475,17 @@ export default function Products({ showToast }) {
   // ── Delete ────────────────────────────────────────────────────────────────
 
   const handleDelete = async (id) => {
-    // Step 1 — ask
-    const confirmId = showToast.loading('Delete this product?');
-
-    // Step 2 — render Yes/No inside the toast
-    toast(
-      (t) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span>Are you sure you want to delete this product?</span>
-          <div style={{ display: 'flex', gap: 8, alignItems: "center", justifyContent: "center" }}>
-            <button
-              style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={async () => {
-                toast.dismiss(t.id);
-                const toastId = showToast.loading('Deleting product...');
-                try {
-                  await dispatch(removeProduct(id));
-                  showToast.success('Product deleted', toastId);
-                } catch (err) {
-                  showToast.error(err?.response?.data?.message || 'Failed to delete', toastId);
-                }
-              }}
-            >
-              Yes, Delete
-            </button>
-            <button
-              style={{ background: '#444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ),
-      { id: confirmId, duration: Infinity }
-    );
+    confirmDelete({
+      title: 'Delete Product?',
+      message: 'Are you sure you want to delete this product?',
+      onConfirm: async () => {
+        try {
+          await dispatch(removeProduct(id));
+        } catch (err) {
+          console.error('Failed to delete product:', err);
+        }
+      },
+    });
   };
 
 

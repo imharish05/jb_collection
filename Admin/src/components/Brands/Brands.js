@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import toast from 'react-hot-toast';
 import DataTable from '../DataTable/DataTable';
 import { fetchBrands, createBrand, editBrand, removeBrand } from '../../redux/services/brandsService';
+import { confirmDelete } from '../../utils/sweetalert';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -87,33 +87,17 @@ export default function Brands({ showToast }) {
   };
 
   const handleDelete = (brandId) => {
-    toast(
-      (t) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span>Are you sure you want to delete this brand?</span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-            <button
-              style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={async () => {
-                toast.dismiss(t.id);
-                const toastId = showToast.loading('Deleting brand...');
-                try {
-                  await dispatch(removeBrand(brandId));
-                  showToast.success('Brand deleted!', toastId);
-                } catch (err) {
-                  showToast.error(err?.response?.data?.message || 'Failed to delete', toastId);
-                }
-              }}
-            >Yes, Delete</button>
-            <button
-              style={{ background: '#444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={() => toast.dismiss(t.id)}
-            >Cancel</button>
-          </div>
-        </div>
-      ),
-      { duration: Infinity }
-    );
+    confirmDelete({
+      title: 'Delete Brand?',
+      message: 'Are you sure you want to delete this brand?',
+      onConfirm: async () => {
+        try {
+          await dispatch(removeBrand(brandId));
+        } catch (err) {
+          console.error('Failed to delete brand:', err);
+        }
+      },
+    });
   };
 
   return (

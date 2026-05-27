@@ -5,6 +5,7 @@ import DataTable from '../DataTable/DataTable';
 import { fetchVariants, createVariant, editVariant, removeVariant } from '../../redux/services/variantsService';
 import { fetchProducts } from '../../redux/services/productsService';
 import VariantBuilder from '../Products/VariantBuilder';
+import { confirmDelete } from '../../utils/sweetalert';
 
 const IMG_URL = process.env.REACT_APP_IMG_URL || '';
 const getImgSrc = (p) => {
@@ -256,34 +257,17 @@ export default function Variants({ showToast }) {
 
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = (variantId) => {
-    const confirmId = showToast.loading('Delete this variant?');
-    toast(
-      (t) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span>Are you sure you want to delete this variant?</span>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-            <button
-              style={{ background: KM.red, color: '#fff', border: 'none', borderRadius: 6, padding: '4px 14px', cursor: 'pointer', fontWeight: 600 }}
-              onClick={async () => {
-                toast.dismiss(t.id);
-                const toastId = showToast.loading('Deleting…');
-                try {
-                  await dispatch(removeVariant(variantId));
-                  showToast.success('Deleted!', toastId);
-                } catch (err) {
-                  showToast.error(err?.response?.data?.message || 'Failed', toastId);
-                }
-              }}
-            >Delete</button>
-            <button
-              style={{ background: '#555', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 14px', cursor: 'pointer' }}
-              onClick={() => toast.dismiss(t.id)}
-            >Cancel</button>
-          </div>
-        </div>
-      ),
-      { id: confirmId, duration: Infinity }
-    );
+    confirmDelete({
+      title: 'Delete Variant?',
+      message: 'Are you sure you want to delete this variant?',
+      onConfirm: async () => {
+        try {
+          await dispatch(removeVariant(variantId));
+        } catch (err) {
+          console.error('Failed to delete variant:', err);
+        }
+      },
+    });
   };
 
   const filtered = filterProduct ? rows.filter(r => String(r.productId) === filterProduct) : rows;

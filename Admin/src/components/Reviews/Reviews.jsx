@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchReviews, approveReview, rejectReview, removeReview } from '../../redux/services/reviewsService';
+import { confirmDelete } from '../../utils/sweetalert';
 
 const pillClass = { Approved: 'pill-approved', Pending: 'pill-pending', Rejected: 'pill-rejected' };
 
@@ -10,40 +11,42 @@ function renderStars(rating) {
   return '★'.repeat(filled) + '☆'.repeat(5 - filled) + ` (${rating})`;
 }
 
-export default function Reviews({ showToast }) {
+export default function Reviews() {
   const dispatch = useDispatch();
   const { items: rows, loading } = useSelector(state => state.reviews);
 
   useEffect(() => {
-    const id = showToast.loading('Loading reviews…', { id: 'reviews-load' });
-    dispatch(fetchReviews())
-      .then(() => showToast.success('Reviews loaded', id))
-      .catch((err) => showToast.error(err?.response?.data?.message || err?.message || 'Failed to load reviews', id));
-  }, []);
+    dispatch(fetchReviews());
+  }, [dispatch]);
 
   const handleApprove = async (id) => {
-    const toastId = showToast.loading('Approving review…');
     try {
       await dispatch(approveReview(id));
-      showToast.success('✅ Review approved!', toastId);
-    } catch (err) { showToast.error(err?.response?.data?.message || err?.message || 'Failed to approve', toastId); }
+    } catch (err) {
+      console.error('Failed to approve review:', err);
+    }
   };
 
   const handleReject = async (id) => {
-    const toastId = showToast.loading('Rejecting review…');
     try {
       await dispatch(rejectReview(id));
-      showToast.success('Review rejected.', toastId);
-    } catch (err) { showToast.error(err?.response?.data?.message || err?.message || 'Failed to reject', toastId); }
+    } catch (err) {
+      console.error('Failed to reject review:', err);
+    }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this review?')) return;
-    const toastId = showToast.loading('Deleting review…');
-    try {
-      await dispatch(removeReview(id));
-      showToast.success('🗑️ Review deleted', toastId);
-    } catch (err) { showToast.error(err?.response?.data?.message || err?.message || 'Failed to delete', toastId); }
+    confirmDelete({
+      title: 'Delete Review?',
+      message: 'Are you sure you want to delete this review? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await dispatch(removeReview(id));
+        } catch (err) {
+          console.error('Failed to delete review:', err);
+        }
+      },
+    });
   };
 
   return (

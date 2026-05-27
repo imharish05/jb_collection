@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axiosInstance';
 import DataTable from '../DataTable/DataTable';
-import toast, { Toaster } from 'react-hot-toast';
+import { confirmDelete } from '../../utils/sweetalert';
 
 export default function SubCategories({ showToast }) {
   const [subcategories, setSubcategories] = useState([]);
@@ -76,35 +76,18 @@ export default function SubCategories({ showToast }) {
   };
 
   const handleDelete = (subId) => {
-    const confirmId = showToast.loading('Delete this subcategory?');
-    toast(
-      (t) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8,width : "345px" }}>
-          <span>Are you sure you want to delete this subcategory?</span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-            <button
-              style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={async () => {
-                toast.dismiss(t.id);
-                const tid = showToast.loading('Deleting...');
-                try {
-                  await api.delete(`/subcategories/${subId}`);
-                  showToast.success('Subcategory deleted', tid);
-                  fetchAll();
-                } catch (err) {
-                  showToast.error('Failed to delete', tid);
-                }
-              }}
-            >Yes, Delete</button>
-            <button
-              style={{ background: '#444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={() => toast.dismiss(t.id)}
-            >Cancel</button>
-          </div>
-        </div>
-      ),
-      { id: confirmId, duration: Infinity,style: { maxWidth: 380}}
-    );
+    confirmDelete({
+      title: 'Delete Subcategory?',
+      message: 'Are you sure you want to delete this subcategory?',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/subcategories/${subId}`);
+          fetchAll();
+        } catch (err) {
+          console.error('Failed to delete subcategory:', err);
+        }
+      },
+    });
   };
 
   // Group subcategories by category for display

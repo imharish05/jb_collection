@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
-import toast from 'react-hot-toast';
 import {
   fetchTestimonials,
   createTestimonial,
   editTestimonial,
   removeTestimonial,
 } from '../../redux/services/testimonialsService';
+import { confirmDelete } from '../../utils/sweetalert';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -77,38 +77,17 @@ export default function Testimonials({ showToast }) {
   };
 
   const handleDelete = (rowId, rowName) => {
-    const confirmId = showToast.loading('Delete this testimonial?');
-    toast(
-      (t) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span>Are you sure you want to delete testimonial from <b>"{rowName}"</b>?</span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-            <button
-              style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={async () => {
-                toast.dismiss(t.id);
-                const toastId = showToast.loading('Deleting testimonial...');
-                try {
-                  await dispatch(removeTestimonial(rowId));
-                  showToast.success('Testimonial deleted', toastId);
-                } catch (err) {
-                  showToast.error(err?.response?.data?.message || 'Failed to delete', toastId);
-                }
-              }}
-            >
-              Yes, Delete
-            </button>
-            <button
-              style={{ background: '#444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ),
-      { id: confirmId, duration: Infinity }
-    );
+    confirmDelete({
+      title: 'Delete Testimonial?',
+      message: `Are you sure you want to delete the testimonial from "${rowName}"?`,
+      onConfirm: async () => {
+        try {
+          await dispatch(removeTestimonial(rowId));
+        } catch (err) {
+          console.error('Failed to delete testimonial:', err);
+        }
+      },
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -533,41 +512,6 @@ export default function Testimonials({ showToast }) {
         }
         .km-btn-submit:hover, .km-btn-cancel:hover {
           opacity: 0.8;
-        }
-        .action-btn {
-          padding: 6px 12px;
-          border: 1px solid #ddd;
-          background: #fff;
-          color: #333;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-family: inherit;
-          white-space: nowrap;
-        }
-        .action-btn:hover {
-          background: #f5f5f5;
-          border-color: #999;
-        }
-        .action-btn.btn-edit {
-          border-color: #487fff;
-          color: #487fff;
-        }
-        .action-btn.btn-edit:hover {
-          background: rgba(72, 127, 255, 0.1);
-          border-color: #2d5fe8;
-          color: #2d5fe8;
-        }
-        .action-btn.btn-del {
-          border-color: #ef4444;
-          color: #ef4444;
-        }
-        .action-btn.btn-del:hover {
-          background: rgba(239, 68, 68, 0.1);
-          border-color: #dc2626;
-          color: #dc2626;
         }
         .img-thumb {
           display: flex;

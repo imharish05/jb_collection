@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import toast from 'react-hot-toast';
 import DataTable from '../DataTable/DataTable';
 import { fetchEvents, createEvent, editEvent, removeEvent } from '../../redux/services/eventService';
+import { confirmDelete } from '../../utils/sweetalert';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -89,33 +89,17 @@ export default function EventCategories({ showToast }) {
   };
 
   const handleDelete = (eventId) => {
-    toast(
-      (t) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span>Are you sure you want to delete this event?</span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-            <button
-              style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={async () => {
-                toast.dismiss(t.id);
-                const toastId = showToast.loading('Deleting event...');
-                try {
-                  await dispatch(removeEvent(eventId));
-                  showToast.success('Event deleted!', toastId);
-                } catch (err) {
-                  showToast.error(err?.response?.data?.message || 'Failed to delete', toastId);
-                }
-              }}
-            >Yes, Delete</button>
-            <button
-              style={{ background: '#555', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={() => toast.dismiss(t.id)}
-            >Cancel</button>
-          </div>
-        </div>
-      ),
-      { duration: Infinity }
-    );
+    confirmDelete({
+      title: 'Delete Event?',
+      message: 'Are you sure you want to delete this event?',
+      onConfirm: async () => {
+        try {
+          await dispatch(removeEvent(eventId));
+        } catch (err) {
+          console.error('Failed to delete event:', err);
+        }
+      },
+    });
   };
 
   return (

@@ -4,7 +4,7 @@ import DataTable from '../DataTable/DataTable';
 import {
   fetchCategories, createCategory, editCategory, removeCategory
 } from '../../redux/services/categoriesService';
-import toast, { Toaster } from 'react-hot-toast';
+import { confirmDelete } from '../../utils/sweetalert';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -94,41 +94,17 @@ export default function Categories({ showToast }) {
   };
 
 const handleDelete = async (catId) => {
-  // Step 1 — ask
-  const confirmId = showToast.loading('Delete this category?');
-
-  // Step 2 — render Yes/No inside the toast
-  toast(
-    (t) => (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <span>Are you sure you want to delete this category?</span>
-        <div style={{ display: 'flex', gap: 8 , alignItems : "center", justifyContent : "center"}}>
-          <button
-            style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-            onClick={async () => {
-              toast.dismiss(t.id);
-              const toastId = showToast.loading('Deleting category...');
-              try {
-                await dispatch(removeCategory(catId));
-                showToast.success('Category deleted', toastId);
-              } catch (err) {
-                showToast.error(err?.response?.data?.message || 'Failed to delete', toastId);
-              }
-            }}
-          >
-            Yes, Delete
-          </button>
-          <button
-            style={{ background: '#444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    ),
-    { id: confirmId, duration: Infinity }
-  );
+  confirmDelete({
+    title: 'Delete Category?',
+    message: 'Are you sure you want to delete this category?',
+    onConfirm: async () => {
+      try {
+        await dispatch(removeCategory(catId));
+      } catch (err) {
+        console.error('Failed to delete category:', err);
+      }
+    },
+  });
 };
 
   return (
