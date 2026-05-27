@@ -26,11 +26,11 @@ api.interceptors.response.use(
             // AND we are not already on the login page.
             // This prevents startup API calls (cart/wishlist) from
             // kicking a freshly-loaded page to /login unnecessarily.
-            if (wasLoggedIn && !window.location.pathname.includes("/login")) {
-                window.location.replace(
-                    (process.env.REACT_APP_PUBLIC_URL || "") + "/login"
-                );
-            }
+            // if (wasLoggedIn && !window.location.pathname.includes("/login")) {
+            //     window.location.replace(
+            //         (process.env.REACT_APP_PUBLIC_URL || "") + "/login"
+            //     );
+            // }
         }
         return Promise.reject(error);
     }

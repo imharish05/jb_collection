@@ -27,7 +27,58 @@ const parseAttributes = (attributes) => {
   return attributes || [];
 };
 
-// Helper to sync variant details (variation JSON blob, price, stock) with the Product model
+// ── Cartesian expand helpers ────────────────────────────────────────────────
+
+// Compute cartesian product of arrays of values.
+// cartesian([["Red","Gold"], ["SM","M"]]) →
+//   [["Red","SM"],["Red","M"],["Gold","SM"],["Gold","M"]]
+const cartesian = (arrays) => {
+  if (!arrays.length) return [[]];
+  return arrays.reduce(
+    (acc, arr) => acc.flatMap(combo => arr.map(v => [...combo, v])),
+    [[]]
+  );
+};
+
+// Given new incoming attributes (e.g. [{key:"Colour",value:"Gold"}]) and all
+// existing Variant rows for the product, return an array of full attribute
+// arrays — one per combination that must be created.
+//
+// Example:
+//   newAttrs  = [{key:"Colour", value:"Gold"}]
+//   existing  = [{key:"Colour",value:"Red"},{key:"Size",value:"SM"},{key:"Material",value:"Glass"}]
+//   result    = [[{key:"Colour",value:"Gold"},{key:"Size",value:"SM"},{key:"Material",value:"Glass"}]]
+//
+// If the product has no variants yet, result = [newAttrs] (just the one row).
+const expandToCombinations = (newAttrs, existingVariants) => {
+  if (!existingVariants.length) return [newAttrs];
+
+  // Keys introduced by the new attrs
+  const newKeys = new Set(newAttrs.map(a => a.key));
+
+  // Collect distinct values for every OTHER dimension already on the product
+  const otherDimensions = {}; // { "Size": ["SM","M"], "Material": ["Glass"] }
+  existingVariants.forEach(v => {
+    parseAttributes(v.attributes).forEach(a => {
+      if (!a.key || !a.value || newKeys.has(a.key)) return;
+      if (!otherDimensions[a.key]) otherDimensions[a.key] = new Set();
+      otherDimensions[a.key].add(a.value);
+    });
+  });
+
+  const otherKeys   = Object.keys(otherDimensions);
+  if (!otherKeys.length) return [newAttrs]; // no other dimensions → single row
+
+  const otherArrays = otherKeys.map(k => [...otherDimensions[k]]);
+  const otherCombos = cartesian(otherArrays); // e.g. [["SM","Glass"],["M","Glass"]]
+
+  return otherCombos.map(combo => [
+    ...newAttrs,
+    ...otherKeys.map((k, i) => ({ key: k, value: combo[i] })),
+  ]);
+};
+
+// ── Helper to sync variant details (variation JSON blob, price, stock) with the Product model
 const syncProductVariants = async (productId) => {
   if (!productId) return;
   try {
@@ -84,39 +135,84 @@ const getByProduct = async (req, res) => {
 };
 
 // POST /variants/add
+//
+// Accepts EITHER:
+//   • A single variant payload (legacy shape) — body has variantName + attributes
+//   • An array of variant payloads — body has variants (JSON string / array)
+//
+// In both cases, each incoming set of attributes is expanded against the
+// existing variants on the product so that every new value gets a full
+// combination row (cartesian expand).  The uploaded image (req.file) is
+// applied to every generated row.
 const add = async (req, res) => {
   try {
-    const { productId, variantName, mrp, salesPrice, stock, attributes, status } = req.body;
-    const parsedAttributes = parseAttributes(attributes);
+    const { productId, mrp, salesPrice, stock, status } = req.body;
     const image = buildImagePath(req.file);
 
-    if (!productId)   return res.status(400).json({ message: "productId is required" });
-    if (!variantName) return res.status(400).json({ message: "variantName is required" });
-    if (!mrp)         return res.status(400).json({ message: "mrp is required" });
-    if (!salesPrice)  return res.status(400).json({ message: "salesPrice is required" });
-    if (Number(mrp) <= 0) return res.status(400).json({ message: "MRP must be greater than 0" });
+    // ── Basic validation ──────────────────────────────────────────────────
+    if (!productId) return res.status(400).json({ message: "productId is required" });
+    if (!mrp)       return res.status(400).json({ message: "mrp is required" });
+    if (!salesPrice) return res.status(400).json({ message: "salesPrice is required" });
+    if (Number(mrp) <= 0)        return res.status(400).json({ message: "MRP must be greater than 0" });
     if (Number(salesPrice) <= 0) return res.status(400).json({ message: "Sales price must be greater than 0" });
     if (Number(salesPrice) > Number(mrp)) return res.status(400).json({ message: "Sales price cannot be greater than MRP" });
     if (stock !== undefined && Number(stock) < 0) return res.status(400).json({ message: "Stock cannot be negative" });
 
-    const variant = await Variant.create({
-      productId,
-      variantName,
-      mrp,
-      salesPrice,
-      stock:      stock      ?? 0,
-      sku:        generateSku(),
-      attributes: parsedAttributes,
-      status:     status     || "Active",
-      image,
-    });
+    // ── Normalise incoming payloads to an array ───────────────────────────
+    // Support both a single-variant body AND a batch body ({ variants: [...] })
+    let incomingPayloads;
+    if (req.body.variants) {
+      const parsed = parseAttributes(req.body.variants); // reuses JSON-parse helper
+      incomingPayloads = Array.isArray(parsed) ? parsed : [parsed];
+    } else {
+      const { variantName, attributes } = req.body;
+      if (!variantName) return res.status(400).json({ message: "variantName is required" });
+      incomingPayloads = [{ variantName, attributes: parseAttributes(attributes) }];
+    }
+
+    // ── Fetch existing variants once for cartesian expansion ─────────────
+    const existingVariants = await Variant.findAll({ where: { productId } });
+
+    // ── Helper: build variantName from attribute combo ────────────────────
+    const comboName = (attrs) =>
+      attrs.filter(a => a.key && a.value && a.key !== "Custom Note")
+           .map(a => `${a.key}: ${a.value}`)
+           .join(" · ") || "Default";
+
+    // ── Create one DB row per expanded combination ────────────────────────
+    const created = [];
+    for (const payload of incomingPayloads) {
+      const parsedAttributes = parseAttributes(payload.attributes || []);
+      const combinations     = expandToCombinations(parsedAttributes, existingVariants);
+
+      for (const combo of combinations) {
+        const name = payload.variantName && combinations.length === 1
+          ? payload.variantName   // honour explicit name when no expansion happened
+          : comboName(combo);
+
+        const row = await Variant.create({
+          productId,
+          variantName: name,
+          mrp,
+          salesPrice,
+          stock:      stock      ?? 0,
+          sku:        generateSku(),
+          attributes: combo,
+          status:     status     || "Active",
+          image,
+        });
+        created.push(row);
+      }
+    }
 
     await syncProductVariants(productId);
 
-    const fresh = await Variant.findByPk(variant.id, {
+    // Return all created rows with product association
+    const fresh = await Variant.findAll({
+      where: { id: created.map(r => r.id) },
       include: [{ model: Product, as: "product", attributes: ["id", "name"] }],
     });
-    res.status(201).json(fresh);
+    res.status(201).json(fresh.length === 1 ? fresh[0] : fresh);
   } catch (e) { res.status(500).json({ message: e.message }); }
 };
 

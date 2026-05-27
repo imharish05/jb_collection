@@ -74,7 +74,9 @@ export default function Variants({ showToast }) {
   const [errors,        setErrors]        = useState({});
 
   // For ADD — use VariantBuilder (option matrix → cartesian SKUs)
-  const [skus, setSkus] = useState([]);
+  const [skus,            setSkus]            = useState([]);
+  // Pre-seeded option matrix built from the selected product's existing variants
+  const [existingOptions, setExistingOptions] = useState(null);
 
   // For EDIT — single SKU card (same SkuRow shape)
   const [editSku, setEditSku] = useState(null);
@@ -84,12 +86,54 @@ export default function Variants({ showToast }) {
     dispatch(fetchProducts());
   }, []);
 
+  // ── Derive existing option matrix whenever productId changes in ADD mode ──
+  // Reads the already-loaded `rows` (variant list) for the selected product and
+  // reconstructs the option axes so VariantBuilder knows what dimensions exist.
+  // e.g. product has Colour:[Red], Size:[SM,M], Material:[Glass]
+  //   → existingOptions = [
+  //       { id:'Colour',   key:'Colour',   values:['Red'] },
+  //       { id:'Size',     key:'Size',     values:['SM','M'] },
+  //       { id:'Material', key:'Material', values:['Glass'] },
+  //     ]
+  useEffect(() => {
+    if (mode !== 'add' || !productId) {
+      setExistingOptions(null);
+      setSkus([]);
+      return;
+    }
+    const productVariants = rows.filter(r => String(r.productId) === String(productId));
+    if (!productVariants.length) {
+      setExistingOptions(null);
+      setSkus([]);
+      return;
+    }
+    const optionMap = {};
+    productVariants.forEach(v => {
+      safeAttrs(v.attributes).forEach(a => {
+        if (!a.key || !a.value || a.key === 'Custom Note') return;
+        if (!optionMap[a.key]) optionMap[a.key] = new Set();
+        optionMap[a.key].add(a.value);
+      });
+    });
+    const keys = Object.keys(optionMap);
+    if (!keys.length) {
+      setExistingOptions(null);
+      setSkus([]);
+      return;
+    }
+    setExistingOptions(
+      keys.map(k => ({ id: k, key: k, values: [...optionMap[k]] }))
+    );
+    setSkus([]); // reset SKUs so VariantBuilder regenerates from new options
+  }, [productId, mode, rows]);
+
   // ── Open ADD form ─────────────────────────────────────────────────────────
   const openAdd = () => {
     setMode('add');
     setEditingId(null);
     setProductId('');
     setSkus([]);
+    setExistingOptions(null);
     setErrors({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -109,6 +153,7 @@ export default function Variants({ showToast }) {
     setEditingId(null);
     setSkus([]);
     setEditSku(null);
+    setExistingOptions(null);
     setErrors({});
   };
 
@@ -371,20 +416,34 @@ export default function Variants({ showToast }) {
               {/* Product selector */}
               <div style={fieldStyle}>
                 <label style={labelStyle}>Product *</label>
-                <select required style={inputStyle} value={productId} onChange={e => setProductId(e.target.value)}>
+                <select required style={inputStyle} value={productId} onChange={e => {
+                  setProductId(e.target.value);
+                  setSkus([]);          // reset SKUs when product changes
+                  setExistingOptions(null); // useEffect will recompute
+                }}>
                   <option value="">Select Product</option>
                   {products.map(p => <option key={p.id} value={p.id}>{p.name || p.productName}</option>)}
                 </select>
                 <ErrorMsg field="productId" />
+                {/* Info banner — shown when product already has variants */}
+                {productId && existingOptions && existingOptions.length > 0 && (
+                  <div style={{ marginTop: 8, padding: '8px 12px', background: '#EEF9F0', border: '1px solid #A7D7AF', borderRadius: 8, fontSize: 12, color: '#2d6a35' }}>
+                    ℹ️ This product already has <strong>{existingOptions.length}</strong> option dimension{existingOptions.length > 1 ? 's' : ''} (
+                    {existingOptions.map(o => o.key).join(', ')}). New values you add will be <strong>auto-expanded</strong> into full combinations.
+                  </div>
+                )}
               </div>
 
               {/* VariantBuilder — same component used in Products */}
+              {/* existingOptions seeds the option matrix with current product dimensions */}
               <VariantBuilder
+                key={productId || 'no-product'} // remount when product changes so options reset
                 variants={skus}
                 errors={Object.fromEntries(
                   skus.map((_, i) => [i, errors[`sku_${i}`] ? [errors[`sku_${i}`]] : []])
                 )}
                 onChange={setSkus}
+                existingOptions={existingOptions || undefined}
               />
               <ErrorMsg field="skus" />
 

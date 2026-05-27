@@ -321,12 +321,15 @@ function buildSkus(options, existingSkus = []) {
     const variantName = comboName(combo);
     // Preserve existing sku data if combo already existed
     const existing = existingSkus.find(s => s.variantName === variantName);
+    // attributes must always be present — Products.js validation + submit both read it
+    const attributesFromCombo = combo.map(c => ({ key: c.key, value: c.value, customValue: '' }));
     return existing
-      ? { ...existing, combo, variantName }
+      ? { ...existing, combo, variantName, attributes: attributesFromCombo }
       : {
           id: `new_${Date.now()}_${Math.random()}`,
           combo,
           variantName,
+          attributes: attributesFromCombo,
           mrp: existingSkus[0]?.mrp || '',
           salesPrice: existingSkus[0]?.salesPrice || '',
           stock: '',

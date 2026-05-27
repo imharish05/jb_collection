@@ -88,7 +88,10 @@ function compatibleValues(variants, selections, targetKey) {
       .forEach(a => { const k = normalKey(a.key); if (!attrs[k]) attrs[k] = []; attrs[k].push(a.value); });
     const othersMatch = Object.entries(selections).every(([k, val]) => {
       if (k === targetKey || !val) return true;
-      return attrs[k] && attrs[k].includes(val);
+      // If this variant doesn't define the attribute key at all,
+      // it places no constraint on that dimension → treat as compatible.
+      if (!attrs[k]) return true;
+      return attrs[k].includes(val);
     });
     if (othersMatch && attrs[targetKey]) attrs[targetKey].forEach(val => compatible.add(val));
   });

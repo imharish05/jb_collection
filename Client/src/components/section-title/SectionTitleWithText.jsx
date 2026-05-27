@@ -10,7 +10,7 @@ const SectionTitleWithText = ({ spaceTopClass, spaceBottomClass }) => {
           <div className="col-lg-6 col-md-6">
             <div className="welcome-image-wrapper">
               <img 
-                src="/assets/img/slider/Slider1.png" 
+                src="/assets/img/about.jpg" 
                 alt="Kamali Gifts" 
                 className="img-fluid"
               />
