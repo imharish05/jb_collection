@@ -11,13 +11,14 @@ const KM = {
 export const OPTION_PRESETS = {
   'Colour':    ['Red','Pink','Yellow','Green','Blue','Purple','Gold','Silver','White','Black','Rose Gold','Bronze','Copper','Multicolour'],
   'Size':      ['XS','S','M','L','XL','XXL','Free Size','Small','Medium','Large'],
-  'Material':  ['Brass','Acrylic','Wood','Leather','Steel','Copper','Clay','Glass','Ceramic'],
+  'Material':  ['Synthetic','Nylon','Korai Silk','Kalamkari','Transparent window bags ','Jute','Brass','Acrylic','Wood','Leather','Steel','Copper','Clay','Glass','Ceramic'],
   'Finish':    ['Matte','Glossy','Antique','Polished','Hand-painted','Mirror','Oxidised'],
   'Storage':   ['32GB','64GB','128GB','256GB','512GB','1TB'],
   'Style':     ['Classic','Modern','Vintage','Minimalist','Luxury','Rustic'],
   'Bundle':    ['Single','Pair','Set of 3','Set of 5','Set of 10'],
   'Capacity':  ['50ml','100ml','250ml','500ml','1L','1.5L','2L'],
   'Weight':    ['Light','Standard','Heavy'],
+  'Design':    ['Cow','Cow and calf','Peacock','Lotus','Flowers','Elephant','Mandala','Standard','Heavy','Plain','Kolam','Wavey lines','Painted'],
 };
 
 const OPTION_KEYS = Object.keys(OPTION_PRESETS);
