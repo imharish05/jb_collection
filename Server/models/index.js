@@ -19,6 +19,7 @@ const Review      = require("./Review");
 const Coupon      = require("./Coupon");
 const Contact     = require("./Contact");
 const OrderItem   = require("./OrderItem");
+const Testimonial = require("./Testimonial");
 
 // ── User ↔ Cart / Wishlist / Order ───────────────────────────────────────────
 User.hasMany(CartItem,     { foreignKey: "user_id", as: "cartItems",     onDelete: "CASCADE" });
@@ -95,4 +96,5 @@ module.exports = {
   Coupon,
   Contact,
   OrderItem,
+  Testimonial,
 };

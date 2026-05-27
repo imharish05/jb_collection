@@ -28,6 +28,7 @@ const couponRoutes = require("./routes/coupons");
 const contactRoutes = require("./routes/contact");
 const customerRoutes = require("./routes/customers");
 const dashboardRoutes = require("./routes/dashboard");
+const testimonialRoutes = require("./routes/testimonials");
 
 const { protect } = require("./middleware/auth");
 const seed = require("./seeders/seed");
@@ -73,6 +74,7 @@ app.use("/api/coupons", couponRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/testimonials", testimonialRoutes);
 
 // Marketing routes: /api/hero-slides, /api/offer-banners, /api/marquee
 app.use("/api", marketingRoutes);

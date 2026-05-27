@@ -199,6 +199,7 @@ const createProduct = async (req, res, next) => {
         stock:       v.stock || 0,
         sku:         v.sku || generateSku("KMV"),
         attributes:  v.attributes || [],
+        status:      v.status || "Active",
         image:       vImage,
       });
     }
@@ -275,6 +276,7 @@ const updateProduct = async (req, res, next) => {
           stock:       v.stock || 0,
           sku:         v.sku || generateSku("KMV"),
           attributes:  v.attributes || [],
+          status:      v.status || "Active",
           image:       vImage,
         });
       }

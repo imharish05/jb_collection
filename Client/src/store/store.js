@@ -23,6 +23,7 @@ import authReducer from "./slices/authSlice";
 import addressReducer from "./slices/addressSlice";
 import orderReducer from "./slices/order-slice";
 import reviewReducer from "./slices/review-slice";
+import testimonialReducer from "./slices/testimonialSlice";
 
 const persistConfig = {
     key: "flone",
@@ -32,19 +33,20 @@ const persistConfig = {
 };
 
 const appReducer = combineReducers({
-    marquee:      marqueeReducer,
-    headerSlider: sliderReducer,
-    product:      productReducer,
-    cart:         cartReducer,
-    compare:      compareReducer,
-    wishlist:     wishlistReducer,
-    currency:     currencyReducer,
-    navMenu:      navMenuReducer,
-    offerBanner:  offerReducer,
-    auth:         authReducer,
-    address:      addressReducer,
-    order:        orderReducer,
-    review:       reviewReducer,
+    marquee:       marqueeReducer,
+    headerSlider:  sliderReducer,
+    product:       productReducer,
+    cart:          cartReducer,
+    compare:       compareReducer,
+    wishlist:      wishlistReducer,
+    currency:      currencyReducer,
+    navMenu:       navMenuReducer,
+    offerBanner:   offerReducer,
+    auth:          authReducer,
+    address:       addressReducer,
+    order:         orderReducer,
+    review:        reviewReducer,
+    testimonial:   testimonialReducer,
 });
 
 // ── Root reducer: wipe cart+wishlist on logout ──────────────────────────────

@@ -22,6 +22,7 @@ import AdminContactManager from './components/Admincontactmanager';
 import HeroSlider from './components/HeroSlider/HeroSlider';
 import TimelessTreasures from './components/TimelessTreasures/TimelessTreasures';
 import Marquee from './components/Marquee/Marquee';
+import Testimonials from './components/Testimonials/Testimonials';
 
 import './components/global.css';
 import Swal from 'sweetalert2';
@@ -51,6 +52,7 @@ const PAGE_CONFIG = {
   hero_slider:         { title: 'Hero Slider' },
   timeless_treasures:  { title: 'Timeless Treasures' },
   marquee:             { title: 'Marquee Messages' },
+  testimonials:        { title: 'Testimonials' },
 };
 
 function AdminLayoutWrapper({ handleLogout }) {
@@ -100,6 +102,7 @@ function AdminLayoutWrapper({ handleLogout }) {
             <Route path="/hero_slider"         element={<HeroSlider         showToast={showToast} />} />
             <Route path="/timeless_treasures"  element={<TimelessTreasures  showToast={showToast} />} />
             <Route path="/marquee"             element={<Marquee            showToast={showToast} />} />
+            <Route path="/testimonials"        element={<Testimonials       showToast={showToast} />} />
             <Route path="/"                    element={<Navigate to="/dashboard" />} />
           </Routes>
         </div>

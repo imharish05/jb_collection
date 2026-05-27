@@ -15,6 +15,7 @@ const uploadFolders = [
   '../uploads/offer-banners',
   '../uploads/events',
   '../uploads/combos',
+  '../uploads/testimonials',
 ];
 
 uploadFolders.forEach(folder => {

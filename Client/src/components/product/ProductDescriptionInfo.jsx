@@ -88,10 +88,7 @@ function compatibleValues(variants, selections, targetKey) {
       .forEach(a => { const k = normalKey(a.key); if (!attrs[k]) attrs[k] = []; attrs[k].push(a.value); });
     const othersMatch = Object.entries(selections).every(([k, val]) => {
       if (k === targetKey || !val) return true;
-      // If this variant doesn't define the attribute key at all,
-      // it places no constraint on that dimension → treat as compatible.
-      if (!attrs[k]) return true;
-      return attrs[k].includes(val);
+      return attrs[k] && attrs[k].includes(val);
     });
     if (othersMatch && attrs[targetKey]) attrs[targetKey].forEach(val => compatible.add(val));
   });
@@ -289,7 +286,15 @@ const ProductDescriptionInfo = ({
   const hasNewVar = hasBackendVariants(product);
   const hasOldVar = !hasNewVar && hasOldVariation(product);
 
-  const optionMap = useMemo(() => hasNewVar ? buildOptionMap(product.Variants) : {}, [product]);
+  // Only show Active variants on the client — Inactive ones are hidden from selection
+  const activeVariants = useMemo(
+    () => hasNewVar
+      ? (product.Variants || []).filter(v => (v.status || 'Active') === 'Active')
+      : [],
+    [product, hasNewVar]
+  );
+
+  const optionMap = useMemo(() => hasNewVar ? buildOptionMap(activeVariants) : {}, [activeVariants, hasNewVar]);
   const attrKeys = useMemo(() => {
     const present = Object.keys(optionMap);
     const ordered = KEY_ORDER.filter(k => present.includes(k));
@@ -298,23 +303,23 @@ const ProductDescriptionInfo = ({
   }, [optionMap]);
 
   const [selections, setSelections] = useState(() => {
-    if (!hasNewVar || !product.Variants.length) return {};
+    if (!hasNewVar || !activeVariants.length) return {};
     // Single variant → always auto-select all its attributes
-    if (product.Variants.length === 1) {
-      const first = product.Variants[0];
+    if (activeVariants.length === 1) {
+      const first = activeVariants[0];
       return Object.fromEntries(
         safeAttrs(first.attributes)
           .filter(a => a.key && a.value && a.key !== "Custom Note")
           .map(a => [normalKey(a.key), a.value])
       );
     }
-    const oMap = buildOptionMap(product.Variants);
+    const oMap = buildOptionMap(activeVariants);
     const keys = Object.keys(oMap);
     // Every attribute key has only one option → auto-select all
     const allSingle = keys.length > 0 && keys.every(k => oMap[k].size === 1);
     if (allSingle) return Object.fromEntries(keys.map(k => [k, [...oMap[k]][0]]));
     // Multiple variants: pre-select first variant's attributes
-    const first = product.Variants[0];
+    const first = activeVariants[0];
     return Object.fromEntries(
       safeAttrs(first.attributes)
         .filter(a => a.key && a.value && a.key !== "Custom Note")
@@ -323,8 +328,8 @@ const ProductDescriptionInfo = ({
   });
 
   const selectedVariant = useMemo(
-    () => hasNewVar ? findMatchingVariant(product.Variants, selections) : null,
-    [selections, product.Variants, hasNewVar]
+    () => hasNewVar ? findMatchingVariant(activeVariants, selections) : null,
+    [selections, activeVariants, hasNewVar]
   );
 
   // Notify parent of auto-selected variant image on mount
@@ -336,8 +341,8 @@ const ProductDescriptionInfo = ({
   }, []);
 
   const customNoteVariant = useMemo(() =>
-    hasNewVar ? product.Variants.find(v => safeAttrs(v.attributes).every(a => a.key === "Custom Note")) : null,
-    [product.Variants, hasNewVar]
+    hasNewVar ? activeVariants.find(v => safeAttrs(v.attributes).every(a => a.key === "Custom Note")) : null,
+    [activeVariants, hasNewVar]
   );
 
   const handleSelect = (key, value) => {
@@ -346,7 +351,7 @@ const ProductDescriptionInfo = ({
     if (!value) delete partial[key];
 
     // Find the best-matching variant for this partial selection
-    const matched = findMatchingVariant(product.Variants, partial);
+    const matched = findMatchingVariant(activeVariants, partial);
 
     // Auto-fill ALL attributes from the matched variant so nothing is left unselected
     let next = { ...partial };
@@ -363,7 +368,7 @@ const ProductDescriptionInfo = ({
     setSelections(next);
     setErrors(prev => ({ ...prev, variant: "" }));
     if (onVariantImageChange) {
-      const v = findMatchingVariant(product.Variants, next);
+      const v = findMatchingVariant(activeVariants, next);
       onVariantImageChange(v?.image || null);
     }
   };
@@ -400,7 +405,7 @@ const ProductDescriptionInfo = ({
   const validateCart = () => {
     const next = {};
     if (hasNewVar) {
-      const compatibleVariants = product.Variants.filter(v => {
+      const compatibleVariants = activeVariants.filter(v => {
         const attrs = {};
         safeAttrs(v.attributes).filter(a => a.key && a.value && a.key !== "Custom Note")
           .forEach(a => { const k = normalKey(a.key); if (!attrs[k]) attrs[k] = []; attrs[k].push(a.value); });
@@ -529,7 +534,7 @@ const ProductDescriptionInfo = ({
               attrKey={key}
               allValues={optionMap[key]}
               selectedValue={selections[key] || null}
-              compatibleSet={compatibleValues(product.Variants, selections, key)}
+              compatibleSet={compatibleValues(activeVariants, selections, key)}
               onSelect={(val) => handleSelect(key, val)}
             />
           ))}
