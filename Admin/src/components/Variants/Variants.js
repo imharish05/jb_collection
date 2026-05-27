@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import DataTable from '../DataTable/DataTable';
@@ -78,8 +78,9 @@ export default function Variants({ showToast }) {
   // Pre-seeded option matrix built from the selected product's existing variants
   const [existingOptions, setExistingOptions] = useState(null);
 
-  // For EDIT — single SKU card (same SkuRow shape)
-  const [editSku, setEditSku] = useState(null);
+  // For EDIT — use VariantBuilder (same as Products page) — single SKU in builder
+  const [editSku,  setEditSku]  = useState(null); // kept for handleEdit compat
+  const [editSkus, setEditSkus] = useState([]);   // VariantBuilder array (always 1 item)
 
   useEffect(() => {
     dispatch(fetchVariants());
@@ -143,7 +144,9 @@ export default function Variants({ showToast }) {
     setMode('edit');
     setEditingId(v.id);
     setProductId(String(v.productId || ''));
-    setEditSku(variantToSku(v));
+    const sku = variantToSku(v);
+    setEditSku(sku);
+    setEditSkus([sku]);
     setErrors({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -153,6 +156,7 @@ export default function Variants({ showToast }) {
     setEditingId(null);
     setSkus([]);
     setEditSku(null);
+    setEditSkus([]);
     setExistingOptions(null);
     setErrors({});
   };
@@ -177,10 +181,11 @@ export default function Variants({ showToast }) {
 
   const validateEdit = () => {
     const next = {};
+    const s = editSkus[0];
     if (!productId) next.productId = 'Please select a product';
-    if (!editSku.mrp || Number(editSku.mrp) <= 0)             next.mrp = 'MRP required';
-    if (!editSku.salesPrice || Number(editSku.salesPrice) <= 0) next.salesPrice = 'Sale price required';
-    if (editSku.stock === '' || editSku.stock === undefined)    next.stock = 'Stock required';
+    if (!s || !s.mrp || Number(s.mrp) <= 0)               next.mrp = 'MRP required';
+    if (!s || !s.salesPrice || Number(s.salesPrice) <= 0)  next.salesPrice = 'Sale price required';
+    if (!s || s.stock === '' || s.stock === undefined)      next.stock = 'Stock required';
     setErrors(next);
     return !Object.keys(next).length;
   };
@@ -221,9 +226,10 @@ export default function Variants({ showToast }) {
     e.preventDefault();
     if (!validateEdit()) return;
 
-    const attrs = editSku.combo?.length
-      ? editSku.combo.map(c => ({ key: c.key, value: c.value }))
-      : (editSku.attributes || []).filter(a => a.key && a.value);
+    const s = editSkus[0];
+    const attrs = s.combo?.length
+      ? s.combo.map(c => ({ key: c.key, value: c.value }))
+      : (s.attributes || []).filter(a => a.key && a.value);
 
     const tid = showToast.loading('Updating variant…');
     try {
@@ -231,13 +237,13 @@ export default function Variants({ showToast }) {
         id: editingId,
         data: {
           productId,
-          variantName: editSku.variantName,
-          mrp:         editSku.mrp,
-          salesPrice:  editSku.salesPrice,
-          stock:       editSku.stock,
-          status:      editSku.status || 'Active',
+          variantName: s.variantName,
+          mrp:         s.mrp,
+          salesPrice:  s.salesPrice,
+          stock:       s.stock,
+          status:      s.status || 'Active',
           attributes:  attrs,
-          imageFile:   editSku.imageFile || undefined,
+          imageFile:   s.imageFile || undefined,
         },
       }));
       showToast.success('Variant updated!', tid);
@@ -284,100 +290,6 @@ export default function Variants({ showToast }) {
   const ErrorMsg = ({ field }) => errors[field]
     ? <div style={errorStyle}>⚠ {errors[field]}</div>
     : null;
-
-  // ── Edit SKU card — inline using same SkuRow style ────────────────────────
-  const EditSkuCard = () => {
-    const imgRef = useRef();
-    if (!editSku) return null;
-    const isOOS  = editSku.stock === '0' || editSku.stock === 0 || editSku.stock === '';
-    const discount = editSku.mrp && editSku.salesPrice && Number(editSku.mrp) > 0
-      ? Math.round((1 - Number(editSku.salesPrice) / Number(editSku.mrp)) * 100) : 0;
-
-    const set = (field) => (e) => setEditSku(prev => ({ ...prev, [field]: e.target.value }));
-
-    return (
-      <div style={{ border: `1px solid ${KM.border}`, borderRadius: 10, overflow: 'hidden', marginBottom: 16 }}>
-        {/* Header */}
-        <div style={{ background: KM.bg, padding: '10px 14px', borderBottom: `1px solid ${KM.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: KM.blue }}>✏️ Editing: {editSku.variantName}</span>
-          <button type="button"
-            onClick={() => setEditSku(prev => ({ ...prev, status: prev.status === 'Active' ? 'Inactive' : 'Active' }))}
-            style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: `1px solid ${editSku.status === 'Active' ? KM.green : KM.border}`, background: editSku.status === 'Active' ? '#F0FFF4' : KM.bg, color: editSku.status === 'Active' ? KM.green : KM.muted, cursor: 'pointer', fontWeight: 700 }}>
-            {editSku.status === 'Active' ? '● Active' : '○ Inactive'}
-          </button>
-        </div>
-
-        {/* Body */}
-        <div style={{ display: 'flex', gap: 16, padding: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-
-          {/* Image upload */}
-          <div style={{ flexShrink: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Image</div>
-            <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }}
-              onChange={e => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setEditSku(prev => ({ ...prev, imageFile: file, imagePreview: URL.createObjectURL(file) }));
-              }} />
-            {editSku.imagePreview ? (
-              <div style={{ position: 'relative', width: 90, height: 90 }}>
-                <img src={editSku.imagePreview} alt="variant"
-                  style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 10, border: `2px solid ${KM.teal}`, display: 'block' }} />
-                <button type="button"
-                  onClick={() => setEditSku(prev => ({ ...prev, imageFile: null, imagePreview: null }))}
-                  style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: KM.red, color: '#fff', border: '2px solid #fff', cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontWeight: 700 }}>✕</button>
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,180,216,0.85)', borderRadius: '0 0 8px 8px', fontSize: 10, color: '#fff', textAlign: 'center', padding: '3px 0', fontWeight: 600 }}>
-                  {editSku.imageFile ? 'New' : 'Saved'}
-                </div>
-              </div>
-            ) : (
-              <div onClick={() => imgRef.current?.click()}
-                style={{ width: 90, height: 90, border: `2px dashed ${KM.teal}`, borderRadius: 10, background: '#F0FAFE', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                <span style={{ fontSize: 26 }}>🖼️</span>
-                <span style={{ fontSize: 10, color: KM.teal, fontWeight: 700 }}>Upload</span>
-              </div>
-            )}
-          </div>
-
-          {/* Fields */}
-          <div style={{ flex: 1, minWidth: 220 }}>
-            {/* Variant name */}
-            <div style={{ marginBottom: 12 }}>
-              <label style={labelStyle}>Variant Name</label>
-              <input style={{ ...inputStyle, marginTop: 4 }} type="text" value={editSku.variantName}
-                onChange={e => setEditSku(prev => ({ ...prev, variantName: e.target.value }))} />
-            </div>
-
-            {/* Price + stock grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-              <div>
-                <label style={labelStyle}>MRP (₹)</label>
-                <input style={{ ...inputStyle, marginTop: 4 }} type="number" min="0" step="0.01" placeholder="0.00"
-                  value={editSku.mrp} onChange={set('mrp')} />
-                <ErrorMsg field="mrp" />
-              </div>
-              <div>
-                <label style={labelStyle}>Sale Price (₹)</label>
-                <input style={{ ...inputStyle, marginTop: 4, borderColor: (editSku.mrp && editSku.salesPrice && Number(editSku.salesPrice) > Number(editSku.mrp)) ? KM.red : KM.border }}
-                  type="number" min="0" step="0.01" placeholder="0.00"
-                  value={editSku.salesPrice} onChange={set('salesPrice')} />
-                {discount > 0 && <div style={{ fontSize: 10, color: KM.green, fontWeight: 700, marginTop: 2 }}>{discount}% off</div>}
-                <ErrorMsg field="salesPrice" />
-              </div>
-              <div>
-                <label style={labelStyle}>Stock</label>
-                <input style={{ ...inputStyle, marginTop: 4, borderColor: isOOS ? '#F59E0B' : KM.border }}
-                  type="number" min="0" placeholder="0"
-                  value={editSku.stock} onChange={set('stock')} />
-                {isOOS && <div style={{ fontSize: 10, color: '#F59E0B', fontWeight: 700, marginTop: 2 }}>Out of stock</div>}
-                <ErrorMsg field="stock" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -455,15 +367,15 @@ export default function Variants({ showToast }) {
         </div>
       )}
 
-      {/* ── EDIT form — single SKU card ────────────────────────────────────── */}
-      {mode === 'edit' && editSku && (
+      {/* ── EDIT form — VariantBuilder (matches Products page) ───────────────── */}
+      {mode === 'edit' && editSkus.length > 0 && (
         <div style={formCard}>
           <div style={formHeader}>
             <div style={headerIcon}>✏</div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Edit Variant</div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 1 }}>
-                Update price, stock, image and status
+                Update options, price, stock, image and status
               </div>
             </div>
           </div>
@@ -481,7 +393,23 @@ export default function Variants({ showToast }) {
                 <ErrorMsg field="productId" />
               </div>
 
-              <EditSkuCard />
+              {/* VariantBuilder in SKUs tab — shows the single variant card */}
+              <VariantBuilder
+                key={`edit-${editingId}`}
+                variants={editSkus}
+                errors={Object.fromEntries(
+                  editSkus.map((_, i) => [i, [
+                    ...(errors.mrp       ? [errors.mrp]       : []),
+                    ...(errors.salesPrice ? [errors.salesPrice] : []),
+                    ...(errors.stock     ? [errors.stock]     : []),
+                  ]])
+                )}
+                onChange={(updated) => {
+                  setEditSkus(updated);
+                  // keep legacy editSku in sync (used nowhere but keeps shape consistent)
+                  if (updated[0]) setEditSku(updated[0]);
+                }}
+              />
 
               <button type="submit" style={submitBtn}>Update Variant</button>
             </form>
