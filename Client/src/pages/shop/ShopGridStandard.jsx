@@ -53,11 +53,13 @@ const ShopGridStandard = () => {
 
   const sortType  = searchParam ? "search" : catParam ? "category" : eventParam ? "tag" : comboParam ? "combo" : "";
   const sortValue = searchParam || catParam || eventParam || comboParam || "";
+  const currentCombo = comboParam ? navCombos.find(c => c.value === comboParam || String(c.id) === String(comboParam)) : null;
   const activeLabel = searchParam
     ? `Search: "${searchParam}"`
     : catParam ? LABEL_MAP[catParam]
     : eventParam ? LABEL_MAP[eventParam]
     : comboParam === "all" ? "All Combos"
+    : currentCombo ? (currentCombo.label || currentCombo.name || comboParam)
     : comboParam ? (LABEL_MAP[comboParam] || comboParam)
     : null;
 
