@@ -18,12 +18,18 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
+            const wasLoggedIn = !!localStorage.getItem("token");
             localStorage.removeItem("token");
             localStorage.removeItem("user");
 
-            // ONLY redirect if we aren't already on the sign-in page
-            if (!window.location.pathname.includes("/login")) {
-                window.location.replace("/login");
+            // Only hard-redirect if the user actually had a session
+            // AND we are not already on the login page.
+            // This prevents startup API calls (cart/wishlist) from
+            // kicking a freshly-loaded page to /login unnecessarily.
+            if (wasLoggedIn && !window.location.pathname.includes("/login")) {
+                window.location.replace(
+                    (process.env.REACT_APP_PUBLIC_URL || "") + "/login"
+                );
             }
         }
         return Promise.reject(error);

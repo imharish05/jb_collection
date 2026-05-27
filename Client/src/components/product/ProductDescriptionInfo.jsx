@@ -165,9 +165,6 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
         {selectedValue && (
           <span className="pdp-attr-selected">— {selectedValue}</span>
         )}
-        {isSingle && (
-          <span className="pdp-attr-auto-tag">auto‑selected</span>
-        )}
       </div>
       <div className={`pdp-attr-options${isColour ? " is-colour" : ""}${allCompact ? " is-size" : ""}`}>
         {[...allValues].map(val => {

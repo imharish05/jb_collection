@@ -462,7 +462,7 @@ export default function Products({ showToast }) {
         showToast.success('Updated!', tid);
       } else {
         await dispatch(createProduct(fd));
-        showToast.success('✨ Added!', tid);
+        showToast.success('Added!', tid);
       }
       reset();
       dispatch(fetchProducts());

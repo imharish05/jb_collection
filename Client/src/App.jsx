@@ -91,7 +91,14 @@ const App = () => {
         };
       });
       dispatch(replaceCart(items));
-    }).catch(() => {});
+    }).catch((err) => {
+      // Silently ignore 401 on startup — token may have expired;
+      // the interceptor handles clearing storage, no redirect needed here.
+      if (err?.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      }
+    });
 
     // Sync wishlist
     loadWishlistService();
