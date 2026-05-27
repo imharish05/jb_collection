@@ -1,568 +1,596 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
-// ── Brand Colors ──────────────────────────────────────────────────────────────
 const KM = {
   orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B',
   green: '#39B54A', teal: '#00B4D8', border: '#E5E7EB',
-  text: '#1A1A2E', muted: '#6B7280', bg: '#F9FAFB',
-  blueFaint: '#EEF2FB',
+  text: '#1A1A2E', muted: '#6B7280', bg: '#F9FAFB', blueFaint: '#EEF2FB',
+  red: '#EF4444', redLight: '#FEF2F2',
 };
 
-// ── Predefined attribute suggestions ─────────────────────────────────────────
-export const ATTRIBUTE_PRESETS = {
-  'Colour':    { type: 'dropdown', options: ['Red','Pink','Yellow','Green','Blue','Purple','Gold','Silver','White','Black','Rose Gold','Multicolour','Custom'] },
-  'Size':      { type: 'dropdown', options: ['XS','S','M','L','XL','XXL','Free Size','Small','Medium','Large','Custom'] },
-  'Material':  { type: 'dropdown', options: ['Gold-plated','Silver','Stainless Steel','Brass','Copper','Leather','Wood','Acrylic','Clay','Custom'] },
-  'Finish':    { type: 'dropdown', options: ['Matte','Glossy','Antique','Polished','Hand-painted','Mirror-finish','Oxidised','Plain'] },
-  'Capacity':  { type: 'dropdown', options: ['50ml','100ml','200ml','250ml','350ml','500ml','750ml','1L','1.5L','Custom'] },
-  'Engraving': { type: 'text', options: [] },
-  'Print Text':{ type: 'text', options: [] },
-  'Weight':    { type: 'text', options: [] },
-  'Dimensions':{ type: 'text', options: [] },
-  'Custom Note':{ type: 'text', options: [] },
+// ── Predefined option types ────────────────────────────────────────────────────
+export const OPTION_PRESETS = {
+  'Colour':    ['Red','Pink','Yellow','Green','Blue','Purple','Gold','Silver','White','Black','Rose Gold','Bronze','Copper','Multicolour'],
+  'Size':      ['XS','S','M','L','XL','XXL','Free Size','Small','Medium','Large'],
+  'Material':  ['Brass','Acrylic','Wood','Leather','Steel','Copper','Clay','Glass','Ceramic'],
+  'Finish':    ['Matte','Glossy','Antique','Polished','Hand-painted','Mirror','Oxidised'],
+  'Storage':   ['32GB','64GB','128GB','256GB','512GB','1TB'],
+  'Style':     ['Classic','Modern','Vintage','Minimalist','Luxury','Rustic'],
+  'Bundle':    ['Single','Pair','Set of 3','Set of 5','Set of 10'],
+  'Capacity':  ['50ml','100ml','250ml','500ml','1L','1.5L','2L'],
+  'Weight':    ['Light','Standard','Heavy'],
 };
 
-const PRESET_KEYS = Object.keys(ATTRIBUTE_PRESETS);
+const OPTION_KEYS = Object.keys(OPTION_PRESETS);
 
-// Build variant name from attributes — shows "Key: Value" pairs
-function buildVariantName(attributes) {
-  return attributes
-    .map(a => {
-      const val = a.value === 'Custom' ? (a.customValue || 'Custom') : a.value;
-      if (!val) return '';
-      // For Custom Note, show just the value (not "Custom Note: Colour: Red")
-      if (a.key === 'Custom Note') return val;
-      return a.key ? `${a.key}: ${val}` : val;
-    })
-    .filter(Boolean)
-    .join(' · ') || 'Default';
+// ── Normalize value for duplicate detection ───────────────────────────────────
+const norm = (v) => v.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// ── Cartesian product ─────────────────────────────────────────────────────────
+function cartesian(arrays) {
+  if (!arrays.length) return [];
+  return arrays.reduce(
+    (acc, arr) => acc.flatMap(combo => arr.map(v => [...combo, v])),
+    [[]]
+  );
 }
 
-function blankAttribute() {
-  return { key: '', value: '', customValue: '' };
-}
-
-function blankVariant() {
-  return {
-    id: Date.now() + Math.random(),
-    attributes: [blankAttribute()],
-    mrp: '',
-    salesPrice: '',
-    stock: '',
-    imageFile: null,      // File object (new upload)
-    imagePreview: null,   // blob: or saved URL
-  };
+// ── Build variant name from option combo ─────────────────────────────────────
+function comboName(combo) {
+  return combo.map(({ key, value }) => `${key}: ${value}`).join(' · ') || 'Default';
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-const s = {
-  input: {
-    padding: '8px 10px', border: `1px solid ${KM.border}`,
-    borderRadius: 7, fontSize: 13, color: KM.text,
-    background: '#fff', fontFamily: 'inherit',
-    outline: 'none', width: '100%', boxSizing: 'border-box',
-  },
-  label: {
-    fontSize: 11, fontWeight: 600, color: KM.muted,
-    textTransform: 'uppercase', letterSpacing: '0.06em',
-    display: 'block', marginBottom: 4,
-  },
-  iconBtn: (color = KM.muted) => ({
-    background: 'none', border: 'none', cursor: 'pointer',
-    color, fontSize: 16, padding: '4px 6px', borderRadius: 6,
-    lineHeight: 1, display: 'flex', alignItems: 'center',
-  }),
+const inp = {
+  padding: '8px 10px', border: `1px solid ${KM.border}`, borderRadius: 7,
+  fontSize: 13, color: KM.text, background: '#fff', fontFamily: 'inherit',
+  outline: 'none', width: '100%', boxSizing: 'border-box',
 };
+const lbl = {
+  fontSize: 11, fontWeight: 600, color: KM.muted,
+  textTransform: 'uppercase', letterSpacing: '0.06em',
+  display: 'block', marginBottom: 4,
+};
+const pill = (active) => ({
+  display: 'inline-flex', alignItems: 'center', gap: 4,
+  padding: '3px 10px 3px 12px', borderRadius: 20,
+  fontSize: 12, fontWeight: 600, cursor: 'default',
+  background: active ? KM.blueFaint : KM.bg,
+  color: active ? KM.blue : KM.muted,
+  border: `1px solid ${active ? '#B8C9EE' : KM.border}`,
+});
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AttributeRow — one key/value pair inside a variant
-// ─────────────────────────────────────────────────────────────────────────────
-export function AttributeRow({ attr, onChange, onRemove, isOnly }) {
-  const preset = ATTRIBUTE_PRESETS[attr.key];
-  const isDropdown = preset?.type === 'dropdown';
-  const showCustomInput = isDropdown && attr.value === 'Custom';
-  const showTextInput = preset?.type === 'text' || !preset;
+// ── OptionRow — one option type with its values ───────────────────────────────
+function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
+  const [valueInput, setValueInput] = useState('');
   const [keyOpen, setKeyOpen] = useState(false);
   const [keySearch, setKeySearch] = useState('');
-  const keyRef = useRef();
+  const inputRef = useRef();
 
-  const filteredPresets = PRESET_KEYS.filter(k =>
-    k.toLowerCase().includes(keySearch.toLowerCase())
-  );
-
-  const selectKey = (k) => {
-    setKeyOpen(false);
-    setKeySearch('');
-    onChange({ ...attr, key: k, value: '', customValue: '' });
+  const addValue = (raw) => {
+    const v = raw.trim();
+    if (!v) return;
+    // Duplicate detection (case/space insensitive)
+    if (option.values.some(existing => norm(existing) === norm(v))) return;
+    onChange({ ...option, values: [...option.values, v] });
+    setValueInput('');
+    inputRef.current?.focus();
   };
 
-  return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', width: '100%' }}>
+  const removeValue = (idx) => onChange({ ...option, values: option.values.filter((_, i) => i !== idx) });
 
-      {/* Key selector */}
-      <div style={{ flex: '0 0 160px', position: 'relative' }} ref={keyRef}>
-        <div
-          onClick={() => setKeyOpen(o => !o)}
-          style={{
-            ...s.input, cursor: 'pointer',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            background: attr.key ? KM.blueFaint : '#fff',
-            borderColor: attr.key ? '#B8C9EE' : KM.border,
-          }}
-        >
-          <span style={{ color: attr.key ? KM.blue : KM.muted, fontWeight: attr.key ? 600 : 400 }}>
-            {attr.key || 'Select / type…'}
-          </span>
-          <span style={{ fontSize: 10, color: KM.muted }}>▾</span>
+  const filteredKeys = OPTION_KEYS.filter(k =>
+    k.toLowerCase().includes(keySearch.toLowerCase()) &&
+    !allOtherKeys.includes(k)
+  );
+
+  return (
+    <div style={{ background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 10, padding: 14, marginBottom: 10 }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+
+        {/* Option type selector */}
+        <div style={{ flex: '0 0 170px', position: 'relative' }}>
+          <label style={lbl}>Option Type</label>
+          <div
+            onClick={() => setKeyOpen(o => !o)}
+            style={{ ...inp, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: option.key ? KM.blueFaint : '#fff', borderColor: option.key ? '#B8C9EE' : KM.border }}
+          >
+            <span style={{ color: option.key ? KM.blue : KM.muted, fontWeight: option.key ? 600 : 400 }}>
+              {option.key || 'Select type…'}
+            </span>
+            <span style={{ fontSize: 10, color: KM.muted }}>▾</span>
+          </div>
+          {keyOpen && (
+            <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 200, width: 220, background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', marginTop: 4, overflow: 'hidden' }}>
+              <input
+                autoFocus
+                style={{ ...inp, borderRadius: 0, borderWidth: '0 0 1px 0' }}
+                placeholder="Search or type custom…"
+                value={keySearch}
+                onChange={e => setKeySearch(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && keySearch.trim()) {
+                    onChange({ ...option, key: keySearch.trim(), values: [] });
+                    setKeyOpen(false); setKeySearch('');
+                  }
+                  if (e.key === 'Escape') setKeyOpen(false);
+                }}
+              />
+              <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+                {filteredKeys.map(k => (
+                  <div key={k} onClick={() => { onChange({ ...option, key: k, values: [] }); setKeyOpen(false); setKeySearch(''); }}
+                    style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', justifyContent: 'space-between', background: option.key === k ? KM.blueFaint : 'transparent', color: option.key === k ? KM.blue : KM.text }}
+                    onMouseEnter={e => { if (option.key !== k) e.currentTarget.style.background = KM.bg; }}
+                    onMouseLeave={e => { if (option.key !== k) e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <span>{k}</span>
+                    <span style={{ fontSize: 10, color: KM.muted }}>{(OPTION_PRESETS[k] || []).length} presets</span>
+                  </div>
+                ))}
+                {keySearch && !filteredKeys.includes(keySearch.trim()) && (
+                  <div onClick={() => { onChange({ ...option, key: keySearch.trim(), values: [] }); setKeyOpen(false); setKeySearch(''); }}
+                    style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: KM.orange, borderTop: `1px solid ${KM.border}` }}>
+                    + Use "{keySearch.trim()}" as custom
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {keyOpen && (
-          <div style={{
-            position: 'absolute', top: '100%', left: 0, zIndex: 100, width: 220,
-            background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 8,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.12)', marginTop: 4, overflow: 'hidden',
-          }}>
+        {/* Values area */}
+        <div style={{ flex: 1 }}>
+          <label style={lbl}>Values</label>
+
+          {/* Preset suggestions */}
+          {option.key && OPTION_PRESETS[option.key] && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+              {OPTION_PRESETS[option.key].map(preset => {
+                const already = option.values.some(v => norm(v) === norm(preset));
+                return (
+                  <button key={preset} type="button"
+                    onClick={() => !already && addValue(preset)}
+                    style={{ fontSize: 11, padding: '3px 9px', borderRadius: 5, border: `1px solid ${already ? KM.green : KM.border}`, background: already ? '#F0FFF4' : '#fff', color: already ? KM.green : KM.muted, cursor: already ? 'default' : 'pointer', fontWeight: 500 }}>
+                    {already ? '✓ ' : '+'}{preset}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Selected values as pills */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8, minHeight: option.values.length ? 'auto' : 0 }}>
+            {option.values.map((v, i) => (
+              <span key={i} style={pill(true)}>
+                {v}
+                <button type="button" onClick={() => removeValue(i)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.muted, fontSize: 14, padding: 0, lineHeight: 1 }}>×</button>
+              </span>
+            ))}
+          </div>
+
+          {/* Custom value input */}
+          <div style={{ display: 'flex', gap: 6 }}>
             <input
-              autoFocus
-              style={{ ...s.input, borderRadius: 0, borderWidth: '0 0 1px 0', borderColor: KM.border }}
-              placeholder="Search or type custom…"
-              value={keySearch}
-              onChange={e => setKeySearch(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && keySearch.trim()) {
-                  selectKey(keySearch.trim());
-                }
-                if (e.key === 'Escape') setKeyOpen(false);
-              }}
+              ref={inputRef}
+              style={{ ...inp, flex: 1 }}
+              placeholder={option.key ? `Add ${option.key.toLowerCase()} value…` : 'Select option type first'}
+              value={valueInput}
+              disabled={!option.key}
+              onChange={e => setValueInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addValue(valueInput); } }}
             />
-            <div style={{ maxHeight: 180, overflowY: 'auto' }}>
-              {filteredPresets.map(k => (
-                <div
-                  key={k}
-                  onClick={() => selectKey(k)}
-                  style={{
-                    padding: '8px 12px', cursor: 'pointer', fontSize: 13,
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    background: attr.key === k ? KM.blueFaint : 'transparent',
-                    color: attr.key === k ? KM.blue : KM.text,
-                  }}
-                  onMouseEnter={e => { if (attr.key !== k) e.currentTarget.style.background = KM.bg; }}
-                  onMouseLeave={e => { if (attr.key !== k) e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <span>{k}</span>
-                  <span style={{ fontSize: 10, color: KM.muted }}>
-                    {ATTRIBUTE_PRESETS[k].type === 'dropdown' ? '▾ list' : 'Aa text'}
-                  </span>
-                </div>
-              ))}
-              {keySearch && !filteredPresets.includes(keySearch) && (
-                <div
-                  onClick={() => selectKey(keySearch.trim())}
-                  style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: KM.orange, borderTop: `1px solid ${KM.border}` }}
-                >
-                  + Use "{keySearch}" as custom key
-                </div>
-              )}
+            <button type="button" onClick={() => addValue(valueInput)}
+              disabled={!option.key || !valueInput.trim()}
+              style={{ padding: '8px 14px', background: KM.teal, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: (!option.key || !valueInput.trim()) ? 0.4 : 1 }}>
+              Add
+            </button>
+          </div>
+        </div>
+
+        {/* Remove option */}
+        {canRemove && (
+          <button type="button" onClick={onRemove}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.red, fontSize: 18, padding: '4px 6px', marginTop: 20, alignSelf: 'flex-start' }}
+            title="Remove option">
+            ✕
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── SKU Row — card layout with big image upload ───────────────────────────────
+function SkuRow({ sku, index, onChange, errors = [] }) {
+  const imgRef = useRef();
+
+  const handleImg = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    onChange({ ...sku, imageFile: file, imagePreview: URL.createObjectURL(file) });
+  };
+
+  const hasErr = errors.length > 0;
+  const isOOS  = sku.stock === '0' || sku.stock === 0;
+  const discount = sku.mrp && sku.salesPrice && Number(sku.mrp) > 0
+    ? Math.round((1 - Number(sku.salesPrice) / Number(sku.mrp)) * 100) : 0;
+
+  return (
+    <div style={{
+      display: 'flex', gap: 14, padding: '16px',
+      borderBottom: `1px solid ${KM.border}`,
+      background: hasErr ? KM.redLight : isOOS ? '#FFFBEB' : '#fff',
+      alignItems: 'flex-start',
+    }}>
+
+      {/* Index badge */}
+      <div style={{ width: 26, height: 26, borderRadius: 6, background: KM.blue, color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 4 }}>
+        {index + 1}
+      </div>
+
+      {/* Image upload — big zone */}
+      <div style={{ flexShrink: 0 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Image</div>
+        <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImg} />
+        {sku.imagePreview ? (
+          <div style={{ position: 'relative', width: 90, height: 90 }}>
+            <img src={sku.imagePreview} alt="variant"
+              style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 10, border: `2px solid ${KM.teal}`, display: 'block' }} />
+            <button type="button" onClick={() => onChange({ ...sku, imageFile: null, imagePreview: null })}
+              style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: KM.red, color: '#fff', border: '2px solid #fff', cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontWeight: 700 }}>✕</button>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,180,216,0.85)', borderRadius: '0 0 8px 8px', fontSize: 10, color: '#fff', textAlign: 'center', padding: '3px 0', fontWeight: 600 }}>
+              {sku.imagePreview.startsWith('blob:') ? 'New' : 'Saved'}
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Value input */}
-      <div style={{ flex: 1 }}>
-        {isDropdown ? (
-          <select
-            style={{ ...s.input, background: '#fff' }}
-            value={attr.value}
-            onChange={e => onChange({ ...attr, value: e.target.value, customValue: '' })}
-          >
-            <option value="">Select value…</option>
-            {preset.options.map(o => <option key={o}>{o}</option>)}
-          </select>
         ) : (
-          <input
-            style={s.input}
-            placeholder={
-              attr.key === 'Custom Note' ? 'e.g. Colour: Red, Font: Arial' :
-              attr.key === 'Engraving' ? 'e.g. "John & Sara 2024"' :
-              attr.key === 'Print Text' ? 'e.g. Company logo / name' :
-              attr.key === 'Weight' ? 'e.g. 250g' :
-              attr.key === 'Dimensions' ? 'e.g. 10×8×5 cm' :
-              'Enter value…'
-            }
-            value={attr.value}
-            onChange={e => onChange({ ...attr, value: e.target.value })}
-          />
-        )}
-        {showCustomInput && (
-          <input
-            style={{ ...s.input, marginTop: 5 }}
-            placeholder={`Custom ${attr.key.toLowerCase()}…`}
-            value={attr.customValue || ''}
-            onChange={e => onChange({ ...attr, customValue: e.target.value })}
-          />
-        )}
-        {/* Custom Note helper: parse "Key: Val, Key2: Val2" and show preview chips */}
-        {attr.key === 'Custom Note' && attr.value && (
-          <div style={{ marginTop: 5, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {attr.value.split(',').map(p => p.trim()).filter(Boolean).map((part, i) => {
-              const ci = part.indexOf(':');
-              if (ci > -1) {
-                const k = part.slice(0, ci).trim();
-                const v = part.slice(ci + 1).trim();
-                return (
-                  <span key={i} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 4, background: '#FEF0EB', border: '1px solid #F5C09A', color: '#8B3A0F', fontWeight: 500 }}>
-                    <span style={{ fontWeight: 700 }}>{k}:</span> {v}
-                  </span>
-                );
-              }
-              return <span key={i} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 4, background: '#FEF0EB', border: '1px solid #F5C09A', color: '#8B3A0F' }}>{part}</span>;
-            })}
+          <div onClick={() => imgRef.current?.click()}
+            style={{ width: 90, height: 90, border: `2px dashed ${KM.teal}`, borderRadius: 10, background: '#F0FAFE', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <span style={{ fontSize: 26 }}>🖼️</span>
+            <span style={{ fontSize: 10, color: KM.teal, fontWeight: 700 }}>Upload</span>
           </div>
         )}
       </div>
 
-      {/* Remove attribute */}
-      <button
-        type="button"
-        onClick={onRemove}
-        disabled={isOnly}
-        style={{
-          ...s.iconBtn(isOnly ? '#D1D5DB' : '#EF4444'),
-          marginTop: 7, cursor: isOnly ? 'default' : 'pointer',
-        }}
-        title="Remove attribute"
-      >
-        ✕
+      {/* Right side — name + fields */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+
+        {/* Name + status */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: KM.blue }}>{sku.variantName}</div>
+            <div style={{ fontSize: 11, color: KM.muted, marginTop: 2 }}>
+              {sku.combo?.map(c => `${c.key}: ${c.value}`).join('  ·  ')}
+            </div>
+            {hasErr && <div style={{ fontSize: 11, color: KM.red, fontWeight: 600, marginTop: 3 }}>{errors.join(' · ')}</div>}
+          </div>
+          <button type="button"
+            onClick={() => onChange({ ...sku, status: sku.status === 'Active' ? 'Inactive' : 'Active' })}
+            style={{ flexShrink: 0, fontSize: 11, padding: '4px 10px', borderRadius: 6, border: `1px solid ${sku.status === 'Active' ? KM.green : KM.border}`, background: sku.status === 'Active' ? '#F0FFF4' : KM.bg, color: sku.status === 'Active' ? KM.green : KM.muted, cursor: 'pointer', fontWeight: 700 }}>
+            {sku.status === 'Active' ? '● Active' : '○ Inactive'}
+          </button>
+        </div>
+
+        {/* Price + stock row */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={{ ...lbl, marginBottom: 4 }}>MRP (₹)</label>
+            <input
+              style={{ ...inp }}
+              type="number" min="0" step="0.01" placeholder="0.00"
+              value={sku.mrp}
+              onChange={e => onChange({ ...sku, mrp: e.target.value })}
+            />
+          </div>
+          <div>
+            <label style={{ ...lbl, marginBottom: 4 }}>Sale Price (₹)</label>
+            <input
+              style={{ ...inp, borderColor: (sku.mrp && sku.salesPrice && Number(sku.salesPrice) > Number(sku.mrp)) ? KM.red : KM.border }}
+              type="number" min="0" step="0.01" placeholder="0.00"
+              value={sku.salesPrice}
+              onChange={e => onChange({ ...sku, salesPrice: e.target.value })}
+            />
+            {discount > 0 && (
+              <div style={{ fontSize: 10, color: KM.green, fontWeight: 700, marginTop: 3 }}>{discount}% off</div>
+            )}
+          </div>
+          <div>
+            <label style={{ ...lbl, marginBottom: 4 }}>Stock</label>
+            <input
+              style={{ ...inp, borderColor: isOOS ? '#F59E0B' : KM.border }}
+              type="number" min="0" placeholder="0"
+              value={sku.stock}
+              onChange={e => onChange({ ...sku, stock: e.target.value })}
+            />
+            {isOOS && <div style={{ fontSize: 10, color: '#F59E0B', fontWeight: 700, marginTop: 3 }}>Out of stock</div>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Build SKU rows from option matrix ────────────────────────────────────────
+function buildSkus(options, existingSkus = []) {
+  const validOptions = options.filter(o => o.key && o.values.length > 0);
+  if (!validOptions.length) return [];
+
+  const combos = cartesian(validOptions.map(o => o.values.map(v => ({ key: o.key, value: v }))));
+
+  return combos.map(combo => {
+    const variantName = comboName(combo);
+    // Preserve existing sku data if combo already existed
+    const existing = existingSkus.find(s => s.variantName === variantName);
+    return existing
+      ? { ...existing, combo, variantName }
+      : {
+          id: `new_${Date.now()}_${Math.random()}`,
+          combo,
+          variantName,
+          mrp: existingSkus[0]?.mrp || '',
+          salesPrice: existingSkus[0]?.salesPrice || '',
+          stock: '',
+          imageFile: null,
+          imagePreview: null,
+          status: 'Active',
+        };
+  });
+}
+
+// ── BulkEdit bar ──────────────────────────────────────────────────────────────
+function BulkEditBar({ onApply }) {
+  const [mrp, setMrp] = useState('');
+  const [price, setPrice] = useState('');
+  const [stock, setStock] = useState('');
+
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 12px', background: KM.blueFaint, borderBottom: `1px solid ${KM.border}`, flexWrap: 'wrap' }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: KM.blue, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>Apply to all</span>
+      <input style={{ ...inp, width: 100, fontSize: 12 }} type="number" placeholder="MRP ₹" value={mrp} onChange={e => setMrp(e.target.value)} />
+      <input style={{ ...inp, width: 100, fontSize: 12 }} type="number" placeholder="Price ₹" value={price} onChange={e => setPrice(e.target.value)} />
+      <input style={{ ...inp, width: 80, fontSize: 12 }} type="number" placeholder="Stock" value={stock} onChange={e => setStock(e.target.value)} />
+      <button type="button"
+        onClick={() => { onApply({ mrp, salesPrice: price, stock }); setMrp(''); setPrice(''); setStock(''); }}
+        style={{ padding: '7px 14px', background: KM.orange, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+        Apply
       </button>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VariantCard — one collapsible variant with its attributes + pricing
-// ─────────────────────────────────────────────────────────────────────────────
-function VariantCard({ variant, index, onChange, onRemove, canRemove, errors = [] }) {
-  const [open, setOpen] = useState(true);
-  const variantName = buildVariantName(variant.attributes);
-
-  const updateAttr = (i, updated) => {
-    const attrs = [...variant.attributes];
-    attrs[i] = updated;
-    onChange({ ...variant, attributes: attrs });
-  };
-
-  const addAttr = () => onChange({
-    ...variant,
-    attributes: [...variant.attributes, blankAttribute()],
+// ═══════════════════════════════════════════════════════════════════════════════
+// VariantBuilder — main export
+// Props:
+//   variants     — array of SKU rows (from parent state)
+//   onChange     — (newVariants) => void
+//   errors       — { [index]: string[] }
+//   existingOptions — pre-populated option matrix when editing
+// ═══════════════════════════════════════════════════════════════════════════════
+export default function VariantBuilder({ variants = [], onChange, errors = {}, existingOptions }) {
+  // Options = the matrix rows (Colour: [Red, Blue], Size: [S, M, L])
+  const [options, setOptions] = useState(() => {
+    if (existingOptions?.length) return existingOptions;
+    // Reconstruct option matrix from existing variants
+    if (variants.length > 0) {
+      const optionMap = {};
+      variants.forEach(v => {
+        (v.attributes || []).forEach(a => {
+          if (!a.key || !a.value || a.key === 'Custom Note') return;
+          if (!optionMap[a.key]) optionMap[a.key] = new Set();
+          optionMap[a.key].add(a.value);
+        });
+      });
+      const keys = Object.keys(optionMap);
+      if (keys.length) return keys.map(k => ({ id: k, key: k, values: [...optionMap[k]] }));
+    }
+    return [{ id: 'opt_0', key: '', values: [] }];
   });
 
-  const removeAttr = (i) => onChange({
-    ...variant,
-    attributes: variant.attributes.filter((_, j) => j !== i),
-  });
+  const [tab, setTab] = useState('options'); // 'options' | 'skus'
 
-  const updateField = (k, v) => onChange({ ...variant, [k]: v });
-
-  const imgInputRef = useRef();
-
-  const handleVariantImage = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const preview = URL.createObjectURL(file);
-    onChange({ ...variant, imageFile: file, imagePreview: preview });
+  const addOption = () => setOptions(o => [...o, { id: `opt_${Date.now()}`, key: '', values: [] }]);
+  const removeOption = (i) => {
+    const next = options.filter((_, j) => j !== i);
+    setOptions(next);
+    regenerate(next);
+  };
+  const updateOption = (i, updated) => {
+    const next = [...options]; next[i] = updated;
+    setOptions(next);
+    regenerate(next);
   };
 
-  const removeVariantImage = () => {
-    onChange({ ...variant, imageFile: null, imagePreview: null });
+  const regenerate = useCallback((opts) => {
+    const next = buildSkus(opts, variants);
+    onChange(next);
+  }, [variants, onChange]);
+
+  const updateSku = (i, updated) => {
+    const next = [...variants]; next[i] = updated;
+    onChange(next);
   };
 
+  const bulkApply = ({ mrp, salesPrice, stock }) => {
+    onChange(variants.map(v => ({
+      ...v,
+      ...(mrp ? { mrp } : {}),
+      ...(salesPrice ? { salesPrice } : {}),
+      ...(stock ? { stock } : {}),
+    })));
+  };
+
+  const totalCombos = (() => {
+    const valid = options.filter(o => o.key && o.values.length);
+    if (!valid.length) return 0;
+    return valid.reduce((acc, o) => acc * o.values.length, 1);
+  })();
+
+  const allOtherKeys = (idx) => options.filter((_, i) => i !== idx).map(o => o.key).filter(Boolean);
+
+  // ── AttributeRow export (for Variants.js standalone use) ──────────────────
   return (
-    <div style={{
-      border: `1px solid ${KM.border}`, borderRadius: 10,
-      background: '#fff', overflow: 'hidden', marginBottom: 10,
-    }}>
+    <div style={{ gridColumn: 'span 2', background: KM.bg, border: `1px solid ${KM.border}`, borderRadius: 12, overflow: 'hidden' }}>
+
       {/* Header */}
-      <div
-        onClick={() => setOpen(o => !o)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 14px', cursor: 'pointer',
-          background: open ? KM.blueFaint : KM.bg,
-          borderBottom: open ? `1px solid ${KM.border}` : 'none',
-          userSelect: 'none',
-        }}
-      >
-        <span style={{
-          width: 22, height: 22, borderRadius: 6, background: KM.blue,
-          color: '#fff', fontSize: 11, fontWeight: 700,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}>{index + 1}</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ fontWeight: 600, fontSize: 13, color: KM.blue }}>
-            {variantName}
+      <div style={{ background: KM.blue, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>🎁 Variant Options</span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginLeft: 10 }}>
+            {totalCombos > 0 ? `${totalCombos} variant${totalCombos !== 1 ? 's' : ''} will be generated` : 'Define options below'}
           </span>
-          {!open && (variant.mrp || variant.salesPrice) && (
-            <span style={{ fontSize: 11, color: KM.muted, marginLeft: 10 }}>
-              {variant.salesPrice ? `₹${variant.salesPrice}` : ''}{variant.mrp ? ` / MRP ₹${variant.mrp}` : ''}
-              {variant.stock ? ` · ${variant.stock} in stock` : ''}
-            </span>
-          )}
         </div>
-        <span style={{ fontSize: 12, color: KM.muted }}>{open ? '▲' : '▼'}</span>
-        {canRemove && (
-          <button
-            type="button"
-            onClick={e => { e.stopPropagation(); onRemove(); }}
-            style={{ ...s.iconBtn('#EF4444'), marginLeft: 4 }}
-            title="Remove variant"
-          >
-            🗑
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['options', 'skus'].map(t => (
+            <button key={t} type="button" onClick={() => setTab(t)}
+              style={{ padding: '5px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: tab === t ? KM.orange : 'rgba(255,255,255,0.15)', color: '#fff' }}>
+              {t === 'options' ? '⚙️ Options' : `📦 SKUs (${variants.length})`}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {open && (
-        <div style={{ padding: '14px 14px 16px' }}>
-          {errors.length > 0 && (
-            <div style={{
-              marginBottom: 12, padding: '8px 10px',
-              background: '#FEF2F2', border: '1px solid #FCA5A5',
-              borderRadius: 7, color: '#dc2626', fontSize: 11, fontWeight: 600,
-            }}>
-              {errors.map((msg, i) => <div key={i}>{msg}</div>)}
-            </div>
-          )}
-          {/* Attributes */}
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <span style={{ ...s.label, marginBottom: 0 }}>Attributes</span>
-              <button
-                type="button"
-                onClick={addAttr}
-                style={{
-                  fontSize: 11, padding: '4px 10px', background: 'transparent',
-                  color: KM.teal, border: `1px solid ${KM.teal}`,
-                  borderRadius: 6, cursor: 'pointer', fontWeight: 600,
-                }}
-              >
-                + Add Attribute
+      {/* Options tab */}
+      {tab === 'options' && (
+        <div style={{ padding: 16 }}>
+          <div style={{ marginBottom: 12, fontSize: 12, color: KM.muted }}>
+            Add option types (Colour, Size, Material…) with their values. SKUs are auto-generated as a cartesian product.
+          </div>
+
+          {options.map((opt, i) => (
+            <OptionRow
+              key={opt.id}
+              option={opt}
+              onChange={updated => updateOption(i, updated)}
+              onRemove={() => removeOption(i)}
+              canRemove={options.length > 1}
+              allOtherKeys={allOtherKeys(i)}
+            />
+          ))}
+
+          <button type="button" onClick={addOption}
+            style={{ fontSize: 12, padding: '7px 16px', background: 'transparent', color: KM.teal, border: `1.5px dashed ${KM.teal}`, borderRadius: 8, cursor: 'pointer', fontWeight: 700, width: '100%', marginTop: 4 }}>
+            + Add Option Type
+          </button>
+
+          {totalCombos > 0 && (
+            <div style={{ marginTop: 14, padding: '10px 14px', background: KM.orangeLight, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: KM.orange }}>
+                {totalCombos} SKU{totalCombos !== 1 ? 's' : ''} ready to configure
+              </span>
+              <button type="button" onClick={() => setTab('skus')}
+                style={{ padding: '6px 14px', background: KM.orange, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                Set Prices & Stock →
               </button>
             </div>
+          )}
+        </div>
+      )}
 
-            {/* Column headers */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 6, paddingRight: 30 }}>
-              <span style={{ ...s.label, flex: '0 0 160px', marginBottom: 0 }}>Attribute Key</span>
-              <span style={{ ...s.label, flex: 1, marginBottom: 0 }}>Value</span>
+      {/* SKUs tab */}
+      {tab === 'skus' && (
+        <div>
+          {variants.length === 0 ? (
+            <div style={{ padding: 24, textAlign: 'center', color: KM.muted, fontSize: 13 }}>
+              No variants yet — go to ⚙️ Options tab and add option types with values.
             </div>
+          ) : (
+            <>
+              <BulkEditBar onApply={bulkApply} />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {variant.attributes.map((attr, i) => (
-                <AttributeRow
-                  key={i}
-                  attr={attr}
-                  onChange={updated => updateAttr(i, updated)}
-                  onRemove={() => removeAttr(i)}
-                  isOnly={variant.attributes.length === 1}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Generated name preview */}
-          <div style={{
-            padding: '8px 12px', background: KM.orangeLight,
-            borderRadius: 7, marginBottom: 14,
-            display: 'flex', alignItems: 'center', gap: 8,
-          }}>
-            <span style={{ fontSize: 11, color: KM.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Variant Name</span>
-            <span style={{
-              fontSize: 13, fontWeight: 700, color: KM.orange,
-              background: '#fff', padding: '2px 10px', borderRadius: 5,
-              border: `1px solid ${KM.orange}20`,
-            }}>
-              {variantName}
-            </span>
-          </div>
-
-          {/* Pricing row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-            <div>
-              <label style={s.label}>MRP (₹) *</label>
-              <input
-                style={s.input} type="number" required placeholder="0"
-                value={variant.mrp}
-                onChange={e => updateField('mrp', e.target.value)}
-              />
-            </div>
-            <div>
-              <label style={s.label}>Sales Price (₹) *</label>
-              <input
-                style={s.input} type="number" required placeholder="0"
-                value={variant.salesPrice}
-                onChange={e => updateField('salesPrice', e.target.value)}
-              />
-              {variant.mrp && variant.salesPrice && Number(variant.mrp) > 0 && (
-                <span style={{ fontSize: 11, color: KM.green, fontWeight: 700, marginTop: 3, display: 'block' }}>
-                  {Math.round((1 - variant.salesPrice / variant.mrp) * 100)}% off
-                </span>
-              )}
-            </div>
-            <div>
-              <label style={s.label}>Stock *</label>
-              <input
-                style={s.input} type="number" required placeholder="0"
-                value={variant.stock}
-                onChange={e => updateField('stock', e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Variant Image — same design as product gallery */}
-          <div style={{ marginTop: 14 }}>
-            <label style={s.label}>Variant Image</label>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', padding: '6px 0' }}>
-              {/* Upload trigger */}
-              <div
-                onClick={() => imgInputRef.current.click()}
-                style={{
-                  width: 100, height: 100,
-                  border: `2px dashed ${KM.teal}`,
-                  borderRadius: 12,
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', background: '#F0FAFE', flexShrink: 0,
-                }}
-              >
-                <input
-                  ref={imgInputRef}
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={handleVariantImage}
-                />
-                <span style={{ fontSize: 22 }}>➕</span>
-                <span style={{ fontSize: 11, color: KM.teal, fontWeight: 600, marginTop: 4 }}>Upload</span>
+              <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+                {variants.map((sku, i) => (
+                  <SkuRow
+                    key={sku.id || i}
+                    sku={sku}
+                    index={i}
+                    onChange={updated => updateSku(i, updated)}
+                    errors={errors[i] || []}
+                  />
+                ))}
               </div>
 
-              {/* Preview */}
-              {variant.imagePreview && (
-                <div style={{
-                  width: 100, height: 100, position: 'relative',
-                  borderRadius: 12, overflow: 'hidden',
-                  border: `1px solid ${KM.border}`, flexShrink: 0,
-                }}>
-                  <img
-                    src={variant.imagePreview}
-                    alt="variant"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={removeVariantImage}
-                    style={{
-                      position: 'absolute', top: 5, right: 5,
-                      background: '#ef4444', color: '#fff',
-                      border: 'none', borderRadius: '50%',
-                      width: 20, height: 20, cursor: 'pointer',
-                      fontSize: 11, lineHeight: 1, display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                    }}
-                  >✕</button>
-                  <div style={{
-                    position: 'absolute', bottom: 0, width: '100%',
-                    background: 'rgba(0,0,0,0.55)', color: '#fff',
-                    fontSize: 10, textAlign: 'center', padding: '2px 0',
-                  }}>
-                    {variant.imagePreview.startsWith('blob:') ? 'New' : 'Saved'}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+              {/* Summary */}
+              <div style={{ padding: '10px 14px', background: KM.bg, borderTop: `1px solid ${KM.border}`, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, color: KM.muted }}>
+                  <strong style={{ color: KM.blue }}>{variants.filter(v => v.status === 'Active').length}</strong> active
+                </span>
+                <span style={{ fontSize: 12, color: KM.muted }}>
+                  <strong style={{ color: KM.green }}>{variants.filter(v => Number(v.stock) > 0).length}</strong> in stock
+                </span>
+                <span style={{ fontSize: 12, color: KM.muted }}>
+                  <strong style={{ color: '#F59E0B' }}>{variants.filter(v => Number(v.stock) === 0).length}</strong> out of stock
+                </span>
+                <span style={{ fontSize: 12, color: KM.muted }}>
+                  Total: <strong style={{ color: KM.text }}>{variants.reduce((s, v) => s + (Number(v.stock) || 0), 0)}</strong> units
+                </span>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VariantBuilder — main export, drop this into your Products form
-// ─────────────────────────────────────────────────────────────────────────────
-export default function VariantBuilder({ variants, onChange, errors = [] }) {
-  const addVariant = () => onChange([...variants, blankVariant()]);
-  const removeVariant = (i) => onChange(variants.filter((_, j) => j !== i));
-  const updateVariant = (i, updated) => {
-    const v = [...variants]; v[i] = updated; onChange(v);
-  };
-
-  // Build the payload shape your backend expects
-  const getPayload = () =>
-    variants.map(v => ({
-      variantName: buildVariantName(v.attributes),
-      mrp: v.mrp,
-      salesPrice: v.salesPrice,
-      stock: v.stock,
-      imageFile: v.imageFile || null,          // File object — append to FormData separately
-      imagePreview: v.imagePreview || null,     // saved URL (if editing)
-      attributes: v.attributes
-        .filter(a => a.key && (a.value || a.customValue))
-        .map(a => ({
-          key: a.key,
-          value: a.value === 'Custom' ? (a.customValue || 'Custom') : a.value,
-        })),
-      // Flat fields for backward-compat
-      colour:      v.attributes.find(a => a.key === 'Colour')?.value || '',
-      size:        v.attributes.find(a => a.key === 'Size')?.value || '',
-      material:    v.attributes.find(a => a.key === 'Material')?.value || '',
-      finish:      v.attributes.find(a => a.key === 'Finish')?.value || '',
-      engraving:   v.attributes.find(a => a.key === 'Engraving')?.value || '',
-      printText:   v.attributes.find(a => a.key === 'Print Text')?.value || '',
-      weight:      v.attributes.find(a => a.key === 'Weight')?.value || '',
-      dimensions:  v.attributes.find(a => a.key === 'Dimensions')?.value || '',
-      customLabel: v.attributes.find(a => a.key === 'Custom Note')?.value || '',
-      unit: v.attributes.find(a => a.key === 'Size')?.value || 'Free Size',
-    }));
+// ── AttributeRow export (kept for Variants.js standalone admin page) ──────────
+export function AttributeRow({ attr, onChange, onRemove, isOnly }) {
+  const preset = OPTION_PRESETS[attr.key];
+  const [keyOpen, setKeyOpen] = useState(false);
+  const [keySearch, setKeySearch] = useState('');
 
   return (
-    <div style={{ gridColumn: 'span 2', background: KM.bg, border: `1px solid ${KM.border}`, borderRadius: 10, padding: 16 }}>
-
-      {/* Section header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div>
-          <span style={{ fontSize: 13, fontWeight: 700, color: KM.blue, letterSpacing: '0.02em' }}>
-            🎁 Product Variants
+    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', width: '100%' }}>
+      <div style={{ flex: '0 0 160px', position: 'relative' }}>
+        <div onClick={() => setKeyOpen(o => !o)}
+          style={{ ...inp, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: attr.key ? KM.blueFaint : '#fff', borderColor: attr.key ? '#B8C9EE' : KM.border }}>
+          <span style={{ color: attr.key ? KM.blue : KM.muted, fontWeight: attr.key ? 600 : 400 }}>
+            {attr.key || 'Select / type…'}
           </span>
-          <span style={{ fontSize: 11, color: KM.muted, marginLeft: 8 }}>
-            Define custom attributes per variant (colour, size, material, etc.)
-          </span>
+          <span style={{ fontSize: 10, color: KM.muted }}>▾</span>
         </div>
-        <button
-          type="button"
-          onClick={addVariant}
-          style={{
-            fontSize: 12, padding: '6px 14px', background: KM.orange,
-            color: '#fff', border: 'none', borderRadius: 7,
-            cursor: 'pointer', fontWeight: 700,
-          }}
-        >
-          + Add Variant
-        </button>
+        {keyOpen && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, width: 220, background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', marginTop: 4, overflow: 'hidden' }}>
+            <input autoFocus style={{ ...inp, borderRadius: 0, borderWidth: '0 0 1px 0' }} placeholder="Search or type…" value={keySearch} onChange={e => setKeySearch(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && keySearch.trim()) { onChange({ ...attr, key: keySearch.trim(), value: '', customValue: '' }); setKeyOpen(false); setKeySearch(''); } if (e.key === 'Escape') setKeyOpen(false); }}
+            />
+            <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+              {OPTION_KEYS.filter(k => k.toLowerCase().includes(keySearch.toLowerCase())).map(k => (
+                <div key={k} onClick={() => { onChange({ ...attr, key: k, value: '', customValue: '' }); setKeyOpen(false); setKeySearch(''); }}
+                  style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, background: attr.key === k ? KM.blueFaint : 'transparent', color: attr.key === k ? KM.blue : KM.text }}
+                  onMouseEnter={e => { if (attr.key !== k) e.currentTarget.style.background = KM.bg; }}
+                  onMouseLeave={e => { if (attr.key !== k) e.currentTarget.style.background = 'transparent'; }}>
+                  {k}
+                </div>
+              ))}
+              {keySearch && !OPTION_KEYS.includes(keySearch.trim()) && (
+                <div onClick={() => { onChange({ ...attr, key: keySearch.trim(), value: '', customValue: '' }); setKeyOpen(false); setKeySearch(''); }}
+                  style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: KM.orange, borderTop: `1px solid ${KM.border}` }}>
+                  + Use "{keySearch.trim()}"
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {variants.map((v, i) => (
-        <VariantCard
-          key={v.id}
-          index={i}
-          variant={v}
-          onChange={updated => updateVariant(i, updated)}
-          onRemove={() => removeVariant(i)}
-          canRemove={variants.length > 1}
-          errors={errors[i] || []}
-        />
-      ))}
+      <div style={{ flex: 1 }}>
+        {preset ? (
+          <select style={{ ...inp }} value={attr.value} onChange={e => onChange({ ...attr, value: e.target.value })}>
+            <option value="">Select value…</option>
+            {preset.map(o => <option key={o}>{o}</option>)}
+          </select>
+        ) : (
+          <input style={inp} placeholder="Enter value…" value={attr.value} onChange={e => onChange({ ...attr, value: e.target.value })} />
+        )}
+      </div>
 
-
+      <button type="button" onClick={onRemove} disabled={isOnly}
+        style={{ background: 'none', border: 'none', cursor: isOnly ? 'default' : 'pointer', color: isOnly ? '#D1D5DB' : KM.red, fontSize: 16, padding: '4px 6px', marginTop: 7 }}>
+        ✕
+      </button>
     </div>
   );
 }
+
+export const ATTRIBUTE_PRESETS = Object.fromEntries(
+  Object.entries(OPTION_PRESETS).map(([k, v]) => [k, { type: 'dropdown', options: v }])
+);

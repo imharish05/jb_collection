@@ -109,7 +109,7 @@ export default function Combos({ showToast }) {
     try {
       if (editingId) {
         await dispatch(editCombo({ id: editingId, formData: fd }));
-        showToast.success('✅ Combo updated', tid);
+        showToast.success('Combo updated', tid);
       } else {
         await dispatch(createCombo(fd));
         showToast.success('✨ Combo added', tid);

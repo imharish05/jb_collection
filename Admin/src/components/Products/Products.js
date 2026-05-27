@@ -315,9 +315,12 @@ export default function Products({ showToast }) {
             open: false,
             mrp: v.mrp || '',
             salesPrice: v.salesPrice || '',
-            stock: v.stock || '',
+            stock: v.stock ?? '',
+            status: v.status || 'Active',
             imageFile: null,
             imagePreview: v.image ? getImageUrl(v.image) : null,
+            combo: builtAttrs.map(a => ({ key: a.key, value: a.value })),
+            variantName: v.variantName || builtAttrs.map(a => `${a.key}: ${a.value}`).join(' · '),
             attributes: builtAttrs.length > 0 ? builtAttrs : [{ key: '', value: '', customValue: '' }],
           };
         })
@@ -456,7 +459,7 @@ export default function Products({ showToast }) {
     try {
       if (editingId) {
         await dispatch(editProduct({ id: editingId, formData: fd }));
-        showToast.success('✅ Updated!', tid);
+        showToast.success('Updated!', tid);
       } else {
         await dispatch(createProduct(fd));
         showToast.success('✨ Added!', tid);
