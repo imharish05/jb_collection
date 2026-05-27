@@ -31,11 +31,11 @@ export const fetchAddresses = () => async (dispatch, getState) => {
 // ── POST /api/address ─────────────────────────────────────────────────────────
 export const addAddressService = (addressData) => async (dispatch, getState) => {
   dispatch(addressStart());
-  const loader = cogoToast.loading("Saving address...", { hideAfter: 0 });
+  // const loader = cogoToast.loading("Saving address...", { hideAfter: 0 });
   try {
     const res = await api.post("/address", addressData, getAuthHeader(getState));
     
-    if (loader?.hide) loader.hide(); // Hide loader before success
+    // if (loader?.hide) loader.hide(); // Hide loader before success
 
     dispatch(addAddress(res.data));
     setTimeout(() => {
@@ -43,7 +43,7 @@ export const addAddressService = (addressData) => async (dispatch, getState) => 
     }, 100);
     return true;
   } catch (err) {
-    if (loader?.hide) loader.hide(); // Hide loader first
+    // if (loader?.hide) loader.hide(); // Hide loader first
     const msg = err.response?.data?.message || "Failed to save address";
     
     dispatch(addressFailure(msg));

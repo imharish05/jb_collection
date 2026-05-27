@@ -137,12 +137,12 @@ const NAV_ITEMS = [
   {
     section: 'Marketing',
     items: [
-      { id: 'marquee', label: 'Marquee Messages', icon: (
+      { id: 'marquee', label: 'Slider Messages', icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M3 6h18M3 12h18M3 18h18M1 9v6M23 9v6"/>
         </svg>
       )},
-      { id: 'hero_slider', label: 'Hero Slider', icon: (
+      { id: 'banners', label: 'Banners', icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="2" y="5" width="20" height="14" rx="2"/>
           <path d="M8 12h8M12 9v6"/>

@@ -41,7 +41,7 @@ const OrderConfirmation = () => {
           {/* Thank you banner */}
           <div
             style={{
-              background: "linear-gradient(135deg, #fff8f0 0%, #ffe8d6 100%)",
+              background:"linear-gradient(135deg, rgba(223, 77, 129, 0.4) 0%, rgb(255, 232, 214) 100%)",
               borderRadius: 20,
               padding: "48px 32px",
               textAlign: "center",
@@ -59,7 +59,7 @@ const OrderConfirmation = () => {
             <div
               style={{
                 display: "inline-block",
-                background: "#c0622a",
+                background: "rgba(223, 77, 129)",
                 color: "#fff",
                 borderRadius: 30,
                 padding: "10px 32px",
@@ -110,7 +110,7 @@ const OrderConfirmation = () => {
                 <div style={{ borderTop: "2px solid #f0f0f0", marginTop: 12, paddingTop: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 16 }}>
                     <span>Grand Total</span>
-                    <span style={{ color: "#c0622a" }}>₹{parseFloat(cartTotalPrice).toFixed(2)}</span>
+                    <span style={{ color: "rgba(223, 77, 129)" }}>₹{parseFloat(cartTotalPrice).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -150,7 +150,7 @@ const OrderConfirmation = () => {
                     style={{
                       ...infoValue,
                       background: paymentMethod === "cod" ? "#fff3e0" : "#e8f5e9",
-                      color: paymentMethod === "cod" ? "#e65100" : "#2e7d32",
+                      color: paymentMethod === "cod" ? "rgba(223, 77, 129)" : "#2e7d32",
                       padding: "2px 10px",
                       borderRadius: 20,
                       fontWeight: 600,
@@ -182,8 +182,7 @@ const OrderConfirmation = () => {
             <span style={{ fontSize: 20 }}>📩</span>
             <span>
               A confirmation has been sent to{" "}
-              <strong>{selectedAddr.email || "your registered email"}</strong>{" "}
-              and an SMS to <strong>{selectedAddr.phone || "your phone"}</strong>.
+              <strong>{selectedAddr.email || "your registered email"}</strong>
             </span>
           </div>
 
@@ -192,7 +191,7 @@ const OrderConfirmation = () => {
             <Link
               to={process.env.PUBLIC_URL + "/my-account?tab=orders"}
               style={{
-                background: "#c0622a",
+                background: "#db1a5d",
                 color: "#fff",
                 padding: "12px 32px",
                 borderRadius: 30,
@@ -207,13 +206,13 @@ const OrderConfirmation = () => {
               to={process.env.PUBLIC_URL + "/shop"}
               style={{
                 background: "#fff",
-                color: "#c0622a",
+                color: "#db1a5d",
                 padding: "12px 32px",
                 borderRadius: 30,
                 fontWeight: 600,
                 textDecoration: "none",
                 fontSize: 15,
-                border: "2px solid #c0622a",
+                border: "2px solid #db1a5d",
               }}
             >
               Continue Shopping
