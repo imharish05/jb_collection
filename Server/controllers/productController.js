@@ -49,7 +49,9 @@ const generateSku = (prefix = "KM") =>
 // shape: rename variants → Variants for frontend compatibility
 const shape = (p) => {
   const row = p.toJSON();
-  row.Variants = row.variants || [];
+  if (!Array.isArray(row.Variants)) {
+    row.Variants = Array.isArray(row.variants) ? row.variants : [];
+  }
   delete row.variants;
   // Ensure JSON fields are always real arrays, never raw strings
   row.image     = safeParse(row.image,     []);

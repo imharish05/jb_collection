@@ -19,27 +19,37 @@ function getImg(p) {
   return `${IMG_URL}/uploads/${p.replace(/^\//, "").replace(/^uploads\//, "")}`;
 }
 
-// ── Image Upload Widget ────────────────────────────────────────────────────────
-function ImageUpload({ preview, onChange, onClear }) {
-  const ref = useRef();
+// ── Categories-style Image Upload ─────────────────────────────────────────────
+function ImageUploadField({ label = "Image", imageFile, preview, fileInputRef, onFileChange, onClear }) {
   return (
-    <div className="upload-grid-wrapper">
-      <div
-        className={`drop-zone-area ${preview ? "active-file" : ""}`}
-        onClick={() => ref.current.click()}
-      >
-        <input ref={ref} type="file" accept="image/*" style={{ display: "none" }} onChange={onChange} />
-        <div className="drop-zone-info">
-          <div className="upload-icon text-center">{preview ? "✅" : "📸"}</div>
-          <p className="upload-text">{preview ? <b>Image selected</b> : <>Click to <b>browse</b></>}</p>
+    <div className="km-field km-field-full">
+      <label className="km-label">{label}</label>
+      <div className="upload-grid-wrapper">
+        <div
+          className={`drop-zone-area ${imageFile ? "active-file" : ""}`}
+          onClick={() => fileInputRef.current.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={onFileChange}
+          />
+          <div className="drop-zone-info">
+            <div className="upload-icon text-center">{imageFile ? "✅" : "📸"}</div>
+            <p className="upload-text">
+              {imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b> or drag image</>}
+            </p>
+          </div>
         </div>
+        {preview && (
+          <div className="preview-tile fade-in">
+            <img src={preview} alt="Preview" />
+            <button type="button" className="preview-remove" onClick={onClear}>✕</button>
+          </div>
+        )}
       </div>
-      {preview && (
-        <div className="preview-tile fade-in">
-          <img src={preview} alt="preview" />
-          <button type="button" className="preview-remove" onClick={onClear}>✕</button>
-        </div>
-      )}
     </div>
   );
 }
@@ -93,7 +103,7 @@ function ProductPickerRow({ allProducts, onAdd, label = "Included Products" }) {
   const variants = selProd?.Variants || [];
 
   return (
-    <div style={{ border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)", overflow: "hidden" }}>
+    <div style={{ border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)", overflow: "visible" }}>
       <div style={{ background: "var(--neutral-50)", padding: "10px 14px", borderBottom: "1px solid var(--border-color)" }}>
         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--neutral-800)" }}>{label}</span>
       </div>
@@ -108,40 +118,46 @@ function ProductPickerRow({ allProducts, onAdd, label = "Included Products" }) {
             onFocus={() => setOpen(true)}
             onChange={e => { setSearch(e.target.value); setSelProd(null); setOpen(true); }}
           />
-          {open && (
+          {open && filtered.length > 0 && (
             <div style={{
-              position: "absolute", top: "100%", left: 0, right: 0, zIndex: 200,
+              position: "absolute", top: "100%", left: 0, right: 0, zIndex: 9999,
               background: "#fff", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.1)", maxHeight: 220, overflowY: "auto", marginTop: 2,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.12)", maxHeight: 220, overflowY: "auto", marginTop: 2,
             }}>
-              {filtered.length === 0
-                ? <div style={{ padding: 12, color: "var(--neutral-400)", fontSize: 12 }}>No products found</div>
-                : filtered.map(p => {
-                    const img = Array.isArray(p.image) ? p.image[0] : p.image;
-                    return (
-                      <div key={p.id}
-                        onClick={() => { setSelProd(p); setSelVar(""); setOpen(false); setSearch(""); }}
-                        style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", cursor: "pointer", borderBottom: "1px solid var(--border-color)" }}
-                        onMouseEnter={e => e.currentTarget.style.background = "var(--neutral-50)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                      >
-                        {img
-                          ? <img src={getImg(img)} alt="" width={28} height={28} style={{ borderRadius: 4, objectFit: "cover" }} />
-                          : <div style={{ width: 28, height: 28, borderRadius: 4, background: "var(--neutral-100)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>🎁</div>
-                        }
-                        <div>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--neutral-800)" }}>{p.name}</div>
-                          <div style={{ fontSize: 10, color: "var(--neutral-400)" }}>₹{p.price} · {p.Variants?.length || 0} variants</div>
-                        </div>
+              {filtered.map(p => {
+                const img = Array.isArray(p.image) ? p.image[0] : p.image;
+                return (
+                  <div key={p.id}
+                    onClick={() => { setSelProd(p); setSelVar(""); setOpen(false); setSearch(""); }}
+                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", cursor: "pointer", borderBottom: "1px solid var(--neutral-100)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--neutral-50)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                  >
+                    {img
+                      ? <img src={getImg(img)} alt="" width={28} height={28} style={{ borderRadius: 4, objectFit: "cover", flexShrink: 0 }} />
+                      : <div style={{ width: 28, height: 28, borderRadius: 4, background: "var(--neutral-100)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>🎁</div>
+                    }
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--neutral-800)" }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--neutral-400)" }}>
+                        ₹{p.price} · {p.Variants?.length || 0} variant{p.Variants?.length !== 1 ? "s" : ""}
                       </div>
-                    );
-                  })
-              }
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+          )}
+          {open && filtered.length === 0 && search && (
+            <div style={{
+              position: "absolute", top: "100%", left: 0, right: 0, zIndex: 9999,
+              background: "#fff", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)",
+              padding: 12, color: "var(--neutral-400)", fontSize: 12, marginTop: 2,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            }}>No products found</div>
           )}
         </div>
 
-        {/* Variant select — only after product selected */}
         {selProd && variants.length > 0 && (
           <div style={{ flex: "1 1 160px" }}>
             <label className="km-label" style={{ display: "block", marginBottom: 5 }}>Variant</label>
@@ -154,7 +170,6 @@ function ProductPickerRow({ allProducts, onAdd, label = "Included Products" }) {
           </div>
         )}
 
-        {/* Qty */}
         <div style={{ flex: "0 0 80px" }}>
           <label className="km-label" style={{ display: "block", marginBottom: 5 }}>Qty</label>
           <input type="number" min={1} className="km-input"
@@ -180,7 +195,7 @@ function ProductList({ products, allProducts, onRemove }) {
         const prod = cp.product || (allProducts || []).find(p => p.id === cp.productId);
         const variant = cp.variant || prod?.Variants?.find(v => String(v.id) === String(cp.variantId));
         const img = Array.isArray(prod?.image) ? prod?.image[0] : prod?.image;
-        const stock = variant ? variant.stock : prod?.stock ?? 0;
+        const stock = variant ? Number(variant.stock) : Number(prod?.stock ?? 0);
         const price = variant ? parseFloat(variant.salesPrice) : parseFloat(prod?.price || 0);
         return (
           <div key={cp.id} style={{
@@ -188,12 +203,14 @@ function ProductList({ products, allProducts, onRemove }) {
             background: "#fff", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)",
           }}>
             {img
-              ? <img src={getImg(img)} alt="" width={36} height={36} style={{ borderRadius: 6, objectFit: "cover", border: "1px solid var(--border-color)", flexShrink: 0 }} />
+              ? <img src={getImg(img)} alt="" width={36} height={36}
+                  style={{ borderRadius: 6, objectFit: "cover", border: "1px solid var(--border-color)", flexShrink: 0 }}
+                  onError={e => { e.target.style.display = "none"; }} />
               : <div style={{ width: 36, height: 36, borderRadius: 6, background: "var(--neutral-100)", border: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🎁</div>
             }
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--neutral-800)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {prod?.name || cp.productId}
+                {prod?.name || `Product #${cp.productId}`}
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 3 }}>
                 {variant && (
@@ -209,7 +226,7 @@ function ProductList({ products, allProducts, onRemove }) {
               </div>
             </div>
             <button type="button" onClick={() => onRemove(cp.id)}
-              style={{ background: "none", border: "none", color: "var(--danger-500)", cursor: "pointer", fontSize: 16, flexShrink: 0, padding: 4 }}>✕</button>
+              style={{ background: "none", border: "none", color: "var(--danger-500)", cursor: "pointer", fontSize: 18, flexShrink: 0, padding: 4, lineHeight: 1 }}>✕</button>
           </div>
         );
       })}
@@ -221,7 +238,6 @@ function ProductList({ products, allProducts, onRemove }) {
 function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, showToast }) {
   const dispatch = useDispatch();
   const isEdit   = !!initial;
-
   const [form, setForm] = useState({
     name:           initial?.name || "",
     type:           initial?.type || "fixed",
@@ -237,6 +253,7 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
   const [imgPreview, setImgPreview] = useState(initial?.image ? getImg(initial.image) : null);
   const [saving,     setSaving]     = useState(false);
   const [pendingProducts, setPendingProducts] = useState([]);
+  const imgRef = useRef();
 
   const f = (key) => (val) => setForm(p => ({ ...p, [key]: val }));
 
@@ -314,7 +331,6 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
       </div>
       <div className="km-form-body">
         <form className="km-form-grid" onSubmit={handleSubmit}>
-
           <div className="km-field km-field-full">
             <label className="km-label">Name *</label>
             <input className="km-input" required value={form.name}
@@ -387,16 +403,21 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
             </>
           )}
 
-          <div className="km-field km-field-full">
-            <label className="km-label">Image</label>
-            <ImageUpload
-              preview={imgPreview}
-              onChange={e => { const file = e.target.files?.[0]; if (file) { setImgFile(file); setImgPreview(URL.createObjectURL(file)); } }}
-              onClear={() => { setImgFile(null); setImgPreview(null); }}
-            />
-          </div>
+          {/* Image — categories style */}
+          <ImageUploadField
+            label="Image"
+            imageFile={imgFile}
+            preview={imgPreview}
+            fileInputRef={imgRef}
+            onFileChange={e => {
+              const file = e.target.files?.[0];
+              if (file) { setImgFile(file); setImgPreview(URL.createObjectURL(file)); }
+            }}
+            onClear={() => { setImgFile(null); setImgPreview(initial?.image ? getImg(initial.image) : null); }}
+          />
 
-          <div className="km-field km-field-full">
+          {/* Product picker — overflow visible so dropdown doesn't clip */}
+          <div className="km-field km-field-full" style={{ overflow: "visible" }}>
             <ProductPickerRow
               allProducts={allProducts}
               label={form.type === "mix_match" ? "Eligible Pool" : "Included Products"}
@@ -409,7 +430,7 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
             />
           </div>
 
-          <div className="km-form-actions" style={{ display: "flex" }}>
+          <div className="km-form-actions">
             <button type="submit" disabled={saving} className="km-btn-submit" style={{ opacity: saving ? 0.7 : 1 }}>
               {saving ? "Saving…" : isEdit ? "Update Child Combo" : "Save Child Combo"}
             </button>
@@ -425,12 +446,12 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
 function RootComboForm({ initial, onSave, onCancel, showToast }) {
   const dispatch = useDispatch();
   const isEdit   = !!initial;
-
   const [name,       setName]       = useState(initial?.name || "");
   const [isActive,   setIsActive]   = useState(initial?.isActive !== false);
   const [imgFile,    setImgFile]    = useState(null);
   const [imgPreview, setImgPreview] = useState(initial?.image ? getImg(initial.image) : null);
   const [saving,     setSaving]     = useState(false);
+  const imgRef = useRef();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -448,6 +469,7 @@ function RootComboForm({ initial, onSave, onCancel, showToast }) {
       } else {
         result = await dispatch(createRootCombo(fd));
       }
+
       showToast.success(isEdit ? "Root combo updated" : "Root combo created!", tid);
       onSave(result);
     } catch (err) {
@@ -481,16 +503,19 @@ function RootComboForm({ initial, onSave, onCancel, showToast }) {
             </select>
           </div>
 
-          <div className="km-field">
-            <label className="km-label">Sidebar Image</label>
-            <ImageUpload
-              preview={imgPreview}
-              onChange={e => { const file = e.target.files?.[0]; if (file) { setImgFile(file); setImgPreview(URL.createObjectURL(file)); } }}
-              onClear={() => { setImgFile(null); setImgPreview(null); }}
-            />
-          </div>
+          <ImageUploadField
+            label="Sidebar Image"
+            imageFile={imgFile}
+            preview={imgPreview}
+            fileInputRef={imgRef}
+            onFileChange={e => {
+              const file = e.target.files?.[0];
+              if (file) { setImgFile(file); setImgPreview(URL.createObjectURL(file)); }
+            }}
+            onClear={() => { setImgFile(null); setImgPreview(initial?.image ? getImg(initial.image) : null); }}
+          />
 
-          <div className="km-form-actions" style={{ display: "flex" }}>
+          <div className="km-form-actions">
             <button type="submit" disabled={saving} className="km-btn-submit" style={{ opacity: saving ? 0.7 : 1 }}>
               {saving ? "Saving…" : isEdit ? "Update Root Combo" : "Save Root Combo"}
             </button>
@@ -562,7 +587,6 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
         </div>
       </div>
 
-      {/* Edit root form */}
       {editingRoot && (
         <RootComboForm
           initial={currentRoot}
@@ -572,7 +596,6 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
         />
       )}
 
-      {/* Add child form */}
       {showChildForm && !editingChild && (
         <ChildComboForm
           rootComboId={currentRoot.id}
@@ -583,7 +606,6 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
         />
       )}
 
-      {/* Children table */}
       {(!currentRoot.children || currentRoot.children.length === 0) && !showChildForm ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: "var(--neutral-400)", fontSize: 13 }}>
           No child combos yet. Click "+ Add Child Combo" to start.
@@ -594,56 +616,70 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
           initialRows={currentRoot.children || []}
           renderRow={(child, i) => (
             <>
-            <tr key={child.id}>
-              <td className="td-id">{i + 1}</td>
-              <td>
-                <div className="img-thumb">
-                  {child.image
-                    ? <img src={getImg(child.image)} alt={child.name} width={40} height={40} style={{ borderRadius: 8, objectFit: "cover" }} />
-                    : "🎁"
-                  }
-                </div>
-              </td>
-              <td><strong>{child.name}</strong></td>
-              <td>
-                <span style={{
-                  fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
-                  background: child.type === "fixed" ? "var(--info-50)" : "var(--warning-50)",
-                  color: child.type === "fixed" ? "var(--info-main)" : "var(--warning-600)",
-                }}>
-                  {child.type === "fixed" ? "Fixed" : "Mix & Match"}
-                </span>
-              </td>
-              <td>₹{parseFloat(child.comboPrice || 0).toLocaleString("en-IN")}</td>
-              <td>
-                <span className={`status-pill ${child.isActive ? "pill-active" : "pill-inactive"}`}>
-                  {child.isActive ? "Active" : "Inactive"}
-                </span>
-              </td>
-              <td>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button className="action-btn btn-edit"
-                    onClick={() => { setEditingChild(c => c?.id === child.id ? null : child); setShowChildForm(false); }}>
-                    Edit
-                  </button>
-                  <button className="action-btn btn-del" onClick={() => handleDeleteChild(child)}>Delete</button>
-                </div>
-              </td>
-            </tr>
-            {editingChild?.id === child.id && (
-              <tr key={`edit-${child.id}`}>
-                <td colSpan={7} style={{ padding: "0 8px 12px" }}>
-                  <ChildComboForm
-                    rootComboId={currentRoot.id}
-                    initial={child}
-                    allProducts={allProducts}
-                    showToast={showToast}
-                    onSave={() => { setEditingChild(null); dispatch(fetchRootComboById(rootId)); }}
-                    onCancel={() => setEditingChild(null)}
-                  />
+              <tr key={child.id}>
+                <td className="td-id">{i + 1}</td>
+                <td>
+                  <div className="img-thumb">
+                    {child.image
+                      ? <img src={getImg(child.image)} alt={child.name} width={40} height={40}
+                          style={{ borderRadius: 8, objectFit: "cover" }}
+                          onError={e => { e.target.style.display = "none"; }} />
+                      : "🎁"
+                    }
+                  </div>
+                </td>
+                <td>
+                  <strong>{child.name}</strong>
+                  {child.description && <div style={{ fontSize: 11, color: "var(--neutral-400)", marginTop: 2 }}>{child.description}</div>}
+                </td>
+                <td>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
+                    background: child.type === "fixed" ? "var(--info-50)" : "var(--warning-50)",
+                    color: child.type === "fixed" ? "var(--info-main)" : "var(--warning-600)",
+                  }}>
+                    {child.type === "fixed" ? "Fixed" : "Mix & Match"}
+                  </span>
+                </td>
+                <td>
+                  <div>
+                    <strong>₹{parseFloat(child.comboPrice || 0).toLocaleString("en-IN")}</strong>
+                    {child.originalPrice && (
+                      <div style={{ fontSize: 11, color: "var(--neutral-400)", textDecoration: "line-through" }}>
+                        ₹{parseFloat(child.originalPrice).toLocaleString("en-IN")}
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td>
+                  <span className={`status-pill ${child.isActive ? "pill-active" : "pill-inactive"}`}>
+                    {child.isActive ? "Active" : "Inactive"}
+                  </span>
+                </td>
+                <td>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="action-btn btn-edit"
+                      onClick={() => { setEditingChild(c => c?.id === child.id ? null : child); setShowChildForm(false); }}>
+                      {editingChild?.id === child.id ? "Close" : "Edit"}
+                    </button>
+                    <button className="action-btn btn-del" onClick={() => handleDeleteChild(child)}>Delete</button>
+                  </div>
                 </td>
               </tr>
-            )}
+              {editingChild?.id === child.id && (
+                <tr key={`edit-${child.id}`}>
+                  <td colSpan={7} style={{ padding: "0 8px 12px", background: "var(--neutral-50)" }}>
+                    <ChildComboForm
+                      rootComboId={currentRoot.id}
+                      initial={child}
+                      allProducts={allProducts}
+                      showToast={showToast}
+                      onSave={() => { setEditingChild(null); dispatch(fetchRootComboById(rootId)); }}
+                      onCancel={() => setEditingChild(null)}
+                    />
+                  </td>
+                </tr>
+              )}
             </>
           )}
         />
@@ -657,7 +693,6 @@ export default function NewCombos({ showToast }) {
   const dispatch = useDispatch();
   const { rootCombos, loading } = useSelector(s => s.newCombos || { rootCombos: [], loading: false });
   const { items: allProducts }  = useSelector(s => s.products || { items: [] });
-
   const [showRootForm,   setShowRootForm]   = useState(false);
   const [selectedRootId, setSelectedRootId] = useState(null);
 
@@ -696,7 +731,6 @@ export default function NewCombos({ showToast }) {
 
   return (
     <div className="categories-container">
-      {/* Page header */}
       <div className="section-header">
         <div className="section-title">Combo Manager</div>
         <button className="action-btn btn-edit" onClick={() => setShowRootForm(f => !f)}>
@@ -704,19 +738,14 @@ export default function NewCombos({ showToast }) {
         </button>
       </div>
 
-      {/* Add root form */}
       {showRootForm && (
         <RootComboForm
           showToast={showToast}
-          onSave={(root) => {
-            setShowRootForm(false);
-            dispatch(fetchRootCombos());
-          }}
+          onSave={() => { setShowRootForm(false); dispatch(fetchRootCombos()); }}
           onCancel={() => setShowRootForm(false)}
         />
       )}
 
-      {/* Table */}
       {loading ? (
         <p className="km-loading">Loading combos…</p>
       ) : (
@@ -729,16 +758,17 @@ export default function NewCombos({ showToast }) {
               <td>
                 <div className="img-thumb">
                   {root.image
-                    ? <img src={getImg(root.image)} alt={root.name} width={40} height={40} style={{ borderRadius: 8, objectFit: "cover" }}
+                    ? <img src={getImg(root.image)} alt={root.name} width={40} height={40}
+                        style={{ borderRadius: 8, objectFit: "cover" }}
                         onError={e => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23eee'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='8' fill='%23999'%3ENo Img%3C/text%3E%3C/svg%3E"; }} />
-                    : "🎁"
+                    : <span style={{ fontSize: 24 }}>🎁</span>
                   }
                 </div>
               </td>
               <td><strong>{root.name}</strong></td>
               <td>
                 <span style={{ background: "var(--info-50)", color: "var(--info-main)", borderRadius: 4, padding: "2px 8px", fontSize: 12, fontWeight: 600 }}>
-                  {root.children?.length || root.childCount || 0}
+                  {root.children?.length ?? 0}
                 </span>
               </td>
               <td>
@@ -758,6 +788,31 @@ export default function NewCombos({ showToast }) {
       )}
 
       <style>{`
+        .km-form-card {
+          background: #fff;
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          overflow: hidden;
+          margin-bottom: 20px;
+        }
+        .km-form-header {
+          background: var(--primary-700, #1A3A6B);
+          padding: 16px 24px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: #fff;
+        }
+        .km-form-header-icon {
+          width: 32px; height: 32px;
+          background: rgba(255,255,255,0.15);
+          border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 16px;
+        }
+        .km-form-header-title { font-size: 16px; font-weight: 700; }
+        .km-form-header-sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+        .km-form-body { padding: 24px; }
         .km-form-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
@@ -765,41 +820,52 @@ export default function NewCombos({ showToast }) {
         }
         .km-field { display: flex; flex-direction: column; gap: 5px; }
         .km-field-full { grid-column: span 2; }
-
+        .km-label {
+          font-size: 11px; font-weight: 500;
+          color: var(--neutral-500, #6B7280);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .km-input {
+          padding: 9px 12px;
+          border: 1px solid var(--border-color, #E5E7EB);
+          border-radius: 8px;
+          font-size: 13px;
+          color: var(--neutral-800, #1A1A2E);
+          background: #fff;
+          width: 100%;
+          box-sizing: border-box;
+          outline: none;
+        }
+        .km-input:focus { border-color: var(--primary-400, #60a5fa); }
         .upload-grid-wrapper {
-          display: flex;
-          gap: 16px;
-          margin-top: 8px;
-          align-items: flex-start;
+          display: flex; gap: 16px; margin-top: 8px; align-items: flex-start;
         }
         .drop-zone-area {
-          flex: 1;
-          height: 110px;
+          flex: 1; height: 110px;
           border: 2px dashed rgba(0,0,0,0.1);
           background: rgba(0,0,0,0.02);
           border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; transition: all 0.2s ease;
         }
         .drop-zone-area.active-file {
-          border-color: var(--success-main);
+          border-color: var(--success-main, #39B54A);
           background: rgba(69,179,105,0.05);
         }
-        .upload-text { font-size: 13px; color: #666; margin: 0; }
-        .upload-icon { text-align: center; }
+        .drop-zone-area:hover { border-color: var(--primary-400, #60a5fa); background: var(--primary-50, #eff6ff); }
+        .drop-zone-info { text-align: center; padding: 16px; }
+        .upload-text { font-size: 13px; color: #666; margin: 4px 0 0; }
         .preview-tile {
-          width: 110px; height: 110px;
-          border-radius: 12px; overflow: hidden; position: relative;
-          border: 2px solid var(--primary-600); flex-shrink: 0;
+          width: 110px; height: 110px; border-radius: 12px; overflow: hidden;
+          position: relative; border: 2px solid var(--primary-400, #60a5fa); flex-shrink: 0;
         }
         .preview-tile img { width: 100%; height: 100%; object-fit: cover; }
         .preview-remove {
           position: absolute; top: 5px; right: 5px;
           width: 20px; height: 20px; border-radius: 50%;
           background: rgba(0,0,0,0.7); color: white; border: none; cursor: pointer;
+          font-size: 11px; display: flex; align-items: center; justify-content: center;
         }
         .km-form-actions {
           grid-column: span 2;
@@ -811,18 +877,23 @@ export default function NewCombos({ showToast }) {
           border-top: 1px solid rgba(0,0,0,0.05);
         }
         .km-btn-submit {
-          padding: 10px 24px; background: var(--primary-600); color: white;
-          border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+          padding: 10px 24px;
+          background: var(--primary-600, #2563eb);
+          color: white; border: none;
+          border-radius: 8px; font-weight: 600; cursor: pointer;
         }
         .km-btn-cancel {
-          padding: 10px 24px; background: #f1f1f1; color: #333;
-          border: 1px solid #ddd; border-radius: 8px; font-weight: 600; cursor: pointer;
+          padding: 10px 24px;
+          background: #f1f1f1; color: #333;
+          border: 1px solid #ddd; border-radius: 8px;
+          font-weight: 600; cursor: pointer;
         }
-        .km-btn-submit:hover, .km-btn-cancel:hover { opacity: 0.8; }
+        .km-btn-submit:hover, .km-btn-cancel:hover { opacity: 0.85; }
+        .km-loading { padding: 40px; text-align: center; color: var(--neutral-400, #9ca3af); }
         .fade-in { animation: kmFadeIn 0.3s ease-out; }
         @keyframes kmFadeIn {
           from { opacity: 0; transform: translateY(5px); }
-          to { opacity: 1; transform: translateY(0); }
+          to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>

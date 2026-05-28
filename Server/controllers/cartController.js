@@ -5,7 +5,7 @@ const cartInclude = [
   {
     model: Product,
     as: "product",
-    include: [{ model: Variant, as: "variants" }],
+    include: [{ model: Variant, as: "Variants" }],
   },
 ];
 
@@ -127,7 +127,7 @@ const increaseQuantity = async (req, res, next) => {
   try {
     const item = await CartItem.findOne({
       where: { id: req.params.cartItemId, userId: req.user.id },
-      include: [{ model: Product, as: "product", include: [{ model: Variant, as: "variants" }] }],
+      include: [{ model: Product, as: "product", include: [{ model: Variant, as: "Variants" }] }],
     });
     if (!item) return res.status(404).json({ message: "Cart item not found" });
 

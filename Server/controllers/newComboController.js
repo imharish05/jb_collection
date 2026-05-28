@@ -37,7 +37,15 @@ const variantInclude = {
 // GET /api/combos  — all root combos, shallow
 exports.getRootCombos = async (req, res) => {
   try {
-    const roots = await RootCombo.findAll({ order: [["createdAt", "DESC"]] });
+    const roots = await RootCombo.findAll({
+      order: [["createdAt", "DESC"]],
+      include: [{
+        model: ChildCombo,
+        as: "children",
+        attributes: ["id", "name", "is_active"],
+        required: false,
+      }],
+    });
     res.json({ success: true, data: roots });
   } catch (err) {
     console.error("getRootCombos:", err);
