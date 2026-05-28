@@ -18,6 +18,10 @@ const getImageUrl = (imagePath) => {
 export default function Categories({ showToast }) {
   const dispatch = useDispatch();
   const { items: rows, loading } = useSelector(state => state.categories);
+
+  console.log(rows);
+  
+
   const [showForm, setShowForm]           = useState(false);
   const [editingId, setEditingId]         = useState(null);
   const [categoryName, setCategoryName]   = useState('');
@@ -193,6 +197,7 @@ const handleDelete = async (catId) => {
           columns={['No.', 'Image', 'Category Name', 'Slug', 'Actions']}
           initialRows={rows}
           renderRow={(row, i) => (
+            
             <tr key={row.id}>
               <td className="td-id">{i + 1}</td>
               <td>
