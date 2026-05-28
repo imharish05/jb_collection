@@ -22,8 +22,8 @@ export default function SubCategories({ showToast }) {
     setLoading(true);
     try {
       const [subRes, catRes] = await Promise.all([
-        api.get('/subcategories'),
-        api.get('/categories?active=true'),
+        api.get('/categories/subcategories'),
+        api.get('/categories/categories?active=true'),
       ]);
       
       // Safely check and extract the inner array data from responses
@@ -67,10 +67,10 @@ export default function SubCategories({ showToast }) {
     const toastId = showToast.loading(editingId ? 'Updating subcategory...' : 'Adding subcategory...');
     try {
       if (editingId) {
-        await api.patch(`/subcategories/${editingId}`, payload);
+        await api.patch(`/categories/subcategories/${editingId}`, payload);
         showToast.success('Subcategory updated', toastId);
       } else {
-        await api.post('/subcategories', payload);
+        await api.post('/categories/subcategories', payload);
         showToast.success('Subcategory added', toastId);
       }
       resetForm();
@@ -86,7 +86,7 @@ export default function SubCategories({ showToast }) {
       message: 'Are you sure you want to delete this subcategory?',
       onConfirm: async () => {
         try {
-          await api.delete(`/subcategories/${subId}`);
+          await api.delete(`/categories/subcategories/${subId}`);
           fetchAll();
         } catch (err) {
           console.error('Failed to delete subcategory:', err);
