@@ -13,6 +13,123 @@ import { confirmDelete } from "../../utils/sweetalert";
 
 const IMG_URL = process.env.REACT_APP_IMG_URL || "";
 
+// ── Shared CSS injected by every sub-component that renders forms ─────────────
+const COMBO_STYLES = `
+  .km-form-card {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .km-form-header {
+    // background: var(--primary-700, #1A3A6B);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+  }
+  .km-form-header-icon {
+       width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--primary-600);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .km-form-header-title { font-size: 16px; font-weight: 700; }
+  .km-form-header-sub { font-size: 12px; margin-top: 2px; }
+  .km-form-body { padding: 24px; }
+  .km-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .km-field { display: flex; flex-direction: column; gap: 5px; }
+  .km-field-full { grid-column: span 2; }
+  .km-label {
+    font-size: 11px; font-weight: 500;
+    color: var(--neutral-500, #6B7280);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .km-input {
+    padding: 9px 12px;
+    border: 1px solid var(--border-color, #E5E7EB);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--neutral-800, #1A1A2E);
+    background: #fff;
+    width: 100%;
+    box-sizing: border-box;
+    outline: none;
+  }
+  .km-input:focus { border-color: var(--primary-400, #60a5fa); }
+  .upload-grid-wrapper {
+    display: flex; gap: 16px; margin-top: 8px; align-items: flex-start;
+  }
+  .drop-zone-area {
+    flex: 1; height: 110px;
+    border: 2px dashed rgba(0,0,0,0.1);
+    background: rgba(0,0,0,0.02);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .drop-zone-area.active-file {
+    border-color: var(--success-main, #39B54A);
+    background: rgba(69,179,105,0.05);
+  }
+  .drop-zone-area:hover { border-color: var(--primary-400, #60a5fa); background: var(--primary-50, #eff6ff); }
+  .drop-zone-info { text-align: center; padding: 16px; }
+  .upload-text { font-size: 13px; color: #666; margin: 4px 0 0; }
+  .preview-tile {
+    width: 110px; height: 110px; border-radius: 12px; overflow: hidden;
+    position: relative; border: 2px solid var(--primary-400, #60a5fa); flex-shrink: 0;
+  }
+  .preview-tile img { width: 100%; height: 100%; object-fit: cover; }
+  .preview-remove {
+    position: absolute; top: 5px; right: 5px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(0,0,0,0.7); color: white; border: none; cursor: pointer;
+    font-size: 11px; display: flex; align-items: center; justify-content: center;
+  }
+  .km-form-actions {
+    grid-column: span 2;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+  }
+  .km-btn-submit {
+    padding: 10px 24px;
+    background: var(--primary-600, #2563eb);
+    color: white; border: none;
+    border-radius: 8px; font-weight: 600; cursor: pointer;
+  }
+  .km-btn-cancel {
+    padding: 10px 24px;
+    background: #f1f1f1; color: #333;
+    border: 1px solid #ddd; border-radius: 8px;
+    font-weight: 600; cursor: pointer;
+  }
+  .km-btn-submit:hover, .km-btn-cancel:hover { opacity: 0.85; }
+  .km-loading { padding: 40px; text-align: center; color: var(--neutral-400, #9ca3af); }
+  .fade-in { animation: kmFadeIn 0.3s ease-out; }
+  @keyframes kmFadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+`;
+
 function getImg(p) {
   if (!p) return null;
   if (p.startsWith("http")) return p;
@@ -322,6 +439,7 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
 
   return (
     <div className="km-form-card fade-in" style={{ marginTop: 12 }}>
+      <style>{COMBO_STYLES}</style>
       <div className="km-form-header">
         <div className="km-form-header-icon">{isEdit ? "✎" : "+"}</div>
         <div>
@@ -480,6 +598,7 @@ function RootComboForm({ initial, onSave, onCancel, showToast }) {
 
   return (
     <div className="km-form-card fade-in">
+      <style>{COMBO_STYLES}</style>
       <div className="km-form-header">
         <div className="km-form-header-icon">{isEdit ? "✎" : "🎁"}</div>
         <div>
@@ -567,24 +686,31 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
       {/* Header */}
       <div className="section-header">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={onBack} className="action-btn btn-edit" style={{ background: "#fff", color: "var(--neutral-600)" }}>
-            ← Back
+          <button onClick={editingChild ? () => setEditingChild(null) : onBack}
+            className="action-btn btn-edit" style={{ background: "#fff", color: "var(--neutral-600)" }}>
+            ← {editingChild ? "Back to list" : "Back"}
           </button>
-          <div className="section-title">{currentRoot.name}</div>
-          <span style={{ fontSize: 12, color: "var(--neutral-400)" }}>
-            {currentRoot.children?.length || 0} child combo{currentRoot.children?.length !== 1 ? "s" : ""}
-          </span>
+          <div className="section-title">
+            {editingChild ? `Editing: ${editingChild.name}` : currentRoot.name}
+          </div>
+          {!editingChild && (
+            <span style={{ fontSize: 12, color: "var(--neutral-400)" }}>
+              {currentRoot.children?.length || 0} child combo{currentRoot.children?.length !== 1 ? "s" : ""}
+            </span>
+          )}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className="action-btn btn-edit"
-            onClick={() => { setEditingRoot(r => !r); setShowChildForm(false); setEditingChild(null); }}>
-            {editingRoot ? "Close Edit" : "✏️ Edit Root"}
-          </button>
-          <button className="action-btn btn-edit"
-            onClick={() => { setShowChildForm(f => !f); setEditingRoot(false); setEditingChild(null); }}>
-            {showChildForm ? "Close" : "+ Add Child Combo"}
-          </button>
-        </div>
+        {!editingChild && (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="action-btn btn-edit"
+              onClick={() => { setEditingRoot(r => !r); setShowChildForm(false); setEditingChild(null); }}>
+              {editingRoot ? "Close Edit" : "✏️ Edit Root"}
+            </button>
+            <button className="action-btn btn-edit"
+              onClick={() => { setShowChildForm(f => !f); setEditingRoot(false); setEditingChild(null); }}>
+              {showChildForm ? "Close" : "+ Add Child Combo"}
+            </button>
+          </div>
+        )}
       </div>
 
       {editingRoot && (
@@ -606,81 +732,78 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
         />
       )}
 
-      {(!currentRoot.children || currentRoot.children.length === 0) && !showChildForm ? (
+      {/* When editing a child — show ONLY the form, no table */}
+      {editingChild && (
+        <ChildComboForm
+          rootComboId={currentRoot.id}
+          initial={editingChild}
+          allProducts={allProducts}
+          showToast={showToast}
+          onSave={() => { setEditingChild(null); dispatch(fetchRootComboById(rootId)); }}
+          onCancel={() => setEditingChild(null)}
+        />
+      )}
+
+      {/* Table — hidden while editing a child */}
+      {!editingChild && (!currentRoot.children || currentRoot.children.length === 0) && !showChildForm ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: "var(--neutral-400)", fontSize: 13 }}>
           No child combos yet. Click "+ Add Child Combo" to start.
         </div>
-      ) : (
+      ) : !editingChild && (
         <DataTable
           columns={["No.", "Image", "Name", "Type", "Price", "Status", "Actions"]}
           initialRows={currentRoot.children || []}
           renderRow={(child, i) => (
-            <>
-              <tr key={child.id}>
-                <td className="td-id">{i + 1}</td>
-                <td>
-                  <div className="img-thumb">
-                    {child.image
-                      ? <img src={getImg(child.image)} alt={child.name} width={40} height={40}
-                          style={{ borderRadius: 8, objectFit: "cover" }}
-                          onError={e => { e.target.style.display = "none"; }} />
-                      : "🎁"
-                    }
-                  </div>
-                </td>
-                <td>
-                  <strong>{child.name}</strong>
-                  {child.description && <div style={{ fontSize: 11, color: "var(--neutral-400)", marginTop: 2 }}>{child.description}</div>}
-                </td>
-                <td>
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
-                    background: child.type === "fixed" ? "var(--info-50)" : "var(--warning-50)",
-                    color: child.type === "fixed" ? "var(--info-main)" : "var(--warning-600)",
-                  }}>
-                    {child.type === "fixed" ? "Fixed" : "Mix & Match"}
-                  </span>
-                </td>
-                <td>
-                  <div>
-                    <strong>₹{parseFloat(child.comboPrice || 0).toLocaleString("en-IN")}</strong>
-                    {child.originalPrice && (
-                      <div style={{ fontSize: 11, color: "var(--neutral-400)", textDecoration: "line-through" }}>
-                        ₹{parseFloat(child.originalPrice).toLocaleString("en-IN")}
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td>
-                  <span className={`status-pill ${child.isActive ? "pill-active" : "pill-inactive"}`}>
-                    {child.isActive ? "Active" : "Inactive"}
-                  </span>
-                </td>
-                <td>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button className="action-btn btn-edit"
-                      onClick={() => { setEditingChild(c => c?.id === child.id ? null : child); setShowChildForm(false); }}>
-                      {editingChild?.id === child.id ? "Close" : "Edit"}
-                    </button>
-                    <button className="action-btn btn-del" onClick={() => handleDeleteChild(child)}>Delete</button>
-                  </div>
-                </td>
-              </tr>
-              {editingChild?.id === child.id && (
-                <tr key={`edit-${child.id}`}>
-                  <td colSpan={7} style={{ padding: "0 8px 12px", background: "var(--neutral-50)" }}>
-                    <ChildComboForm
-                      rootComboId={currentRoot.id}
-                      initial={child}
-                      allProducts={allProducts}
-                      showToast={showToast}
-                      onSave={() => { setEditingChild(null); dispatch(fetchRootComboById(rootId)); }}
-                      onCancel={() => setEditingChild(null)}
-                    />
-                  </td>
-                </tr>
-              )}
-            </>
+            <tr key={child.id}>
+              <td className="td-id">{i + 1}</td>
+              <td>
+                <div className="img-thumb">
+                  {child.image
+                    ? <img src={getImg(child.image)} alt={child.name} width={40} height={40}
+                        style={{ borderRadius: 8, objectFit: "cover" }}
+                        onError={e => { e.target.style.display = "none"; }} />
+                    : "🎁"
+                  }
+                </div>
+              </td>
+              <td>
+                <strong>{child.name}</strong>
+                {child.description && <div style={{ fontSize: 11, color: "var(--neutral-400)", marginTop: 2 }}>{child.description}</div>}
+              </td>
+              <td>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
+                  background: child.type === "fixed" ? "var(--info-50)" : "var(--warning-50)",
+                  color: child.type === "fixed" ? "var(--info-main)" : "var(--warning-600)",
+                }}>
+                  {child.type === "fixed" ? "Fixed" : "Mix & Match"}
+                </span>
+              </td>
+              <td>
+                <div>
+                  <strong>₹{parseFloat(child.comboPrice || 0).toLocaleString("en-IN")}</strong>
+                  {child.originalPrice && (
+                    <div style={{ fontSize: 11, color: "var(--neutral-400)", textDecoration: "line-through" }}>
+                      ₹{parseFloat(child.originalPrice).toLocaleString("en-IN")}
+                    </div>
+                  )}
+                </div>
+              </td>
+              <td>
+                <span className={`status-pill ${child.isActive ? "pill-active" : "pill-inactive"}`}>
+                  {child.isActive ? "Active" : "Inactive"}
+                </span>
+              </td>
+              <td>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="action-btn btn-edit"
+                    onClick={() => { setEditingChild(child); setShowChildForm(false); setEditingRoot(false); }}>
+                    Edit
+                  </button>
+                  <button className="action-btn btn-del" onClick={() => handleDeleteChild(child)}>Delete</button>
+                </div>
+              </td>
+            </tr>
           )}
         />
       )}
@@ -787,115 +910,7 @@ export default function NewCombos({ showToast }) {
         />
       )}
 
-      <style>{`
-        .km-form-card {
-          background: #fff;
-          border: 1px solid var(--border-color);
-          border-radius: 12px;
-          overflow: hidden;
-          margin-bottom: 20px;
-        }
-        .km-form-header {
-          background: var(--primary-700, #1A3A6B);
-          padding: 16px 24px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          color: #fff;
-        }
-        .km-form-header-icon {
-          width: 32px; height: 32px;
-          background: rgba(255,255,255,0.15);
-          border-radius: 8px;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 16px;
-        }
-        .km-form-header-title { font-size: 16px; font-weight: 700; }
-        .km-form-header-sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 2px; }
-        .km-form-body { padding: 24px; }
-        .km-form-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 20px;
-        }
-        .km-field { display: flex; flex-direction: column; gap: 5px; }
-        .km-field-full { grid-column: span 2; }
-        .km-label {
-          font-size: 11px; font-weight: 500;
-          color: var(--neutral-500, #6B7280);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-        .km-input {
-          padding: 9px 12px;
-          border: 1px solid var(--border-color, #E5E7EB);
-          border-radius: 8px;
-          font-size: 13px;
-          color: var(--neutral-800, #1A1A2E);
-          background: #fff;
-          width: 100%;
-          box-sizing: border-box;
-          outline: none;
-        }
-        .km-input:focus { border-color: var(--primary-400, #60a5fa); }
-        .upload-grid-wrapper {
-          display: flex; gap: 16px; margin-top: 8px; align-items: flex-start;
-        }
-        .drop-zone-area {
-          flex: 1; height: 110px;
-          border: 2px dashed rgba(0,0,0,0.1);
-          background: rgba(0,0,0,0.02);
-          border-radius: 12px;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; transition: all 0.2s ease;
-        }
-        .drop-zone-area.active-file {
-          border-color: var(--success-main, #39B54A);
-          background: rgba(69,179,105,0.05);
-        }
-        .drop-zone-area:hover { border-color: var(--primary-400, #60a5fa); background: var(--primary-50, #eff6ff); }
-        .drop-zone-info { text-align: center; padding: 16px; }
-        .upload-text { font-size: 13px; color: #666; margin: 4px 0 0; }
-        .preview-tile {
-          width: 110px; height: 110px; border-radius: 12px; overflow: hidden;
-          position: relative; border: 2px solid var(--primary-400, #60a5fa); flex-shrink: 0;
-        }
-        .preview-tile img { width: 100%; height: 100%; object-fit: cover; }
-        .preview-remove {
-          position: absolute; top: 5px; right: 5px;
-          width: 20px; height: 20px; border-radius: 50%;
-          background: rgba(0,0,0,0.7); color: white; border: none; cursor: pointer;
-          font-size: 11px; display: flex; align-items: center; justify-content: center;
-        }
-        .km-form-actions {
-          grid-column: span 2;
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-          margin-top: 10px;
-          padding-top: 20px;
-          border-top: 1px solid rgba(0,0,0,0.05);
-        }
-        .km-btn-submit {
-          padding: 10px 24px;
-          background: var(--primary-600, #2563eb);
-          color: white; border: none;
-          border-radius: 8px; font-weight: 600; cursor: pointer;
-        }
-        .km-btn-cancel {
-          padding: 10px 24px;
-          background: #f1f1f1; color: #333;
-          border: 1px solid #ddd; border-radius: 8px;
-          font-weight: 600; cursor: pointer;
-        }
-        .km-btn-submit:hover, .km-btn-cancel:hover { opacity: 0.85; }
-        .km-loading { padding: 40px; text-align: center; color: var(--neutral-400, #9ca3af); }
-        .fade-in { animation: kmFadeIn 0.3s ease-out; }
-        @keyframes kmFadeIn {
-          from { opacity: 0; transform: translateY(5px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      <style>{COMBO_STYLES}</style>
     </div>
   );
 }

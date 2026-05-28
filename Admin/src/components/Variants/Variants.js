@@ -232,8 +232,13 @@ export default function Variants({ showToast }) {
       ? s.combo.map(c => ({ key: c.key, value: c.value }))
       : (s.attributes || []).filter(a => a.key && a.value);
 
-    const tid = showToast.loading('Updating variant…');
+    const tid = showToast.loading(
+      editSkus.length > 1
+        ? `Updating variant + adding ${editSkus.length - 1} new…`
+        : 'Updating variant…'
+    );
     try {
+      // Always update the original variant (editSkus[0])
       await dispatch(editVariant({
         id: editingId,
         data: {
@@ -247,7 +252,32 @@ export default function Variants({ showToast }) {
           imageFile:   s.imageFile || undefined,
         },
       }));
-      showToast.success('Variant updated!', tid);
+
+      // If adding new option values created extra SKUs, save them as new variants
+      if (editSkus.length > 1) {
+        for (const newSku of editSkus.slice(1)) {
+          const newAttrs = newSku.combo?.length
+            ? newSku.combo.map(c => ({ key: c.key, value: c.value }))
+            : (newSku.attributes || []).filter(a => a.key && a.value);
+          await dispatch(createVariant({
+            productId,
+            variantName: newSku.variantName,
+            mrp:         newSku.mrp         || s.mrp,
+            salesPrice:  newSku.salesPrice  || s.salesPrice,
+            stock:       newSku.stock       ?? 0,
+            status:      newSku.status      || 'Active',
+            attributes:  newAttrs,
+            imageFile:   newSku.imageFile   || undefined,
+          }));
+        }
+      }
+
+      showToast.success(
+        editSkus.length > 1
+          ? `Variant updated + ${editSkus.length - 1} new variant${editSkus.length > 2 ? 's' : ''} created!`
+          : 'Variant updated!',
+        tid
+      );
       closeForm();
       dispatch(fetchVariants());
     } catch (err) {
