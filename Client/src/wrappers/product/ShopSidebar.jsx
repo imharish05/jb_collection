@@ -315,6 +315,7 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
           <div className={clsx("mobile-accordion-content", (mobileSections.combos || !isMobile) && "open")} style={(!mobileSections.combos && isMobile) ? {display: 'none'} : {marginTop: 14}}>
             <ul style={styles.filterList}>
               {rootCombos.map((combo) => {
+                const count = combo.children ? combo.children.filter(c => c.isActive !== false && c.is_active !== false).length : 0;
                 const isActive = activeCombo === String(combo.id);
                 return (
                   <li key={combo.id}>
@@ -323,6 +324,9 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
                       style={{ ...styles.filterBtn, ...(isActive ? styles.filterBtnActive : {}) }}
                     >
                       <span>{combo.name}</span>
+                      <span style={{ ...styles.filterCount, ...(isActive ? styles.filterCountActive : {}) }}>
+                        ({count})
+                      </span>
                     </button>
                   </li>
                 );

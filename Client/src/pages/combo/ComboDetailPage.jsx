@@ -17,11 +17,26 @@ import {
 import { replaceCart } from "../../store/slices/cart-slice";
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
+import ProductImageGallerySideThumb from "../../components/product/ProductImageGallerySideThumb";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
+function parseProductImages(image) {
+  if (Array.isArray(image)) return image;
+  if (typeof image === "string") {
+    try {
+      const parsed = JSON.parse(image);
+      return Array.isArray(parsed) ? parsed : [image];
+    } catch {
+      return [image];
+    }
+  }
+  return [];
+}
+
 function getProductImg(p) {
-  const img = Array.isArray(p?.image) ? p?.image[0] : p?.image;
+  const imgs = parseProductImages(p?.image);
+  const img = imgs[0];
   return img ? getImgUrl(img) : null;
 }
 
@@ -44,45 +59,7 @@ function isOutOfStock(cp) {
   return stock === 0;
 }
 
-// ── Inline image gallery (mirrors ProductImageGallerySideThumb structure) ─────
-function ComboImageGallery({ images }) {
-  const [active, setActive] = useState(0);
-  if (!images || images.length === 0) {
-    return (
-      <div style={{ background: "#F9FAFB", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400, fontSize: 72, color: "#e5e7eb" }}>
-        🎁
-      </div>
-    );
-  }
-  return (
-    <div className="row row-5 test">
-      {/* Main image - col-xl-10 */}
-      <div className="col-xl-10">
-        <div className="product-large-image-wrapper">
-          <div className="single-image">
-            <img
-              src={getImgUrl(images[active])}
-              className="img-fluid"
-              alt="combo"
-              style={{ width: "100%", objectFit: "cover", borderRadius: 8 }}
-            />
-          </div>
-        </div>
-      </div>
-      {/* Thumbnails - col-xl-2 */}
-      <div className="col-xl-2">
-        <div className="product-small-image-wrapper product-small-image-wrapper--side-thumb">
-          {images.map((img, i) => (
-            <div key={i} className="single-image" onClick={() => setActive(i)}
-              style={{ cursor: "pointer", opacity: active === i ? 1 : 0.55, transition: "opacity 0.15s", marginBottom: 6 }}>
-              <img src={getImgUrl(img)} className="img-fluid" alt="" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+// ComboImageGallery removed in favor of ProductImageGallerySideThumb
 
 // ── Fixed combo: included products list ──────────────────────────────────────
 function FixedProductsList({ comboProducts }) {
@@ -313,6 +290,9 @@ const ComboDetailPage = () => {
             discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
             image: cartItem.productSnapshot?.image || cartItem.product?.image || [],
             variation: cartItem.product?.variation || [],
+            // Combo specific fields
+            isCombo: cartItem.productSnapshot?.isCombo || false,
+            rootComboId: cartItem.productSnapshot?.rootComboId || null,
           };
         });
         dispatch(replaceCart(items));
@@ -368,7 +348,7 @@ const ComboDetailPage = () => {
 
               {/* LEFT: image gallery — mirrors ProductImageDescription layout */}
               <div className="col-lg-6 col-md-6">
-                <ComboImageGallery images={comboImgs} />
+                <ProductImageGallerySideThumb product={{ image: comboImgs, discount: savings, new: false }} thumbPosition="left" />
               </div>
 
               {/* RIGHT: info panel — mirrors ProductDescriptionInfo structure */}

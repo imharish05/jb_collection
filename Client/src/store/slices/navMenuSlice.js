@@ -1,7 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  categories: [],
+  events: [],
+  combos: [],
   rootCombos: [],
+  loading: false,
 };
 const navMenuSlice = createSlice({
   name: "navMenu",

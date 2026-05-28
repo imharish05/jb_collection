@@ -41,7 +41,7 @@ const ShopGridStandard = () => {
   const [priceRange, setPriceRange] = useState(null);
 
   const { products } = useSelector((state) => state.product);
-  const { combos: navCombos = [] } = useSelector((state) => state.navMenu || {});
+  const { rootCombos: navCombos = [] } = useSelector((state) => state.navMenu || {});
   const { currentCombo: reduxCurrentCombo } = useSelector((state) => state.combo || {});
   const { search, pathname } = useLocation();
   const navigate = useNavigate();
@@ -154,7 +154,9 @@ const ShopGridStandard = () => {
             {activeLabel && (
               <div style={{ marginBottom:24, display:"flex", alignItems:"center", gap:10 }}>
                 <h4 style={{ margin:0, fontSize:20, fontWeight:700 }}>{activeLabel}</h4>
-                <span style={{ fontSize:13, color:"#888" }}>({sortedProducts.length} products)</span>
+                <span style={{ fontSize:13, color:"#888" }}>
+                  {isComboMode ? `(${childCombos.length} combos)` : `(${sortedProducts.length} products)`}
+                </span>
                 <a href={process.env.PUBLIC_URL + "/shop"} style={{ marginLeft:8, fontSize:12, color:"#c0622a" }}>Clear ×</a>
               </div>
             )}
@@ -208,7 +210,7 @@ const ShopGridStandard = () => {
                   ))}
                 </div>
                 <ShopProducts layout={layout} products={currentData} isComboMode={isComboMode} childCombos={childCombos} />
-                {!showAll && (
+                {!showAll && !isComboMode && (
                   <div className="pro-pagination-style text-center mt-30">
                     <Paginator
                       totalRecords={sortedProducts.length} pageLimit={pageLimit}
@@ -219,7 +221,10 @@ const ShopGridStandard = () => {
                   </div>
                 )}
                 <p style={{ textAlign:"center", fontSize:13, color:"#888", marginTop:12 }}>
-                  Showing {currentData.length} of {sortedProducts.length} products
+                  {isComboMode
+                    ? `Showing ${childCombos.length} combos`
+                    : `Showing ${currentData.length} of ${sortedProducts.length} products`
+                  }
                 </p>
               </div>
             </div>

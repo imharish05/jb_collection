@@ -19,15 +19,22 @@ const ProductGridList = ({ products, spaceBottomClass, layout, isComboMode, chil
       : "col-xl-4 col-sm-6"; // default three-column
 
   // ── Combo mode: render ComboCards instead of product cards ──
-  if (isComboMode && childCombos && childCombos.length > 0) {
+  if (isComboMode) {
+    if (childCombos && childCombos.length > 0) {
+      return (
+        <Fragment>
+          {childCombos.map(combo => (
+            <div className={colClass} key={combo.id}>
+              <ComboCard combo={combo} spaceBottomClass={spaceBottomClass} />
+            </div>
+          ))}
+        </Fragment>
+      );
+    }
     return (
-      <Fragment>
-        {childCombos.map(combo => (
-          <div className={colClass} key={combo.id}>
-            <ComboCard combo={combo} spaceBottomClass={spaceBottomClass} />
-          </div>
-        ))}
-      </Fragment>
+      <div className="col-12 text-center" style={{ padding: "40px 0", color: "#aaa" }}>
+        <p>No combo offers found under this combo category.</p>
+      </div>
     );
   }
 

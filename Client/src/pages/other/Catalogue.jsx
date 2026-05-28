@@ -103,7 +103,7 @@ const Catalogue = () => {
                 {rootCombos.map((combo) => (
                   <CircleCard
                     key={combo.id}
-                    to={process.env.PUBLIC_URL + "/combos"}
+                    to={`${S}?combo=${combo.id}`}
                     imgSrc={combo.image ? getImgUrl(combo.image) : null}
                     label={combo.name}
                     emoji="🎁"

@@ -90,6 +90,9 @@ const App = () => {
           discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
           image: cartItem.productSnapshot?.image || cartItem.product?.image || [],
           variation: cartItem.product?.variation || [],
+          // Combo specific fields
+          isCombo: cartItem.productSnapshot?.isCombo || false,
+          rootComboId: cartItem.productSnapshot?.rootComboId || null,
         };
       });
       dispatch(replaceCart(items));

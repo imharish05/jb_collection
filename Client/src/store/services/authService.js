@@ -36,6 +36,9 @@ const syncCartFromServer = async (dispatch) => {
         variation: cartItem.product?.variation || [],
         Variants: variants,
         selectedVariant: matchedVariant || null,  // ← full variant object (same as wishlist)
+        // Combo specific fields
+        isCombo: cartItem.productSnapshot?.isCombo || false,
+        rootComboId: cartItem.productSnapshot?.rootComboId || null,
       };
     });
     
