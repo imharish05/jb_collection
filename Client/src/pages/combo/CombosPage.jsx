@@ -4,15 +4,9 @@ import { useSelector } from "react-redux";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
+import { getImgUrl } from "../../helpers/imageUrl";
 
-const IMG_BASE = process.env.REACT_APP_IMG_URL;
-
-const getImgUrl = (path) => {
-  if (!path) return null;
-  return `${IMG_BASE}/uploads/${path.replace(/^\/?(uploads\/)?/, "")}`;
-};
-
-const CircleCard = ({ to, imgSrc, label, emoji = "🗂️" }) => (
+const CircleCard = ({ to, imgSrc, label, emoji = "🎁" }) => (
   <Link
     to={to}
     style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, textDecoration: "none", width: 100 }}
@@ -36,74 +30,35 @@ const CircleCard = ({ to, imgSrc, label, emoji = "🗂️" }) => (
   </Link>
 );
 
-const Catalogue = () => {
+const CombosPage = () => {
   const { pathname } = useLocation();
-  const { categories = [], events = [], rootCombos = [] } = useSelector((state) => state.navMenu || {});
+  const { rootCombos = [] } = useSelector((state) => state.navMenu || {});
   const S = process.env.PUBLIC_URL + "/shop";
 
   return (
     <Fragment>
-      <SEO titleTemplate="Catalogue" description="Browse all our product categories and events." />
+      <SEO titleTemplate="Combos" description="Browse all our combo offers." />
       <LayoutOne headerTop="visible">
         <Breadcrumb
           pages={[
             { label: "Home", path: process.env.PUBLIC_URL + "/" },
-            { label: "Catalogue", path: process.env.PUBLIC_URL + pathname },
+            { label: "Combos", path: process.env.PUBLIC_URL + pathname },
           ]}
         />
 
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "60px 20px 80px" }}>
 
-          {/* Categories */}
-          {categories.length > 0 && (
-            <section style={{ marginBottom: 56 }}>
-              <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: "#999", marginBottom: 28 }}>
-                Categories
-              </h4>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "28px 20px" }}>
-                {categories.map((cat) => (
-                  <CircleCard
-                    key={cat.value ?? cat.id}
-                    to={cat.value ? `${S}?category=${cat.value}` : S}
-                    imgSrc={cat.image ? getImgUrl(cat.image) : null}
-                    label={cat.label}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Events */}
-          {events.length > 0 && (
-            <section>
-              <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: "#999", marginBottom: 28 }}>
-                Shop by Event
-              </h4>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "28px 20px" }}>
-                {events.map((evt) => (
-                  <CircleCard
-                    key={evt.value}
-                    to={`${S}?event=${evt.value}`}
-                     imgSrc={evt.image ? getImgUrl(evt.image) : null}
-                    label={evt.label}
-                    emoji="🎉"
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* Combos */}
           {rootCombos.length > 0 && (
-            <section style={{ marginTop: 56 }}>
+            <section>
               <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: "#999", marginBottom: 28 }}>
-                🎁 Combos
+                🎁 All Combos
               </h4>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "28px 20px" }}>
                 {rootCombos.map((combo) => (
                   <CircleCard
                     key={combo.id}
-                    to={process.env.PUBLIC_URL + "/combos"}
+                    to={`${S}?combo=${combo.id}`}
                     imgSrc={combo.image ? getImgUrl(combo.image) : null}
                     label={combo.name}
                     emoji="🎁"
@@ -113,8 +68,8 @@ const Catalogue = () => {
             </section>
           )}
 
-          {categories.length === 0 && events.length === 0 && rootCombos.length === 0 && (
-            <p style={{ color: "#aaa", textAlign: "center", marginTop: 80 }}>No categories found.</p>
+          {rootCombos.length === 0 && (
+            <p style={{ color: "#aaa", textAlign: "center", marginTop: 80 }}>No combos found.</p>
           )}
         </div>
       </LayoutOne>
@@ -122,4 +77,4 @@ const Catalogue = () => {
   );
 };
 
-export default Catalogue;
+export default CombosPage;

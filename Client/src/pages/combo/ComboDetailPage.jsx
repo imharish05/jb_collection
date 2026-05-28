@@ -14,6 +14,8 @@ import { fetchComboById, addComboToCart } from "../../store/services/comboServic
 import {
   addMixMatchItem, removeMixMatchItem, clearMixMatch,
 } from "../../store/slices/combo-slice";
+import { replaceCart } from "../../store/slices/cart-slice";
+import api from "../../api/axios";
 import cogoToast from "cogo-toast";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -289,6 +291,35 @@ const ComboDetailPage = () => {
       });
       cogoToast.success("Combo added to cart!", { position: "top-center" });
       if (child.type === "mix_match") dispatch(clearMixMatch(child.id));
+
+      // Re-fetch cart from server to sync combo cart items into Redux
+      try {
+        const res = await api.get("/cart");
+        const items = (res.data || []).map(cartItem => {
+          const variants = cartItem.product?.Variants || cartItem.product?.variants || [];
+          const matched = variants.find(v => String(v.id) === String(cartItem.selectedVariantId));
+          const resolvedPrice = matched?.salesPrice ?? cartItem.productSnapshot?.price ?? cartItem.product?.price ?? 0;
+          const resolvedDiscount = cartItem.productSnapshot?.discount ?? cartItem.product?.discount ?? 0;
+          return {
+            id: cartItem.productId,
+            cartItemId: cartItem.id,
+            quantity: cartItem.quantity,
+            selectedVariantId: cartItem.selectedVariantId != null ? Number(cartItem.selectedVariantId) : null,
+            selectedVariantName: cartItem.productSnapshot?.selectedVariantName || null,
+            selectedProductColor: cartItem.selectedProductColor || null,
+            selectedProductSize: cartItem.selectedProductSize || null,
+            name: cartItem.productSnapshot?.name || cartItem.product?.name,
+            price: typeof resolvedPrice === "string" ? parseFloat(resolvedPrice) : resolvedPrice,
+            discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
+            image: cartItem.productSnapshot?.image || cartItem.product?.image || [],
+            variation: cartItem.product?.variation || [],
+          };
+        });
+        dispatch(replaceCart(items));
+      } catch (cartErr) {
+        // Cart sync failed silently — combo was still added
+        console.warn("Cart re-sync failed after combo add:", cartErr);
+      }
     } catch {
       // error already toasted in service
     }

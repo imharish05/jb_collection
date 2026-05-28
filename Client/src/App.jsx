@@ -18,6 +18,7 @@ const HomeFashion = lazy(() => import("./pages/home/HomeFashion"));
 // Combo page
 // const ComboPage = lazy(() => import("./pages/combo/ComboPage"));
 const ComboDetailPage = lazy(() => import("./pages/combo/ComboDetailPage"));
+const CombosPage = lazy(() => import("./pages/combo/CombosPage"));
 
 // Shop pages
 const ShopGridStandard = lazy(() => import("./pages/shop/ShopGridStandard"));
@@ -123,6 +124,7 @@ const App = () => {
             <Route path={process.env.PUBLIC_URL + "/"} element={<HomeFashion />} />
             <Route path={process.env.PUBLIC_URL + "/home-fashion"} element={<HomeFashion />} />
             <Route path={process.env.PUBLIC_URL + "/shop"} element={<ShopGridStandard />} />
+            <Route path={process.env.PUBLIC_URL + "/combos"} element={<CombosPage />} />
             <Route path={process.env.PUBLIC_URL + "/combo/root/:rootComboId"} element={<ComboDetailPage />} />
             {/* <Route path={process.env.PUBLIC_URL + "/combo/:id"} element={<ComboPage />} /> */}
 
