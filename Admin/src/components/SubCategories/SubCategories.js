@@ -25,8 +25,13 @@ export default function SubCategories({ showToast }) {
         api.get('/subcategories'),
         api.get('/categories?active=true'),
       ]);
-      setSubcategories(subRes.data.data || []);
-      setCategories(catRes.data.data || []);
+      
+      // Safely check and extract the inner array data from responses
+      const extractedSubs = subRes.data?.data || subRes.data || [];
+      const extractedCats = catRes.data?.data || catRes.data || [];
+      
+      setSubcategories(Array.isArray(extractedSubs) ? extractedSubs : []);
+      setCategories(Array.isArray(extractedCats) ? extractedCats : []);
     } catch (err) {
       showToast.error('Failed to load data');
     } finally {
@@ -90,12 +95,16 @@ export default function SubCategories({ showToast }) {
     });
   };
 
+  // Safe wrapper reference to prevent errors during parsing layout
+  const safeCategories = Array.isArray(categories) ? categories : [];
+
   // Group subcategories by category for display
   const getCategoryLabel = (row) => {
     const catId = row.categoryId || row.category_id;
-    if (row.category) return row.category.label;
-    const cat = categories.find(c => c.id === catId);
-    return cat ? cat.label : '-';
+    if (row.category?.label) return row.category.label;
+    if (row.category?.name) return row.category.name;
+    const cat = safeCategories.find(c => c.id === catId);
+    return cat ? (cat.label || cat.name) : '-';
   };
 
   return (
@@ -131,8 +140,8 @@ export default function SubCategories({ showToast }) {
                   required
                 >
                   <option value="">— Select Category —</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.label}</option>
+                  {safeCategories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.label || cat.name}</option>
                   ))}
                 </select>
               </div>
