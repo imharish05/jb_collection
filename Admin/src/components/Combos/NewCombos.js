@@ -136,6 +136,52 @@ function getImg(p) {
   return `${IMG_URL}/uploads/${p.replace(/^\//, "").replace(/^uploads\//, "")}`;
 }
 
+// Safely resolve product image — handles JSON string, array, or plain path
+function resolveImage(raw) {
+  if (!raw) return null;
+  if (Array.isArray(raw)) return raw[0] || null;
+  if (typeof raw === "string") {
+    if (raw.startsWith("[")) {
+      try { const arr = JSON.parse(raw); return Array.isArray(arr) ? arr[0] : arr; } catch {}
+    }
+    return raw || null;
+  }
+  return null;
+}
+
+// Build readable variant label from Sequelize attributes JSON array OR flat fields
+function buildVariantLabel(variant) {
+  if (!variant) return "";
+  // Try attributes JSON array: [{name:"Colour", value:"Green"}, ...]
+  const attrArr = (() => {
+    try {
+      const raw = variant.attributes;
+      if (Array.isArray(raw)) return raw;
+      if (typeof raw === "string" && raw.startsWith("[")) return JSON.parse(raw);
+    } catch {}
+    return null;
+  })();
+  if (attrArr && attrArr.length > 0) {
+    return attrArr
+      .map(a => `${a.name || a.key || ""}: ${a.value || ""}`)
+      .filter(s => s.trim() !== ":")
+      .join(" · ");
+  }
+  // Flat fields fallback
+  const flat = [];
+  if (variant.color)    flat.push(`Colour: ${variant.color}`);
+  if (variant.material) flat.push(`Material: ${variant.material}`);
+  if (variant.size)     flat.push(`Size: ${variant.size}`);
+  if (variant.weight)   flat.push(`Weight: ${variant.weight}`);
+  if (variant.variantValues && typeof variant.variantValues === "object") {
+    Object.entries(variant.variantValues).forEach(([k, v]) => { if (v) flat.push(`${k}: ${v}`); });
+  }
+  if (variant.options && typeof variant.options === "object") {
+    Object.entries(variant.options).forEach(([k, v]) => { if (v) flat.push(`${k}: ${v}`); });
+  }
+  return flat.length > 0 ? flat.join(" · ") : (variant.variantName || "");
+}
+
 // ── Categories-style Image Upload ─────────────────────────────────────────────
 function ImageUploadField({ label = "Image", imageFile, preview, fileInputRef, onFileChange, onClear }) {
   return (
@@ -160,12 +206,21 @@ function ImageUploadField({ label = "Image", imageFile, preview, fileInputRef, o
             </p>
           </div>
         </div>
-        {preview && (
-          <div className="preview-tile fade-in">
-            <img src={preview} alt="Preview" />
-            <button type="button" className="preview-remove" onClick={onClear}>✕</button>
-          </div>
-        )}
+        {/* Always show preview tile — either the actual image or a placeholder — so layout is identical in add & edit mode */}
+        <div className="preview-tile fade-in" style={{ cursor: preview ? "default" : "pointer", border: preview ? "2px solid var(--primary-400, #60a5fa)" : "2px dashed var(--border-color, #E5E7EB)", background: preview ? undefined : "var(--neutral-50, #f9fafb)" }}
+          onClick={() => !preview && fileInputRef.current.click()}>
+          {preview ? (
+            <>
+              <img src={preview} alt="Preview" />
+              <button type="button" className="preview-remove" onClick={e => { e.stopPropagation(); onClear(); }}>✕</button>
+            </>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 6 }}>
+              <div style={{ fontSize: 28, opacity: 0.25 }}>🖼️</div>
+              <div style={{ fontSize: 9, color: "var(--neutral-400, #9ca3af)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center", lineHeight: 1.3 }}>No<br/>Image</div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -276,12 +331,14 @@ function ProductPickerRow({ allProducts, onAdd, label = "Included Products" }) {
         </div>
 
         {selProd && variants.length > 0 && (
-          <div style={{ flex: "1 1 160px" }}>
+          <div style={{ flex: "1 1 200px" }}>
             <label className="km-label" style={{ display: "block", marginBottom: 5 }}>Variant</label>
             <select className="km-input" value={selVar} onChange={e => setSelVar(e.target.value)}>
               <option value="">Any / No variant</option>
               {variants.map(v => (
-                <option key={v.id} value={v.id}>{v.variantName} — ₹{v.salesPrice}</option>
+                <option key={v.id} value={v.id}>
+                  {buildVariantLabel(v) || v.variantName} — ₹{v.salesPrice}
+                </option>
               ))}
             </select>
           </div>
@@ -309,13 +366,17 @@ function ProductList({ products, allProducts, onRemove }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
       {products.map(cp => {
+        // cp.product comes from API (edit mode); fallback to allProducts (add mode)
         const prod = cp.product || (allProducts || []).find(p => p.id === cp.productId);
+        // Variant: prefer cp.variant (API), else look up in prod.Variants
         const variant = cp.variant || prod?.Variants?.find(v => String(v.id) === String(cp.variantId));
-        const img = Array.isArray(prod?.image) ? prod?.image[0] : prod?.image;
+        // Image: resolve from product — handles JSON string, array, or plain path
+        const img = resolveImage(prod?.image);
         const stock = variant ? Number(variant.stock) : Number(prod?.stock ?? 0);
         const price = variant ? parseFloat(variant.salesPrice) : parseFloat(prod?.price || 0);
+        const variantLabel = buildVariantLabel(variant);
         return (
-          <div key={cp.id} style={{
+          <div key={cp.id || cp._tempId} style={{
             display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
             background: "#fff", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)",
           }}>
@@ -330,9 +391,9 @@ function ProductList({ products, allProducts, onRemove }) {
                 {prod?.name || `Product #${cp.productId}`}
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 3 }}>
-                {variant && (
-                  <span style={{ fontSize: 10, background: "var(--info-50)", color: "var(--info-main)", borderRadius: 4, padding: "1px 6px", border: "1px solid var(--info-border)", fontWeight: 600 }}>
-                    {variant.variantName}
+                {variantLabel && (
+                  <span style={{ fontSize: 10, background: "var(--info-50)", color: "var(--info-main)", borderRadius: 4, padding: "1px 6px", border: "1px solid var(--info-border,#bfdbfe)", fontWeight: 600 }}>
+                    {variantLabel}
                   </span>
                 )}
                 <span style={{ fontSize: 10, background: stock > 0 ? "var(--success-50)" : "var(--danger-50)", color: stock > 0 ? "var(--success-main)" : "var(--danger-main)", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>
@@ -342,7 +403,7 @@ function ProductList({ products, allProducts, onRemove }) {
                 <span style={{ fontSize: 10, color: "var(--neutral-400)" }}>₹{price.toLocaleString("en-IN")}</span>
               </div>
             </div>
-            <button type="button" onClick={() => onRemove(cp.id)}
+            <button type="button" onClick={() => onRemove(cp.id || cp._tempId)}
               style={{ background: "none", border: "none", color: "var(--danger-500)", cursor: "pointer", fontSize: 18, flexShrink: 0, padding: 4, lineHeight: 1 }}>✕</button>
           </div>
         );
@@ -355,6 +416,13 @@ function ProductList({ products, allProducts, onRemove }) {
 function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, showToast }) {
   const dispatch = useDispatch();
   const isEdit   = !!initial;
+
+  // Read live comboProducts from Redux so add/remove immediately reflects in UI
+  const { currentRoot } = useSelector(s => s.newCombos);
+  const liveChild = isEdit
+    ? currentRoot?.children?.find(c => c.id === initial.id)
+    : null;
+
   const [form, setForm] = useState({
     name:           initial?.name || "",
     type:           initial?.type || "fixed",
@@ -423,19 +491,20 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
 
   const handleRemoveProduct = async (cpId) => {
     if (isEdit) {
-      const tid = showToast.loading("Removing…");
+      // const tid = showToast.loading("Removing…");
       try {
         await dispatch(removeChildProduct({ childId: initial.id, pid: cpId }));
-        showToast.success("Removed", tid);
+        // showToast.success("Removed", tid);
       } catch {
-        showToast.error("Failed", tid);
+        showToast.error("Failed");
       }
     } else {
       setPendingProducts(prev => prev.filter(p => p._tempId !== cpId));
     }
   };
 
-  const currentProducts = isEdit ? (initial?.comboProducts || []) : pendingProducts;
+  // Use live Redux state for edit mode so add/remove immediately updates the list
+  const currentProducts = isEdit ? (liveChild?.comboProducts || initial?.comboProducts || []) : pendingProducts;
 
   return (
     <div className="km-form-card fade-in" style={{ marginTop: 12 }}>
@@ -751,7 +820,7 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
         </div>
       ) : !editingChild && (
         <DataTable
-          columns={["No.", "Image", "Name", "Type", "Price", "Status", "Actions"]}
+          columns={["No.", "Image", "Name", "Type", "Price", "Products", "Status", "Actions"]}
           initialRows={currentRoot.children || []}
           renderRow={(child, i) => (
             <tr key={child.id}>
@@ -767,8 +836,25 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
                 </div>
               </td>
               <td>
-                <strong>{child.name}</strong>
-                {child.description && <div style={{ fontSize: 11, color: "var(--neutral-400)", marginTop: 2 }}>{child.description}</div>}
+                <div>
+                  <strong>{child.name}</strong>
+                  {child.description && <div style={{ fontSize: 11, color: "var(--neutral-400)", marginTop: 2 }}>{child.description}</div>}
+                  {/* Small product thumbnails below name */}
+                  {child.comboProducts && child.comboProducts.length > 0 && (
+                    <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
+                      {child.comboProducts.slice(0, 5).map(cp => {
+                        const prod = cp.product || (allProducts || []).find(p => p.id === cp.productId);
+                          <div key={cp.id} title={prod?.name || "Product"}
+                            style={{ width: 24, height: 24, borderRadius: 4, background: "var(--neutral-100)", border: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>🎁</div>
+                      })}
+                      {child.comboProducts.length > 5 && (
+                        <div style={{ width: 24, height: 24, borderRadius: 4, background: "var(--neutral-200)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "var(--neutral-600)", fontWeight: 700 }}>
+                          +{child.comboProducts.length - 5}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </td>
               <td>
                 <span style={{
@@ -788,6 +874,17 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
                     </div>
                   )}
                 </div>
+              </td>
+              <td>
+                {/* Product count badge */}
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 10,
+                  background: "var(--info-50)", color: "var(--info-main)",
+                  border: "1px solid var(--info-border,#bfdbfe)",
+                }}>
+                  {child.comboProducts?.length || 0} item{(child.comboProducts?.length || 0) !== 1 ? "s" : ""}
+                </span>
               </td>
               <td>
                 <span className={`status-pill ${child.isActive ? "pill-active" : "pill-inactive"}`}>
