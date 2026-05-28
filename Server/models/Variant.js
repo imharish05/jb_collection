@@ -27,7 +27,7 @@ const Variant = sequelize.define("Variant", {
     field: "updatedAt"
   }
 }, { 
-  tableName: "variants",
+  tableName: "Variants",
   timestamps: true // This tells Sequelize to manage them, but it will use our custom definitions above
 });
 

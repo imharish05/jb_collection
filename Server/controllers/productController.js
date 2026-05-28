@@ -6,7 +6,7 @@ const sequelize = require("../config/database");
 const PRODUCT_INCLUDE = [
   {
     model: Variant,
-    as: "variants",
+    as: "Variants",
     attributes: ["id", "variantName", "mrp", "salesPrice", "stock", "sku", "attributes", "status", "image"],
     required: false,
   },

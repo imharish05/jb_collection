@@ -22,7 +22,7 @@ const getStats = async (req, res) => {
           },
           {
             model: Variant,
-            as: "variants",
+            as: "Variants",
             attributes: ["id", "mrp", "salesPrice", "stock", "sku", "variantName", "attributes", "status"],
             required: false,
           },

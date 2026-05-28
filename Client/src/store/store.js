@@ -25,12 +25,13 @@ import orderReducer from "./slices/order-slice";
 import reviewReducer from "./slices/review-slice";
 import testimonialReducer from "./slices/testimonialSlice";
 import contactReducer from "./slices/contactSlice";
+import comboReducer from "./slices/combo-slice";   // ← new
 
 const persistConfig = {
     key: "flone",
     version: 1.1,
     storage,
-    blacklist: ["product", "navMenu", "headerSlider", "review"]
+    blacklist: ["product", "navMenu", "headerSlider", "review", "combo"]
 };
 
 const appReducer = combineReducers({
@@ -49,12 +50,12 @@ const appReducer = combineReducers({
     review:        reviewReducer,
     testimonial:   testimonialReducer,
     contact:       contactReducer,
+    combo:         comboReducer,               // ← new
 });
 
 // ── Root reducer: wipe cart+wishlist on logout ──────────────────────────────
 export const rootReducer = (state, action) => {
     if (action.type === "auth/logoutAction") {
-        // Keep currency preference, wipe user-specific slices
         const { currency, navMenu, product, marquee, headerSlider, offerBanner } = state;
         state = { currency, navMenu, product, marquee, headerSlider, offerBanner };
     }
