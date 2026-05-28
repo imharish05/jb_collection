@@ -18,7 +18,6 @@ const getImageUrl = (imagePath) => {
 export default function Categories({ showToast }) {
   const dispatch = useDispatch();
   const { items: rows, loading } = useSelector(state => state.categories);
-
   const [showForm, setShowForm]           = useState(false);
   const [editingId, setEditingId]         = useState(null);
   const [categoryName, setCategoryName]   = useState('');

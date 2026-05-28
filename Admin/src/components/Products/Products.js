@@ -61,7 +61,6 @@ const BLANK_FORM = {
   tag: '', isCustomisable: true, isNewArrival: false, isHotDeal: false,
 };
 
-
 // ── EventTagSelector — searchable multi-tag picker from Events model ──────────
 function EventTagSelector({ value, onChange }) {
   const { items: events } = useSelector(s => s.events || {});
@@ -178,8 +177,12 @@ export default function Products({ showToast }) {
   const dispatch = useDispatch();
   const location = useLocation();
   const { items: allProducts, loading } = useSelector(s => s.products || {});
-  const { items: categories } = useSelector(s => s.categories || {});
+  const { items: rawCategories } = useSelector(s => s.categories || {});
   const { items: brands } = useSelector(s => s.brands || {});
+
+  // Safe checks: ensure categories and brands are normalized arrays to prevent runtime crashes
+  const categories = Array.isArray(rawCategories) ? rawCategories : [];
+  const safeBrands = Array.isArray(brands) ? brands : [];
 
   // ── Core state ────────────────────────────────────────────────────────────
   const [showForm, setShowForm] = useState(false);
@@ -195,30 +198,27 @@ export default function Products({ showToast }) {
   const [previews, setPreviews] = useState([]);
   const fileInputRef = useRef();
 
-  // ── SubCategories derived from selected category ──────────────────────────
+  // ── SubCategories derived from selected category safely ───────────────────
   const selectedCategory = categories.find(c => String(c.id) === String(formData.categoryId));
   const productCategories = categories.filter(c => c.value !== null && c.value !== undefined && c.value !== '');
-
-
 
   const subCategories = selectedCategory?.subcategories || selectedCategory?.subCategories || selectedCategory?.SubCategories || [];
 
   console.log(selectedCategory, "This si the nsjn");
-
 
   // ── Load data ─────────────────────────────────────────────────────────────
   useEffect(() => {
     dispatch(fetchCategories());
     dispatch(fetchBrands());
     dispatch(fetchEvents());
-    dispatch(fetchProducts())
+    dispatch(fetchProducts());
   }, [location.search]);
 
   // ── Filter ────────────────────────────────────────────────────────────────
   const isLowStock = new URLSearchParams(location.search).get('filter') === 'lowstock';
   const rows = isLowStock
-    ? [...allProducts].filter(p => totalStock(p) < 50).sort((a, b) => totalStock(a) - totalStock(b))
-    : allProducts;
+    ? [...(allProducts || [])].filter(p => totalStock(p) < 50).sort((a, b) => totalStock(a) - totalStock(b))
+    : (allProducts || []);
 
   // ── Image handlers ────────────────────────────────────────────────────────
   const handleFileChange = (e) => {
@@ -253,7 +253,6 @@ export default function Products({ showToast }) {
     const subCatId = p.subCategoryId || p.SubCategory?.id || '';
     const subCatName = p.SubCategory?.name || p.SubCategory?.label || '';
 
-
     setEditingId(p.id);
     setFormData({
       productName: p.name || '',
@@ -275,15 +274,11 @@ export default function Products({ showToast }) {
     setVariants(
       p.Variants?.length
         ? p.Variants.map(v => {
-          // attributes may come back as a JSON string from some backends — parse safely
           const rawAttrs = v.attributes;
           const parsedAttrs = typeof rawAttrs === 'string'
             ? (() => { try { return JSON.parse(rawAttrs); } catch { return []; } })()
             : (Array.isArray(rawAttrs) ? rawAttrs : []);
 
-          // Prefer structured attributes; fall back to flat fields.
-          // Do NOT use variantName as Custom Note — it is a generated label, not a user note.
-          // Parse "Key: Value · Key2: Value2" from variantName as last resort
           const parseVariantName = (name) => {
             if (!name || name === 'Default') return [];
             return name.split(' · ').map(part => {
@@ -391,7 +386,6 @@ export default function Products({ showToast }) {
     if (formData.subCategoryId) fd.append('subCategoryId', formData.subCategoryId);
     if (formData.subCategoryName) fd.append('subCategoryName', formData.subCategoryName);
 
-    // Build tag array — merge manual event tags + feature flags as tags
     const baseTags = formData.tag ? formData.tag.split(',').map(t => t.trim()).filter(Boolean) : [];
     if (formData.isCustomisable && !baseTags.includes('customisable')) baseTags.push('customisable');
     if (formData.isNewArrival   && !baseTags.includes('new-arrival'))  baseTags.push('new-arrival');
@@ -437,17 +431,15 @@ export default function Products({ showToast }) {
         printText: findAttr('Print Text'),
         customLabel: findAttr('Custom Note'),
         subCategory: findAttr('Sub-type'),
-        // Existing saved image (no new file uploaded)
         image: (!v.imageFile && v.imagePreview && !v.imagePreview.startsWith('blob:'))
           ? v.imagePreview : undefined,
-        variantImageIndex: v.imageFile ? idx : undefined, // ties file to variant
+        variantImageIndex: v.imageFile ? idx : undefined,
         status: v.status || 'Active',
       };
     });
 
     fd.append('variants', JSON.stringify(mappedVariants));
 
-    // Append variant images as variantImage_0, variantImage_1, …
     variants.forEach((v, idx) => {
       if (v.imageFile) fd.append(`variantImage_${idx}`, v.imageFile);
     });
@@ -473,7 +465,6 @@ export default function Products({ showToast }) {
   };
 
   // ── Delete ────────────────────────────────────────────────────────────────
-
   const handleDelete = async (id) => {
     confirmDelete({
       title: 'Delete Product?',
@@ -487,7 +478,6 @@ export default function Products({ showToast }) {
       },
     });
   };
-
 
   return (
     <div>
@@ -596,7 +586,7 @@ export default function Products({ showToast }) {
                 <select style={inputStyle} value={formData.brandId}
                   onChange={e => setFormData({ ...formData, brandId: e.target.value })}>
                   <option value="">Select Brand</option>
-                  {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  {safeBrands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
               </div>
 
@@ -628,7 +618,6 @@ export default function Products({ showToast }) {
 
               <VariantBuilder variants={variants} errors={errors.variantErrors || []} onChange={(updated) => {
                 setVariants(updated);
-                // Auto-calc discount from first variant if mrp & salesPrice filled
                 const first = updated[0];
                 if (first?.mrp && first?.salesPrice && Number(first.mrp) > 0) {
                   const auto = Math.round((1 - Number(first.salesPrice) / Number(first.mrp)) * 100);
@@ -669,7 +658,6 @@ export default function Products({ showToast }) {
                   </div>
                 </div>
                 <div style={{ ...fieldStyle, justifyContent: 'flex-end' }}>
-                  {/* Show effective price based on first variant MRP */}
                   {(() => {
                     const mrp = Number(variants[0]?.mrp);
                     const disc = Number(formData.discount);
