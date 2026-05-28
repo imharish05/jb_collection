@@ -12,7 +12,7 @@ const ComboCard = ({ combo, spaceBottomClass }) => {
     : 0;
 
   const comboImg = combo.image ? getImgUrl(combo.image) : null;
-  const detailUrl = process.env.PUBLIC_URL + "/combo/root/" + combo.rootComboId;
+  const detailUrl = process.env.PUBLIC_URL + "/combo/root/" + combo.rootComboId + "?type=" + combo.type;
 
   const typeBadgeStyle = combo.type === "fixed"
     ? { background: "#EFF6FF", color: "#1A3A6B" }

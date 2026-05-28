@@ -117,7 +117,18 @@ function FixedProductsList({ comboProducts }) {
 function MixMatchCard({ cp, selected, onToggle }) {
   const prod = cp.product;
   const img  = getProductImg(prod);
-  const { sales, mrp, variantId } = getVariantPrice(prod);
+  
+  // Get the variant for THIS combo product entry (not just the first variant)
+  const variant = cp.variant
+    || (cp.variantId && Array.isArray(prod?.Variants)
+      ? prod.Variants.find(v => String(v.id) === String(cp.variantId))
+      : null);
+  
+  // Use variant's price if available, otherwise use product price
+  const sales = variant ? parseFloat(variant.salesPrice || 0) : parseFloat(prod?.price || 0);
+  const mrp = variant ? parseFloat(variant.mrp || 0) : parseFloat(prod?.price || 0);
+  const variantId = cp.variantId || null;
+  
   const oos = isOutOfStock(cp);
 
   return (
@@ -145,6 +156,11 @@ function MixMatchCard({ cp, selected, onToggle }) {
         <div style={{ fontSize: 12, fontWeight: 600, color: "#1A1A2E", lineHeight: 1.3, marginBottom: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {prod?.name}
         </div>
+        {variant && (
+          <div style={{ fontSize: 9, color: "#db1a5d", fontWeight: 600, marginBottom: 4, lineHeight: 1.4 }}>
+            {variant.variantName}
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "#F15A24" }}>₹{sales.toLocaleString("en-IN")}</span>
           {mrp > sales && <span style={{ fontSize: 10, color: "#6B7280", textDecoration: "line-through" }}>₹{mrp.toLocaleString("en-IN")}</span>}
@@ -155,34 +171,10 @@ function MixMatchCard({ cp, selected, onToggle }) {
   );
 }
 
-// ── Mix & Match selected tray ─────────────────────────────────────────────────
-function SelectedTray({ selections, comboProducts, onRemove }) {
-  if (selections.length === 0) return null;
-  return (
-    <div style={{ marginTop: 12, padding: "10px 12px", background: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: 8 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: "#6B7280", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Selected Items</div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {selections.map((sel, i) => {
-          const cp   = comboProducts.find(c => String(c.productId) === String(sel.productId));
-          const prod = cp?.product;
-          const img  = getProductImg(prod);
-          return (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, background: "#FEF0EB", border: "1px solid #F15A24", borderRadius: 6, padding: "3px 8px" }}>
-              {img && <img src={img} alt="" width={18} height={18} style={{ borderRadius: 3, objectFit: "cover" }} />}
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#1A1A2E" }}>{prod?.name || sel.productId}</span>
-              <button onClick={() => onRemove(i)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: 0, fontSize: 12, lineHeight: 1 }}>✕</button>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 const ComboDetailPage = () => {
   const { rootComboId } = useParams();
-  const { pathname }    = useLocation();
+  const { pathname, search }    = useLocation();
   const dispatch        = useDispatch();
   const navigate        = useNavigate();
 
@@ -209,13 +201,24 @@ const ComboDetailPage = () => {
     dispatch(fetchComboById(rootComboId));
   }, [rootComboId]);
 
-  // Auto-select first active child
+  // Auto-select child combo based on URL type param or first active
   useEffect(() => {
     if (currentCombo?.children?.length && !activeChild) {
-      const first = currentCombo.children.find(c => c.isActive) || currentCombo.children[0];
-      setActiveChild(first);
+      // Check URL for type parameter (mix_match or fixed)
+      const params = new URLSearchParams(search);
+      const requestedType = params.get('type');
+      
+      let selected = null;
+      if (requestedType) {
+        selected = currentCombo.children.find(c => c.type === requestedType && c.isActive);
+      }
+      // Fallback to first active child
+      if (!selected) {
+        selected = currentCombo.children.find(c => c.isActive) || currentCombo.children[0];
+      }
+      setActiveChild(selected);
     }
-  }, [currentCombo]);
+  }, [currentCombo, search]);
 
   // ── Loading / error states ──────────────────────────────────────────────────
   if (loading) {
@@ -406,24 +409,7 @@ const ComboDetailPage = () => {
                   </div>
                   <h2 style={{ marginBottom: 12 }}>{child.name}</h2>
 
-                  {/* Child combo tabs (if multiple active children) */}
-                  {currentCombo.children?.filter(c => c.isActive).length > 1 && (
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-                      {currentCombo.children.filter(c => c.isActive).map(c => (
-                        <button key={c.id}
-                          onClick={() => { setActiveChild(c); setQty(1); }}
-                          style={{
-                            padding: "5px 14px", borderRadius: 20, border: "1.5px solid",
-                            borderColor: activeChild?.id === c.id ? "#F15A24" : "#E5E7EB",
-                            background: activeChild?.id === c.id ? "#FEF0EB" : "#fff",
-                            color: activeChild?.id === c.id ? "#F15A24" : "#6B7280",
-                            fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-                          }}>
-                          {c.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+
 
                   {/* Type badge */}
                   <div style={{ marginBottom: 12 }}>
@@ -501,7 +487,10 @@ const ComboDetailPage = () => {
                       {child.comboProducts && (
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8, marginBottom: 8 }}>
                           {child.comboProducts.filter(cp => cp.isEligible).map(cp => {
-                            const isSel = selections.some(s => String(s.productId) === String(cp.productId));
+                            const isSel = selections.some(s =>
+                              String(s.productId) === String(cp.productId) &&
+                              String(s.variantId || "") === String(cp.variantId || "")
+                            );
                             return (
                               <MixMatchCard key={cp.id} cp={cp} selected={isSel}
                                 onToggle={(cp, vId) => handleToggle(cp, vId)} />
@@ -509,13 +498,6 @@ const ComboDetailPage = () => {
                           })}
                         </div>
                       )}
-
-                      {/* Selected tray */}
-                      <SelectedTray
-                        selections={selections}
-                        comboProducts={child.comboProducts || []}
-                        onRemove={(i) => dispatch(removeMixMatchItem({ childComboId: child.id, index: i }))}
-                      />
                     </>
                   )}
 
