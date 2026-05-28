@@ -34,6 +34,24 @@ const cartSlice = createSlice({
             const product = normalizeProduct(action.payload);
             const newCartItemId = product.cartItemId || uuidv4();
 
+            // ── Combo items: always a unique row — never merge ────────────────
+            if (product.isCombo) {
+                const existing = product.cartItemId
+                    ? state.cartItems.find(item => item.cartItemId === product.cartItemId)
+                    : null;
+                if (existing) {
+                    state.cartItems = state.cartItems.map(item =>
+                        item.cartItemId === product.cartItemId
+                            ? { ...item, quantity: product.quantity != null ? product.quantity : item.quantity + 1 }
+                            : item
+                    );
+                } else {
+                    state.cartItems.push({ ...product, quantity: product.quantity || 1, cartItemId: newCartItemId });
+                    cogoToast.success("Added To Cart", { position: "top-center" });
+                }
+                return;
+            }
+
             // ── Backend variant products ──────────────────────────────────────
             if (product.selectedVariantId) {
                 const existingItem = state.cartItems.find(item => isSameBackendVariant(item, product));

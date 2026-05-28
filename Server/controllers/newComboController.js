@@ -432,6 +432,20 @@ exports.addComboToCart = async (req, res) => {
       return res.status(422).json({ valid: false, errors: validationErrors });
     }
 
+    const getProductFirstImage = (prod) => {
+      if (!prod || !prod.image) return null;
+      let img = prod.image;
+      if (typeof img === "string") {
+        try {
+          const parsed = JSON.parse(img);
+          img = Array.isArray(parsed) ? parsed : [img];
+        } catch (e) {
+          img = [img];
+        }
+      }
+      return Array.isArray(img) ? img[0] || null : img || null;
+    };
+
     // Server-calculated price (never trust client)
     const comboPrice = parseFloat(child.comboPrice);
 
@@ -450,9 +464,21 @@ exports.addComboToCart = async (req, res) => {
             variantId: cp.variantId,
             quantity:  cp.quantity,
             name:      cp.product?.name,
-            image:     cp.product?.image?.[0] || null,
+            image:     getProductFirstImage(cp.product),
+            variantName: cp.variant?.variantName || null,
           }))
-        : selections,
+        : selections.map(sel => {
+            const cp = child.comboProducts.find(c => String(c.productId) === String(sel.productId));
+            const matchedVariant = cp?.product?.Variants?.find(v => String(v.id) === String(sel.variantId));
+            return {
+              productId: sel.productId,
+              variantId: sel.variantId,
+              quantity:  sel.quantity,
+              name:      cp?.product?.name || "Product",
+              image:     getProductFirstImage(cp?.product),
+              variantName: matchedVariant?.variantName || null,
+            };
+          }),
     };
 
     // Store as a single CartItem with comboSnapshot

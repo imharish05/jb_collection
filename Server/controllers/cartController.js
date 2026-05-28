@@ -17,7 +17,51 @@ const getCart = async (req, res, next) => {
       include: cartInclude,
       order: [["createdAt", "ASC"]],
     });
-    return res.json(items);
+
+    // Enrich combo items: if snapshot.products has entries with null names,
+    // look up the product (and its variant) from DB so the client can display them
+    const enriched = await Promise.all(items.map(async (item) => {
+      const snap = item.productSnapshot;
+      if (!snap?.isCombo || !Array.isArray(snap.products)) return item.toJSON();
+
+      const needsEnrich = snap.products.some(p => !p.name || !p.image);
+      if (!needsEnrich) return item.toJSON();
+
+      const enrichedProducts = await Promise.all(snap.products.map(async (p) => {
+        if (p.name && p.image) return p; // already complete
+        try {
+          const prod = await Product.findByPk(p.productId, {
+            attributes: ["id", "name", "image"],
+            include: [{ model: Variant, as: "Variants", attributes: ["id", "variantName"] }],
+          });
+          const matchedVariant = p.variantId && prod?.Variants
+            ? prod.Variants.find(v => String(v.id) === String(p.variantId)) || null
+            : null;
+          // Parse image: may be JSON string or array
+          let img = prod?.image || null;
+          if (typeof img === "string") {
+            try { const parsed = JSON.parse(img); img = Array.isArray(parsed) ? parsed[0] : img; }
+            catch { /* use as-is */ }
+          } else if (Array.isArray(img)) {
+            img = img[0] || null;
+          }
+          return {
+            ...p,
+            name: p.name || prod?.name || null,
+            image: p.image || img || null,
+            variantName: p.variantName || matchedVariant?.variantName || null,
+          };
+        } catch {
+          return p; // leave as-is if lookup fails
+        }
+      }));
+
+      const plain = item.toJSON();
+      plain.productSnapshot = { ...snap, products: enrichedProducts };
+      return plain;
+    }));
+
+    return res.json(enriched);
   } catch (err) {
     next(err);
   }

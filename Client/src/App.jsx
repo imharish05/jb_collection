@@ -93,6 +93,9 @@ const App = () => {
           // Combo specific fields
           isCombo: cartItem.productSnapshot?.isCombo || false,
           rootComboId: cartItem.productSnapshot?.rootComboId || null,
+          childComboId: cartItem.productSnapshot?.childComboId || null,
+          selectedProducts: cartItem.productSnapshot?.products || null,
+          comboType: cartItem.productSnapshot?.comboType || null,
         };
       });
       dispatch(replaceCart(items));

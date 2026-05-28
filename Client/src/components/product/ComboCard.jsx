@@ -21,7 +21,7 @@ const ComboCard = ({ combo, spaceBottomClass }) => {
   const typeLabel = combo.type === "fixed" ? "Fixed Combo" : "Mix & Match";
 
   return (
-    <div className={clsx("product-card-premium", spaceBottomClass)}>
+    <div className={clsx("product-card-premium", spaceBottomClass, "single-image-card")}>
       <div className="product-img-container">
         <Link to={detailUrl}>
           {comboImg ? (

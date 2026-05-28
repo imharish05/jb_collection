@@ -89,6 +89,15 @@ const Cart = () => {
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponOpen, setCouponOpen] = useState(false);
 
+  /* ── Expanded combos state ── */
+  const [expandedCombos, setExpandedCombos] = useState({});
+  const toggleComboExpanded = (cartItemId) => {
+    setExpandedCombos(prev => ({
+      ...prev,
+      [cartItemId]: !prev[cartItemId]
+    }));
+  };
+
   /* ── Available coupons from backend ───────────────────────────────────── */
   const [availableCoupons, setAvailableCoupons] = useState([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
@@ -327,6 +336,24 @@ const Cart = () => {
 
                         {/* Details */}
                         <div className="kg-item-details">
+                          {item.isCombo && (
+                            <span className="kg-combo-badge" style={{
+                              display: "inline-block",
+                              fontSize: "10px",
+                              fontWeight: 700,
+                              color: "#db1a5d",
+                              background: "#fff0f6",
+                              border: "1px solid #ffd6e7",
+                              borderRadius: "4px",
+                              padding: "2px 8px",
+                              marginBottom: "6px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              width: "fit-content"
+                            }}>
+                              🎁 Combo Offer ({item.comboType === "fixed" ? "Fixed Combo" : item.comboType === "mix_match" ? "Mix & Match" : "Combo"})
+                            </span>
+                          )}
                           <Link
                             to={item.isCombo ? process.env.PUBLIC_URL + "/combo/root/" + item.rootComboId : process.env.PUBLIC_URL + "/product/" + item.id}
                             className="kg-item-name"
@@ -363,7 +390,138 @@ const Cart = () => {
                             </div>
                           ) : null}
 
-                                                    {/* Stock warning when near limit */}
+                          {item.isCombo && (
+                            <div className="kg-combo-toggle" style={{ marginTop: "6px", display: "flex", alignItems: "center" }}>
+                              <button
+                                onClick={() => toggleComboExpanded(item.cartItemId)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#db1a5d",
+                                  fontSize: "12px",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  padding: "0"
+                                }}
+                              >
+                                <span>{expandedCombos[item.cartItemId] ? "Hide Included Products" : "Show Included Products"}</span>
+                                <svg
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                  style={{
+                                    transform: expandedCombos[item.cartItemId] ? "rotate(180deg)" : "rotate(0deg)",
+                                    transition: "transform 0.2s"
+                                  }}
+                                >
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+
+                          {item.isCombo && expandedCombos[item.cartItemId] && (
+                            <div className="kg-combo-included-products" style={{
+                              marginTop: "10px",
+                              padding: "10px 12px",
+                              background: "#f8fafc",
+                              border: "1px dashed #e2e8f0",
+                              borderRadius: "8px"
+                            }}>
+                              <div style={{
+                                fontSize: "10px",
+                                fontWeight: 700,
+                                color: "#6b7280",
+                                marginBottom: "8px",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.06em"
+                              }}>
+                                Included Products
+                              </div>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                {Array.isArray(item.selectedProducts) && item.selectedProducts.length > 0 ? (
+                                  item.selectedProducts.map((p, idx) => {
+                                    const productImgSrc = p.image ? getImgUrl(p.image) : "/assets/img/products/products-1.jpeg";
+                                    return (
+                                      <div key={idx} style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "10px",
+                                        padding: "7px 9px",
+                                        background: "#fff",
+                                        border: "1px solid #e5e7eb",
+                                        borderRadius: "7px"
+                                      }}>
+                                        {/* Thumbnail */}
+                                        <img
+                                          src={productImgSrc}
+                                          alt={p.name || "product"}
+                                          style={{
+                                            width: "40px",
+                                            height: "40px",
+                                            borderRadius: "6px",
+                                            objectFit: "cover",
+                                            border: "1px solid #e5e7eb",
+                                            flexShrink: 0
+                                          }}
+                                          onError={(e) => e.target.src = "/assets/img/products/products-1.jpeg"}
+                                        />
+                                        {/* Info */}
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                          <div style={{
+                                            fontSize: "12px",
+                                            fontWeight: 600,
+                                            color: "#1f2937",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap"
+                                          }}>
+                                          {p.name || "Included Product"}
+                                          </div>
+                                          <div style={{ display: "flex", gap: "5px", marginTop: "4px", flexWrap: "wrap", alignItems: "center" }}>
+                                            {p.variantName && (
+                                              <span style={{
+                                                fontSize: "10px",
+                                                background: "#fff0f6",
+                                                color: "#db1a5d",
+                                                border: "1px solid #ffd6e7",
+                                                borderRadius: "4px",
+                                                padding: "1px 6px",
+                                                fontWeight: 600
+                                              }}>{p.variantName}</span>
+                                            )}
+                                            {p.quantity >= 1 && (
+                                              <span style={{
+                                                fontSize: "10px",
+                                                background: "#f3f4f6",
+                                                color: "#6b7280",
+                                                border: "1px solid #e5e7eb",
+                                                borderRadius: "4px",
+                                                padding: "1px 6px",
+                                                fontWeight: 600
+                                              }}>×{p.quantity}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })
+                                ) : (
+                                  <span style={{ fontSize: "11px", color: "#9ca3af", fontStyle: "italic" }}>
+                                    No product details available
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Stock warning when near limit */}
                           {maxStock < 10 && (
                             <div style={{ fontSize: 11, color: "#f59e0b", marginTop: 3 }}>
                               Only {maxStock} left in stock

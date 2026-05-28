@@ -3,7 +3,9 @@
 // Fixed combos: show products list + add-to-cart.
 // Mix & Match: product picker grid + selected tray + progress bar.
 
-import React, { Fragment, useState, useEffect } from "react";
+import React, { Fragment, useState, useEffect, useMemo } from "react";
+import { Icon } from "@iconify/react";
+import clsx from "clsx";
 import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import SEO from "../../components/seo";
@@ -14,7 +16,7 @@ import { fetchComboById, addComboToCart } from "../../store/services/comboServic
 import {
   addMixMatchItem, removeMixMatchItem, clearMixMatch,
 } from "../../store/slices/combo-slice";
-import { replaceCart } from "../../store/slices/cart-slice";
+import { addToCart, replaceCart } from "../../store/slices/cart-slice";
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
 import ProductImageGallerySideThumb from "../../components/product/ProductImageGallerySideThumb";
@@ -71,10 +73,15 @@ function FixedProductsList({ comboProducts }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {comboProducts.map(cp => {
           const prod = cp.product;
-          const variant = cp.variant;
+          // cp.variant may be null even if cp.variantId exists — resolve from product.Variants[]
+          const variant = cp.variant
+            || (cp.variantId && Array.isArray(prod?.Variants)
+              ? prod.Variants.find(v => String(v.id) === String(cp.variantId)) || null
+              : null);
           const img = getProductImg(prod);
           const low = isLowStock(cp);
           const oos = isOutOfStock(cp);
+          const qty = cp.quantity || 1;
           return (
             <div key={cp.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: 8 }}>
               {img
@@ -85,13 +92,15 @@ function FixedProductsList({ comboProducts }) {
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#1A1A2E", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {prod?.name}
                 </div>
-                <div style={{ display: "flex", gap: 6, marginTop: 3, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: 6, marginTop: 3, flexWrap: "wrap", alignItems: "center" }}>
                   {variant && (
-                    <span style={{ fontSize: 10, background: "#EFF6FF", color: "#1A3A6B", borderRadius: 4, padding: "1px 6px", border: "1px solid #c7d4f0", fontWeight: 600 }}>
+                    <span style={{ fontSize: 10, background: "#fff0f6", color: "#db1a5d", borderRadius: 4, padding: "1px 6px", border: "1px solid #ffd6e7", fontWeight: 600 }}>
                       {variant.variantName}
                     </span>
                   )}
-                  {cp.quantity > 1 && <span style={{ fontSize: 10, color: "#6B7280" }}>×{cp.quantity}</span>}
+                  <span style={{ fontSize: 10, background: "#f3f4f6", color: "#6b7280", borderRadius: 4, padding: "1px 6px", border: "1px solid #e5e7eb", fontWeight: 600 }}>
+                    ×{qty}
+                  </span>
                   {oos  && <span style={{ fontSize: 10, background: "#fef2f2", color: "#dc2626", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>Out of stock</span>}
                   {low  && !oos && <span style={{ fontSize: 10, background: "#fef9c3", color: "#b45309", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>Only {isLowStock(cp) ? (cp.variant?.stock ?? cp.product?.stock) : ""} left</span>}
                 </div>
@@ -179,10 +188,22 @@ const ComboDetailPage = () => {
 
   const { currentCombo, loading, error, mixMatchSelections } = useSelector(s => s.combo || {});
   const { isAuthenticated } = useSelector(s => s.auth || {});
+  const { cartItems } = useSelector(s => s.cart || { cartItems: [] });
 
   const [qty,        setQty]        = useState(1);
   const [addingCart, setAddingCart] = useState(false);
   const [activeChild, setActiveChild] = useState(null); // selected child combo tab
+
+  const child = activeChild || currentCombo?.children?.[0];
+  const comboCartQty = useMemo(() => {
+    if (!child || !cartItems) return 0;
+    const match = cartItems.find(
+      item => item.isCombo && String(item.childComboId) === String(child.id)
+    );
+    return match ? match.quantity : 0;
+  }, [cartItems, child]);
+
+  const isInCart = isAuthenticated && comboCartQty > 0;
 
   useEffect(() => {
     dispatch(fetchComboById(rootComboId));
@@ -219,7 +240,6 @@ const ComboDetailPage = () => {
     );
   }
 
-  const child = activeChild || currentCombo.children?.[0];
   if (!child) {
     return (
       <LayoutOne headerTop="visible">
@@ -248,7 +268,7 @@ const ComboDetailPage = () => {
 
   const fixedOos = child.type === "fixed" && child.comboProducts?.some(cp => isOutOfStock(cp));
 
-  // ── Add to cart ─────────────────────────────────────────────────────────────
+  // ── Add to cart — same dispatch pattern as single products ──────────────────
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
       cogoToast.warn("Please login to add items to cart", { position: "top-center" });
@@ -261,47 +281,70 @@ const ComboDetailPage = () => {
     }
     setAddingCart(true);
     try {
-      await addComboToCart({
+      const res = await addComboToCart({
         childComboId: child.id,
         quantity: qty,
         selections: child.type === "mix_match" ? selections : undefined,
       });
-      cogoToast.success("Combo added to cart!", { position: "top-center" });
+
       if (child.type === "mix_match") dispatch(clearMixMatch(child.id));
 
-      // Re-fetch cart from server to sync combo cart items into Redux
-      try {
-        const res = await api.get("/cart");
-        const items = (res.data || []).map(cartItem => {
-          const variants = cartItem.product?.Variants || cartItem.product?.variants || [];
-          const matched = variants.find(v => String(v.id) === String(cartItem.selectedVariantId));
-          const resolvedPrice = matched?.salesPrice ?? cartItem.productSnapshot?.price ?? cartItem.product?.price ?? 0;
-          const resolvedDiscount = cartItem.productSnapshot?.discount ?? cartItem.product?.discount ?? 0;
-          return {
-            id: cartItem.productId,
-            cartItemId: cartItem.id,
-            quantity: cartItem.quantity,
-            selectedVariantId: cartItem.selectedVariantId != null ? Number(cartItem.selectedVariantId) : null,
-            selectedVariantName: cartItem.productSnapshot?.selectedVariantName || null,
-            selectedProductColor: cartItem.selectedProductColor || null,
-            selectedProductSize: cartItem.selectedProductSize || null,
-            name: cartItem.productSnapshot?.name || cartItem.product?.name,
-            price: typeof resolvedPrice === "string" ? parseFloat(resolvedPrice) : resolvedPrice,
-            discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
-            image: cartItem.productSnapshot?.image || cartItem.product?.image || [],
-            variation: cartItem.product?.variation || [],
-            // Combo specific fields
-            isCombo: cartItem.productSnapshot?.isCombo || false,
-            rootComboId: cartItem.productSnapshot?.rootComboId || null,
-          };
-        });
-        dispatch(replaceCart(items));
-      } catch (cartErr) {
-        // Cart sync failed silently — combo was still added
-        console.warn("Cart re-sync failed after combo add:", cartErr);
-      }
-    } catch {
-      // error already toasted in service
+      // Build the selectedProducts list for the cart item (same as server snapshot.products)
+      const selectedProducts = child.type === "fixed"
+        ? (child.comboProducts || []).map(cp => {
+            // resolve variant from cp.variant OR from product.Variants[]
+            const resolvedVariant = cp.variant
+              || (cp.variantId && Array.isArray(cp.product?.Variants)
+                ? cp.product.Variants.find(v => String(v.id) === String(cp.variantId)) || null
+                : null);
+            return {
+              productId: cp.productId,
+              variantId: cp.variantId,
+              quantity: cp.quantity || 1,
+              name: cp.product?.name || null,
+              image: getProductImg(cp.product) || null,
+              variantName: resolvedVariant?.variantName || null,
+            };
+          })
+        : selections.map(sel => {
+            // look up product data from child.comboProducts
+            const cp = (child.comboProducts || []).find(c => String(c.productId) === String(sel.productId));
+            const matchedVariant = cp?.product?.Variants?.find(v => String(v.id) === String(sel.variantId))
+              || cp?.variant || null;
+            return {
+              productId: sel.productId,
+              variantId: sel.variantId,
+              quantity: sel.quantity || 1,
+              name: cp?.product?.name || null,
+              image: getProductImg(cp?.product) || null,
+              variantName: matchedVariant?.variantName || null,
+            };
+          });
+
+      // Dispatch addToCart — same as single products, instant Redux update + "Added To Cart" toast
+      dispatch(addToCart({
+        id: child.comboProducts?.[0]?.productId || selections?.[0]?.productId || null,
+        cartItemId: res?.cartItem?.id || null,
+        quantity: qty,
+        name: child.name,
+        price: parseFloat(child.comboPrice),
+        discount: 0,
+        image: child.image ? [child.image] : (currentCombo.image ? [currentCombo.image] : []),
+        variation: [],
+        selectedVariantId: null,
+        selectedVariantName: null,
+        // Combo-specific
+        isCombo: true,
+        rootComboId: currentCombo.id,
+        childComboId: child.id,
+        comboType: child.type,
+        selectedProducts,
+      }));
+
+      cogoToast.success("Combo added to cart!", { position: "top-center" });
+    } catch (err) {
+      cogoToast.error("Could not add combo to cart", { position: "top-center" });
+      console.error(err);
     }
     setAddingCart(false);
   };
@@ -476,28 +519,64 @@ const ComboDetailPage = () => {
                     </>
                   )}
 
-                  {/* Qty selector — same PDP style */}
-                  {child.type === "fixed" && (
-                    <div className="pro-details-quality" style={{ marginTop: 20 }}>
-                      <div className="cart-plus-minus">
-                        <button className="dec qtybutton" onClick={() => setQty(q => Math.max(1, q - 1))}>-</button>
-                        <input type="text" readOnly value={qty} className="cart-plus-minus-box" />
-                        <button className="inc qtybutton" onClick={() => setQty(q => q + 1)}>+</button>
+                  <div className="pdp-info__actions" style={{ marginTop: 24 }}>
+                    {/* Qty */}
+                    {child.type === "fixed" && !isInCart && (
+                      <div className="pdp-qty">
+                        <button
+                          className="pdp-qty__btn"
+                          onClick={() => setQty(q => Math.max(1, q - 1))}
+                          disabled={qty <= 1}
+                        >
+                          <svg width="14" height="2" viewBox="0 0 14 2">
+                            <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="2"/>
+                          </svg>
+                        </button>
+                        <span className="pdp-qty__count">{qty}</span>
+                        <button
+                          className="pdp-qty__btn"
+                          onClick={() => setQty(q => q + 1)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 14 14">
+                            <line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" strokeWidth="2"/>
+                            <line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" strokeWidth="2"/>
+                          </svg>
+                        </button>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Add to Cart — same PDP primary button style */}
-                  <div className="pro-details-quality" style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <div className="pro-details-cart btn-hover">
+                    {/* Cart / Go to cart / View Cart */}
+                    {isInCart ? (
+                      <Link to={process.env.PUBLIC_URL + "/cart"} className="pdp-btn pdp-btn--success" style={{ width: "100%" }}>
+                        View Cart
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 6 }}>
+                          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                      </Link>
+                    ) : (
                       <button
+                        className={clsx("pdp-btn", (fixedOos || (child.type === "mix_match" && !canAdd)) ? "pdp-btn--disabled" : "pdp-btn--primary")}
                         onClick={handleAddToCart}
                         disabled={addingCart || fixedOos || (child.type === "mix_match" && !canAdd)}
-                        style={{ opacity: addingCart || fixedOos ? 0.65 : 1, cursor: fixedOos ? "not-allowed" : "pointer" }}
+                        style={{ width: "100%" }}
                       >
-                        {addingCart ? "Adding…" : fixedOos ? "Out of Stock" : child.type === "mix_match" && !canAdd ? `Add ${minQty - totalSel} more to unlock` : "Add to Cart"}
+                        {addingCart ? (
+                          "Adding…"
+                        ) : fixedOos ? (
+                          "Out of Stock"
+                        ) : child.type === "mix_match" && !canAdd ? (
+                          `Add ${minQty - totalSel} more to unlock`
+                        ) : (
+                          <>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8 }}>
+                              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                            </svg>
+                            Add to Cart
+                          </>
+                        )}
                       </button>
-                    </div>
+                    )}
                   </div>
 
                   {/* Stock warning */}
@@ -507,12 +586,171 @@ const ComboDetailPage = () => {
                     </div>
                   )}
 
+                  <div className="pdp-info__divider" style={{ height: "1px", background: "#e5e7eb", margin: "22px 0" }} />
+
+                  {/* Share section */}
+                  <div className="pdp-info__share">
+                    <span className="pdp-info__share-label">Share:</span>
+                    <div className="pdp-info__share-links">
+                      <a
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                        target="_blank" rel="noopener noreferrer" title="Facebook"
+                        className="pdp-share-btn pdp-share-btn--fb"
+                      >
+                        <i className="fa fa-facebook" />
+                      </a>
+                      <a
+                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(child.name + " " + window.location.href)}`}
+                        target="_blank" rel="noopener noreferrer" title="X / Twitter"
+                        className="pdp-share-btn pdp-share-btn--x"
+                      >
+                        <Icon icon="ri:twitter-x-fill" width="15" height="15" />
+                      </a>
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(child.name + " " + window.location.href)}`}
+                        target="_blank" rel="noopener noreferrer" title="WhatsApp"
+                        className="pdp-share-btn pdp-share-btn--wa"
+                      >
+                        <i className="fa fa-whatsapp" />
+                      </a>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
           </div>
         </div>
       </LayoutOne>
+      <style>{`
+        /* ── Actions row ── */
+        .pdp-info__actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        /* ── Qty stepper ── */
+        .pdp-qty {
+          display: inline-flex;
+          align-items: center;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          overflow: hidden;
+          background: #fff;
+          height: 46px;
+        }
+        .pdp-qty__btn {
+          width: 40px;
+          height: 100%;
+          border: none;
+          background: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #4b5563;
+          transition: all 0.15s;
+          flex-shrink: 0;
+        }
+        .pdp-qty__btn:hover:not(:disabled) { background: #f3f4f6; color: #db1a5d; }
+        .pdp-qty__btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .pdp-qty__count {
+          min-width: 40px;
+          text-align: center;
+          font-size: 15px;
+          font-weight: 600;
+          color: #111827;
+          border-left: 1px solid #d1d5db;
+          border-right: 1px solid #d1d5db;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        /* ── Buttons ── */
+        .pdp-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          height: 46px;
+          padding: 0 26px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          border: none;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          text-decoration: none;
+          white-space: nowrap;
+          font-family: inherit;
+        }
+        .pdp-btn--primary {
+          background: #db1a5d;
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(219,26,93,0.2);
+          flex: 1;
+          min-width: 0;
+        }
+        .pdp-btn--primary:hover {
+          background: #be1249;
+          box-shadow: 0 6px 16px rgba(219,26,93,0.3);
+          transform: translateY(-1px);
+          color: #fff;
+        }
+        .pdp-btn--success {
+          background: #111827;
+          color: #fff;
+          flex: 1;
+          min-width: 0;
+        }
+        .pdp-btn--success:hover { background: #1f2937; color: #fff; transform: translateY(-1px); }
+        .pdp-btn--disabled {
+          background: #e5e7eb;
+          color: #9ca3af;
+          cursor: not-allowed;
+          flex: 1;
+          min-width: 0;
+        }
+
+        /* ── Share ── */
+        .pdp-info__share {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .pdp-info__share-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: #9ca3af;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .pdp-info__share-links {
+          display: flex;
+          gap: 8px;
+        }
+        .pdp-share-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 34px;
+          height: 34px;
+          border-radius: 6px;
+          color: #fff;
+          font-size: 14px;
+          text-decoration: none;
+          transition: all 0.15s ease;
+        }
+        .pdp-share-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.12); }
+        .pdp-share-btn--fb { background: #1877f2; }
+        .pdp-share-btn--x  { background: #1f2937; }
+        .pdp-share-btn--wa { background: #25d366; }
+      `}</style>
     </Fragment>
   );
 };
