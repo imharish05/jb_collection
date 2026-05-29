@@ -26,6 +26,7 @@ import reviewReducer from "./slices/review-slice";
 import testimonialReducer from "./slices/testimonialSlice";
 import contactReducer from "./slices/contactSlice";
 import comboReducer from "./slices/combo-slice";   // ← new
+import checkoutReducer from "./slices/checkout-slice";
 
 const persistConfig = {
     key: "flone",
@@ -39,6 +40,7 @@ const appReducer = combineReducers({
     headerSlider:  sliderReducer,
     product:       productReducer,
     cart:          cartReducer,
+    checkout:      checkoutReducer,
     compare:       compareReducer,
     wishlist:      wishlistReducer,
     currency:      currencyReducer,

@@ -1,6 +1,7 @@
-const { Product, Variant, Category, Brand, SubCategory, Combo } = require("../models");
+const { Product, Variant, Category, Brand, SubCategory, Combo, ChildComboProduct } = require("../models");
 const { Op }    = require("sequelize");
 const sequelize = require("../config/database");
+const { syncProductVariants } = require("./variantController");
 
 // ─── shared include for GET queries ─────────────────────────────────────────
 const PRODUCT_INCLUDE = [

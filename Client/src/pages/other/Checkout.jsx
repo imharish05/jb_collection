@@ -10,6 +10,7 @@ import {
 } from "../../store/services/addressService";
 import { setActiveAddress } from "../../store/slices/addressSlice";
 import { deleteAllFromCart, replaceCart } from "../../store/slices/cart-slice";
+import { clearCheckout, replaceCheckoutItems } from "../../store/slices/checkout-slice";
 import { getDiscountPrice } from "../../helpers/product";
 import { getImgUrl } from "../../helpers/imageUrl";
 import api from "../../api/axios";
@@ -79,16 +80,29 @@ const Checkout = () => {
 
   const currency = useSelector((s) => s.currency || { currencyRate: 1 });
   const { cartItems } = useSelector((s) => s.cart);
+  const { items: checkoutItems, source: checkoutSource, expiresAt: checkoutExpiresAt } = useSelector((s) => s.checkout);
   const { addresses, activeAddressId, loading: addrLoading } = useSelector(
     (s) => s.address
   );
   const user = useSelector((s) => s.auth?.user);
 
+  /* ── Route & Session Protection ── */
+  useEffect(() => {
+    if (!checkoutItems || checkoutItems.length === 0) {
+      cogoToast.warn("Your checkout session is empty.", { position: "top-center" });
+      navigate(`${process.env.PUBLIC_URL}/cart`);
+    } else if (checkoutExpiresAt && Date.now() > checkoutExpiresAt) {
+      cogoToast.error("Your checkout session has expired.", { position: "top-center" });
+      dispatch(clearCheckout());
+      navigate(`${process.env.PUBLIC_URL}/cart`);
+    }
+  }, [checkoutItems, checkoutExpiresAt, navigate, dispatch]);
+
   /* ── Pricing (passed from Cart or recomputed) ──────────────────────────── */
   const [pricing] = useState(() => {
     if (navState) return navState;
     let sub = 0;
-    cartItems.forEach((item) => {
+    (checkoutItems || []).forEach((item) => {
       // item.price = final salesPrice from backend — no discount calculation
       sub += parseFloat(item.price || 0) * (currency.currencyRate || 1) * item.quantity;
     });
@@ -121,6 +135,75 @@ const Checkout = () => {
   useEffect(() => {
     if (user?.id) dispatch(fetchAddresses());
   }, [user?.id, dispatch]);
+
+  /* ── Mount-time inventory & price revalidation ── */
+  useEffect(() => {
+    if (!checkoutItems || checkoutItems.length === 0) return;
+
+    const revalidateCheckoutOnMount = async () => {
+      try {
+        const revalPayload = {
+          items: checkoutItems.map(item => ({
+            cartItemId: item.cartItemId,
+            productId: item.id,
+            selectedVariantId: item.selectedVariantId || null,
+            quantity: item.quantity,
+            name: item.name,
+            selectedVariantName: item.selectedVariantName || null,
+            isCombo: item.isCombo || false,
+            childComboId: item.childComboId || null,
+            selectedProducts: item.selectedProducts || null,
+          })),
+        };
+        const revalRes = await api.post("/cart/revalidate", revalPayload);
+        const { hasChanges, items: revalResults } = revalRes.data;
+
+        if (hasChanges) {
+          const blockers = revalResults.filter(r =>
+            r.adjustedQty === 0 && ["OOS", "Discontinued", "Unavailable"].includes(r.status)
+          );
+
+          const updatedCheckout = checkoutItems.map(item => {
+            const result = revalResults.find(r => r.cartItemId === item.cartItemId);
+            if (!result || result.status === "OK") return item;
+            if (result.adjustedQty === 0) return null;
+            return { ...item, quantity: result.adjustedQty };
+          }).filter(Boolean);
+          dispatch(replaceCheckoutItems(updatedCheckout));
+
+          if (checkoutSource === "cart") {
+            const updatedCart = cartItems.map(item => {
+              const result = revalResults.find(r => r.cartItemId === item.cartItemId);
+              if (!result || result.status === "OK") return item;
+              if (result.adjustedQty === 0) return null;
+              return { ...item, quantity: result.adjustedQty };
+            }).filter(Boolean);
+            dispatch(replaceCart(updatedCart));
+          }
+
+          if (blockers.length > 0) {
+            cogoToast.error(
+              "Some items in your order are no longer available. Redirecting to cart...",
+              { position: "top-center" }
+            );
+            setTimeout(() => {
+              navigate(`${process.env.PUBLIC_URL}/cart`);
+            }, 2000);
+          } else {
+            cogoToast.warn(
+              "Some quantities in your order were adjusted due to stock changes.",
+              { position: "top-center" }
+            );
+          }
+        }
+      } catch (err) {
+        console.warn("Mount-time checkout revalidation failed:", err);
+      }
+    };
+
+    revalidateCheckoutOnMount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── Auto-select default/first address ────────────────────────────────── */
   useEffect(() => {
@@ -198,7 +281,7 @@ const Checkout = () => {
     // ── Pre-order stock revalidation ──────────────────────────────────────
     try {
       const revalPayload = {
-        items: cartItems.map(item => ({
+        items: checkoutItems.map(item => ({
           cartItemId: item.cartItemId,
           productId: item.id,
           selectedVariantId: item.selectedVariantId || null,
@@ -217,22 +300,35 @@ const Checkout = () => {
         const blockers = revalResults.filter(r =>
           r.adjustedQty === 0 && ["OOS", "Discontinued", "Unavailable"].includes(r.status)
         );
-        const updatedCart = cartItems.map(item => {
+
+        // Update active checkout session items in Redux
+        const updatedCheckout = checkoutItems.map(item => {
           const result = revalResults.find(r => r.cartItemId === item.cartItemId);
           if (!result || result.status === "OK") return item;
           if (result.adjustedQty === 0) return null;
           return { ...item, quantity: result.adjustedQty };
         }).filter(Boolean);
-        dispatch(replaceCart(updatedCart));
+        dispatch(replaceCheckoutItems(updatedCheckout));
+
+        // If checkout source was cart, update the cart too
+        if (checkoutSource === "cart") {
+          const updatedCart = cartItems.map(item => {
+            const result = revalResults.find(r => r.cartItemId === item.cartItemId);
+            if (!result || result.status === "OK") return item;
+            if (result.adjustedQty === 0) return null;
+            return { ...item, quantity: result.adjustedQty };
+          }).filter(Boolean);
+          dispatch(replaceCart(updatedCart));
+        }
 
         if (blockers.length > 0) {
           cogoToast.error(
-            "Some items are no longer available. Please review your cart.",
+            "Some items are no longer available. Please review your order.",
             { position: "top-center" }
           );
         } else {
           cogoToast.warn(
-            "Some quantities were adjusted due to stock changes. Please review your cart.",
+            "Some quantities were adjusted due to stock changes. Please review your order.",
             { position: "top-center" }
           );
         }
@@ -247,7 +343,7 @@ const Checkout = () => {
     setPlacing(true);
     try {
       const payload = {
-        items: cartItems.map((item) => ({
+        items: checkoutItems.map((item) => ({
           productId: item.id,
           selectedVariantId: item.selectedVariantId || null,
           quantity: item.quantity,
@@ -270,7 +366,10 @@ const Checkout = () => {
       if (paymentMethod !== "cod") {
         initRazorpayPayment(id);
       } else {
-        dispatch(deleteAllFromCart());
+        if (checkoutSource === "cart") {
+          dispatch(deleteAllFromCart());
+        }
+        dispatch(clearCheckout());
         setTimeout(() => {
           navigate(`/order-confirmation`, {
             replace: true,
@@ -279,7 +378,7 @@ const Checkout = () => {
               selectedShippingAddr,
               billingAddress: selectedBillingAddr,
               paymentMethod,
-              cartItems,
+              cartItems: checkoutItems,
             },
           });
         }, 1000);
@@ -336,7 +435,10 @@ const Checkout = () => {
 
             if (verifyRes.data.success) {
               cogoToast.success("Payment successful!", { position: "top-center" });
-              dispatch(deleteAllFromCart());
+              if (checkoutSource === "cart") {
+                dispatch(deleteAllFromCart());
+              }
+              dispatch(clearCheckout());
               setTimeout(() => {
                 navigate(`/order-confirmation`, {
                   replace: true,
@@ -345,7 +447,7 @@ const Checkout = () => {
                     selectedShippingAddr,
                     billingAddress: selectedBillingAddr,
                     paymentMethod,
-                    cartItems,
+                    cartItems: checkoutItems,
                   },
                 });
               }, 1500);
@@ -893,9 +995,9 @@ const Checkout = () => {
                     {/* Items */}
                     <div className="kco-review-section">
                       <div className="kco-review-section-title" style={{ marginBottom: 12 }}>
-                        🛍 Items ({cartItems.length})
+                        🛍 Items ({checkoutItems.length})
                       </div>
-                      {cartItems.map((item) => {
+                      {checkoutItems.map((item) => {
                         const price = parseFloat(item.price || 0);
                         return (
                           <div key={item.cartItemId} className="kco-review-item">
@@ -959,13 +1061,13 @@ const Checkout = () => {
                   <h3 className="kco-price-title">
                     Order Summary
                     <span className="kco-price-title-count">
-                      {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
+                      {checkoutItems.length} {checkoutItems.length === 1 ? "item" : "items"}
                     </span>
                   </h3>
 
                   {/* ── Item Cards ── */}
                   <div className="kco-item-list">
-                    {cartItems.map((item) => {
+                    {checkoutItems.map((item) => {
                       const price = parseFloat(item.price || 0);
                       const mrp   = parseFloat(item.selectedVariant?.mrp || item.variation?.[0]?.mrp || 0);
                       const hasMrp = mrp > 0 && mrp > price;

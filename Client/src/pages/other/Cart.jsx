@@ -16,6 +16,7 @@ import {
 import { fetchAddresses } from "../../store/services/addressService";
 import { setActiveAddress } from "../../store/slices/addressSlice";
 import { replaceCart } from "../../store/slices/cart-slice";
+import { createCheckoutFromCart } from "../../store/slices/checkout-slice";
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
 import "./Cart.css";
@@ -748,7 +749,8 @@ const Cart = () => {
                   {/* Checkout Button */}
                   <button
                     className="kg-checkout-btn"
-                    onClick={() =>
+                    onClick={() => {
+                      dispatch(createCheckoutFromCart(cartItems));
                       navigate(process.env.PUBLIC_URL + "/checkout", {
                         state: {
                           subtotal,
@@ -757,8 +759,8 @@ const Cart = () => {
                           couponCode: null,
                           grandTotal,
                         },
-                      })
-                    }
+                      });
+                    }}
                   >
                     Proceed to Checkout →
                   </button>

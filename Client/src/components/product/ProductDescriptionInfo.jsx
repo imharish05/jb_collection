@@ -1,8 +1,10 @@
 import PropTypes from "prop-types";
-import React, { Fragment, useState, useMemo, useEffect } from "react";
+import React, { Fragment, useState, useMemo, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { addToWishlistService, addToCartService, addToCartSilentService } from "../../store/services";
 import { useDispatch, useSelector } from "react-redux";
+import { v4 as uuidv4 } from "uuid";
+import { createBuyNowCheckout, replaceCheckoutItems } from "../../store/slices/checkout-slice";
 import { getProductCartQuantity } from "../../helpers/product";
 import Rating from "./sub-components/ProductRating";
 import cogoToast from "cogo-toast";
@@ -216,8 +218,8 @@ function buildInitialSelections(activeVariants) {
   const allSingle = keys.length > 0 && keys.every(k => oMap[k].size === 1);
   if (allSingle) return Object.fromEntries(keys.map(k => [k, [...oMap[k]][0]]));
 
-  // Pick first in-stock variant; fallback to first overall
-  const target = activeVariants.find(v => Number(v.stock ?? 0) > 0) || activeVariants[0];
+  // Always pick the very first active variant automatically
+  const target = activeVariants[0];
   return Object.fromEntries(
     safeAttrs(target.attributes)
       .filter(a => a.key && a.value && a.key !== "Custom Note")
@@ -397,6 +399,8 @@ const ProductDescriptionInfo = ({
   const allProducts = useSelector((state) => state.product.products || []);
   const cartItemsFromStore = useSelector((state) => state.cart.cartItems);
   const cartItems = cartItemsFromStore || cartItemsProp || [];
+  // Read current checkout session to support quantity merging on repeated Buy Now
+  const checkoutSession = useSelector((state) => state.checkout);
 
   // Real-time inventory sync & polling
   const [localProduct, setLocalProduct] = useState(product);
@@ -416,7 +420,7 @@ const ProductDescriptionInfo = ({
             res.data.stockStatus !== localProduct.stockStatus ||
             JSON.stringify(res.data.Variants || []) !== JSON.stringify(localProduct.Variants || []);
           if (changed) {
-            cogoToast.info("Inventory updated in real-time!", { position: "top-center" });
+            // cogoToast.info("Inventory updated in real-time!", { position: "top-center" });
             setLocalProduct(res.data);
           }
         }
@@ -457,6 +461,25 @@ const ProductDescriptionInfo = ({
     hasNewVar ? buildInitialSelections(activeVariants) : {}
   );
 
+  // Sync selections when product ID changes, or when activeVariants loads for the first time
+  const lastProductIdRef = useRef(null);
+  const wasEmptyRef = useRef(true);
+
+  useEffect(() => {
+    const idChanged = lastProductIdRef.current !== localProduct.id;
+    const justLoaded = wasEmptyRef.current && activeVariants.length > 0;
+
+    if (idChanged || justLoaded) {
+      if (hasNewVar && activeVariants.length > 0) {
+        setSelections(buildInitialSelections(activeVariants));
+      } else {
+        setSelections({});
+      }
+      lastProductIdRef.current = localProduct.id;
+      wasEmptyRef.current = activeVariants.length === 0;
+    }
+  }, [localProduct.id, activeVariants, hasNewVar]);
+
   // Memoize compat/OOS maps for ALL attribute keys in a single pass per render
   const { compatMap, oosMap } = useMemo(
     () => buildAvailabilityMaps(variantIndex, selections, attrKeys),
@@ -469,13 +492,14 @@ const ProductDescriptionInfo = ({
     [selections, variantIndex, hasNewVar, attrKeys]
   );
 
-  // Notify parent of auto-selected variant image on mount
+  // Notify parent of selected variant image when it changes
+  const lastImageRef = useRef(null);
   useEffect(() => {
-    if (onVariantImageChange && selectedVariant?.image) {
-      onVariantImageChange(selectedVariant.image);
+    if (onVariantImageChange && selectedVariant?.image !== lastImageRef.current) {
+      onVariantImageChange(selectedVariant?.image || null);
+      lastImageRef.current = selectedVariant?.image || null;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedVariant, onVariantImageChange]);
 
   const customNoteVariant = useMemo(() =>
     hasNewVar ? activeVariants.find(v => safeAttrs(v.attributes).every(a => a.key === "Custom Note")) : null,
@@ -545,6 +569,8 @@ const ProductDescriptionInfo = ({
   const [productStock, setProductStock] = useState(hasOldVar ? localProduct.variation[0].size[0].stock : localProduct.stock ?? 10);
   const [quantityCount, setQuantityCount] = useState(1);
   const [errors, setErrors] = useState({});
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
 
   const effectiveStock = selectedVariant ? Number(selectedVariant.stock ?? 0) : productStock;
 
@@ -634,66 +660,123 @@ const ProductDescriptionInfo = ({
     return Object.keys(next).length === 0;
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    if (isAddingToCart || isBuyingNow) return; // double-click protection
     if (!isAuthenticated) {
       cogoToast.warn("Please login to add items to cart", { position: "top-center" });
       redirectToLogin();
       return;
     }
     if (!validateCart()) return;
-    let variantColor = selectedProductColor || null;
-    let variantSize = selectedProductSize || null;
-    if (selectedVariant) {
-      safeAttrs(selectedVariant.attributes).forEach(a => {
-        if (!a.key || !a.value) return;
-        const k = normalKey(a.key);
-        if (k === "Colour") variantColor = a.value;
-        if (k === "Size") variantSize = a.value;
+    
+    setIsAddingToCart(true);
+    try {
+      let variantColor = selectedProductColor || null;
+      let variantSize = selectedProductSize || null;
+      if (selectedVariant) {
+        safeAttrs(selectedVariant.attributes).forEach(a => {
+          if (!a.key || !a.value) return;
+          const k = normalKey(a.key);
+          if (k === "Colour") variantColor = a.value;
+          if (k === "Size") variantSize = a.value;
+        });
+      }
+      await addToCartService(dispatch, {
+        ...localProduct,
+        selectedVariantId: selectedVariant?.id || null,
+        selectedVariantName: selectedVariant?.variantName || null,
+        selectedProductColor: variantColor,
+        selectedProductSize: variantSize,
+        price: selectedVariant ? parseFloat(selectedVariant.salesPrice) : (localProduct.price || 0),
+        quantity: quantityCount,
       });
+    } catch (err) {
+      console.error("Failed to add to cart:", err);
+    } finally {
+      setIsAddingToCart(false);
     }
-    addToCartService(dispatch, {
-      ...localProduct,
-      selectedVariantId: selectedVariant?.id || null,
-      selectedVariantName: selectedVariant?.variantName || null,
-      selectedProductColor: variantColor,
-      selectedProductSize: variantSize,
-      price: selectedVariant ? parseFloat(selectedVariant.salesPrice) : (localProduct.price || 0),
-      quantity: quantityCount,
-    });
   };
 
   const handleBuyNow = async () => {
+    if (isAddingToCart || isBuyingNow) return; // double-click protection
     if (!isAuthenticated) {
       cogoToast.warn("Please login to buy items", { position: "top-center" });
       redirectToLogin();
       return;
     }
-    if (productCartQty > 0) {
-      navigate("/cart");
-      return;
-    }
     if (!validateCart()) return;
-    let variantColor = selectedProductColor || null;
-    let variantSize = selectedProductSize || null;
-    if (selectedVariant) {
-      safeAttrs(selectedVariant.attributes).forEach(a => {
-        if (!a.key || !a.value) return;
-        const k = normalKey(a.key);
-        if (k === "Colour") variantColor = a.value;
-        if (k === "Size") variantSize = a.value;
-      });
-    }
-    const success = await addToCartSilentService(dispatch, {
-      ...localProduct,
-      selectedVariantId: selectedVariant?.id || null,
-      selectedVariantName: selectedVariant?.variantName || null,
-      selectedProductColor: variantColor,
-      selectedProductSize: variantSize,
-      price: selectedVariant ? parseFloat(selectedVariant.salesPrice) : (localProduct.price || 0),
-      quantity: quantityCount,
-    });
-    if (success) {
-      navigate("/cart");
+
+    setIsBuyingNow(true);
+    try {
+      let variantColor = selectedProductColor || null;
+      let variantSize = selectedProductSize || null;
+      if (selectedVariant) {
+        safeAttrs(selectedVariant.attributes).forEach(a => {
+          if (!a.key || !a.value) return;
+          const k = normalKey(a.key);
+          if (k === "Colour") variantColor = a.value;
+          if (k === "Size") variantSize = a.value;
+        });
+      }
+
+      const resolvedStock = selectedVariant ? Number(selectedVariant.stock ?? 0) : Number(localProduct.stock ?? 0);
+      const resolvedPrice = selectedVariant ? parseFloat(selectedVariant.salesPrice) : (localProduct.price || 0);
+      const selectedVariantId = selectedVariant?.id || null;
+
+      // ── Quantity Merge: if the same product+variant is already in an active
+      //    Buy Now session, just update the quantity instead of creating a new session.
+      const existingSession = checkoutSession;
+      const isActiveBuyNow =
+        existingSession?.source === "buy_now" &&
+        Array.isArray(existingSession.items) &&
+        existingSession.items.length === 1 &&
+        existingSession.expiresAt &&
+        Date.now() < existingSession.expiresAt;
+
+      if (isActiveBuyNow) {
+        const existing = existingSession.items[0];
+        const sameProduct = String(existing.id) === String(localProduct.id);
+        const sameVariant = existing.selectedVariantId === null
+          ? selectedVariantId === null
+          : Number(existing.selectedVariantId) === Number(selectedVariantId);
+
+        if (sameProduct && sameVariant) {
+          // Same item — accumulate quantity, capped at available stock
+          const newQty = Math.min(existing.quantity + quantityCount, resolvedStock);
+          const merged = { ...existing, quantity: newQty };
+          dispatch(replaceCheckoutItems([merged]));
+          cogoToast.success(`Quantity updated to ${newQty}. Going to checkout…`, { position: "top-center" });
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          navigate(`${process.env.PUBLIC_URL}/checkout`);
+          return;
+        }
+      }
+
+      // ── Fresh Buy Now session (different item or no active session) ──
+      const buyNowItem = {
+        id: localProduct.id,
+        cartItemId: "buynow-" + uuidv4(),
+        quantity: quantityCount,
+        selectedProductColor: variantColor,
+        selectedProductSize: variantSize,
+        selectedVariantId,
+        selectedVariantName: selectedVariant?.variantName || null,
+        selectedVariant: selectedVariant || null,
+        name: localProduct.name,
+        price: resolvedPrice,
+        discount: selectedVariant ? 0 : (localProduct.discount || 0),
+        image: localProduct.image || [],
+        variation: localProduct.variation || [],
+        stock: resolvedStock,
+        Variants: localProduct.Variants || [],
+      };
+
+      dispatch(createBuyNowCheckout(buyNowItem));
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      navigate(`${process.env.PUBLIC_URL}/checkout`);
+    } catch (err) {
+      console.error("Failed to execute Buy Now:", err);
+      setIsBuyingNow(false);
     }
   };
 
@@ -851,7 +934,7 @@ const ProductDescriptionInfo = ({
       <div className="pdp-info__divider" />
 
       {/* Stock status display */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+      {/* <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <span className={`status-pill ${stockState.badgeClass}`}>
           {stockState.label}
         </span>
@@ -860,7 +943,7 @@ const ProductDescriptionInfo = ({
             <span>🚚</span> Delivered in 3–5 business days
           </span>
         )}
-      </div>
+      </div> */}
 
       {stockState.message && (
         <div style={{ 
@@ -984,33 +1067,53 @@ const ProductDescriptionInfo = ({
                   </Link>
                 ) : (
                   <button
-                    className="pdp-btn pdp-btn--primary"
+                    className={`pdp-btn pdp-btn--primary${isAddingToCart ? " is-loading" : ""}`}
                     onClick={handleAddToCart}
                     disabled={
-                      isAuthenticated && 
-                      productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock)
+                      isAddingToCart ||
+                      isBuyingNow ||
+                      (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))
                     }
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                    </svg>
-                    Add to Cart
+                    {isAddingToCart ? (
+                      <>
+                        <span className="pdp-btn-spinner" />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                        </svg>
+                        Add to Cart
+                      </>
+                    )}
                   </button>
                 )}
 
                 <button
-                  className="pdp-btn pdp-btn--buy"
+                  className={`pdp-btn pdp-btn--buy${isBuyingNow ? " is-loading" : ""}`}
                   onClick={handleBuyNow}
                   disabled={
-                    isAuthenticated && 
-                    productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock)
+                    isAddingToCart ||
+                    isBuyingNow ||
+                    (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))
                   }
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
-                  Buy Now
+                  {isBuyingNow ? (
+                    <>
+                      <span className="pdp-btn-spinner" />
+                      Going to Checkout...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                      </svg>
+                      Buy Now
+                    </>
+                  )}
                 </button>
               </>
             ) : (
@@ -1544,6 +1647,33 @@ const ProductDescriptionInfo = ({
           background: #fdf2f5;
           color: #db1a5d;
           border-color: #fbcfe8;
+        }
+        .pdp-btn--primary:disabled {
+          background: #e5e7eb;
+          color: #9ca3af;
+          box-shadow: none;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        /* ── Loading spinner for buttons ── */
+        @keyframes pdp-spin {
+          to { transform: rotate(360deg); }
+        }
+        .pdp-btn-spinner {
+          display: inline-block;
+          width: 15px;
+          height: 15px;
+          border: 2px solid rgba(255,255,255,0.35);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: pdp-spin 0.65s linear infinite;
+          flex-shrink: 0;
+        }
+        .pdp-btn.is-loading {
+          opacity: 0.85;
+          cursor: not-allowed;
+          pointer-events: none;
         }
 
         /* ── Share ── */
