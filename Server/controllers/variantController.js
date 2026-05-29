@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const Variant = require("../models/Variant");
 const Product = require("../models/Product");
+const ChildComboProduct = require("../models/ChildComboProduct");
 
 const generateSku = () =>
   `KMV-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
@@ -272,6 +273,10 @@ const remove = async (req, res) => {
     const variant = await Variant.findByPk(req.params.id);
     if (!variant) return res.status(404).json({ message: "Not found" });
     const productId = variant.productId;
+
+    // Clean up combo associations
+    await ChildComboProduct.destroy({ where: { variantId: variant.id } });
+
     await variant.destroy();
     await syncProductVariants(productId);
     res.json({ message: "Deleted" });

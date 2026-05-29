@@ -1,4 +1,4 @@
-const { Product, Variant, Category, Brand, SubCategory, Combo, ChildComboProduct } = require("../models");
+const { Product, Variant, Category, Brand, SubCategory, Combo, ChildComboProduct, CartItem, WishlistItem, Review } = require("../models");
 const { Op }    = require("sequelize");
 const sequelize = require("../config/database");
 const { syncProductVariants } = require("./variantController");
@@ -265,6 +265,20 @@ const updateProduct = async (req, res, next) => {
 
     // replace variants if new ones supplied
     if (parsedVariants) {
+      // ── MAPPING COMBO VARIANTS ───────────────────────────────────────────
+      const oldVariants = await Variant.findAll({ where: { productId: product.id } });
+      const oldVariantNameMap = new Map();
+      oldVariants.forEach(ov => {
+        if (ov.id && ov.variantName) {
+          oldVariantNameMap.set(ov.id, ov.variantName);
+        }
+      });
+
+      const affectedComboProds = await ChildComboProduct.findAll({
+        where: { productId: product.id }
+      });
+      // ─────────────────────────────────────────────────────────────────────
+
       await Variant.destroy({ where: { productId: product.id } });
       for (let i = 0; i < parsedVariants.length; i++) {
         const v = parsedVariants[i];
@@ -283,6 +297,31 @@ const updateProduct = async (req, res, next) => {
           image:       vImage,
         });
       }
+
+      // ── RESOLVING COMBO VARIANTS MAPPING ──────────────────────────────────
+      if (affectedComboProds.length > 0) {
+        const newVariants = await Variant.findAll({ where: { productId: product.id } });
+        const newVariantIdMap = new Map();
+        newVariants.forEach(nv => {
+          if (nv.variantName && nv.id) {
+            newVariantIdMap.set(nv.variantName, nv.id);
+          }
+        });
+
+        for (const cp of affectedComboProds) {
+          if (cp.variantId) {
+            const oldName = oldVariantNameMap.get(cp.variantId);
+            const newId = oldName ? newVariantIdMap.get(oldName) : null;
+            if (newId) {
+              await cp.update({ variantId: newId });
+            } else {
+              // The variant was deleted, so clean it up from the combo
+              await cp.destroy();
+            }
+          }
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
     }
 
     const fresh = await Product.findByPk(product.id, { include: PRODUCT_INCLUDE });
@@ -299,6 +338,16 @@ const deleteProduct = async (req, res, next) => {
     const product = await Product.findByPk(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
     await product.update({ isActive: false });
+
+    // Clean up combo associations, variants, cart items, wishlist entries, and reviews
+    await Promise.all([
+      ChildComboProduct.destroy({ where: { productId: product.id } }),
+      Variant.destroy({ where: { productId: product.id } }),
+      CartItem.destroy({ where: { productId: product.id } }),
+      WishlistItem.destroy({ where: { productId: product.id } }),
+      Review.destroy({ where: { productId: product.id } })
+    ]);
+
     return res.json({ message: "Product deleted", id: product.id });
   } catch (err) {
     next(err);
