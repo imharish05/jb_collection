@@ -1,17 +1,68 @@
-import { useState, useEffect } from 'react';
-import styles from '../Dashboard/Dashboard.module.css';
+import { useState, useEffect, useMemo } from 'react';
+import tableStyles from '../Dashboard/Dashboard.module.css';
+import styles from './DataTable.module.css';
 
-export default function DataTable({ columns, initialRows = [], renderRow, loading = false }) {
+const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
+function getPageNumbers(current, total) {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  const pages = new Set([1, total, current, current - 1, current + 1]);
+  const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+  const result = [];
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i] - sorted[i - 1] > 1) result.push('…');
+    result.push(sorted[i]);
+  }
+  return result;
+}
+
+export default function DataTable({
+  columns,
+  initialRows = [],
+  renderRow,
+  loading = false,
+  pageSize: defaultPageSize = DEFAULT_PAGE_SIZE,
+  pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+  showPageSizeSelector = true,
+}) {
   const [rows, setRows] = useState(Array.isArray(initialRows) ? initialRows : []);
   const [query, setQuery] = useState('');
+  const [pageSize, setPageSize] = useState(defaultPageSize);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     setRows(Array.isArray(initialRows) ? initialRows : []);
+    setCurrentPage(1);
   }, [initialRows]);
 
-  const filtered = rows.filter((r) =>
-    Object.values(r).join(' ').toLowerCase().includes(query.toLowerCase())
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query]);
+
+  const filtered = useMemo(
+    () =>
+      rows.filter((r) =>
+        Object.values(r).join(' ').toLowerCase().includes(query.toLowerCase())
+      ),
+    [rows, query]
   );
+
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize) || 1);
+  const page = Math.min(currentPage, totalPages);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const paginated = filtered.slice(startIndex, endIndex);
 
   const deleteRow = (id) => {
     if (window.confirm('Are you sure?')) {
@@ -19,9 +70,15 @@ export default function DataTable({ columns, initialRows = [], renderRow, loadin
     }
   };
 
+  const goToPage = (p) => {
+    setCurrentPage(Math.max(1, Math.min(p, totalPages)));
+  };
+
+  const pageNumbers = getPageNumbers(page, totalPages);
+  const showPagination = !loading && totalItems > 0;
+
   return (
     <div>
-      {/* Search Section using global classes from your CSS */}
       <div className="section-header">
         <input
           className="search-input"
@@ -29,12 +86,29 @@ export default function DataTable({ columns, initialRows = [], renderRow, loadin
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        {showPageSizeSelector && showPagination && (
+          <label className={styles.pageSizeLabel}>
+            Rows per page
+            <select
+              className={styles.pageSizeSelect}
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              {pageSizeOptions.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
-      {/* Table Wrapper matching Dashboard.module.css */}
-      
-      <div className={styles.tableCard}>
-        <table className={styles.table}>
+      <div className={tableStyles.tableCard}>
+        <table className={tableStyles.table}>
           <thead>
             <tr>
               {columns.map((col) => (
@@ -44,29 +118,77 @@ export default function DataTable({ columns, initialRows = [], renderRow, loadin
           </thead>
           <tbody>
             {loading ? (
-              /* 1. Loading State: Matches Dashboard skeleton logic */
               [1, 2, 3, 4, 5].map((i) => (
                 <tr key={i}>
                   {columns.map((_, j) => (
                     <td key={j}>
-                      <div className={styles.skeleton} />
+                      <div className={tableStyles.skeleton} />
                     </td>
                   ))}
                 </tr>
               ))
             ) : filtered.length === 0 ? (
-              /* 2. Empty State: Matches styles.emptyRow from Dashboard */
               <tr>
-                <td colSpan={columns.length} className={styles.emptyRow}>
+                <td colSpan={columns.length} className={tableStyles.emptyRow}>
                   No items found.
                 </td>
               </tr>
             ) : (
-              /* 3. Data State: Uses the provided renderRow function */
-              filtered.map((row, i) => renderRow(row, i, deleteRow))
+              paginated.map((row, i) =>
+                renderRow(row, startIndex + i, deleteRow)
+              )
             )}
           </tbody>
         </table>
+
+        {showPagination && (
+          <div className={styles.pagination}>
+            <span className={styles.paginationInfo}>
+              Showing {startIndex + 1}–{endIndex} of {totalItems}
+              {query ? ` (filtered from ${rows.length})` : ''}
+            </span>
+            <div className={styles.paginationControls}>
+              <button
+                type="button"
+                className={styles.pageBtn}
+                disabled={page <= 1}
+                onClick={() => goToPage(page - 1)}
+                aria-label="Previous page"
+              >
+                Prev
+              </button>
+              <div className={styles.pageNumbers}>
+                {pageNumbers.map((n, idx) =>
+                  n === '…' ? (
+                    <span key={`ellipsis-${idx}`} className={styles.ellipsis}>
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={n}
+                      type="button"
+                      className={`${styles.pageBtn} ${n === page ? styles.pageBtnActive : ''}`}
+                      onClick={() => goToPage(n)}
+                      aria-label={`Page ${n}`}
+                      aria-current={n === page ? 'page' : undefined}
+                    >
+                      {n}
+                    </button>
+                  )
+                )}
+              </div>
+              <button
+                type="button"
+                className={styles.pageBtn}
+                disabled={page >= totalPages}
+                onClick={() => goToPage(page + 1)}
+                aria-label="Next page"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

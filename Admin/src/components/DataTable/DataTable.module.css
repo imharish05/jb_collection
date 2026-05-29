@@ -1,105 +1,101 @@
-.container {
-  background-color: var(--bg-main);
-  min-height: 100vh;
-  padding: 48px;
-  color: var(--text-pure);
-  font-family: 'Inter', system-ui, sans-serif;
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
 }
 
-/* Typography */
-.title { font-size: 28px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.03em; }
-.subtitle { color: var(--text-body); font-size: 15px; margin-bottom: 40px; }
-
-/* Stats */
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-bottom: 40px;
+.paginationInfo {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
 }
 
-.metricCard {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 20px;
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
-.metricCard:hover {
-  border-color: var(--border-bright);
-  transform: translateY(-2px);
-  background: var(--bg-card-hover);
+.pageNumbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.metricLabel {
-  font-size: 12px;
+.pageBtn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.metricValue { font-size: 32px; font-weight: 700; margin: 8px 0; }
-.metricChange { font-size: 13px; font-weight: 600; }
-
-/* Table Section */
-.tableSection {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 20px;
-  padding: 24px;
-}
-
-.table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 8px;
-}
-
-.table th {
-  text-align: left;
-  padding: 12px;
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 600;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.tableRow {
-  transition: background 0.2s;
-}
-
-.tableRow td {
-  padding: 16px 12px;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.tableRow td:first-child { border-radius: 12px 0 0 12px; }
-.tableRow td:last-child { border-radius: 0 12px 12px 0; }
-
-.tableRow:hover td {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-/* Product Info Cell */
-.productName { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-.productId { font-size: 11px; color: var(--text-muted); font-family: monospace; }
-
-/* Price Grouping */
-.priceGroup { display: flex; flex-direction: column; }
-.salePrice { font-weight: 700; color: var(--accent-success); font-size: 15px; }
-.mrp { font-size: 12px; color: var(--text-muted); text-decoration: line-through; }
-
-/* Buttons */
-.primaryBtn {
-  background: var(--text-pure);
-  color: var(--bg-main);
-  border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.pageBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pageBtnActive {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.pageBtnActive:hover:not(:disabled) {
+  background: #1f2937;
+  border-color: #1f2937;
+  color: #fff;
+}
+
+.ellipsis {
+  min-width: 28px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  user-select: none;
+}
+
+.pageSizeLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.pageSizeSelect {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  background: #fff;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+.pageSizeSelect:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
