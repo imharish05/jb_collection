@@ -5,6 +5,43 @@ import { fetchCombos, createCombo, editCombo, removeCombo } from '../../redux/se
 import { fetchProducts } from '../../redux/services/productsService';
 import { confirmDelete } from '../../utils/sweetalert';
 
+// ── Categories-style Image Upload (matches Categories.js exactly) ─────────────
+function ImageUploadField({ label = 'Image', imageFile, preview, fileInputRef, onFileChange, onClear }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: 'span 2' }}>
+      <label style={{ fontSize: 11, fontWeight: 500, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
+      <div style={{ display: 'flex', gap: 16, marginTop: 8, alignItems: 'flex-start' }}>
+        <div
+          className={`combo-drop-zone${imageFile ? ' combo-drop-zone--active' : ''}`}
+          onClick={() => fileInputRef.current.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={onFileChange}
+          />
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 20, textAlign: 'center' }}>{imageFile ? '✅' : '📸'}</div>
+            <p style={{ fontSize: 13, color: '#666', margin: '4px 0 0' }}>
+              {imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b> or drag image</>}
+            </p>
+          </div>
+        </div>
+        {preview && (
+          <div style={{ width: 110, height: 110, borderRadius: 12, overflow: 'hidden', position: 'relative', border: '2px solid #487fff', flexShrink: 0 }}>
+            <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <button type="button" onClick={onClear}
+              style={{ position: 'absolute', top: 5, right: 5, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', color: 'white', border: 'none', cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 const IMG_URL = process.env.REACT_APP_IMG_URL;
 
 const getImg = (p) => {
@@ -217,28 +254,20 @@ export default function Combos({ showToast }) {
                 </select>
               </div>
 
-              {/* Image */}
-              <div style={field}>
-                <label style={lbl}>Combo Image</label>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <div
-                    onClick={() => fileRef.current.click()}
-                    style={{ width: 80, height: 80, border: `2px dashed ${KM.teal}`, borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#F0FAFE', flexShrink: 0 }}
-                  >
-                    <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImgChange} />
-                    <span style={{ fontSize: 20 }}>➕</span>
-                    <span style={{ fontSize: 10, color: KM.teal, fontWeight: 600, marginTop: 2 }}>Upload</span>
-                  </div>
-                  {imgPreview && (
-                    <div style={{ position: 'relative', width: 80, height: 80, borderRadius: 10, overflow: 'hidden', border: `1px solid ${KM.border}` }}>
-                      <img src={imgPreview} alt="combo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <button type="button"
-                        onClick={() => { setImgFile(null); setImgPreview(null); }}
-                        style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: 18, height: 18, cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-                    </div>
-                  )}
-                </div>
-              </div>
+              {/* Image — categories-style drop zone */}
+              <ImageUploadField
+                label="Combo Image"
+                imageFile={imgFile}
+                preview={imgPreview}
+                fileInputRef={fileRef}
+                onFileChange={handleImgChange}
+                onClear={() => {
+                  setImgFile(null);
+                  const original = editingId ? combos.find(c => c.id === editingId) : null;
+                  setImgPreview(original?.image ? getImg(original.image) : null);
+                  if (fileRef.current) fileRef.current.value = '';
+                }}
+              />
 
               {/* Product Picker */}
               <div style={{ gridColumn: 'span 2', border: `1px solid ${KM.border}`, borderRadius: 10, overflow: 'hidden' }}>
@@ -359,6 +388,29 @@ export default function Combos({ showToast }) {
           )}
         />
       )}
+
+      <style>{`
+        .combo-drop-zone {
+          flex: 1;
+          height: 110px;
+          border: 2px dashed rgba(0, 0, 0, 0.1);
+          background: rgba(0, 0, 0, 0.02);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .combo-drop-zone:hover {
+          border-color: #60a5fa;
+          background: #eff6ff;
+        }
+        .combo-drop-zone--active {
+          border-color: #45b369;
+          background: rgba(69, 179, 105, 0.05);
+        }
+      `}</style>
     </div>
   );
 }

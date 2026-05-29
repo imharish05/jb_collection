@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const Variant = require("../models/Variant");
 const Product = require("../models/Product");
+const ChildComboProduct = require("../models/ChildComboProduct");
 
 const generateSku = () =>
   `KMV-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
@@ -95,6 +96,8 @@ const syncProductVariants = async (productId) => {
       mrp: v.mrp,
       salesPrice: v.salesPrice,
       stock: v.stock,
+      stockStatus: v.stockStatus,
+      warningThreshold: v.warningThreshold,
       attributes: v.attributes || [],
       image: v.image,
       sku: v.sku,
@@ -146,7 +149,7 @@ const getByProduct = async (req, res) => {
 // applied to every generated row.
 const add = async (req, res) => {
   try {
-    const { productId, mrp, salesPrice, stock, status } = req.body;
+    const { productId, mrp, salesPrice, stock, status, stockStatus, warningThreshold } = req.body;
     const image = buildImagePath(req.file);
 
     // ── Basic validation ──────────────────────────────────────────────────
@@ -196,6 +199,8 @@ const add = async (req, res) => {
           mrp,
           salesPrice,
           stock:      stock      ?? 0,
+          stockStatus: stockStatus || null,
+          warningThreshold: warningThreshold !== undefined ? parseInt(warningThreshold) : 5,
           sku:        generateSku(),
           attributes: combo,
           status:     status     || "Active",
@@ -222,7 +227,7 @@ const update = async (req, res) => {
     const variant = await Variant.findByPk(req.params.id);
     if (!variant) return res.status(404).json({ message: "Not found" });
 
-    const { productId, variantName, mrp, salesPrice, stock, attributes, status } = req.body;
+    const { productId, variantName, mrp, salesPrice, stock, attributes, status, stockStatus, warningThreshold } = req.body;
     const oldProductId = variant.productId;
     const parsedAttributes = attributes !== undefined ? parseAttributes(attributes) : undefined;
 
@@ -239,6 +244,8 @@ const update = async (req, res) => {
       ...(mrp         !== undefined && { mrp }),
       ...(salesPrice  !== undefined && { salesPrice }),
       ...(stock       !== undefined && { stock }),
+      ...(stockStatus !== undefined && { stockStatus }),
+      ...(warningThreshold !== undefined && { warningThreshold: warningThreshold ? parseInt(warningThreshold) : 5 }),
       ...(parsedAttributes !== undefined && { attributes: parsedAttributes }),
       ...(status      !== undefined && { status }),
     };
@@ -266,10 +273,14 @@ const remove = async (req, res) => {
     const variant = await Variant.findByPk(req.params.id);
     if (!variant) return res.status(404).json({ message: "Not found" });
     const productId = variant.productId;
+
+    // Clean up combo associations
+    await ChildComboProduct.destroy({ where: { variantId: variant.id } });
+
     await variant.destroy();
     await syncProductVariants(productId);
     res.json({ message: "Deleted" });
   } catch (e) { res.status(500).json({ message: e.message }); }
 };
 
-module.exports = { getAll, getByProduct, add, update, remove };
+module.exports = { getAll, getByProduct, add, update, remove, syncProductVariants };

@@ -1,6 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState = {};
+const initialState = {
+  categories: [],
+  events: [],
+  combos: [],
+  rootCombos: [],
+  loading: false,
+};
 const navMenuSlice = createSlice({
   name: "navMenu",
   initialState,
@@ -9,8 +15,9 @@ const navMenuSlice = createSlice({
     setCategories:  (state, action) => { state.categories = action.payload; },
     setEvents:      (state, action) => { state.events     = action.payload; },
     setLoading:     (state, action) => { state.loading    = action.payload; },
+    setRootCombos:  (state, action) => { state.rootCombos = action.payload; },
   },
 });
 
-export const { setCombos, setCategories, setEvents, setLoading, resetToMockData } = navMenuSlice.actions;
+export const { setCombos, setCategories, setEvents, setLoading, setRootCombos, resetToMockData } = navMenuSlice.actions;
 export default navMenuSlice.reducer;

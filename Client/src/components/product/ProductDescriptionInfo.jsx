@@ -1,13 +1,17 @@
 import PropTypes from "prop-types";
-import React, { Fragment, useState, useMemo, useEffect } from "react";
+import React, { Fragment, useState, useMemo, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { addToWishlistService, addToCartService } from "../../store/services";
+import { addToWishlistService, addToCartService, addToCartSilentService } from "../../store/services";
 import { useDispatch, useSelector } from "react-redux";
+import { v4 as uuidv4 } from "uuid";
+import { createBuyNowCheckout, replaceCheckoutItems } from "../../store/slices/checkout-slice";
 import { getProductCartQuantity } from "../../helpers/product";
 import Rating from "./sub-components/ProductRating";
 import cogoToast from "cogo-toast";
 import { Icon } from "@iconify/react";
 import { getImgUrl } from "../../helpers/imageUrl";
+import api from "../../api/axios";
+import { getProductStockState, STOCK_STATES } from "../../helpers/productStock";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -79,41 +83,148 @@ function buildOptionMap(variants) {
   return map;
 }
 
-function compatibleValues(variants, selections, targetKey) {
+/**
+ * Build a pre-computed index: for each variant build a Map keyed by
+ * normalized attribute key/value pairs — enables O(n) compat lookups.
+ */
+function buildVariantIndex(variants) {
+  return variants.map(v => ({
+    variant: v,
+    attrMap: Object.fromEntries(
+      safeAttrs(v.attributes)
+        .filter(a => a.key && a.value && a.key !== "Custom Note")
+        .map(a => [normalKey(a.key), a.value])
+    ),
+  }));
+}
+
+/**
+ * Returns the Set of valid values for `targetKey` given current selections.
+ */
+function compatibleValues(index, selections, targetKey) {
   const compatible = new Set();
-  variants.forEach(v => {
-    const attrs = {};
-    safeAttrs(v.attributes)
-      .filter(a => a.key && a.value && a.key !== "Custom Note")
-      .forEach(a => { const k = normalKey(a.key); if (!attrs[k]) attrs[k] = []; attrs[k].push(a.value); });
+  index.forEach(({ attrMap }) => {
     const othersMatch = Object.entries(selections).every(([k, val]) => {
       if (k === targetKey || !val) return true;
-      return attrs[k] && attrs[k].includes(val);
+      return attrMap[k] === val;
     });
-    if (othersMatch && attrs[targetKey]) attrs[targetKey].forEach(val => compatible.add(val));
+    if (othersMatch && attrMap[targetKey] !== undefined) {
+      compatible.add(attrMap[targetKey]);
+    }
   });
   return compatible;
 }
 
-function findMatchingVariant(variants, selections) {
+function oosValues(index, selections, targetKey) {
+  const oos = new Set();
+  const inStock = new Set();
+  index.forEach(({ variant, attrMap }) => {
+    const othersMatch = Object.entries(selections).every(([k, val]) => {
+      if (k === targetKey || !val) return true;
+      return attrMap[k] === val;
+    });
+    if (othersMatch && attrMap[targetKey] !== undefined) {
+      const stock = Number(variant.stock ?? 0);
+      if (stock > 0) inStock.add(attrMap[targetKey]);
+      else oos.add(attrMap[targetKey]);
+    }
+  });
+  inStock.forEach(v => oos.delete(v));
+  return oos;
+}
+
+function buildAvailabilityMaps(index, selections, allKeys) {
+  const compatMap = {};
+  const oosMap = {};
+  allKeys.forEach(key => {
+    compatMap[key] = compatibleValues(index, selections, key);
+    oosMap[key] = oosValues(index, selections, key);
+  });
+  return { compatMap, oosMap };
+}
+
+/**
+ * Find the best matching variant for a given selection.
+ *
+ * Priority:
+ *  1. Exact match (all keys) that is IN STOCK
+ *  2. Exact match (all keys) regardless of stock (OOS but valid combo)
+ *  3. Highest-score partial match that is IN STOCK
+ *  4. Highest-score partial match regardless of stock
+ *
+ * This ensures we always prefer in-stock when recovering from an invalid selection.
+ */
+function findMatchingVariant(index, selections, allKeys = []) {
   const entries = Object.entries(selections).filter(([, v]) => v);
-  if (!entries.length) return variants[0] || null;
-  const exact = variants.find(v => {
-    const attrs = {};
-    safeAttrs(v.attributes).filter(a => a.key && a.value)
-      .forEach(a => { const k = normalKey(a.key); if (!attrs[k]) attrs[k] = []; attrs[k].push(a.value); });
-    return entries.every(([k, val]) => attrs[k] && attrs[k].includes(val));
+  if (!entries.length) {
+    // Return first in-stock variant, fallback to first variant
+    return index.find(({ variant }) => Number(variant.stock ?? 0) > 0)?.variant
+      || index[0]?.variant
+      || null;
+  }
+
+  const isExact = ({ attrMap }) => entries.every(([k, val]) => attrMap[k] === val);
+  const isInStock = ({ variant }) => Number(variant.stock ?? 0) > 0;
+
+  // 1. Exact + in-stock
+  const exactInStock = index.find(e => isExact(e) && isInStock(e));
+  if (exactInStock) return exactInStock.variant;
+
+  // 2. Exact (any stock)
+  const exact = index.find(e => isExact(e));
+  if (exact) return exact.variant;
+
+  // 3. Best-score + in-stock (weighted matching score based on priority/order in allKeys)
+  const getScore = ({ attrMap }) => {
+    let score = 0;
+    entries.forEach(([k, val]) => {
+      if (attrMap[k] === val) {
+        const keyIdx = allKeys.indexOf(k);
+        const weight = keyIdx > -1 ? Math.pow(10, allKeys.length - 1 - keyIdx) : 1;
+        score += weight;
+      }
+    });
+    return score;
+  };
+
+  let bestInStock = null, bestInStockScore = -1;
+  let bestAny = null, bestAnyScore = -1;
+  index.forEach(e => {
+    const s = getScore(e);
+    if (isInStock(e) && s > bestInStockScore) {
+      bestInStockScore = s;
+      bestInStock = e.variant;
+    }
+    if (s > bestAnyScore) {
+      bestAnyScore = s;
+      bestAny = e.variant;
+    }
   });
-  if (exact) return exact;
-  let best = null, bestScore = -1;
-  variants.forEach(v => {
-    const attrs = {};
-    safeAttrs(v.attributes).filter(a => a.key && a.value)
-      .forEach(a => { const k = normalKey(a.key); if (!attrs[k]) attrs[k] = []; attrs[k].push(a.value); });
-    const score = entries.filter(([k, val]) => attrs[k] && attrs[k].includes(val)).length;
-    if (score > bestScore) { bestScore = score; best = v; }
-  });
-  return best;
+  return bestInStock || bestAny;
+}
+
+/**
+ * Build the initial selections object.
+ * Prefers the first IN-STOCK variant; falls back to first variant.
+ * Auto-selects all attributes when only one option exists per key.
+ */
+function buildInitialSelections(activeVariants) {
+  if (!activeVariants.length) return {};
+
+  const oMap = buildOptionMap(activeVariants);
+  const keys = Object.keys(oMap);
+
+  // All keys have a single option → auto-select everything
+  const allSingle = keys.length > 0 && keys.every(k => oMap[k].size === 1);
+  if (allSingle) return Object.fromEntries(keys.map(k => [k, [...oMap[k]][0]]));
+
+  // Always pick the very first active variant automatically
+  const target = activeVariants[0];
+  return Object.fromEntries(
+    safeAttrs(target.attributes)
+      .filter(a => a.key && a.value && a.key !== "Custom Note")
+      .map(a => [normalKey(a.key), a.value])
+  );
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -150,7 +261,7 @@ function CustomNoteSection({ variant }) {
 const SIZE_KEYS = /^size$/i;
 const COMPACT_SIZE_VALS = /^(xs|s|sm|m|md|l|lg|xl|xxl|2xl|3xl|4xl|5xl|6xl)$/i;
 
-function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSelect }) {
+function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, oosSet, onSelect }) {
   const isColour = /colou?r/i.test(attrKey);
   const isSize   = SIZE_KEYS.test(attrKey);
   const isSingle = allValues.size === 1;
@@ -169,7 +280,11 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
       <div className={`pdp-attr-options${isColour ? " is-colour" : ""}${allCompact ? " is-size" : ""}`}>
         {[...allValues].map(val => {
           const isSelected = selectedValue === val;
-          const isDisabled = !compatibleSet.has(val);
+          // invalid = combination doesn't exist at all
+          const isInvalid  = !compatibleSet.has(val);
+          // oos = combination exists but stock = 0
+          const isOos      = !isInvalid && oosSet.has(val);
+          const isDisabled = false; // Visually styled as disabled via class, but clickable to allow selection transitions
           const hex = isColour ? toHex(val) : null;
           const isLight = LIGHT_COLORS.has(val.toLowerCase());
 
@@ -177,13 +292,14 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
             return (
               <button
                 key={val}
-                title={val}
+                title={isInvalid ? `${val} — unavailable` : isOos ? `${val} — out of stock` : val}
                 disabled={isDisabled}
-                onClick={() => !isDisabled && onSelect(isSelected ? null : val)}
-                className={`pdp-swatch${isSelected ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}${isLight ? " is-light" : ""}${isSingle ? " is-single" : ""}`}
+                onClick={() => onSelect(isSelected ? null : val)}
+                className={`pdp-swatch${isSelected ? " is-selected" : ""}${isInvalid ? " is-disabled" : ""}${isOos ? " is-oos" : ""}${isLight ? " is-light" : ""}${isSingle ? " is-single" : ""}`}
                 style={{ "--swatch-color": hex }}
               >
-                {isDisabled && <span className="pdp-swatch__cross" />}
+                {isInvalid && <span className="pdp-swatch__cross" />}
+                {isOos && !isInvalid && <span className="pdp-swatch__oos" />}
                 {isSelected && (
                   <span className="pdp-swatch__check" style={{ color: isLight ? "#333" : "#fff" }}>✓</span>
                 )}
@@ -196,11 +312,13 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
             <button
               key={val}
               disabled={isDisabled}
-              onClick={() => !isDisabled && onSelect(isSelected ? null : val)}
-              className={`${chipClass}${isSelected ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}${isSingle ? " is-single" : ""}`}
+              onClick={() => onSelect(isSelected ? null : val)}
+              title={isInvalid ? `${val} — unavailable` : isOos ? `${val} — out of stock` : val}
+              className={`${chipClass}${isSelected ? " is-selected" : ""}${isInvalid ? " is-disabled" : ""}${isOos ? " is-oos" : ""}${isSingle ? " is-single" : ""}`}
             >
-              {isDisabled && <span className="pdp-chip__line" />}
+              {isInvalid && <span className="pdp-chip__line" />}
               {val}
+              {isOos && !isInvalid && <span className="pdp-chip__oos-dot" />}
             </button>
           );
         })}
@@ -281,20 +399,57 @@ const ProductDescriptionInfo = ({
   const allProducts = useSelector((state) => state.product.products || []);
   const cartItemsFromStore = useSelector((state) => state.cart.cartItems);
   const cartItems = cartItemsFromStore || cartItemsProp || [];
+  // Read current checkout session to support quantity merging on repeated Buy Now
+  const checkoutSession = useSelector((state) => state.checkout);
+
+  // Real-time inventory sync & polling
+  const [localProduct, setLocalProduct] = useState(product);
+
+  useEffect(() => {
+    setLocalProduct(product);
+  }, [product]);
+
+  useEffect(() => {
+    let active = true;
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get(`/products/${product.id}`);
+        if (res.data && active) {
+          const changed =
+            res.data.stock !== localProduct.stock ||
+            res.data.stockStatus !== localProduct.stockStatus ||
+            JSON.stringify(res.data.Variants || []) !== JSON.stringify(localProduct.Variants || []);
+          if (changed) {
+            // cogoToast.info("Inventory updated in real-time!", { position: "top-center" });
+            setLocalProduct(res.data);
+          }
+        }
+      } catch (err) {
+        console.warn("Polling failed:", err);
+      }
+    }, 15000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [product.id, localProduct]);
 
   const currencySymbol = currency?.currencySymbol || "₹";
-  const hasNewVar = hasBackendVariants(product);
-  const hasOldVar = !hasNewVar && hasOldVariation(product);
+  const hasNewVar = hasBackendVariants(localProduct);
+  const hasOldVar = !hasNewVar && hasOldVariation(localProduct);
 
   // Only show Active variants on the client — Inactive ones are hidden from selection
   const activeVariants = useMemo(
     () => hasNewVar
-      ? (product.Variants || []).filter(v => (v.status || 'Active') === 'Active')
+      ? (localProduct.Variants || []).filter(v => (v.status || 'Active') === 'Active')
       : [],
-    [product, hasNewVar]
+    [localProduct, hasNewVar]
   );
 
   const optionMap = useMemo(() => hasNewVar ? buildOptionMap(activeVariants) : {}, [activeVariants, hasNewVar]);
+  // Pre-computed index for O(1) per-variant attribute lookups
+  const variantIndex = useMemo(() => hasNewVar ? buildVariantIndex(activeVariants) : [], [activeVariants, hasNewVar]);
   const attrKeys = useMemo(() => {
     const present = Object.keys(optionMap);
     const ordered = KEY_ORDER.filter(k => present.includes(k));
@@ -302,43 +457,49 @@ const ProductDescriptionInfo = ({
     return [...ordered, ...rest];
   }, [optionMap]);
 
-  const [selections, setSelections] = useState(() => {
-    if (!hasNewVar || !activeVariants.length) return {};
-    // Single variant → always auto-select all its attributes
-    if (activeVariants.length === 1) {
-      const first = activeVariants[0];
-      return Object.fromEntries(
-        safeAttrs(first.attributes)
-          .filter(a => a.key && a.value && a.key !== "Custom Note")
-          .map(a => [normalKey(a.key), a.value])
-      );
-    }
-    const oMap = buildOptionMap(activeVariants);
-    const keys = Object.keys(oMap);
-    // Every attribute key has only one option → auto-select all
-    const allSingle = keys.length > 0 && keys.every(k => oMap[k].size === 1);
-    if (allSingle) return Object.fromEntries(keys.map(k => [k, [...oMap[k]][0]]));
-    // Multiple variants: pre-select first variant's attributes
-    const first = activeVariants[0];
-    return Object.fromEntries(
-      safeAttrs(first.attributes)
-        .filter(a => a.key && a.value && a.key !== "Custom Note")
-        .map(a => [normalKey(a.key), a.value])
-    );
-  });
-
-  const selectedVariant = useMemo(
-    () => hasNewVar ? findMatchingVariant(activeVariants, selections) : null,
-    [selections, activeVariants, hasNewVar]
+  const [selections, setSelections] = useState(() =>
+    hasNewVar ? buildInitialSelections(activeVariants) : {}
   );
 
-  // Notify parent of auto-selected variant image on mount
+  // Sync selections when product ID changes, or when activeVariants loads for the first time
+  const lastProductIdRef = useRef(null);
+  const wasEmptyRef = useRef(true);
+
   useEffect(() => {
-    if (onVariantImageChange && selectedVariant?.image) {
-      onVariantImageChange(selectedVariant.image);
+    const idChanged = lastProductIdRef.current !== localProduct.id;
+    const justLoaded = wasEmptyRef.current && activeVariants.length > 0;
+
+    if (idChanged || justLoaded) {
+      if (hasNewVar && activeVariants.length > 0) {
+        setSelections(buildInitialSelections(activeVariants));
+      } else {
+        setSelections({});
+      }
+      lastProductIdRef.current = localProduct.id;
+      wasEmptyRef.current = activeVariants.length === 0;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [localProduct.id, activeVariants, hasNewVar]);
+
+  // Memoize compat/OOS maps for ALL attribute keys in a single pass per render
+  const { compatMap, oosMap } = useMemo(
+    () => buildAvailabilityMaps(variantIndex, selections, attrKeys),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [variantIndex, selections, attrKeys.join("|")] // attrKeys is stable shape; join avoids array-ref churn
+  );
+
+  const selectedVariant = useMemo(
+    () => hasNewVar ? findMatchingVariant(variantIndex, selections, attrKeys) : null,
+    [selections, variantIndex, hasNewVar, attrKeys]
+  );
+
+  // Notify parent of selected variant image when it changes
+  const lastImageRef = useRef(null);
+  useEffect(() => {
+    if (onVariantImageChange && selectedVariant?.image !== lastImageRef.current) {
+      onVariantImageChange(selectedVariant?.image || null);
+      lastImageRef.current = selectedVariant?.image || null;
+    }
+  }, [selectedVariant, onVariantImageChange]);
 
   const customNoteVariant = useMemo(() =>
     hasNewVar ? activeVariants.find(v => safeAttrs(v.attributes).every(a => a.key === "Custom Note")) : null,
@@ -346,50 +507,109 @@ const ProductDescriptionInfo = ({
   );
 
   const handleSelect = (key, value) => {
-    // Start with just the clicked selection (or clear if deselecting)
-    const partial = { ...selections, [key]: value };
-    if (!value) delete partial[key];
+    // Deselecting: reset to the first in-stock variant
+    if (!value) {
+      const reset = buildInitialSelections(activeVariants);
+      setSelections(reset);
+      setErrors(prev => ({ ...prev, variant: "" }));
+      if (onVariantImageChange) {
+        const v = findMatchingVariant(variantIndex, reset, attrKeys);
+        onVariantImageChange(v?.image || null);
+      }
+      return;
+    }
 
-    // Find the best-matching variant for this partial selection
-    const matched = findMatchingVariant(activeVariants, partial);
+    // ── Intelligent selection recovery ──────────────────────────────────────
+    // Strategy:
+    //  1. The newly clicked key MUST be honoured (highest priority).
+    //  2. For each other currently-selected key, keep its value if a valid
+    //     variant exists that includes BOTH the new key=value AND the old value.
+    //     If not, drop it so findMatchingVariant can recover gracefully.
+    //  3. findMatchingVariant then picks the best in-stock variant satisfying
+    //     as many of the remaining selections as possible.
 
-    // Auto-fill ALL attributes from the matched variant so nothing is left unselected
-    let next = { ...partial };
+    // Start with the mandatory new key
+    const mandatory = { [key]: value };
+
+    // For every other key currently selected, test if the value is still reachable
+    // alongside the new key choice (at least one variant satisfies both)
+    const preserved = {};
+    Object.entries(selections).forEach(([k, val]) => {
+      if (k === key || !val) return;
+      const reachable = variantIndex.some(({ attrMap }) =>
+        attrMap[key] === value && attrMap[k] === val
+      );
+      if (reachable) preserved[k] = val;
+    });
+
+    const preferred = { ...preserved, ...mandatory };
+    const matched = findMatchingVariant(variantIndex, preferred, attrKeys);
+
+    // Sync ALL keys from the matched variant (keeps the UI fully consistent)
+    const next = {};
     if (matched) {
       safeAttrs(matched.attributes)
         .filter(a => a.key && a.value && a.key !== "Custom Note")
-        .forEach(a => {
-          const k = normalKey(a.key);
-          // Only fill keys that aren't already explicitly set by the user
-          if (!next[k]) next[k] = a.value;
-        });
+        .forEach(a => { next[normalKey(a.key)] = a.value; });
+    } else {
+      // No matching variant at all — commit just the clicked key
+      Object.assign(next, selections, mandatory);
     }
 
     setSelections(next);
     setErrors(prev => ({ ...prev, variant: "" }));
     if (onVariantImageChange) {
-      const v = findMatchingVariant(activeVariants, next);
+      const v = findMatchingVariant(variantIndex, next, attrKeys);
       onVariantImageChange(v?.image || null);
     }
   };
 
-  const [selectedProductColor, setSelectedProductColor] = useState(hasOldVar ? product.variation[0].color : "");
-  const [selectedProductSize, setSelectedProductSize] = useState(hasOldVar ? product.variation[0].size[0].name : "");
-  const [productStock, setProductStock] = useState(hasOldVar ? product.variation[0].size[0].stock : product.stock ?? 10);
+  const [selectedProductColor, setSelectedProductColor] = useState(hasOldVar ? localProduct.variation[0].color : "");
+  const [selectedProductSize, setSelectedProductSize] = useState(hasOldVar ? localProduct.variation[0].size[0].name : "");
+  const [productStock, setProductStock] = useState(hasOldVar ? localProduct.variation[0].size[0].stock : localProduct.stock ?? 10);
   const [quantityCount, setQuantityCount] = useState(1);
   const [errors, setErrors] = useState({});
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
 
   const effectiveStock = selectedVariant ? Number(selectedVariant.stock ?? 0) : productStock;
 
   const productCartQty = useMemo(() => {
     if (hasNewVar && selectedVariant) {
       const match = cartItems?.find(
-        item => String(item.id) === String(product.id) && Number(item.selectedVariantId) === Number(selectedVariant.id)
+        item => String(item.id) === String(localProduct.id) && Number(item.selectedVariantId) === Number(selectedVariant.id)
       );
       return match ? match.quantity : 0;
     }
-    return getProductCartQuantity(cartItems, product, selectedProductColor, selectedProductSize);
-  }, [cartItems, product, selectedVariant, hasNewVar, selectedProductColor, selectedProductSize]);
+    return getProductCartQuantity(cartItems, localProduct, selectedProductColor, selectedProductSize);
+  }, [cartItems, localProduct, selectedVariant, hasNewVar, selectedProductColor, selectedProductSize]);
+
+  const stockState = useMemo(() => {
+    if (hasNewVar) {
+      return getProductStockState(localProduct, selectedVariant);
+    }
+    if (hasOldVar) {
+      return getProductStockState({ ...localProduct, stock: productStock });
+    }
+    return getProductStockState(localProduct);
+  }, [localProduct, selectedVariant, hasNewVar, hasOldVar, productStock]);
+
+  // Adjust quantity Count if stock limits change
+  useEffect(() => {
+    const maxStock = stockState.maxQty !== undefined ? stockState.maxQty : (stockState.isPurchasable ? effectiveStock : 0);
+    const availableToPurchase = Math.max(0, maxStock - productCartQty);
+
+    if (stockState.isPurchasable && availableToPurchase > 0) {
+      if (quantityCount > availableToPurchase) {
+        setQuantityCount(availableToPurchase);
+        cogoToast.warn(`Selected quantity adjusted to match available stock limit (${availableToPurchase}).`, { position: "bottom-left" });
+      }
+    } else {
+      if (quantityCount !== 1) {
+        setQuantityCount(1);
+      }
+    }
+  }, [localProduct, selectedVariant, stockState, productCartQty]);
 
   const redirectToLogin = () => {
     const redirect = encodeURIComponent(window.location.pathname + window.location.search);
@@ -423,39 +643,141 @@ const ProductDescriptionInfo = ({
       if (missing.length > 0) next.variant = `Please select: ${missing.join(", ")}`;
       else if (!selectedVariant) next.variant = "Please select a valid variant";
     }
-    if (!quantityCount || quantityCount < 1) next.quantity = "Please select at least 1 quantity";
-    if (effectiveStock <= 0) next.quantity = "This product is out of stock";
-    if (quantityCount + productCartQty > effectiveStock) next.quantity = "Selected quantity exceeds available stock";
+    if (!quantityCount || quantityCount < 1) {
+      next.quantity = "Please select at least 1 quantity";
+    } else if (!stockState.isPurchasable) {
+      next.quantity = stockState.message || "This product is not available for purchase";
+    } else {
+      const maxStock = stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock;
+      if (quantityCount + productCartQty > maxStock) {
+        const remaining = Math.max(0, maxStock - productCartQty);
+        next.quantity = remaining > 0 
+          ? `Selected quantity exceeds available stock (${remaining} more allowed)`
+          : "You already have all available stock in your cart";
+      }
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    if (isAddingToCart || isBuyingNow) return; // double-click protection
     if (!isAuthenticated) {
       cogoToast.warn("Please login to add items to cart", { position: "top-center" });
       redirectToLogin();
       return;
     }
     if (!validateCart()) return;
-    let variantColor = selectedProductColor || null;
-    let variantSize = selectedProductSize || null;
-    if (selectedVariant) {
-      safeAttrs(selectedVariant.attributes).forEach(a => {
-        if (!a.key || !a.value) return;
-        const k = normalKey(a.key);
-        if (k === "Colour") variantColor = a.value;
-        if (k === "Size") variantSize = a.value;
+    
+    setIsAddingToCart(true);
+    try {
+      let variantColor = selectedProductColor || null;
+      let variantSize = selectedProductSize || null;
+      if (selectedVariant) {
+        safeAttrs(selectedVariant.attributes).forEach(a => {
+          if (!a.key || !a.value) return;
+          const k = normalKey(a.key);
+          if (k === "Colour") variantColor = a.value;
+          if (k === "Size") variantSize = a.value;
+        });
+      }
+      await addToCartService(dispatch, {
+        ...localProduct,
+        selectedVariantId: selectedVariant?.id || null,
+        selectedVariantName: selectedVariant?.variantName || null,
+        selectedProductColor: variantColor,
+        selectedProductSize: variantSize,
+        price: selectedVariant ? parseFloat(selectedVariant.salesPrice) : (localProduct.price || 0),
+        quantity: quantityCount,
       });
+    } catch (err) {
+      console.error("Failed to add to cart:", err);
+    } finally {
+      setIsAddingToCart(false);
     }
-    addToCartService(dispatch, {
-      ...product,
-      selectedVariantId: selectedVariant?.id || null,
-      selectedVariantName: selectedVariant?.variantName || null,
-      selectedProductColor: variantColor,
-      selectedProductSize: variantSize,
-      price: selectedVariant ? parseFloat(selectedVariant.salesPrice) : (product.price || 0),
-      quantity: quantityCount,
-    });
+  };
+
+  const handleBuyNow = async () => {
+    if (isAddingToCart || isBuyingNow) return; // double-click protection
+    if (!isAuthenticated) {
+      cogoToast.warn("Please login to buy items", { position: "top-center" });
+      redirectToLogin();
+      return;
+    }
+    if (!validateCart()) return;
+
+    setIsBuyingNow(true);
+    try {
+      let variantColor = selectedProductColor || null;
+      let variantSize = selectedProductSize || null;
+      if (selectedVariant) {
+        safeAttrs(selectedVariant.attributes).forEach(a => {
+          if (!a.key || !a.value) return;
+          const k = normalKey(a.key);
+          if (k === "Colour") variantColor = a.value;
+          if (k === "Size") variantSize = a.value;
+        });
+      }
+
+      const resolvedStock = selectedVariant ? Number(selectedVariant.stock ?? 0) : Number(localProduct.stock ?? 0);
+      const resolvedPrice = selectedVariant ? parseFloat(selectedVariant.salesPrice) : (localProduct.price || 0);
+      const selectedVariantId = selectedVariant?.id || null;
+
+      // ── Quantity Merge: if the same product+variant is already in an active
+      //    Buy Now session, just update the quantity instead of creating a new session.
+      const existingSession = checkoutSession;
+      const isActiveBuyNow =
+        existingSession?.source === "buy_now" &&
+        Array.isArray(existingSession.items) &&
+        existingSession.items.length === 1 &&
+        existingSession.expiresAt &&
+        Date.now() < existingSession.expiresAt;
+
+      if (isActiveBuyNow) {
+        const existing = existingSession.items[0];
+        const sameProduct = String(existing.id) === String(localProduct.id);
+        const sameVariant = existing.selectedVariantId === null
+          ? selectedVariantId === null
+          : Number(existing.selectedVariantId) === Number(selectedVariantId);
+
+        if (sameProduct && sameVariant) {
+          // Same item — accumulate quantity, capped at available stock
+          const newQty = Math.min(existing.quantity + quantityCount, resolvedStock);
+          const merged = { ...existing, quantity: newQty };
+          dispatch(replaceCheckoutItems([merged]));
+          cogoToast.success(`Quantity updated to ${newQty}. Going to checkout…`, { position: "top-center" });
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          navigate(`${process.env.PUBLIC_URL}/checkout`);
+          return;
+        }
+      }
+
+      // ── Fresh Buy Now session (different item or no active session) ──
+      const buyNowItem = {
+        id: localProduct.id,
+        cartItemId: "buynow-" + uuidv4(),
+        quantity: quantityCount,
+        selectedProductColor: variantColor,
+        selectedProductSize: variantSize,
+        selectedVariantId,
+        selectedVariantName: selectedVariant?.variantName || null,
+        selectedVariant: selectedVariant || null,
+        name: localProduct.name,
+        price: resolvedPrice,
+        discount: selectedVariant ? 0 : (localProduct.discount || 0),
+        image: localProduct.image || [],
+        variation: localProduct.variation || [],
+        stock: resolvedStock,
+        Variants: localProduct.Variants || [],
+      };
+
+      dispatch(createBuyNowCheckout(buyNowItem));
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      navigate(`${process.env.PUBLIC_URL}/checkout`);
+    } catch (err) {
+      console.error("Failed to execute Buy Now:", err);
+      setIsBuyingNow(false);
+    }
   };
 
   const handleWishlist = () => {
@@ -534,20 +856,11 @@ const ProductDescriptionInfo = ({
               attrKey={key}
               allValues={optionMap[key]}
               selectedValue={selections[key] || null}
-              compatibleSet={compatibleValues(activeVariants, selections, key)}
+              compatibleSet={compatMap[key] || new Set()}
+              oosSet={oosMap[key] || new Set()}
               onSelect={(val) => handleSelect(key, val)}
             />
           ))}
-
-          {/* Stock status */}
-          {selectedVariant && (
-            <div className="pdp-info__stock">
-              <span className={`pdp-info__stock-dot${effectiveStock > 0 ? " is-in" : " is-out"}`} />
-              <span className={`pdp-info__stock-label${effectiveStock > 0 ? " is-in" : " is-out"}`}>
-                {effectiveStock > 0 ? `In Stock (${effectiveStock} available)` : "Out of Stock"}
-              </span>
-            </div>
-          )}
 
           {/* Custom note */}
           {selectedVariant && <CustomNoteSection variant={selectedVariant} />}
@@ -620,71 +933,195 @@ const ProductDescriptionInfo = ({
 
       <div className="pdp-info__divider" />
 
+      {/* Stock status display */}
+      {/* <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <span className={`status-pill ${stockState.badgeClass}`}>
+          {stockState.label}
+        </span>
+        {stockState.showDeliveryEstimate && (
+          <span style={{ fontSize: 12, color: "#6b7280", display: "flex", alignItems: "center", gap: 4 }}>
+            <span>🚚</span> Delivered in 3–5 business days
+          </span>
+        )}
+      </div> */}
+
+      {stockState.message && (
+        <div style={{ 
+          fontSize: 13, 
+          fontWeight: 600, 
+          padding: "8px 12px", 
+          borderRadius: 8, 
+          marginBottom: 16, 
+          background: stockState.state === STOCK_STATES.LOW_STOCK ? "#fff7ed" : stockState.state === STOCK_STATES.IN_STOCK ? "#f0fdf4" : "#fef2f2",
+          color: stockState.state === STOCK_STATES.LOW_STOCK ? "#ea580c" : stockState.state === STOCK_STATES.IN_STOCK ? "#15803d" : "#b91c1c",
+          border: `1px solid ${stockState.state === STOCK_STATES.LOW_STOCK ? "#ffedd5" : stockState.state === STOCK_STATES.IN_STOCK ? "#dcfce7" : "#fee2e2"}`
+        }}>
+          {stockState.state === STOCK_STATES.LOW_STOCK ? "⚡ " : stockState.state === STOCK_STATES.IN_STOCK ? "✓ " : "⚠️ "}
+          {stockState.message}
+        </div>
+      )}
+
+      {/* Notify Me subscription */}
+      {stockState.allowNotify && (
+        <div style={{ marginTop: 10, marginBottom: 20, padding: "14px 18px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>✉️</span> Notify Me When Available
+          </div>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const emailInput = e.target.elements.notifyEmail;
+            const email = emailInput?.value || "";
+            if (!email || !email.includes("@")) {
+              cogoToast.error("Please enter a valid email address.", { position: "top-center" });
+              return;
+            }
+            cogoToast.success("Thanks! We will notify you when this item is back in stock.", { position: "top-center" });
+            if (emailInput) emailInput.value = "";
+          }} style={{ display: "flex", gap: 8 }}>
+            <input
+              name="notifyEmail"
+              type="email"
+              placeholder="Enter your email"
+              required
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                border: "1px solid #d1d5db",
+                borderRadius: 8,
+                fontSize: 14,
+                outline: "none"
+              }}
+            />
+            <button type="submit" className="pdp-btn pdp-btn--primary" style={{ height: "40px", padding: "0 18px", fontSize: 13 }}>
+              Subscribe
+            </button>
+          </form>
+        </div>
+      )}
+
       {/* ── Add to cart / Affiliate ── */}
-      {product.affiliateLink ? (
+      {localProduct.affiliateLink ? (
         <div className="pdp-info__actions">
-          <a href={product.affiliateLink} rel="noopener noreferrer" target="_blank" className="pdp-btn pdp-btn--primary">
+          <a href={localProduct.affiliateLink} rel="noopener noreferrer" target="_blank" className="pdp-btn pdp-btn--primary">
             Buy Now
           </a>
         </div>
       ) : (
         <div className="pdp-info__actions">
-          {/* Qty */}
-          <div className="pdp-qty">
-            <button
-              className="pdp-qty__btn"
-              onClick={() => setQuantityCount(q => Math.max(1, q - 1))}
-              disabled={quantityCount <= 1}
-            >
-              <svg width="14" height="2" viewBox="0 0 14 2"><line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="2"/></svg>
-            </button>
-            <span className="pdp-qty__count">{quantityCount}</span>
-            <button
-              className="pdp-qty__btn"
-              onClick={() => setQuantityCount(q => q < effectiveStock - productCartQty ? q + 1 : q)}
-              disabled={quantityCount >= effectiveStock - productCartQty}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14"><line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" strokeWidth="2"/><line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" strokeWidth="2"/></svg>
-            </button>
-          </div>
+          {/* Render Qty & Wishlist row if NOT discontinued */}
+          {stockState.state !== STOCK_STATES.DISCONTINUED && (
+            <div className="pdp-info__actions-row pdp-info__actions-row--top">
+              {/* Qty */}
+              <div className="pdp-qty">
+                <button
+                  className="pdp-qty__btn"
+                  onClick={() => setQuantityCount(q => Math.max(1, q - 1))}
+                  disabled={quantityCount <= 1 || !stockState.isPurchasable}
+                >
+                  <svg width="14" height="2" viewBox="0 0 14 2">
+                    <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </button>
+                <span className="pdp-qty__count">{stockState.isPurchasable ? quantityCount : 0}</span>
+                <button
+                  className="pdp-qty__btn"
+                  onClick={() => {
+                    const maxStock = stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock;
+                    setQuantityCount(q => q < maxStock - productCartQty ? q + 1 : q);
+                  }}
+                  disabled={
+                    !stockState.isPurchasable ||
+                    quantityCount >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock) - productCartQty
+                  }
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14">
+                    <line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" strokeWidth="2"/>
+                    <line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </button>
+              </div>
 
-          {/* Cart / Go to cart */}
-          {effectiveStock > 0 ? (
-            isAuthenticated && productCartQty > 0 ? (
-              <Link to="/cart" className="pdp-btn pdp-btn--success">
-                View Cart
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                </svg>
-              </Link>
-            ) : (
+              {/* Wishlist */}
               <button
-                className="pdp-btn pdp-btn--primary"
-                onClick={handleAddToCart}
-                disabled={isAuthenticated && productCartQty >= effectiveStock}
+                className={`pdp-btn pdp-btn--wishlist${isInWishlist ? " is-active" : ""}`}
+                disabled={isAuthenticated && isInWishlist}
+                title={isInWishlist ? "In your wishlist" : "Add to wishlist"}
+                onClick={handleWishlist}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill={isInWishlist ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
-                Add to Cart
               </button>
-            )
-          ) : (
-            <button className="pdp-btn pdp-btn--disabled" disabled>Out of Stock</button>
+            </div>
           )}
 
-          {/* Wishlist */}
-          <button
-            className={`pdp-btn pdp-btn--wishlist${isInWishlist ? " is-active" : ""}`}
-            disabled={isAuthenticated && isInWishlist}
-            title={isInWishlist ? "In your wishlist" : "Add to wishlist"}
-            onClick={handleWishlist}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill={isInWishlist ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-          </button>
+          <div className="pdp-info__actions-row pdp-info__actions-row--bottom">
+            {stockState.isPurchasable ? (
+              <>
+                {isAuthenticated && productCartQty > 0 ? (
+                  <Link to="/cart" className="pdp-btn pdp-btn--success">
+                    View Cart
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                  </Link>
+                ) : (
+                  <button
+                    className={`pdp-btn pdp-btn--primary${isAddingToCart ? " is-loading" : ""}`}
+                    onClick={handleAddToCart}
+                    disabled={
+                      isAddingToCart ||
+                      isBuyingNow ||
+                      (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))
+                    }
+                  >
+                    {isAddingToCart ? (
+                      <>
+                        <span className="pdp-btn-spinner" />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                        </svg>
+                        Add to Cart
+                      </>
+                    )}
+                  </button>
+                )}
+
+                <button
+                  className={`pdp-btn pdp-btn--buy${isBuyingNow ? " is-loading" : ""}`}
+                  onClick={handleBuyNow}
+                  disabled={
+                    isAddingToCart ||
+                    isBuyingNow ||
+                    (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))
+                  }
+                >
+                  {isBuyingNow ? (
+                    <>
+                      <span className="pdp-btn-spinner" />
+                      Going to Checkout...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                      </svg>
+                      Buy Now
+                    </>
+                  )}
+                </button>
+              </>
+            ) : (
+              <button className="pdp-btn pdp-btn--disabled" disabled style={{ width: "100%" }}>
+                {stockState.buttonText}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -983,6 +1420,50 @@ const ProductDescriptionInfo = ({
           background: #9ca3af;
           pointer-events: none;
         }
+        /* OOS — amber state: combination exists but stock = 0 */
+        .pdp-chip.is-oos {
+          border-color: #f59e0b;
+          color: #92400e;
+          background: #fffbeb;
+          opacity: 0.8;
+          position: relative;
+        }
+        .pdp-chip.is-oos:hover:not(:disabled) {
+          border-color: #d97706;
+          background: #fef3c7;
+        }
+        .pdp-size-chip.is-oos {
+          border-color: #f59e0b;
+          color: #92400e;
+          background: #fffbeb;
+          opacity: 0.85;
+        }
+        .pdp-chip__oos-dot {
+          display: inline-block;
+          width: 5px; height: 5px;
+          border-radius: 50%;
+          background: #f59e0b;
+          margin-left: 5px;
+          vertical-align: middle;
+          flex-shrink: 0;
+        }
+        .pdp-swatch.is-oos {
+          opacity: 0.75;
+          outline: 2px dashed #f59e0b;
+          outline-offset: 2px;
+        }
+        .pdp-swatch__oos {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background: repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 5px,
+            rgba(245,158,11,0.35) 5px,
+            rgba(245,158,11,0.35) 6px
+          );
+        }
 
         /* ── Stock ── */
         .pdp-info__stock {
@@ -1010,9 +1491,36 @@ const ProductDescriptionInfo = ({
         /* ── Actions row ── */
         .pdp-info__actions {
           display: flex;
+          flex-direction: column;
+          gap: 12px;
+          width: 100%;
+        }
+        .pdp-info__actions-row {
+          display: flex;
           align-items: center;
           gap: 12px;
-          flex-wrap: wrap;
+          width: 100%;
+        }
+        .pdp-info__actions-row--top .pdp-qty {
+          flex: 1;
+          max-width: 140px;
+        }
+        .pdp-info__actions-row--top .pdp-btn--wishlist {
+          flex-shrink: 0;
+        }
+        .pdp-info__actions-row--bottom .pdp-btn {
+          flex: 1;
+          min-width: 0;
+        }
+        .pdp-info__actions-row--bottom .pdp-btn--disabled {
+          flex: 1;
+          width: 100%;
+        }
+
+        @media (max-width: 767px) {
+          .pdp-info__actions-row--top .pdp-qty {
+            max-width: none;
+          }
         }
 
         /* ── Qty stepper ── */
@@ -1024,6 +1532,7 @@ const ProductDescriptionInfo = ({
           overflow: hidden;
           background: #fff;
           height: 46px;
+          justify-content: space-between;
         }
         .pdp-qty__btn {
           width: 40px;
@@ -1036,7 +1545,7 @@ const ProductDescriptionInfo = ({
           justify-content: center;
           color: #4b5563;
           transition: all 0.15s;
-          flex-shrink: 0;
+          flex: 1;
         }
         .pdp-qty__btn:hover:not(:disabled) { background: #f3f4f6; color: #db1a5d; }
         .pdp-qty__btn:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -1052,7 +1561,7 @@ const ProductDescriptionInfo = ({
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-shrink: 0;
+          flex: 1.5;
         }
 
         /* ── Buttons ── */
@@ -1086,6 +1595,26 @@ const ProductDescriptionInfo = ({
           transform: translateY(-1px);
           color: #fff;
         }
+        .pdp-btn--buy {
+          background: #F15A24;
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(241,90,36,0.2);
+          flex: 1;
+          min-width: 0;
+        }
+        .pdp-btn--buy:hover:not(:disabled) {
+          background: #df4e1b;
+          box-shadow: 0 6px 16px rgba(241,90,36,0.3);
+          transform: translateY(-1px);
+          color: #fff;
+        }
+        .pdp-btn--buy:disabled {
+          background: #e5e7eb;
+          color: #9ca3af;
+          box-shadow: none;
+          cursor: not-allowed;
+          transform: none;
+        }
         .pdp-btn--success {
           background: #111827;
           color: #fff;
@@ -1118,6 +1647,33 @@ const ProductDescriptionInfo = ({
           background: #fdf2f5;
           color: #db1a5d;
           border-color: #fbcfe8;
+        }
+        .pdp-btn--primary:disabled {
+          background: #e5e7eb;
+          color: #9ca3af;
+          box-shadow: none;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        /* ── Loading spinner for buttons ── */
+        @keyframes pdp-spin {
+          to { transform: rotate(360deg); }
+        }
+        .pdp-btn-spinner {
+          display: inline-block;
+          width: 15px;
+          height: 15px;
+          border: 2px solid rgba(255,255,255,0.35);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: pdp-spin 0.65s linear infinite;
+          flex-shrink: 0;
+        }
+        .pdp-btn.is-loading {
+          opacity: 0.85;
+          cursor: not-allowed;
+          pointer-events: none;
         }
 
         /* ── Share ── */
@@ -1275,6 +1831,45 @@ const ProductDescriptionInfo = ({
           width: 100%;
         }
         .pdp-combo__item-price { font-size: 12px; color: #db1a5d; font-weight: 600; }
+
+        /* ── Status Pills ── */
+        .status-pill {
+          display: inline-flex;
+          align-items: center;
+          padding: 4px 10px;
+          border-radius: 50px;
+          font-size: 10px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          border: 1px solid transparent;
+        }
+        .status-pill.is-in {
+          background: #ecfdf5;
+          color: #10b981;
+          border-color: #a7f3d0;
+        }
+        .status-pill.is-low {
+          background: #fff7ed;
+          color: #f97316;
+          border-color: #fed7aa;
+        }
+        .status-pill.is-out {
+          background: #fef2f2;
+          color: #ef4444;
+          border-color: #fecaca;
+        }
+        .status-pill.is-unavailable {
+          background: #f3f4f6;
+          color: #6b7280;
+          border-color: #e5e7eb;
+        }
+        .status-pill.is-discontinued {
+          background: #fef2f2;
+          color: #6b7280;
+          border-color: #e5e7eb;
+          text-decoration: line-through;
+        }
       `}</style>
     </div>
   );

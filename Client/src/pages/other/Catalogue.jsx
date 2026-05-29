@@ -38,7 +38,7 @@ const CircleCard = ({ to, imgSrc, label, emoji = "🗂️" }) => (
 
 const Catalogue = () => {
   const { pathname } = useLocation();
-  const { categories = [], events = [] } = useSelector((state) => state.navMenu || {});
+  const { categories = [], events = [], rootCombos = [] } = useSelector((state) => state.navMenu || {});
   const S = process.env.PUBLIC_URL + "/shop";
 
   return (
@@ -93,7 +93,27 @@ const Catalogue = () => {
             </section>
           )}
 
-          {categories.length === 0 && events.length === 0 && (
+          {/* Combos */}
+          {rootCombos.length > 0 && (
+            <section style={{ marginTop: 56 }}>
+              <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: "#999", marginBottom: 28 }}>
+                🎁 Combos
+              </h4>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "28px 20px" }}>
+                {rootCombos.map((combo) => (
+                  <CircleCard
+                    key={combo.id}
+                    to={`${S}?combo=${combo.id}`}
+                    imgSrc={combo.image ? getImgUrl(combo.image) : null}
+                    label={combo.name}
+                    emoji="🎁"
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {categories.length === 0 && events.length === 0 && rootCombos.length === 0 && (
             <p style={{ color: "#aaa", textAlign: "center", marginTop: 80 }}>No categories found.</p>
           )}
         </div>

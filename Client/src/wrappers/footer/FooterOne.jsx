@@ -18,12 +18,19 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           border-top: 1px solid #eeeeee;
         }
 
-        /* ── Desktop: 6 cols ── */
+        /* By default (mobile & tablet < 992px), hide the desktop grid */
         .km-footer-grid {
-          display: grid;
-          grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1.8fr;
-          gap: 24px;
-          align-items: start;
+          display: none;
+        }
+
+        /* ── Desktop: 6 cols (min-width: 992px) ── */
+        @media (min-width: 992px) {
+          .km-footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1.8fr;
+            gap: 24px;
+            align-items: start;
+          }
         }
 
         /* Brand */
@@ -70,19 +77,13 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         .km-brand-divider { display: none; }
 
         /* ──────────────────────────────────────────────
-           TABLET  ≤ 1024px  →  2-col brand + 4-col links
+           TABLET  ≤ 991px  →  2-col brand + 4-col links
            ────────────────────────────────────────────── */
-        @media (max-width: 1024px) {
+        @media (max-width: 991px) {
           .km-footer { padding: 56px 0 36px; }
-
-          .km-footer-grid {
-            grid-template-columns: 1fr 1fr;
-            gap: 0;
-          }
 
           /* Brand + Address span full width as a horizontal strip */
           .km-brand-block {
-            grid-column: 1 / -1;
             display: flex;
             align-items: flex-start;
             gap: 40px;
@@ -96,7 +97,6 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
 
           /* Link columns: 4 equal cols */
           .km-links-block {
-            grid-column: 1 / -1;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
@@ -114,8 +114,6 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
            ────────────────────────────────────────────── */
         @media (max-width: 600px) {
           .km-footer { padding: 44px 0 28px; }
-
-          .km-footer-grid { grid-template-columns: 1fr; gap: 0; }
 
           .km-brand-block {
             flex-direction: column;

@@ -5,7 +5,7 @@ const wishlistInclude = [
   {
     model: Product,
     as: "product",
-    include: [{ model: Variant, as: "variants" }],
+    include: [{ model: Variant, as: "Variants" }],
   },
 ];
 

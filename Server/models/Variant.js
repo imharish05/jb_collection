@@ -8,6 +8,8 @@ const Variant = sequelize.define("Variant", {
   mrp:         { type: DataTypes.DECIMAL(10, 2), allowNull: false },
   salesPrice:  { type: DataTypes.DECIMAL(10, 2), allowNull: false, field: "sales_price" },
   stock:       { type: DataTypes.INTEGER,        defaultValue: 0 },
+  stockStatus: { type: DataTypes.STRING,         allowNull: true, field: "stock_status" },
+  warningThreshold: { type: DataTypes.INTEGER,   defaultValue: 5, field: "warning_threshold" },
   sku:         { type: DataTypes.STRING,         allowNull: true },
   attributes:  { type: DataTypes.JSON,           defaultValue: [], allowNull: true },
   status:      { type: DataTypes.STRING,         defaultValue: "Active" },
@@ -27,7 +29,7 @@ const Variant = sequelize.define("Variant", {
     field: "updatedAt"
   }
 }, { 
-  tableName: "variants",
+  tableName: "Variants",
   timestamps: true // This tells Sequelize to manage them, but it will use our custom definitions above
 });
 

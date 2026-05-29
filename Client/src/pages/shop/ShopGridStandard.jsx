@@ -1,7 +1,8 @@
 import { Fragment, useState, useEffect } from 'react';
 import Paginator from 'react-hooks-paginator';
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
+import { fetchComboById } from '../../store/services/comboService';
 import { getSortedProducts } from '../../helpers/product';
 import SEO from "../../components/seo";
 import LayoutOne from '../../layouts/LayoutOne';
@@ -40,9 +41,14 @@ const ShopGridStandard = () => {
   const [priceRange, setPriceRange] = useState(null);
 
   const { products } = useSelector((state) => state.product);
-  const { combos: navCombos = [] } = useSelector((state) => state.navMenu || {});
+  const { rootCombos: navCombos = [] } = useSelector((state) => state.navMenu || {});
+  const { currentCombo: reduxCurrentCombo } = useSelector((state) => state.combo || {});
   const { search, pathname } = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  // ── Combo mode state ──
+  const [childCombos, setChildCombos] = useState([]);
 
   const params = new URLSearchParams(search);
   const rawCatParam = params.get("category");
@@ -83,6 +89,23 @@ const ShopGridStandard = () => {
     setOffset(0);
     setCurrentPage(1);
   }, [search]);
+
+  // ── Fetch combo children when ?combo= param is present ──
+  const isComboMode = !!comboParam;
+  useEffect(() => {
+    if (comboParam) {
+      dispatch(fetchComboById(comboParam));
+    } else {
+      setChildCombos([]);
+    }
+  }, [comboParam]);
+
+  // ── Sync childCombos from Redux currentCombo ──
+  useEffect(() => {
+    if (isComboMode && reduxCurrentCombo?.children) {
+      setChildCombos(reduxCurrentCombo.children.filter(c => c.isActive));
+    }
+  }, [reduxCurrentCombo, isComboMode]);
 
   useEffect(() => {
     let source = products;
@@ -131,7 +154,9 @@ const ShopGridStandard = () => {
             {activeLabel && (
               <div style={{ marginBottom:24, display:"flex", alignItems:"center", gap:10 }}>
                 <h4 style={{ margin:0, fontSize:20, fontWeight:700 }}>{activeLabel}</h4>
-                <span style={{ fontSize:13, color:"#888" }}>({sortedProducts.length} products)</span>
+                <span style={{ fontSize:13, color:"#888" }}>
+                  {isComboMode ? `(${childCombos.length} combos)` : `(${sortedProducts.length} products)`}
+                </span>
                 <a href={process.env.PUBLIC_URL + "/shop"} style={{ marginLeft:8, fontSize:12, color:"#c0622a" }}>Clear ×</a>
               </div>
             )}
@@ -184,8 +209,8 @@ const ShopGridStandard = () => {
                     }}>{size}</button>
                   ))}
                 </div>
-                <ShopProducts layout={layout} products={currentData} />
-                {!showAll && (
+                <ShopProducts layout={layout} products={currentData} isComboMode={isComboMode} childCombos={childCombos} />
+                {!showAll && !isComboMode && (
                   <div className="pro-pagination-style text-center mt-30">
                     <Paginator
                       totalRecords={sortedProducts.length} pageLimit={pageLimit}
@@ -196,7 +221,10 @@ const ShopGridStandard = () => {
                   </div>
                 )}
                 <p style={{ textAlign:"center", fontSize:13, color:"#888", marginTop:12 }}>
-                  Showing {currentData.length} of {sortedProducts.length} products
+                  {isComboMode
+                    ? `Showing ${childCombos.length} combos`
+                    : `Showing ${currentData.length} of ${sortedProducts.length} products`
+                  }
                 </p>
               </div>
             </div>

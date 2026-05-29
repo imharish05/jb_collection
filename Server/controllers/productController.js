@@ -1,13 +1,14 @@
-const { Product, Variant, Category, Brand, SubCategory, Combo } = require("../models");
+const { Product, Variant, Category, Brand, SubCategory, Combo, ChildComboProduct, CartItem, WishlistItem, Review } = require("../models");
 const { Op }    = require("sequelize");
 const sequelize = require("../config/database");
+const { syncProductVariants } = require("./variantController");
 
 // ─── shared include for GET queries ─────────────────────────────────────────
 const PRODUCT_INCLUDE = [
   {
     model: Variant,
-    as: "variants",
-    attributes: ["id", "variantName", "mrp", "salesPrice", "stock", "sku", "attributes", "status", "image"],
+    as: "Variants",
+    attributes: ["id", "variantName", "mrp", "salesPrice", "stock", "sku", "attributes", "status", "image", "stockStatus", "warningThreshold"],
     required: false,
   },
   {
@@ -49,7 +50,9 @@ const generateSku = (prefix = "KM") =>
 // shape: rename variants → Variants for frontend compatibility
 const shape = (p) => {
   const row = p.toJSON();
-  row.Variants = row.variants || [];
+  if (!Array.isArray(row.Variants)) {
+    row.Variants = Array.isArray(row.variants) ? row.variants : [];
+  }
   delete row.variants;
   // Ensure JSON fields are always real arrays, never raw strings
   row.image     = safeParse(row.image,     []);
@@ -262,6 +265,20 @@ const updateProduct = async (req, res, next) => {
 
     // replace variants if new ones supplied
     if (parsedVariants) {
+      // ── MAPPING COMBO VARIANTS ───────────────────────────────────────────
+      const oldVariants = await Variant.findAll({ where: { productId: product.id } });
+      const oldVariantNameMap = new Map();
+      oldVariants.forEach(ov => {
+        if (ov.id && ov.variantName) {
+          oldVariantNameMap.set(ov.id, ov.variantName);
+        }
+      });
+
+      const affectedComboProds = await ChildComboProduct.findAll({
+        where: { productId: product.id }
+      });
+      // ─────────────────────────────────────────────────────────────────────
+
       await Variant.destroy({ where: { productId: product.id } });
       for (let i = 0; i < parsedVariants.length; i++) {
         const v = parsedVariants[i];
@@ -280,6 +297,31 @@ const updateProduct = async (req, res, next) => {
           image:       vImage,
         });
       }
+
+      // ── RESOLVING COMBO VARIANTS MAPPING ──────────────────────────────────
+      if (affectedComboProds.length > 0) {
+        const newVariants = await Variant.findAll({ where: { productId: product.id } });
+        const newVariantIdMap = new Map();
+        newVariants.forEach(nv => {
+          if (nv.variantName && nv.id) {
+            newVariantIdMap.set(nv.variantName, nv.id);
+          }
+        });
+
+        for (const cp of affectedComboProds) {
+          if (cp.variantId) {
+            const oldName = oldVariantNameMap.get(cp.variantId);
+            const newId = oldName ? newVariantIdMap.get(oldName) : null;
+            if (newId) {
+              await cp.update({ variantId: newId });
+            } else {
+              // The variant was deleted, so clean it up from the combo
+              await cp.destroy();
+            }
+          }
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
     }
 
     const fresh = await Product.findByPk(product.id, { include: PRODUCT_INCLUDE });
@@ -296,10 +338,176 @@ const deleteProduct = async (req, res, next) => {
     const product = await Product.findByPk(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
     await product.update({ isActive: false });
+
+    // Clean up combo associations, variants, cart items, wishlist entries, and reviews
+    await Promise.all([
+      ChildComboProduct.destroy({ where: { productId: product.id } }),
+      Variant.destroy({ where: { productId: product.id } }),
+      CartItem.destroy({ where: { productId: product.id } }),
+      WishlistItem.destroy({ where: { productId: product.id } }),
+      Review.destroy({ where: { productId: product.id } })
+    ]);
+
     return res.json({ message: "Product deleted", id: product.id });
   } catch (err) {
     next(err);
   }
 };
 
-module.exports = { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct };
+const seedStockTestProducts = async (req, res, next) => {
+  try {
+    // Clean up any existing test seed products to keep it clean
+    await Product.destroy({ where: { sku: { [Op.like]: "SEED-TEST-%" } } });
+
+    const productsToSeed = [
+      {
+        sku: "SEED-TEST-INSTOCK",
+        name: "Test In Stock Mug",
+        price: 299.0,
+        stock: 12,
+        isActive: true,
+        category: ["gifts"],
+        image: ["/assets/img/products/products-1.jpeg"],
+        shortDescription: "A beautiful test mug that is fully in stock.",
+        fullDescription: "A beautiful test mug that is fully in stock for checking standard PDP features.",
+        warningThreshold: 5,
+        stockStatus: null
+      },
+      {
+        sku: "SEED-TEST-LOWSTOCK",
+        name: "Test Low Stock Keychain",
+        price: 149.0,
+        stock: 3,
+        isActive: true,
+        category: ["gifts"],
+        image: ["/assets/img/products/products-2.jpeg"],
+        shortDescription: "Only a few left of this test keychain.",
+        fullDescription: "Only a few left of this test keychain. Shows low stock warning.",
+        warningThreshold: 5,
+        stockStatus: null
+      },
+      {
+        sku: "SEED-TEST-OOS",
+        name: "Test Out of Stock Bowl",
+        price: 499.0,
+        stock: 0,
+        isActive: true,
+        category: ["gifts"],
+        image: ["/assets/img/products/products-3.jpeg"],
+        shortDescription: "This test bowl is completely out of stock.",
+        fullDescription: "This test bowl is completely out of stock. Testing notify me features.",
+        warningThreshold: 5,
+        stockStatus: null
+      },
+      {
+        sku: "SEED-TEST-UNAVAILABLE",
+        name: "Test Temporarily Unavailable Frame",
+        price: 899.0,
+        stock: 10,
+        isActive: true,
+        category: ["gifts"],
+        image: ["/assets/img/products/products-4.jpeg"],
+        shortDescription: "Temporarily unavailable test frame.",
+        fullDescription: "Temporarily unavailable test frame. Stock exists but status makes it unavailable.",
+        warningThreshold: 5,
+        stockStatus: "Temporarily Unavailable"
+      },
+      {
+        sku: "SEED-TEST-DISCONTINUED",
+        name: "Test Discontinued Box",
+        price: 1200.0,
+        stock: 0,
+        isActive: true,
+        category: ["gifts"],
+        image: ["/assets/img/products/products-5.jpeg"],
+        shortDescription: "Discontinued box that cannot be bought.",
+        fullDescription: "Discontinued box that cannot be bought. Testing discontinued state.",
+        warningThreshold: 5,
+        stockStatus: "Discontinued"
+      }
+    ];
+
+    const seeded = [];
+    for (const p of productsToSeed) {
+      const prod = await Product.create(p);
+      seeded.push(prod);
+    }
+
+    // Seed the variable product
+    const varProd = await Product.create({
+      sku: "SEED-TEST-VARPRODUCT",
+      name: "Test Variable T-Shirt",
+      price: 399.0,
+      stock: 27,
+      isActive: true,
+      category: ["gifts"],
+      image: ["/assets/img/products/products-6.jpeg"],
+      shortDescription: "A multi-attribute variable product for complex OOS testing.",
+      fullDescription: "Testing sizes and colors dynamic options filtering, invalid vs OOS combos, auto-recovery.",
+      warningThreshold: 5,
+    });
+
+    const variants = [
+      {
+        productId: varProd.id,
+        variantName: "Colour: Red · Size: S",
+        mrp: 599.0,
+        salesPrice: 399.0,
+        stock: 10,
+        stockStatus: "Temporarily Unavailable",
+        sku: "SEED-TEST-VAR-1",
+        attributes: [{ key: "Colour", value: "Red" }, { key: "Size", value: "S" }],
+        status: "Active"
+      },
+      {
+        productId: varProd.id,
+        variantName: "Colour: Red · Size: M",
+        mrp: 599.0,
+        salesPrice: 399.0,
+        stock: 0,
+        stockStatus: null,
+        sku: "SEED-TEST-VAR-2",
+        attributes: [{ key: "Colour", value: "Red" }, { key: "Size", value: "M" }],
+        status: "Active"
+      },
+      {
+        productId: varProd.id,
+        variantName: "Colour: Blue · Size: S",
+        mrp: 599.0,
+        salesPrice: 449.0,
+        stock: 2,
+        stockStatus: null,
+        sku: "SEED-TEST-VAR-3",
+        attributes: [{ key: "Colour", value: "Blue" }, { key: "Size", value: "S" }],
+        status: "Active"
+      },
+      {
+        productId: varProd.id,
+        variantName: "Colour: Blue · Size: M",
+        mrp: 599.0,
+        salesPrice: 449.0,
+        stock: 15,
+        stockStatus: null,
+        sku: "SEED-TEST-VAR-4",
+        attributes: [{ key: "Colour", value: "Blue" }, { key: "Size", value: "M" }],
+        status: "Active"
+      }
+    ];
+
+    for (const v of variants) {
+      await Variant.create(v);
+    }
+
+    // Call internal helper to sync variant info to Product table
+    await syncProductVariants(varProd.id);
+
+    const freshVar = await Product.findByPk(varProd.id, { include: PRODUCT_INCLUDE });
+    seeded.push(freshVar);
+
+    res.json({ success: true, message: "Stock test products seeded successfully!", count: seeded.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct, seedStockTestProducts };

@@ -30,31 +30,24 @@ const customerRoutes = require("./routes/customers");
 const dashboardRoutes = require("./routes/dashboard");
 const testimonialRoutes = require("./routes/testimonials");
 
+// New combo routes (Root/Child system)
+const newComboRoutes = require("./routes/combos");
+
 const { protect } = require("./middleware/auth");
 const seed = require("./seeders/seed");
 
-
 const app = express();
 
-// ── Middleware ────────────────────────────────────────────────
-// app.use(
-//   cors({
-//     origin: process.env.CLIENT_URL || "http://localhost:3000",
-//     credentials: true,
-//   })
-// );
-
-app.use(cors())
-
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded images statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-// ── Routes ────────────────────────────────────────────────────
+
+// ── Routes ────────────────────────────────────────────────────────────────────
 
 app.use("/api/auth", authRoutes);
-app.use("/api", categoryRoutes);
 app.use("/api/nav", navRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/address", protect, addressRoutes);
@@ -65,7 +58,6 @@ app.use("/api/blogs", protect, blogRoutes);
 app.use("/api/orders", protect, orderRoutes);
 app.use("/api/payment", protect, paymentRoutes);
 
-// New routes (no auth needed for admin panel — admin login handles it)
 app.use("/api/categories", categoryRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/variants", variantRoutes);
@@ -75,33 +67,39 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/testimonials", testimonialRoutes);
-
-// Marketing routes: /api/hero-slides, /api/offer-banners, /api/marquee
-app.use("/api", marketingRoutes);
-
+// New combo routes (Root/Child/ChildProduct system)
+app.use("/api/combos", newComboRoutes);
 // Health check
 app.get("/api/health", (req, res) =>
   res.json({ status: "ok", service: "Kamali Gifts API", db: "MySQL" })
 );
 
+// Marketing routes: /api/hero-slides, /api/offer-banners, /api/marquee
+app.use("/api", categoryRoutes);
+app.use("/api", marketingRoutes);
+
+
+
 // 404 handler
 app.use((req, res) => res.status(404).json({ message: "Route not found" }));
-
 
 // Global error handler
 app.use(errorHandler);
 
-// ── DB + Server ───────────────────────────────────────────────
+// ── DB + Server ───────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-// seed()
 
 const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log("✅ MySQL database connected");
 
-    await sequelize.sync({alter : true});
+    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0;');
+
+    await sequelize.sync({ alter: true });
     console.log("✅ Models synced");
+
+    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1;');
 
     const { seedCoupons } = require("./controllers/couponController");
     await seedCoupons();
@@ -116,25 +114,3 @@ const startServer = async () => {
 };
 
 startServer();
-
-/**
- * ONE-TIME migration: add variant_id column to wishlist_items
- * and update the unique index to (user_id, product_id, variant_id).
- *
- * Run ONCE before starting the server after this update:
- *   node migrate_wishlist_variant.js
- */
-
-/**
- * ONE-TIME migration script.
- *
- * Run ONCE from the Server directory before (re)starting the server:
- *   node migrate_wishlist_variant.js
- *
- * What it does:
- *  1. Adds variant_id column to wishlist_items (if missing)
- *  2. Drops the old UNIQUE(user_id, product_id) index (if it exists)
- *  3. Creates the correct UNIQUE(user_id, product_id, variant_id) index
- */
-
-
