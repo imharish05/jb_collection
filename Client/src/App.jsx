@@ -72,30 +72,36 @@ const App = () => {
 
     // Sync cart
     api.get("/cart").then(res => {
+      const safeParseSnap = (raw) => {
+        if (!raw) return {};
+        if (typeof raw === "string") { try { return JSON.parse(raw); } catch { return {}; } }
+        return raw;
+      };
       const items = (res.data || []).map(cartItem => {
+        const snap = safeParseSnap(cartItem.productSnapshot);
         const variants = cartItem.product?.Variants || cartItem.product?.variants || [];
         const matched = variants.find(v => String(v.id) === String(cartItem.selectedVariantId));
-        const resolvedPrice = matched?.salesPrice ?? cartItem.productSnapshot?.price ?? cartItem.product?.price ?? 0;
-        const resolvedDiscount = cartItem.productSnapshot?.discount ?? cartItem.product?.discount ?? 0;
+        const resolvedPrice = matched?.salesPrice ?? snap.price ?? cartItem.product?.price ?? 0;
+        const resolvedDiscount = snap.discount ?? cartItem.product?.discount ?? 0;
         return {
           id: cartItem.productId,
           cartItemId: cartItem.id,
           quantity: cartItem.quantity,
           selectedVariantId: cartItem.selectedVariantId != null ? Number(cartItem.selectedVariantId) : null,
-          selectedVariantName: cartItem.productSnapshot?.selectedVariantName || null,
+          selectedVariantName: snap.selectedVariantName || null,
           selectedProductColor: cartItem.selectedProductColor || null,
           selectedProductSize: cartItem.selectedProductSize || null,
-          name: cartItem.productSnapshot?.name || cartItem.product?.name,
+          name: snap.name || cartItem.product?.name,
           price: typeof resolvedPrice === "string" ? parseFloat(resolvedPrice) : resolvedPrice,
           discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
-          image: cartItem.productSnapshot?.image || cartItem.product?.image || [],
+          image: snap.image || cartItem.product?.image || [],
           variation: cartItem.product?.variation || [],
           // Combo specific fields
-          isCombo: cartItem.productSnapshot?.isCombo || false,
-          rootComboId: cartItem.productSnapshot?.rootComboId || null,
-          childComboId: cartItem.productSnapshot?.childComboId || null,
-          selectedProducts: cartItem.productSnapshot?.products || null,
-          comboType: cartItem.productSnapshot?.comboType || null,
+          isCombo: snap.isCombo || false,
+          rootComboId: snap.rootComboId || null,
+          childComboId: snap.childComboId || null,
+          selectedProducts: snap.products || null,
+          comboType: snap.comboType || null,
         };
       });
       dispatch(replaceCart(items));

@@ -20,8 +20,14 @@ const getCart = async (req, res, next) => {
 
     // Enrich combo items: if snapshot.products has entries with null names,
     // look up the product (and its variant) from DB so the client can display them
+    const safeParseSnap = (raw) => {
+      if (!raw) return null;
+      if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return null; } }
+      return raw;
+    };
+
     const enriched = await Promise.all(items.map(async (item) => {
-      const snap = item.productSnapshot;
+      const snap = safeParseSnap(item.productSnapshot);
       if (!snap?.isCombo || !Array.isArray(snap.products)) return item.toJSON();
 
       const needsEnrich = snap.products.some(p => !p.name || !p.image);

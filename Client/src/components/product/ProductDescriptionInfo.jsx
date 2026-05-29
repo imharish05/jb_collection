@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import React, { Fragment, useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { addToWishlistService, addToCartService } from "../../store/services";
+import { addToWishlistService, addToCartService, addToCartSilentService } from "../../store/services";
 import { useDispatch, useSelector } from "react-redux";
 import { getProductCartQuantity } from "../../helpers/product";
 import Rating from "./sub-components/ProductRating";
@@ -458,6 +458,41 @@ const ProductDescriptionInfo = ({
     });
   };
 
+  const handleBuyNow = async () => {
+    if (!isAuthenticated) {
+      cogoToast.warn("Please login to buy items", { position: "top-center" });
+      redirectToLogin();
+      return;
+    }
+    if (productCartQty > 0) {
+      navigate("/cart");
+      return;
+    }
+    if (!validateCart()) return;
+    let variantColor = selectedProductColor || null;
+    let variantSize = selectedProductSize || null;
+    if (selectedVariant) {
+      safeAttrs(selectedVariant.attributes).forEach(a => {
+        if (!a.key || !a.value) return;
+        const k = normalKey(a.key);
+        if (k === "Colour") variantColor = a.value;
+        if (k === "Size") variantSize = a.value;
+      });
+    }
+    const success = await addToCartSilentService(dispatch, {
+      ...product,
+      selectedVariantId: selectedVariant?.id || null,
+      selectedVariantName: selectedVariant?.variantName || null,
+      selectedProductColor: variantColor,
+      selectedProductSize: variantSize,
+      price: selectedVariant ? parseFloat(selectedVariant.salesPrice) : (product.price || 0),
+      quantity: quantityCount,
+    });
+    if (success) {
+      navigate("/cart");
+    }
+  };
+
   const handleWishlist = () => {
     if (!isAuthenticated) {
       cogoToast.warn("Please login to save to wishlist", { position: "top-center" });
@@ -650,26 +685,39 @@ const ProductDescriptionInfo = ({
 
           {/* Cart / Go to cart */}
           {effectiveStock > 0 ? (
-            isAuthenticated && productCartQty > 0 ? (
-              <Link to="/cart" className="pdp-btn pdp-btn--success">
-                View Cart
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                </svg>
-              </Link>
-            ) : (
+            <>
+              {isAuthenticated && productCartQty > 0 ? (
+                <Link to="/cart" className="pdp-btn pdp-btn--success">
+                  View Cart
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </Link>
+              ) : (
+                <button
+                  className="pdp-btn pdp-btn--primary"
+                  onClick={handleAddToCart}
+                  disabled={isAuthenticated && productCartQty >= effectiveStock}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                  </svg>
+                  Add to Cart
+                </button>
+              )}
+
               <button
-                className="pdp-btn pdp-btn--primary"
-                onClick={handleAddToCart}
+                className="pdp-btn pdp-btn--buy"
+                onClick={handleBuyNow}
                 disabled={isAuthenticated && productCartQty >= effectiveStock}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
-                Add to Cart
+                Buy Now
               </button>
-            )
+            </>
           ) : (
             <button className="pdp-btn pdp-btn--disabled" disabled>Out of Stock</button>
           )}
@@ -1085,6 +1133,26 @@ const ProductDescriptionInfo = ({
           box-shadow: 0 6px 16px rgba(219,26,93,0.3);
           transform: translateY(-1px);
           color: #fff;
+        }
+        .pdp-btn--buy {
+          background: #F15A24;
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(241,90,36,0.2);
+          flex: 1;
+          min-width: 0;
+        }
+        .pdp-btn--buy:hover:not(:disabled) {
+          background: #df4e1b;
+          box-shadow: 0 6px 16px rgba(241,90,36,0.3);
+          transform: translateY(-1px);
+          color: #fff;
+        }
+        .pdp-btn--buy:disabled {
+          background: #e5e7eb;
+          color: #9ca3af;
+          box-shadow: none;
+          cursor: not-allowed;
+          transform: none;
         }
         .pdp-btn--success {
           background: #111827;

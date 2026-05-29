@@ -14,34 +14,41 @@ const syncCartFromServer = async (dispatch) => {
   try {
     const res = await api.get('/cart');
     const cartItems = res.data || [];
+
+    const safeParseSnap = (raw) => {
+      if (!raw) return {};
+      if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return {}; } }
+      return raw;
+    };
     
     // Map database records to Redux cart structure
     const formattedItems = cartItems.map(cartItem => {
+      const snap = safeParseSnap(cartItem.productSnapshot);
       const variants = cartItem.product?.Variants || cartItem.product?.variants || [];
       const matchedVariant = variants.find(v => String(v.id) === String(cartItem.selectedVariantId));
-      const resolvedPrice = matchedVariant?.salesPrice ?? cartItem.productSnapshot?.price ?? cartItem.product?.price ?? 0;
-      const resolvedDiscount = cartItem.productSnapshot?.discount ?? cartItem.product?.discount ?? 0;
+      const resolvedPrice = matchedVariant?.salesPrice ?? snap.price ?? cartItem.product?.price ?? 0;
+      const resolvedDiscount = snap.discount ?? cartItem.product?.discount ?? 0;
       return {
         id: cartItem.productId,
         cartItemId: cartItem.id,
         quantity: cartItem.quantity,
         selectedVariantId: cartItem.selectedVariantId || null,
-        selectedVariantName: cartItem.productSnapshot?.selectedVariantName || null,
+        selectedVariantName: snap.selectedVariantName || null,
         selectedProductColor: cartItem.selectedProductColor || null,
         selectedProductSize: cartItem.selectedProductSize || null,
-        name: cartItem.productSnapshot?.name || cartItem.product?.name,
-        price: typeof resolvedPrice === "string" ? parseFloat(resolvedPrice) : resolvedPrice,
-        discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
-        image: cartItem.productSnapshot?.image || cartItem.product?.image || [],
+        name: snap.name || cartItem.product?.name,
+        price: typeof resolvedPrice === 'string' ? parseFloat(resolvedPrice) : resolvedPrice,
+        discount: typeof resolvedDiscount === 'string' ? parseFloat(resolvedDiscount) : resolvedDiscount,
+        image: snap.image || cartItem.product?.image || [],
         variation: cartItem.product?.variation || [],
         Variants: variants,
-        selectedVariant: matchedVariant || null,  // ← full variant object (same as wishlist)
+        selectedVariant: matchedVariant || null,
         // Combo specific fields
-        isCombo: cartItem.productSnapshot?.isCombo || false,
-        rootComboId: cartItem.productSnapshot?.rootComboId || null,
-        childComboId: cartItem.productSnapshot?.childComboId || null,
-        selectedProducts: cartItem.productSnapshot?.products || null,
-        comboType: cartItem.productSnapshot?.comboType || null,
+        isCombo: snap.isCombo || false,
+        rootComboId: snap.rootComboId || null,
+        childComboId: snap.childComboId || null,
+        selectedProducts: snap.products || null,
+        comboType: snap.comboType || null,
       };
     });
     

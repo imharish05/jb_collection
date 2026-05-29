@@ -16,7 +16,7 @@ import { fetchComboById, addComboToCart } from "../../store/services/comboServic
 import {
   addMixMatchItem, removeMixMatchItem, clearMixMatch,
 } from "../../store/slices/combo-slice";
-import { addToCart, replaceCart } from "../../store/slices/cart-slice";
+import { addToCart, addToCartSilent, replaceCart } from "../../store/slices/cart-slice";
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
 import ProductImageGallerySideThumb from "../../components/product/ProductImageGallerySideThumb";
@@ -271,7 +271,6 @@ const ComboDetailPage = () => {
 
   const fixedOos = child.type === "fixed" && child.comboProducts?.some(cp => isOutOfStock(cp));
 
-  // ── Add to cart — same dispatch pattern as single products ──────────────────
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
       cogoToast.warn("Please login to add items to cart", { position: "top-center" });
@@ -352,6 +351,85 @@ const ComboDetailPage = () => {
     setAddingCart(false);
   };
 
+  const handleBuyNow = async () => {
+    if (!isAuthenticated) {
+      cogoToast.warn("Please login to buy items", { position: "top-center" });
+      navigate(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+    if (isInCart) {
+      navigate("/cart");
+      return;
+    }
+    if (child.type === "mix_match" && !canAdd) {
+      cogoToast.warn(`Select at least ${minQty} item${minQty > 1 ? "s" : ""}`, { position: "top-center" });
+      return;
+    }
+    setAddingCart(true);
+    try {
+      const res = await addComboToCart({
+        childComboId: child.id,
+        quantity: qty,
+        selections: child.type === "mix_match" ? selections : undefined,
+      });
+
+      if (child.type === "mix_match") dispatch(clearMixMatch(child.id));
+
+      const selectedProducts = child.type === "fixed"
+        ? (child.comboProducts || []).map(cp => {
+            const resolvedVariant = cp.variant
+              || (cp.variantId && Array.isArray(cp.product?.Variants)
+                ? cp.product.Variants.find(v => String(v.id) === String(cp.variantId)) || null
+                : null);
+            return {
+              productId: cp.productId,
+              variantId: cp.variantId,
+              quantity: cp.quantity || 1,
+              name: cp.product?.name || null,
+              image: getProductImg(cp.product) || null,
+              variantName: resolvedVariant?.variantName || null,
+            };
+          })
+        : selections.map(sel => {
+            const cp = (child.comboProducts || []).find(c => String(c.productId) === String(sel.productId));
+            const matchedVariant = cp?.product?.Variants?.find(v => String(v.id) === String(sel.variantId))
+              || cp?.variant || null;
+            return {
+              productId: sel.productId,
+              variantId: sel.variantId,
+              quantity: sel.quantity || 1,
+              name: cp?.product?.name || null,
+              image: getProductImg(cp?.product) || null,
+              variantName: matchedVariant?.variantName || null,
+            };
+          });
+
+      dispatch(addToCartSilent({
+        id: child.comboProducts?.[0]?.productId || selections?.[0]?.productId || null,
+        cartItemId: res?.cartItem?.id || null,
+        quantity: qty,
+        name: child.name,
+        price: parseFloat(child.comboPrice),
+        discount: 0,
+        image: child.image ? [child.image] : (currentCombo.image ? [currentCombo.image] : []),
+        variation: [],
+        selectedVariantId: null,
+        selectedVariantName: null,
+        isCombo: true,
+        rootComboId: currentCombo.id,
+        childComboId: child.id,
+        comboType: child.type,
+        selectedProducts,
+      }));
+
+      navigate("/cart");
+    } catch (err) {
+      cogoToast.error("Could not add combo to cart", { position: "top-center" });
+      console.error(err);
+    }
+    setAddingCart(false);
+  };
+
   // ── Mix & Match toggle ──────────────────────────────────────────────────────
   const handleToggle = (cp, variantId) => {
     const idx = selections.findIndex(s =>
@@ -408,8 +486,6 @@ const ComboDetailPage = () => {
                     </span>
                   </div>
                   <h2 style={{ marginBottom: 12 }}>{child.name}</h2>
-
-
 
                   {/* Type badge */}
                   <div style={{ marginBottom: 12 }}>
@@ -529,35 +605,60 @@ const ComboDetailPage = () => {
 
                     {/* Cart / Go to cart / View Cart */}
                     {isInCart ? (
-                      <Link to={process.env.PUBLIC_URL + "/cart"} className="pdp-btn pdp-btn--success" style={{ width: "100%" }}>
-                        View Cart
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 6 }}>
-                          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                        </svg>
-                      </Link>
+                      <>
+                        <Link to={process.env.PUBLIC_URL + "/cart"} className="pdp-btn pdp-btn--success" style={{ flex: 1 }}>
+                          View Cart
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 6 }}>
+                            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                          </svg>
+                        </Link>
+                        <button
+                          className="pdp-btn pdp-btn--buy"
+                          onClick={handleBuyNow}
+                          style={{ flex: 1 }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                          Buy Now
+                        </button>
+                      </>
                     ) : (
-                      <button
-                        className={clsx("pdp-btn", (fixedOos || (child.type === "mix_match" && !canAdd)) ? "pdp-btn--disabled" : "pdp-btn--primary")}
-                        onClick={handleAddToCart}
-                        disabled={addingCart || fixedOos || (child.type === "mix_match" && !canAdd)}
-                        style={{ width: "100%" }}
-                      >
-                        {addingCart ? (
-                          "Adding…"
-                        ) : fixedOos ? (
-                          "Out of Stock"
-                        ) : child.type === "mix_match" && !canAdd ? (
-                          `Add ${minQty - totalSel} more to unlock`
-                        ) : (
-                          <>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8 }}>
-                              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                            </svg>
-                            Add to Cart
-                          </>
-                        )}
-                      </button>
+                      <>
+                        <button
+                          className={clsx("pdp-btn", (fixedOos || (child.type === "mix_match" && !canAdd)) ? "pdp-btn--disabled" : "pdp-btn--primary")}
+                          onClick={handleAddToCart}
+                          disabled={addingCart || fixedOos || (child.type === "mix_match" && !canAdd)}
+                          style={{ flex: 1 }}
+                        >
+                          {addingCart ? (
+                            "Adding…"
+                          ) : fixedOos ? (
+                            "Out of Stock"
+                          ) : child.type === "mix_match" && !canAdd ? (
+                            `Add ${minQty - totalSel} more to unlock`
+                          ) : (
+                            <>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8 }}>
+                                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                              </svg>
+                              Add to Cart
+                            </>
+                          )}
+                        </button>
+                        <button
+                          className="pdp-btn pdp-btn--buy"
+                          onClick={handleBuyNow}
+                          disabled={addingCart || fixedOos || (child.type === "mix_match" && !canAdd)}
+                          style={{ flex: 1 }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                          Buy Now
+                        </button>
+                      </>
                     )}
                   </div>
 
@@ -683,6 +784,26 @@ const ComboDetailPage = () => {
           box-shadow: 0 6px 16px rgba(219,26,93,0.3);
           transform: translateY(-1px);
           color: #fff;
+        }
+        .pdp-btn--buy {
+          background: #F15A24;
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(241,90,36,0.2);
+          flex: 1;
+          min-width: 0;
+        }
+        .pdp-btn--buy:hover:not(:disabled) {
+          background: #df4e1b;
+          box-shadow: 0 6px 16px rgba(241,90,36,0.3);
+          transform: translateY(-1px);
+          color: #fff;
+        }
+        .pdp-btn--buy:disabled {
+          background: #e5e7eb;
+          color: #9ca3af;
+          box-shadow: none;
+          cursor: not-allowed;
+          transform: none;
         }
         .pdp-btn--success {
           background: #111827;
