@@ -602,3 +602,117 @@ body {
   font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.18s;
 }
 .btn-delete:hover { background: var(--danger-600); color: #fff; }
+
+/* ── Admin: Orders detail panel (All/New/etc.) ── */
+.km-order-detail-cell {
+  padding: 18px;
+  background: var(--neutral-50);
+}
+
+.km-order-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px;
+  padding: 18px 20px 20px;
+}
+
+@media (max-width: 1100px) {
+  .km-order-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; gap: 18px; }
+}
+
+@media (max-width: 640px) {
+  .km-order-detail-grid { grid-template-columns: 1fr; padding: 14px; gap: 14px; }
+}
+
+.km-order-detail-grid > div {
+  background: #fff;
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius);
+  padding: 14px 14px 12px;
+}
+
+.km-detail-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--neutral-600);
+  margin-bottom: 12px;
+}
+
+.km-order-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--neutral-100);
+  border-radius: var(--radius-sm);
+  background: var(--neutral-50);
+  margin-bottom: 8px;
+}
+
+.km-order-item-row:last-child {
+  margin-bottom: 0;
+}
+
+.km-billing-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.55;
+}
+
+.td-muted {
+  color: var(--neutral-500);
+  font-size: 12px;
+}
+
+.td-price-sm {
+  font-weight: 900;
+  color: var(--neutral-800);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.td-price {
+  font-weight: 900;
+  color: var(--neutral-800);
+}
+
+.td-green {
+  color: var(--success-600);
+  font-weight: 900;
+}
+
+.km-payment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--neutral-200);
+}
+
+.km-payment-row:last-of-type {
+  border-bottom: none;
+}
+
+.km-payment-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  margin-top: 10px;
+  border-top: 1px solid var(--neutral-200);
+}
+
+.km-order-notes {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--neutral-200);
+  background: var(--neutral-50);
+  color: var(--neutral-700);
+  font-size: 12px;
+  white-space: pre-wrap;
+}

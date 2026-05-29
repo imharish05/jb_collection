@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchOrders, changeOrderStatus } from '../../redux/services/ordersService';
@@ -12,18 +12,64 @@ const labelFor = s => ({
   delivered: 'Delivered',
   cancelled: 'Cancelled',
 }[s] || s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
-const parseAddr = (raw) => { try { return JSON.parse(raw); } catch { return null; } };
+const safeNumber = (v, fallback = 0) => {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return Number.isFinite(n) ? n : fallback;
+};
 
-const AddressBlock = ({ addr, phone, email }) => {
-  if (!addr) return <p className="td-muted">Not provided</p>;
+const parseAddr = (raw) => {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  if (typeof raw !== 'string') return null;
+  try { return JSON.parse(raw); } catch { return null; }
+};
+
+const normalizeAddress = (addr) => {
+  if (!addr) return null;
+
+  // New Address model shape (Server/models/Address.js)
+  if (addr.fullName && addr.street) {
+    const parts = [
+      addr.street,
+      addr.apartment ? addr.apartment : null,
+      addr.city ? `${addr.city}${addr.pincode ? ` — ${addr.pincode}` : ''}` : null,
+      addr.state || null,
+      addr.country || null,
+    ].filter(Boolean);
+    return {
+      name: addr.fullName,
+      businessName: addr.businessName || '',
+      lines: parts,
+      phone: addr.phone || null,
+    };
+  }
+
+  // Legacy JSON string shape used by older orders
+  const name = [addr.firstName, addr.lastName].filter(Boolean).join(' ').trim();
+  const line1 = addr.address || '';
+  const line2 = addr.apartment ? addr.apartment : '';
+  const line3 = [addr.city, addr.postCode ? `— ${addr.postCode}` : ''].filter(Boolean).join(' ').trim();
+  const parts = [line1, line2, line3, addr.state, addr.country].filter(Boolean);
+
+  return {
+    name: name || addr.fullName || '',
+    businessName: addr.businessName || '',
+    lines: parts,
+    phone: addr.phone || null,
+  };
+};
+
+const AddressBlock = ({ addr, fallbackPhone, email }) => {
+  const n = normalizeAddress(addr);
+  if (!n) return <p className="td-muted">Not provided</p>;
   return (
     <div className="km-billing-info">
-      <div><strong>{addr.firstName} {addr.lastName}</strong></div>
-      {addr.businessName && <div className="td-muted">{addr.businessName}</div>}
-      <div>{addr.address}{addr.apartment ? `, ${addr.apartment}` : ''}</div>
-      <div>{addr.city}{addr.postCode ? ` — ${addr.postCode}` : ''}</div>
-      {addr.state && <div className="td-muted">{addr.state}</div>}
-      {phone && <div className="td-muted">{phone}</div>}
+      {n.name && <div><strong>{n.name}</strong></div>}
+      {n.businessName && <div className="td-muted">{n.businessName}</div>}
+      {n.lines.map((l, idx) => (
+        <div key={idx}>{l}</div>
+      ))}
+      {(n.phone || fallbackPhone) && <div className="td-muted">{n.phone || fallbackPhone}</div>}
       {email && <div className="td-muted">{email}</div>}
     </div>
   );
@@ -34,7 +80,47 @@ export default function Orders({ status = null }) {
   const { items: allOrders, loading } = useSelector(state => state.orders);
   const [expanded, setExpanded] = useState(null);
 
-  const rows = status ? allOrders.filter(o => o.status === status) : allOrders;
+  const rows = useMemo(() => {
+    const normalized = (Array.isArray(allOrders) ? allOrders : []).map((o) => {
+      const user = o.user || o.User || null;
+      const items = o.items || o.orderItems || [];
+      const coupon = o.coupon_code ?? o.couponCode ?? null;
+      const total = o.total ?? o.totalAmount ?? o.total_amount ?? null;
+      const customerName = o.customer_name ?? user?.name ?? user?.fullName ?? '';
+      const customerEmail = o.customer_email ?? user?.email ?? '';
+      const customerPhone = o.customer_phone ?? user?.phone ?? o.shippingAddress?.phone ?? '';
+
+      const billing = parseAddr(o.billing_address ?? o.billingAddress ?? null);
+      const shipping = parseAddr(o.shipping_address ?? o.shippingAddress ?? null);
+
+      const computedSubtotal = Array.isArray(items)
+        ? items.reduce((sum, it) => sum + (safeNumber(it.price) * (safeNumber(it.quantity, 1) || 1)), 0)
+        : 0;
+
+      const discount = safeNumber(o.discount ?? 0, 0);
+      const tax = safeNumber(o.tax ?? 0, 0);
+      const resolvedTotal = safeNumber(total, computedSubtotal - discount + tax);
+
+      return {
+        ...o,
+        user,
+        items,
+        couponCode: coupon,
+        totalAmount: resolvedTotal,
+        subtotalAmount: safeNumber(o.subtotal ?? computedSubtotal, computedSubtotal),
+        taxAmount: tax,
+        discountAmount: discount,
+        customer_name: customerName,
+        customer_email: customerEmail,
+        customer_phone: customerPhone,
+        billingAddress: billing,
+        shippingAddress: shipping,
+      };
+    });
+
+    const byStatus = status ? normalized.filter(o => o.status === status) : normalized;
+    return byStatus;
+  }, [allOrders, status]);
 
   useEffect(() => {
     setExpanded(null);
@@ -65,8 +151,8 @@ export default function Orders({ status = null }) {
           columns={['#ID', 'Customer', 'Items', 'Total', 'Coupon', 'Status', 'Date', 'Details']}
           initialRows={rows}
           renderRow={(order) => {
-            const billing = parseAddr(order.billing_address);
-            const shipping = parseAddr(order.shipping_address);
+            const billing = order.billingAddress;
+            const shipping = order.shippingAddress;
             const isOpen = expanded === order.id;
             const shippingAddr = shipping || billing;
             const sameAddress = !shipping || JSON.stringify(shipping) === JSON.stringify(billing);
@@ -75,15 +161,15 @@ export default function Orders({ status = null }) {
                 <tr key={order.id}>
                   <td className="td-id">#{order.id}</td>
                   <td>
-                    <div className="td-name">{order.customer_name}</div>
-                    <div className="td-sub">{order.customer_email}</div>
-                    <div className="td-sub">{order.customer_phone}</div>
+                    <div className="td-name">{order.customer_name || '—'}</div>
+                    {order.customer_email && <div className="td-sub">{order.customer_email}</div>}
+                    {order.customer_phone && <div className="td-sub">{order.customer_phone}</div>}
                   </td>
                   <td><span className="km-count-badge">{order.items?.length || 0} items</span></td>
-                  <td className="td-price">₹{Number(order.total).toFixed(2)}</td>
+                  <td className="td-price">₹{safeNumber(order.totalAmount).toFixed(2)}</td>
                   <td>
-                    {order.coupon_code
-                      ? <span className="status-pill pill-approved">{order.coupon_code}</span>
+                    {order.couponCode
+                      ? <span className="status-pill pill-approved">{order.couponCode}</span>
                       : <span className="td-muted">—</span>}
                   </td>
                   <td>
@@ -93,7 +179,9 @@ export default function Orders({ status = null }) {
                     </select>
                   </td>
                   <td className="td-muted">
-                    {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {order.createdAt
+                      ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : '—'}
                   </td>
                   <td>
                     <button className="action-btn btn-edit" onClick={() => setExpanded(isOpen ? null : order.id)}>
@@ -109,7 +197,7 @@ export default function Orders({ status = null }) {
                           <div className="km-form-header-icon">📦</div>
                           <div>
                             <div className="km-form-header-title">Order #{order.id} — {order.customer_name}</div>
-                            <div className="km-form-header-sub">Payment ID: {order.payment_id || '—'}</div>
+                            <div className="km-form-header-sub">Payment: {order.paymentMethod || '—'} ({order.paymentStatus || '—'})</div>
                           </div>
                         </div>
                         <div className="km-order-detail-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
@@ -127,14 +215,14 @@ export default function Orders({ status = null }) {
                                     )}
                                     <span className="td-muted"> × {item.quantity}</span>
                                   </span>
-                                  <span className="td-price-sm">₹{(item.price * item.quantity).toFixed(2)}</span>
+                                  <span className="td-price-sm">₹{(safeNumber(item.price) * safeNumber(item.quantity, 1)).toFixed(2)}</span>
                                 </div>
                               ))
                               : <p className="td-muted">No items found</p>}
                           </div>
                           <div>
                             <div className="km-detail-section-title">Billing Address</div>
-                            <AddressBlock addr={billing} phone={order.customer_phone} email={order.customer_email} />
+                            <AddressBlock addr={billing} fallbackPhone={order.customer_phone} email={order.customer_email} />
                           </div>
                           <div>
                             <div className="km-detail-section-title">
@@ -143,21 +231,21 @@ export default function Orders({ status = null }) {
                                 <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, background: '#e8f5e9', color: '#2e7d32', padding: '2px 8px', borderRadius: 20 }}>Same as billing</span>
                               )}
                             </div>
-                            <AddressBlock addr={shippingAddr} phone={!sameAddress ? order.customer_phone : null} email={null} />
+                            <AddressBlock addr={shippingAddr} fallbackPhone={!sameAddress ? order.customer_phone : null} email={null} />
                           </div>
                           <div>
                             <div className="km-detail-section-title">Payment Summary</div>
-                            <div className="km-payment-row"><span className="td-muted">Subtotal</span><span>₹{Number(order.subtotal).toFixed(2)}</span></div>
-                            <div className="km-payment-row"><span className="td-muted">Tax</span><span>₹{Number(order.tax).toFixed(2)}</span></div>
+                            <div className="km-payment-row"><span className="td-muted">Subtotal</span><span>₹{safeNumber(order.subtotalAmount).toFixed(2)}</span></div>
+                            <div className="km-payment-row"><span className="td-muted">Tax</span><span>₹{safeNumber(order.taxAmount).toFixed(2)}</span></div>
                             <div className="km-payment-row"><span className="td-muted">Delivery</span><span className="td-green">FREE</span></div>
-                            {order.discount > 0 && (
+                            {safeNumber(order.discountAmount) > 0 && (
                               <div className="km-payment-row">
-                                <span className="td-muted">Discount {order.coupon_code ? `(${order.coupon_code})` : ''}</span>
-                                <span className="td-green">−₹{Number(order.discount).toFixed(2)}</span>
+                                <span className="td-muted">Discount {order.couponCode ? `(${order.couponCode})` : ''}</span>
+                                <span className="td-green">−₹{safeNumber(order.discountAmount).toFixed(2)}</span>
                               </div>
                             )}
-                            <div className="km-payment-total"><span>Total Paid</span><span className="td-price">₹{Number(order.total).toFixed(2)}</span></div>
-                            {order.order_notes && <div className="km-order-notes">{order.order_notes}</div>}
+                            <div className="km-payment-total"><span>Total Paid</span><span className="td-price">₹{safeNumber(order.totalAmount).toFixed(2)}</span></div>
+                            {order.notes && <div className="km-order-notes">{order.notes}</div>}
                           </div>
                         </div>
                       </div>

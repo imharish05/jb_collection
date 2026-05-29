@@ -20,6 +20,29 @@ h3.cart-page-title {
 .cart-table-content table {
   border: 1px solid #ebebeb;
 }
+
+/* Mobile/tablet: prevent cart table from breaking layout */
+@media only screen and (max-width: 991px) {
+  .cart-table-content {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+  .cart-table-content table {
+    min-width: 720px; /* keeps columns readable; enables horizontal scroll */
+  }
+}
+
+@media only screen and (max-width: 767px) {
+  .cart-table-content table tbody > tr td {
+    padding: 18px 0 18px 18px;
+    font-size: 14px;
+  }
+  .cart-table-content table thead > tr th {
+    padding: 16px 18px;
+    font-size: 13px;
+  }
+}
 .cart-table-content table thead > tr {
   border: 1px solid #ebebeb;
   background-color: #f9f9f9;
