@@ -12,7 +12,7 @@ const getStats = async (req, res) => {
         limit: 8,
         order: [["createdAt", "DESC"]],
         where: { isActive: true },
-        attributes: ["id", ["name", "productName"], "createdAt"],
+        attributes: ["id", ["name", "productName"], "createdAt", "categoryId", "price", "discount", "stock"],
         include: [
           {
             model: Category,
@@ -30,11 +30,16 @@ const getStats = async (req, res) => {
       }),
     ]);
 
-    // Rename `variants` → `Variants` to match what frontend reads
+    // Shape the recent products for the frontend
     const shaped = recentProducts.map((p) => {
       const row = p.toJSON();
-      row.Variants = row.variants || [];
+      row.Variants = row.Variants || row.variants || [];
       delete row.variants;
+      
+      // Map base product price and discount as fallbacks for MRP and Sale Price
+      row.mrp = parseFloat(row.price) || 0;
+      row.salesPrice = row.price ? parseFloat((row.price * (1 - (row.discount || 0) / 100)).toFixed(2)) : 0;
+      
       return row;
     });
 

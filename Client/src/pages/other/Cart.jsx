@@ -23,24 +23,7 @@ const SHIPPING_COST = 60;
 const COD_FEE = 30;
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
-const formatCouponDesc = (c) => {
-  if (c.type === "percent") {
-    let s = `${parseFloat(c.value)}% OFF`;
-    if (c.max_discount) s += ` up to ₹${parseFloat(c.max_discount)}`;
-    return s;
-  }
-  return `₹${parseFloat(c.value)} OFF`;
-};
 
-const formatCouponCond = (c) => {
-  const parts = [];
-  if (parseFloat(c.min_order) > 0) parts.push(`Min order ₹${parseFloat(c.min_order)}`);
-  if (c.expires_at) {
-    const d = new Date(c.expires_at);
-    parts.push(`Valid till ${d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`);
-  }
-  return parts.join(" · ") || "No minimum order";
-};
 
 // ── Variant helpers (same logic as Wishlist) ─────────────────────────────────
 const safeAttrs = (raw) => {
@@ -82,13 +65,6 @@ const Cart = () => {
   const { cartItems } = useSelector((state) => state.cart);
   const { addresses, activeAddressId, loading: addrLoading } = useSelector((state) => state.address);
 
-  /* ── Coupon state ──────────────────────────────────────────────────────── */
-  const [couponInput, setCouponInput] = useState("");
-  const [coupon, setCoupon] = useState(null);
-  const [couponErr, setCouponErr] = useState("");
-  const [couponLoading, setCouponLoading] = useState(false);
-  const [couponOpen, setCouponOpen] = useState(false);
-
   /* ── Expanded combos state ── */
   const [expandedCombos, setExpandedCombos] = useState({});
   const toggleComboExpanded = (cartItemId) => {
@@ -97,25 +73,6 @@ const Cart = () => {
       [cartItemId]: !prev[cartItemId]
     }));
   };
-
-  /* ── Available coupons from backend ───────────────────────────────────── */
-  const [availableCoupons, setAvailableCoupons] = useState([]);
-  const [couponsLoading, setCouponsLoading] = useState(false);
-  const [couponsLoaded, setCouponsLoaded] = useState(false);
-
-  useEffect(() => {
-    if (couponOpen && !couponsLoaded) {
-      setCouponsLoading(true);
-      api
-        .get("/coupons/active")
-        .then((res) => setAvailableCoupons(res.data || []))
-        .catch(() => {})
-        .finally(() => {
-          setCouponsLoading(false);
-          setCouponsLoaded(true);
-        });
-    }
-  }, [couponOpen, couponsLoaded]);
 
   useEffect(() => {
     if (authUser?.id) dispatch(fetchAddresses());
@@ -131,38 +88,7 @@ const Cart = () => {
   });
 
   const shipping = subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
-  const couponDiscount = coupon ? parseFloat(coupon.discount) : 0;
-  const grandTotal = subtotal + shipping - couponDiscount;
-
-  /* ── Apply Coupon ──────────────────────────────────────────────────────── */
-  const applyCode = useCallback(
-    async (code) => {
-      const normalized = (code || couponInput).trim().toUpperCase();
-      if (!normalized) return;
-      setCouponLoading(true);
-      setCouponErr("");
-      setCoupon(null);
-      try {
-        const res = await api.post("/coupons/validate", {
-          code: normalized,
-          order_total: subtotal,
-        });
-        setCoupon(res.data);
-        setCouponInput(normalized);
-      } catch (err) {
-        setCouponErr(err.response?.data?.message || "Invalid coupon code");
-      } finally {
-        setCouponLoading(false);
-      }
-    },
-    [couponInput, subtotal]
-  );
-
-  const handleRemoveCoupon = () => {
-    setCoupon(null);
-    setCouponInput("");
-    setCouponErr("");
-  };
+  const grandTotal = subtotal + shipping;
 
   /* ── Empty Cart ────────────────────────────────────────────────────────── */
   if (!cartItems || cartItems.length === 0) {
@@ -606,156 +532,6 @@ const Cart = () => {
                   })}
                 </div>
 
-                {/* ── Coupons & Offers (Secondary Card) ───────────── */}
-                <div className="kg-coupons-card">
-                  {/* Header */}
-                  <div
-                    className="kg-coupons-header"
-                    onClick={() => setCouponOpen((o) => !o)}
-                    role="button"
-                    aria-expanded={couponOpen}
-                  >
-                    <div className="kg-coupons-header-left">
-                      <div className="kg-coupon-icon-wrap">🏷️</div>
-                      <div>
-                        <div className="kg-coupons-title">
-                          {coupon ? (
-                            <span style={{ color: "#16a34a" }}>Coupon Applied ✓</span>
-                          ) : (
-                            "Promo Codes & Offers"
-                          )}
-                        </div>
-                        <div className="kg-coupons-subtitle">
-                          {coupon
-                            ? `Saving ₹${couponDiscount.toFixed(2)} on this order`
-                            : "Tap to view available offers"}
-                        </div>
-                      </div>
-                    </div>
-                    <span className={`kg-coupons-toggle-icon ${couponOpen ? "open" : ""}`}>
-                      ▼
-                    </span>
-                  </div>
-
-                  {/* Applied chip (always visible) */}
-                  {coupon && (
-                    <div style={{ marginTop: 14 }}>
-                      <span className="kg-coupon-applied-chip">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        {coupon.coupon_code}
-                        <button className="kg-coupon-remove-btn" onClick={handleRemoveCoupon}>
-                          Remove
-                        </button>
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Expanded body */}
-                  {couponOpen && (
-                    <div className="kg-coupon-body">
-
-                      {/* Available coupon cards */}
-                      {couponsLoading && (
-                        <div className="kg-coupons-loading">
-                          <span>Loading offers...</span>
-                        </div>
-                      )}
-
-                      {/* {!couponsLoading && availableCoupons.length > 0 && (
-                        <>
-                          <p
-                            style={{
-                              fontSize: 12,
-                              color: "#888",
-                              marginBottom: 10,
-                              fontWeight: 600,
-                              textTransform: "uppercase",
-                              letterSpacing: 0.5,
-                            }}
-                          >
-                            Available Offers
-                          </p>
-                          <div className="kg-coupon-cards-grid">
-                            {availableCoupons.map((c) => {
-                              const isApplied = coupon?.coupon_code === c.code;
-                              const isEligible = subtotal >= parseFloat(c.min_order || 0);
-                              return (
-                                <div
-                                  key={c.id}
-                                  className={`kg-coupon-card ${isApplied ? "applied" : ""}`}
-                                  onClick={() => !isApplied && isEligible && applyCode(c.code)}
-                                  style={{ opacity: isEligible ? 1 : 0.55 }}
-                                  title={!isEligible ? `Min order ₹${c.min_order} required` : ""}
-                                >
-                                  <div className="kg-coupon-card-code">{c.code}</div>
-                                  <div className="kg-coupon-card-desc">
-                                    {formatCouponDesc(c)}
-                                  </div>
-                                  <div className="kg-coupon-card-cond">
-                                    {formatCouponCond(c)}
-                                  </div>
-                                  {!isApplied && isEligible && (
-                                    <div className="kg-coupon-card-tap">
-                                      ↗ Tap to apply
-                                    </div>
-                                  )}
-                                  {isApplied && (
-                                    <div
-                                      className="kg-coupon-card-tap"
-                                      style={{ color: "#16a34a" }}
-                                    >
-                                      ✓ Applied
-                                    </div>
-                                  )}
-                                  {!isEligible && (
-                                    <div
-                                      className="kg-coupon-card-tap"
-                                      style={{ color: "#f59e0b" }}
-                                    >
-                                      ⚠ Add ₹{(parseFloat(c.min_order) - subtotal).toFixed(0)} more
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </>
-                      )} */}
-
-                      {/* Manual input */}
-                      <p className="kg-coupon-manual-label">
-                        {availableCoupons.length > 0
-                          ? "Or enter a different code:"
-                          : "Enter promo code:"}
-                      </p>
-                      <div className="kg-coupon-input-row">
-                        <input
-                          type="text"
-                          className="kg-coupon-input"
-                          value={couponInput}
-                          onChange={(e) => {
-                            setCouponInput(e.target.value.toUpperCase());
-                            setCouponErr("");
-                          }}
-                          placeholder="E.g. KAMALI15"
-                          onKeyDown={(e) => e.key === "Enter" && applyCode()}
-                        />
-                        <button
-                          className="kg-coupon-apply-btn"
-                          onClick={() => applyCode()}
-                          disabled={couponLoading || !couponInput.trim()}
-                        >
-                          {couponLoading ? "..." : "Apply"}
-                        </button>
-                      </div>
-                      {couponErr && (
-                        <p className="kg-coupon-err">⚠ {couponErr}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
 
                 {/* Continue Shopping */}
                 <Link
@@ -882,12 +658,6 @@ const Cart = () => {
                         {shipping === 0 ? "FREE" : `₹${shipping}`}
                       </span>
                     </div>
-                    {couponDiscount > 0 && (
-                      <div className="kg-breakdown-row" style={{ color: "#16a34a" }}>
-                        <span>Coupon ({coupon.coupon_code})</span>
-                        <span>− ₹{couponDiscount.toFixed(2)}</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Total */}
@@ -900,24 +670,6 @@ const Cart = () => {
                     Inclusive of all taxes · COD +₹{COD_FEE}
                   </p>
 
-                  {couponDiscount > 0 && (
-                    <div
-                      style={{
-                        background: "#f0fdf4",
-                        border: "1px solid #86efac",
-                        borderRadius: 8,
-                        padding: "8px 12px",
-                        fontSize: 12,
-                        color: "#16a34a",
-                        fontWeight: 700,
-                        textAlign: "center",
-                        marginBottom: 14,
-                      }}
-                    >
-                      🎉 You're saving ₹{couponDiscount.toFixed(2)} on this order!
-                    </div>
-                  )}
-
                   {/* Checkout Button */}
                   <button
                     className="kg-checkout-btn"
@@ -926,8 +678,8 @@ const Cart = () => {
                         state: {
                           subtotal,
                           shipping,
-                          couponDiscount,
-                          couponCode: coupon?.coupon_code || null,
+                          couponDiscount: 0,
+                          couponCode: null,
                           grandTotal,
                         },
                       })

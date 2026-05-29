@@ -50,30 +50,35 @@ function getVariantPrice(p) {
 }
 
 function isLowStock(cp) {
-  const v = cp.variant;
+  const v = cp.variant
+    || (cp.variantId && Array.isArray(cp.product?.Variants)
+      ? cp.product.Variants.find(x => String(x.id) === String(cp.variantId))
+      : null);
   const stock = v ? v.stock : cp.product?.stock ?? 0;
-  return stock <= 3 && stock > 0;
+  return Number(stock) <= 3 && Number(stock) > 0;
 }
 
 function isOutOfStock(cp) {
-  const v = cp.variant;
+  const v = cp.variant
+    || (cp.variantId && Array.isArray(cp.product?.Variants)
+      ? cp.product.Variants.find(x => String(x.id) === String(cp.variantId))
+      : null);
   const stock = v ? v.stock : cp.product?.stock ?? 0;
-  return stock === 0;
+  return Number(stock) === 0;
 }
 
 // ComboImageGallery removed in favor of ProductImageGallerySideThumb
 
-// ── Fixed combo: included products list ──────────────────────────────────────
+// ── Fixed combo: included products list (card-grid, same style as Mix & Match) ─
 function FixedProductsList({ comboProducts }) {
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{ fontSize: 13, fontWeight: 600, color: "#1A3A6B", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
         Included Products
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
         {comboProducts.map(cp => {
           const prod = cp.product;
-          // cp.variant may be null even if cp.variantId exists — resolve from product.Variants[]
           const variant = cp.variant
             || (cp.variantId && Array.isArray(prod?.Variants)
               ? prod.Variants.find(v => String(v.id) === String(cp.variantId)) || null
@@ -82,28 +87,53 @@ function FixedProductsList({ comboProducts }) {
           const low = isLowStock(cp);
           const oos = isOutOfStock(cp);
           const qty = cp.quantity || 1;
+          const sales = variant ? parseFloat(variant.salesPrice || 0) : parseFloat(prod?.price || 0);
+          const mrp   = variant ? parseFloat(variant.mrp || 0)        : parseFloat(prod?.price || 0);
           return (
-            <div key={cp.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: 8 }}>
-              {img
-                ? <img src={img} alt="" width={40} height={40} style={{ borderRadius: 6, objectFit: "cover", border: "1px solid #E5E7EB", flexShrink: 0 }} />
-                : <div style={{ width: 40, height: 40, borderRadius: 6, background: "#fff", border: "1px solid #E5E7EB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>🎁</div>
-              }
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#1A1A2E", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div
+              key={cp.id}
+              style={{
+                border: `2px solid ${oos ? "#fecaca" : "#E5E7EB"}`,
+                borderRadius: 10,
+                overflow: "hidden",
+                background: oos ? "#fef9f9" : "#fff",
+                opacity: oos ? 0.75 : 1,
+                position: "relative",
+              }}
+            >
+              {/* Qty badge */}
+              {qty > 1 && (
+                <div style={{
+                  position: "absolute", top: 6, left: 6,
+                  minWidth: 20, height: 20, borderRadius: 10,
+                  background: "#1A3A6B", color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 9, fontWeight: 700, zIndex: 1, padding: "0 5px",
+                }}>×{qty}</div>
+              )}
+              {/* Image */}
+              <div style={{ paddingTop: "75%", position: "relative", background: "#F9FAFB", overflow: "hidden" }}>
+                {img
+                  ? <img src={img} alt={prod?.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, color: "#e5e7eb" }}>🎁</div>
+                }
+              </div>
+              {/* Info */}
+              <div style={{ padding: "8px 10px" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#1A1A2E", lineHeight: 1.3, marginBottom: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {prod?.name}
                 </div>
-                <div style={{ display: "flex", gap: 6, marginTop: 3, flexWrap: "wrap", alignItems: "center" }}>
-                  {variant && (
-                    <span style={{ fontSize: 10, background: "#fff0f6", color: "#db1a5d", borderRadius: 4, padding: "1px 6px", border: "1px solid #ffd6e7", fontWeight: 600 }}>
-                      {variant.variantName}
-                    </span>
-                  )}
-                  <span style={{ fontSize: 10, background: "#f3f4f6", color: "#6b7280", borderRadius: 4, padding: "1px 6px", border: "1px solid #e5e7eb", fontWeight: 600 }}>
-                    ×{qty}
-                  </span>
-                  {oos  && <span style={{ fontSize: 10, background: "#fef2f2", color: "#dc2626", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>Out of stock</span>}
-                  {low  && !oos && <span style={{ fontSize: 10, background: "#fef9c3", color: "#b45309", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>Only {isLowStock(cp) ? (cp.variant?.stock ?? cp.product?.stock) : ""} left</span>}
+                {variant && (
+                  <div style={{ fontSize: 9, color: "#db1a5d", fontWeight: 600, marginBottom: 4, lineHeight: 1.4 }}>
+                    {variant.variantName}
+                  </div>
+                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                  {sales > 0 && <span style={{ fontSize: 12, fontWeight: 700, color: "#F15A24" }}>₹{sales.toLocaleString("en-IN")}</span>}
+                  {mrp > sales && sales > 0 && <span style={{ fontSize: 10, color: "#6B7280", textDecoration: "line-through" }}>₹{mrp.toLocaleString("en-IN")}</span>}
                 </div>
+                {oos && <div style={{ fontSize: 10, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>Out of stock</div>}
+                {low && !oos && <div style={{ fontSize: 10, color: "#b45309", fontWeight: 600, marginTop: 2 }}>Only {cp.variant?.stock ?? cp.product?.stock} left</div>}
               </div>
             </div>
           );
@@ -197,6 +227,30 @@ const ComboDetailPage = () => {
 
   const isInCart = isAuthenticated && comboCartQty > 0;
 
+  // Rule 2: Combo purchasable qty = min(all child stocks) — "Lowest Stock Rule"
+  const fixedMaxQty = useMemo(() => {
+    if (!child || child.type !== "fixed" || !child.comboProducts?.length) return Infinity;
+    const stocks = child.comboProducts.map(cp => {
+      const v = cp.variant
+        || (cp.variantId && Array.isArray(cp.product?.Variants)
+          ? cp.product.Variants.find(x => String(x.id) === String(cp.variantId))
+          : null);
+      return Number(v ? v.stock : cp.product?.stock ?? 0);
+    });
+    return Math.min(...stocks);
+  }, [child]);
+
+  // Rule 4: List of OOS products for partial-OOS UI
+  const oosProducts = useMemo(() => {
+    if (!child || child.type !== "fixed" || !child.comboProducts?.length) return [];
+    return child.comboProducts.filter(cp => isOutOfStock(cp));
+  }, [child]);
+
+  const lowStockProducts = useMemo(() => {
+    if (!child || child.type !== "fixed" || !child.comboProducts?.length) return [];
+    return child.comboProducts.filter(cp => isLowStock(cp));
+  }, [child]);
+
   useEffect(() => {
     dispatch(fetchComboById(rootComboId));
   }, [rootComboId]);
@@ -269,6 +323,7 @@ const ComboDetailPage = () => {
   const maxQty     = child.maxQty || Infinity;
   const canAdd     = totalSel >= minQty;
 
+  // ── Fixed combo OOS & stock rules ─────────────────────────────────────────
   const fixedOos = child.type === "fixed" && child.comboProducts?.some(cp => isOutOfStock(cp));
 
   const handleAddToCart = async () => {
@@ -477,7 +532,7 @@ const ComboDetailPage = () => {
 
               {/* RIGHT: info panel — mirrors ProductDescriptionInfo structure */}
               <div className="col-lg-6 col-md-6">
-                <div className="product-details-content ml-70">
+                <div className="combo-details-content">
 
                   {/* Combo name + root group */}
                   <div style={{ marginBottom: 4 }}>
@@ -528,9 +583,28 @@ const ComboDetailPage = () => {
                       {child.comboProducts && child.comboProducts.length > 0 && (
                         <FixedProductsList comboProducts={child.comboProducts} />
                       )}
-                      {fixedOos && (
-                        <div style={{ marginTop: 10, padding: "8px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, fontSize: 12, color: "#dc2626", fontWeight: 600 }}>
-                          ⚠️ One or more products in this combo are out of stock.
+
+                      {/* Rule 1 — Hard OOS: one or more items are zero-stock */}
+                      {fixedOos && oosProducts.length > 0 && (
+                        <div style={{ marginTop: 10, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8 }}>
+                          <div style={{ fontSize: 13, color: "#dc2626", fontWeight: 700, marginBottom: 6 }}>
+                            ⚠️ Combo Unavailable — out of stock item{oosProducts.length > 1 ? "s" : ""}:
+                          </div>
+                          {oosProducts.map((cp, i) => (
+                            <div key={i} style={{ fontSize: 12, color: "#991b1b", display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#dc2626", flexShrink: 0, display: "inline-block" }} />
+                              {cp.product?.name || `Product #${cp.productId}`}
+                              {cp.variant?.variantName ? ` — ${cp.variant.variantName}` : ""}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Rule 2 — Low stock warning: remaining qty limited */}
+                      {!fixedOos && fixedMaxQty < Infinity && fixedMaxQty <= 5 && lowStockProducts.length > 0 && (
+                        <div style={{ marginTop: 10, padding: "8px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, fontSize: 12, color: "#92400e", fontWeight: 600 }}>
+                          ⚡ Only {fixedMaxQty} combo{fixedMaxQty === 1 ? "" : "s"} left — limited by{" "}
+                          {lowStockProducts.map(cp => cp.product?.name || "item").join(", ")}
                         </div>
                       )}
                     </>
@@ -578,88 +652,104 @@ const ComboDetailPage = () => {
                   )}
 
                   <div className="pdp-info__actions" style={{ marginTop: 24 }}>
-                    {/* Qty */}
-                    {child.type === "fixed" && !isInCart && (
-                      <div className="pdp-qty">
-                        <button
-                          className="pdp-qty__btn"
-                          onClick={() => setQty(q => Math.max(1, q - 1))}
-                          disabled={qty <= 1}
-                        >
-                          <svg width="14" height="2" viewBox="0 0 14 2">
-                            <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="2"/>
-                          </svg>
-                        </button>
-                        <span className="pdp-qty__count">{qty}</span>
-                        <button
-                          className="pdp-qty__btn"
-                          onClick={() => setQty(q => q + 1)}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 14 14">
-                            <line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" strokeWidth="2"/>
-                            <line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" strokeWidth="2"/>
-                          </svg>
-                        </button>
+                    {/* Qty stepper — shown for both fixed & mix_match unless out of stock */}
+                    {!fixedOos && (
+                      <div className="pdp-info__actions-row pdp-info__actions-row--top">
+                        <div className="pdp-qty">
+                          <button
+                            className="pdp-qty__btn"
+                            onClick={() => setQty(q => Math.max(1, q - 1))}
+                            disabled={qty <= 1}
+                          >
+                            <svg width="14" height="2" viewBox="0 0 14 2">
+                              <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="2"/>
+                            </svg>
+                          </button>
+                          <span className="pdp-qty__count">{qty}</span>
+                          <button
+                            className="pdp-qty__btn"
+                            onClick={() => setQty(q => {
+                              // Cap at fixedMaxQty for fixed combos (lowest stock rule)
+                              const cap = child.type === "fixed" ? fixedMaxQty : Infinity;
+                              return q < cap ? q + 1 : q;
+                            })}
+                            disabled={child.type === "fixed" && qty >= fixedMaxQty}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 14 14">
+                              <line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" strokeWidth="2"/>
+                              <line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" strokeWidth="2"/>
+                            </svg>
+                          </button>
+                        </div>
+                        {/* Show lowest-stock warning for fixed combo */}
+                        {child.type === "fixed" && fixedMaxQty < Infinity && fixedMaxQty <= 5 && (
+                          <span style={{ fontSize: 11, color: fixedMaxQty <= 2 ? "#dc2626" : "#f59e0b", fontWeight: 600, alignSelf: "center" }}>
+                            Only {fixedMaxQty} available
+                          </span>
+                        )}
                       </div>
                     )}
 
-                    {/* Cart / Go to cart / View Cart */}
-                    {isInCart ? (
-                      <>
-                        <Link to={process.env.PUBLIC_URL + "/cart"} className="pdp-btn pdp-btn--success" style={{ flex: 1 }}>
-                          View Cart
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 6 }}>
-                            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                          </svg>
-                        </Link>
-                        <button
-                          className="pdp-btn pdp-btn--buy"
-                          onClick={handleBuyNow}
-                          style={{ flex: 1 }}
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M5 12h14M12 5l7 7-7 7"/>
-                          </svg>
-                          Buy Now
+                    <div className="pdp-info__actions-row pdp-info__actions-row--bottom">
+                      {fixedOos ? (
+                        <button className="pdp-btn pdp-btn--disabled" disabled style={{ width: "100%" }}>
+                          Out of Stock
                         </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          className={clsx("pdp-btn", (fixedOos || (child.type === "mix_match" && !canAdd)) ? "pdp-btn--disabled" : "pdp-btn--primary")}
-                          onClick={handleAddToCart}
-                          disabled={addingCart || fixedOos || (child.type === "mix_match" && !canAdd)}
-                          style={{ flex: 1 }}
-                        >
-                          {addingCart ? (
-                            "Adding…"
-                          ) : fixedOos ? (
-                            "Out of Stock"
-                          ) : child.type === "mix_match" && !canAdd ? (
-                            `Add ${minQty - totalSel} more to unlock`
-                          ) : (
-                            <>
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8 }}>
-                                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                              </svg>
-                              Add to Cart
-                            </>
-                          )}
-                        </button>
-                        <button
-                          className="pdp-btn pdp-btn--buy"
-                          onClick={handleBuyNow}
-                          disabled={addingCart || fixedOos || (child.type === "mix_match" && !canAdd)}
-                          style={{ flex: 1 }}
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M5 12h14M12 5l7 7-7 7"/>
-                          </svg>
-                          Buy Now
-                        </button>
-                      </>
-                    )}
+                      ) : isInCart ? (
+                        <>
+                          <Link to={process.env.PUBLIC_URL + "/cart"} className="pdp-btn pdp-btn--success" style={{ flex: 1 }}>
+                            View Cart
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 6 }}>
+                              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                            </svg>
+                          </Link>
+                          <button
+                            className="pdp-btn pdp-btn--buy"
+                            onClick={handleBuyNow}
+                            style={{ flex: 1 }}
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                            Buy Now
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className={clsx("pdp-btn", (child.type === "mix_match" && !canAdd) ? "pdp-btn--disabled" : "pdp-btn--primary")}
+                            onClick={handleAddToCart}
+                            disabled={addingCart || (child.type === "mix_match" && !canAdd)}
+                            style={{ flex: 1 }}
+                          >
+                            {addingCart ? (
+                              "Adding…"
+                            ) : child.type === "mix_match" && !canAdd ? (
+                              `Add ${minQty - totalSel} more to unlock`
+                            ) : (
+                              <>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8 }}>
+                                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                                </svg>
+                                Add to Cart
+                              </>
+                            )}
+                          </button>
+                          <button
+                            className="pdp-btn pdp-btn--buy"
+                            onClick={handleBuyNow}
+                            disabled={addingCart || (child.type === "mix_match" && !canAdd)}
+                            style={{ flex: 1 }}
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                            Buy Now
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {/* Stock warning */}
@@ -706,12 +796,47 @@ const ComboDetailPage = () => {
         </div>
       </LayoutOne>
       <style>{`
+        /* ── Responsive details layout ── */
+        .combo-details-content {
+          margin-left: 70px;
+        }
+        @media (max-width: 991px) {
+          .combo-details-content {
+            margin-left: 0;
+            margin-top: 30px;
+          }
+        }
+
         /* ── Actions row ── */
         .pdp-info__actions {
           display: flex;
+          flex-direction: column;
+          gap: 12px;
+          width: 100%;
+        }
+        .pdp-info__actions-row {
+          display: flex;
           align-items: center;
           gap: 12px;
-          flex-wrap: wrap;
+          width: 100%;
+        }
+        .pdp-info__actions-row--top .pdp-qty {
+          flex: 1;
+          max-width: 140px;
+        }
+        .pdp-info__actions-row--bottom .pdp-btn {
+          flex: 1;
+          min-width: 0;
+        }
+        .pdp-info__actions-row--bottom .pdp-btn--disabled {
+          flex: 1;
+          width: 100%;
+        }
+
+        @media (max-width: 767px) {
+          .pdp-info__actions-row--top .pdp-qty {
+            max-width: none;
+          }
         }
 
         /* ── Qty stepper ── */
@@ -723,6 +848,8 @@ const ComboDetailPage = () => {
           overflow: hidden;
           background: #fff;
           height: 46px;
+          justify-content: space-between;
+          width: 100%;
         }
         .pdp-qty__btn {
           width: 40px;
@@ -735,7 +862,7 @@ const ComboDetailPage = () => {
           justify-content: center;
           color: #4b5563;
           transition: all 0.15s;
-          flex-shrink: 0;
+          flex: 1;
         }
         .pdp-qty__btn:hover:not(:disabled) { background: #f3f4f6; color: #db1a5d; }
         .pdp-qty__btn:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -751,7 +878,7 @@ const ComboDetailPage = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-shrink: 0;
+          flex: 1.5;
         }
 
         /* ── Buttons ── */
