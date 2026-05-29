@@ -1,45 +1,40 @@
 :root {
-  /* This is your single source of truth for the brand color */
   --primary-color: #db1a5d;
-  --primary-glow: rgba(250, 111, 254, 0.3);
+  --primary-glow: rgba(219, 26, 93, 0.22);
 }
 
-/* Background & Shapes */
+/* ── WRAPPER ── */
 .glass-contact-wrapper {
   min-height: 100vh;
-  padding: 100px 0;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4efe9 100%);
+  padding: clamp(32px, 5vw, 60px) 0;
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
 }
 
+/* ── BLOBS ── */
 .glass-shape {
   position: absolute;
   border-radius: 50%;
   filter: blur(80px);
   z-index: 0;
+  pointer-events: none;
 }
-
 .shape-1 {
-  width: 400px;
-  height: 400px;
-  /* Using the variable with low opacity for the background blur */
+  width: clamp(200px, 35vw, 400px);
+  height: clamp(200px, 35vw, 400px);
   background: var(--primary-glow);
-  top: -100px;
-  right: -100px;
+  top: -100px; right: -100px;
 }
-
 .shape-2 {
-  width: 300px;
-  height: 300px;
+  width: clamp(150px, 25vw, 300px);
+  height: clamp(150px, 25vw, 300px);
   background: rgba(255, 174, 205, 0.3);
-  bottom: -50px;
-  left: -50px;
+  bottom: -50px; left: -50px;
 }
 
-/* The Main Glass Card */
+/* ── CARD ── */
 .glass-card-container {
   position: relative;
   z-index: 1;
@@ -47,159 +42,204 @@
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 30px;
+  border-radius: clamp(16px, 2.5vw, 30px);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 
-/* Left Side Styling */
+/* ── INFO SIDE ── */
 .glass-info-side {
   background: rgba(255, 255, 255, 0.2);
-  padding: 60px;
+  padding: clamp(32px, 5vw, 60px) clamp(24px, 4vw, 50px);
   border-right: 1px solid rgba(255, 255, 255, 0.4);
+  height: 100%;
 }
 
 .glass-tag {
+  display: inline-block;
   color: var(--primary-color);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 2px;
-  font-size: 13px;
+  font-size: clamp(11px, 1.1vw, 13px);
 }
 
 .glass-title {
-  font-size: 3rem;
+  font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 800;
-  margin: 20px 0;
+  margin: 16px 0 20px;
   color: #2d3436;
   line-height: 1.1;
 }
-
-.glass-title span {
-  color: var(--primary-color);
-}
+.glass-title span { color: var(--primary-color); }
 
 .glass-text {
   color: #636e72;
-  font-size: 1.1rem;
-  line-height: 1.6;
+  font-size: clamp(0.9rem, 1.3vw, 1.05rem);
+  line-height: 1.65;
 }
 
-/* Form Styling */
-.glass-form-side {
-  padding: 60px;
-}
-
-.glass-input-group {
-  margin-bottom: 25px;
-}
-
-.glass-input-group label {
-  display: block;
-  font-weight: 600;
-  color: #2d3436;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-.glass-input-group input, 
-.glass-input-group textarea {
-  width: 100%;
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 12px;
-  color: #2d3436;
-  transition: all 0.3s ease;
-}
-
-.glass-input-group input:focus, 
-.glass-input-group textarea:focus {
-  outline: none;
-  background: #fff;
-  border-color: var(--primary-color);
-  /* Use glow variable for focus shadow */
-  box-shadow: 0 5px 15px var(--primary-glow);
-}
-
-.input-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-/* Button */
-.glass-button {
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 15px 40px;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 16px;
-  cursor: pointer;
-  transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
-}
-
-.glass-button:hover {
-  /* Brightens the color slightly on hover using filter */
-  filter: brightness(1.1);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px var(--primary-glow);
-}
-
-/* Responsive */
-@media (max-width: 991px) {
-  .input-row { grid-template-columns: 1fr; }
-  .glass-info-side { border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.4); }
-}
-
-/* Map Section Specific Styles */
-.glass-map-wrapper {
-  position: relative;
-  line-height: 0; /* Removes bottom gap in some browsers */
-  overflow: hidden;
-}
-
-.glass-map-wrapper iframe {
-  filter: grayscale(0.2) contrast(0.9); /* Subtly desaturates to match soft UI */
-}
-
-/* Optional: This overlay makes the map feel "under" the glass */
-.map-glass-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none; /* Allows you to still interact with the map */
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.1) 0%,
-    transparent 20%,
-    transparent 80%,
-    rgba(255, 255, 255, 0.1) 100%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.4);
-}
-
-/* Icon circle styling (missing from your previous snippet) */
+/* Icon circles */
 .icon-circle {
-  width: 45px;
-  height: 45px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   background: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--primary-color);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
   flex-shrink: 0;
 }
 
-/* Margin utility if not using Bootstrap */
-.mt-5 {
-  margin-top: 3rem !important;
+.glass-link-item strong {
+  display: block;
+  font-size: 13px;
+  color: #2d3436;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.glass-link-item span {
+  font-size: 13px;
+  color: #636e72;
+  margin-top: 2px;
+  display: block;
 }
 
+/* ── FORM SIDE ── */
+.glass-form-side {
+  padding: clamp(32px, 5vw, 60px) clamp(24px, 4vw, 50px);
+}
 
+.glass-input-group {
+  margin-bottom: clamp(16px, 2.5vw, 24px);
+}
+.glass-input-group label {
+  display: block;
+  font-weight: 600;
+  color: #2d3436;
+  margin-bottom: 8px;
+  font-size: clamp(12px, 1.1vw, 14px);
+}
+
+.glass-input-group input,
+.glass-input-group textarea {
+  width: 100%;
+  padding: clamp(10px, 1.5vw, 13px) clamp(14px, 2vw, 20px);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  color: #2d3436;
+  font-family: inherit;
+  font-size: clamp(13px, 1.2vw, 15px);
+  transition: all 0.3s ease;
+}
+.glass-input-group input::placeholder,
+.glass-input-group textarea::placeholder { color: #b2bec3; }
+
+.glass-input-group input:focus,
+.glass-input-group textarea:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--primary-color);
+  box-shadow: 0 5px 15px var(--primary-glow);
+}
+
+/* 2-col row inside form */
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 2vw, 20px);
+}
+
+/* ── BUTTON ── */
+.glass-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: clamp(12px, 1.5vw, 15px) clamp(28px, 4vw, 44px);
+  border-radius: 12px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: clamp(14px, 1.3vw, 16px);
+  cursor: pointer;
+  width: 100%;
+  transition: filter 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px var(--primary-glow);
+}
+.glass-button:active { transform: translateY(0); }
+
+/* ── MAP ── */
+.glass-map-wrapper {
+  position: relative;
+  line-height: 0;
+  overflow: hidden;
+  border-radius: clamp(16px, 2.5vw, 30px);
+}
+.glass-map-wrapper iframe {
+  filter: grayscale(0.2) contrast(0.9);
+  display: block;
+  width: 100%;
+}
+.map-glass-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.1) 0%,
+    transparent 20%,
+    transparent 80%,
+    rgba(255,255,255,0.1) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: inherit;
+}
+
+/* ── TABLET (Bootstrap lg breakpoint) ── */
+@media (max-width: 991px) {
+  .glass-info-side {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    height: auto;
+  }
+}
+
+/* ── MOBILE ── */
+@media (max-width: 576px) {
+  .glass-contact-wrapper {
+    padding: 20px 0;
+    align-items: flex-start;
+  }
+  .glass-info-side {
+    padding: 28px 22px;
+  }
+  .glass-form-side {
+    padding: 28px 22px;
+  }
+  .input-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .glass-title {
+    font-size: 2rem;
+  }
+  .glass-button {
+    font-size: 15px;
+    padding: 13px 24px;
+  }
+}
+
+/* ── SMALL PHONES ── */
+@media (max-width: 380px) {
+  .glass-info-side,
+  .glass-form-side { padding: 22px 16px; }
+  .glass-title { font-size: 1.7rem; }
+}

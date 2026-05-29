@@ -4,8 +4,13 @@ import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
 import { submitContactForm } from "../../store/services/contactService";
 import { resetContactForm } from "../../store/slices/contactSlice";
+import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
+import { useLocation } from "react-router-dom";
+
 
 const Contact = () => {
+    let { pathname } = useLocation();
+    
   const dispatch = useDispatch();
   const { loading, error, success, message } = useSelector((state) => state.contact);
 
@@ -70,7 +75,15 @@ const Contact = () => {
   return (
     <Fragment>
       <SEO titleTemplate="Contact Us" description="Customer Support & Inquiries" />
+
       <LayoutOne headerTop="visible">
+        {/* breadcrumb */}
+        <Breadcrumb 
+          pages={[
+            {label: "Home", path: process.env.PUBLIC_URL + "/" },
+            {label: "Contact us", path: process.env.PUBLIC_URL + pathname }
+          ]} 
+        />
         <div className="glass-contact-wrapper">
           <div className="glass-shape shape-1"></div>
           <div className="glass-shape shape-2"></div>
