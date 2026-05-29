@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 const KM = {
   orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B',
@@ -310,6 +310,21 @@ function SkuRow({ sku, index, onChange, errors = [] }) {
   );
 }
 
+function attributesMatch(attrs1, attrs2) {
+  const a1 = Array.isArray(attrs1) ? attrs1 : [];
+  const a2 = Array.isArray(attrs2) ? attrs2 : [];
+  if (a1.length !== a2.length) return false;
+  
+  const normKey = k => {
+    const KEY_ALIASES = { color: "Colour", colour: "Colour", size: "Size", material: "Material", finish: "Finish", capacity: "Capacity" };
+    return KEY_ALIASES[k?.toLowerCase()] || k;
+  };
+
+  return a1.every(x => 
+    a2.some(y => normKey(x.key) === normKey(y.key) && String(x.value).trim().toLowerCase() === String(y.value).trim().toLowerCase())
+  );
+}
+
 // ── Build SKU rows from option matrix ────────────────────────────────────────
 function buildSkus(options, existingSkus = []) {
   const validOptions = options.filter(o => o.key && o.values.length > 0);
@@ -319,8 +334,11 @@ function buildSkus(options, existingSkus = []) {
 
   return combos.map(combo => {
     const variantName = comboName(combo);
-    // Preserve existing sku data if combo already existed
-    const existing = existingSkus.find(s => s.variantName === variantName);
+    // Preserve existing sku data if combo already existed (order-independent match)
+    const existing = existingSkus.find(s => {
+      const sAttrs = s.attributes || s.combo || [];
+      return attributesMatch(sAttrs, combo);
+    });
     // attributes must always be present — Products.js validation + submit both read it
     const attributesFromCombo = combo.map(c => ({ key: c.key, value: c.value, customValue: '' }));
     return existing
@@ -388,6 +406,13 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
     }
     return [{ id: 'opt_0', key: '', values: [] }];
   });
+
+  // Sync options when existingOptions is loaded/updated (resolves initialization race condition on mount)
+  useEffect(() => {
+    if (existingOptions?.length) {
+      setOptions(existingOptions);
+    }
+  }, [existingOptions]);
 
   const [tab, setTab] = useState('options'); // 'options' | 'skus'
 

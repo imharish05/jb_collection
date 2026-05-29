@@ -9,7 +9,8 @@ import Categories from './components/Categories/Categories';
 import SubCategories from './components/SubCategories/SubCategories';
 import EventCategories from './components/EventCategories/EventCategories';
 import Brands from './components/Brands/Brands';
-import Combos from './components/Combos/Combos';
+import Combos from "./components/Combos/Combos";
+import NewCombos from "./components/Combos/NewCombos";
 import Products from './components/Products/Products';
 import Variants from './components/Variants/Variants';
 import Stock from './components/Stock/Stock';
@@ -83,7 +84,7 @@ function AdminLayoutWrapper({ handleLogout }) {
             <Route path="/sub_categories"      element={<SubCategories      showToast={showToast} />} />
             <Route path="/event_categories"    element={<EventCategories    showToast={showToast} />} />
             <Route path="/brands"              element={<Brands             showToast={showToast} />} />
-            <Route path="/combos"              element={<Combos             showToast={showToast} />} />
+            <Route path="/combos" element={<NewCombos showToast={showToast} />} />
             <Route path="/products"            element={<Products           showToast={showToast} />} />
             <Route path="/variants"            element={<Variants           showToast={showToast} />} />
             <Route path="/stock"               element={<Stock              showToast={showToast} />} />

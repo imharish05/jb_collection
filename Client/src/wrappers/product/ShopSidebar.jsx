@@ -9,7 +9,7 @@ import "rc-slider/assets/index.css";
 const S = process.env.PUBLIC_URL + "/shop";
 
 const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
-  const { categories = [], events = [], combos = [] } = useSelector((state) => state.navMenu);
+  const { categories = [], events = [], combos = [], rootCombos = [] } = useSelector((state) => state.navMenu);
 
   const { search } = useLocation();
   const navigate = useNavigate();
@@ -304,37 +304,26 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
       </div>
 
       {/* ── Combos ── */}
-      {combos.length > 0 && (
+      {rootCombos.length > 0 && (
         <div style={{ ...styles.section, borderBottom: "none", paddingBottom: 0 }}>
           <div className="mobile-accordion-header" onClick={() => toggleMobileSection("combos")}>
             <p style={{...styles.sectionTitle, margin: 0}}>
-              <span style={styles.comboIcon}></span> Combos {isMobile && <span style={styles.mobileChevron}>{mobileSections.combos ? "▲" : "▼"}</span>}
+              🎁 Combos {isMobile && <span style={styles.mobileChevron}>{mobileSections.combos ? "▲" : "▼"}</span>}
             </p>
           </div>
           
           <div className={clsx("mobile-accordion-content", (mobileSections.combos || !isMobile) && "open")} style={(!mobileSections.combos && isMobile) ? {display: 'none'} : {marginTop: 14}}>
             <ul style={styles.filterList}>
-              {combos.map((combo) => {
-                const isAll    = combo.value === null;
-                const isActive = isAll ? activeCombo === "all" : activeCombo === combo.id;
-                const comboProductIds = new Set(Array.isArray(combo.productIds) ? combo.productIds : []);
-                const count    = isAll
-                  ? (() => {
-                      const allIds = new Set(combos.flatMap(c => Array.isArray(c.productIds) ? c.productIds : []));
-                      return products.filter(p => p.comboId != null || allIds.has(p.id)).length;
-                    })()
-                  : products.filter(p =>
-                      (comboProductIds.size > 0 ? comboProductIds.has(p.id) : false) ||
-                      (p.comboId && String(p.comboId) === String(combo.id))
-                    ).length;
-                if (!isAll && count === 0) return null;
+              {rootCombos.map((combo) => {
+                const count = combo.children ? combo.children.filter(c => c.isActive !== false && c.is_active !== false).length : 0;
+                const isActive = activeCombo === String(combo.id);
                 return (
-                  <li key={combo.id ?? "__all-combos"}>
+                  <li key={combo.id}>
                     <button
-                      onClick={() => combo.id ? navigate(`${S}?combo=${combo.id}`) : navigate(`${S}?combo=all`)}
+                      onClick={() => navigate(`${S}?combo=${combo.id}`)}
                       style={{ ...styles.filterBtn, ...(isActive ? styles.filterBtnActive : {}) }}
                     >
-                      <span>{combo.label}</span>
+                      <span>{combo.name}</span>
                       <span style={{ ...styles.filterCount, ...(isActive ? styles.filterCountActive : {}) }}>
                         ({count})
                       </span>

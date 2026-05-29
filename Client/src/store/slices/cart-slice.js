@@ -34,6 +34,24 @@ const cartSlice = createSlice({
             const product = normalizeProduct(action.payload);
             const newCartItemId = product.cartItemId || uuidv4();
 
+            // ── Combo items: always a unique row — never merge ────────────────
+            if (product.isCombo) {
+                const existing = product.cartItemId
+                    ? state.cartItems.find(item => item.cartItemId === product.cartItemId)
+                    : null;
+                if (existing) {
+                    state.cartItems = state.cartItems.map(item =>
+                        item.cartItemId === product.cartItemId
+                            ? { ...item, quantity: product.quantity != null ? product.quantity : item.quantity + 1 }
+                            : item
+                    );
+                } else {
+                    state.cartItems.push({ ...product, quantity: product.quantity || 1, cartItemId: newCartItemId });
+                    cogoToast.success("Added To Cart", { position: "top-center" });
+                }
+                return;
+            }
+
             // ── Backend variant products ──────────────────────────────────────
             if (product.selectedVariantId) {
                 const existingItem = state.cartItems.find(item => isSameBackendVariant(item, product));
@@ -99,6 +117,67 @@ const cartSlice = createSlice({
             }
         },
 
+        // Silent version — no toast. Used by "Buy Now".
+        addToCartSilent(state, action) {
+            const product = normalizeProduct(action.payload);
+            const newCartItemId = product.cartItemId || uuidv4();
+            if (product.isCombo) {
+                const existing = product.cartItemId
+                    ? state.cartItems.find(item => item.cartItemId === product.cartItemId)
+                    : null;
+                if (existing) {
+                    state.cartItems = state.cartItems.map(item =>
+                        item.cartItemId === product.cartItemId
+                            ? { ...item, quantity: product.quantity != null ? product.quantity : item.quantity + 1 }
+                            : item
+                    );
+                } else {
+                    state.cartItems.push({ ...product, quantity: product.quantity || 1, cartItemId: newCartItemId });
+                }
+                return;
+            }
+            if (product.selectedVariantId) {
+                const existingItem = state.cartItems.find(item => isSameBackendVariant(item, product));
+                if (existingItem) {
+                    state.cartItems = state.cartItems.map(item =>
+                        isSameBackendVariant(item, product)
+                            ? { ...item, quantity: product.quantity != null ? product.quantity : item.quantity + 1, cartItemId: product.cartItemId || item.cartItemId }
+                            : item
+                    );
+                } else {
+                    state.cartItems.push({ ...product, quantity: product.quantity || 1, cartItemId: newCartItemId });
+                }
+                return;
+            }
+            if (!product.variation || (Array.isArray(product.variation) && product.variation.length === 0)) {
+                const cartItem = state.cartItems.find(item => item.id === product.id);
+                if (!cartItem) {
+                    state.cartItems.push({ ...product, quantity: product.quantity || 1, cartItemId: newCartItemId });
+                } else {
+                    state.cartItems = state.cartItems.map(item =>
+                        item.id === cartItem.id
+                            ? { ...item, quantity: product.quantity != null ? product.quantity : item.quantity + 1, cartItemId: product.cartItemId || item.cartItemId }
+                            : item
+                    );
+                }
+                return;
+            }
+            const cartItem = state.cartItems.find(item =>
+                item.id === product.id &&
+                item.selectedProductColor === product.selectedProductColor &&
+                item.selectedProductSize === product.selectedProductSize
+            );
+            if (!cartItem) {
+                state.cartItems.push({ ...product, quantity: product.quantity || 1, cartItemId: newCartItemId });
+            } else {
+                state.cartItems = state.cartItems.map(item =>
+                    item.cartItemId === cartItem.cartItemId
+                        ? { ...item, quantity: product.quantity != null ? product.quantity : item.quantity + 1, cartItemId: product.cartItemId || item.cartItemId }
+                        : item
+                );
+            }
+        },
+
         increaseQuantity(state, action) {
             // action.payload = { cartItemId }
             state.cartItems = state.cartItems.map(item =>
@@ -137,5 +216,5 @@ const cartSlice = createSlice({
     },
 });
 
-export const { addToCart, increaseQuantity, deleteFromCart, decreaseQuantity, deleteAllFromCart, replaceCart } = cartSlice.actions;
+export const { addToCart, addToCartSilent, increaseQuantity, deleteFromCart, decreaseQuantity, deleteAllFromCart, replaceCart } = cartSlice.actions;
 export default cartSlice.reducer;

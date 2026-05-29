@@ -21,7 +21,12 @@ const Contact     = require("./Contact");
 const OrderItem   = require("./OrderItem");
 const Testimonial = require("./Testimonial");
 
-// ── User ↔ Cart / Wishlist / Order ───────────────────────────────────────────
+// ── New Root/Child Combo models ───────────────────────────────────────────────
+const RootCombo         = require("./RootCombo");
+const ChildCombo        = require("./ChildCombo");
+const ChildComboProduct = require("./ChildComboProduct");
+
+// ── User ↔ Cart / Wishlist / Order ───────────────────────────────────────────────
 User.hasMany(CartItem,     { foreignKey: "user_id", as: "cartItems",     onDelete: "CASCADE" });
 CartItem.belongsTo(User,   { foreignKey: "user_id" });
 
@@ -37,7 +42,7 @@ Address.belongsTo(User, { foreignKey: "userId", as: "user" });
 Order.belongsTo(Address, { foreignKey: "shipping_address_id", as: "shippingAddress" });
 Order.belongsTo(Address, { foreignKey: "billing_address_id", as: "billingAddress" });
 
-// ── Product ↔ Cart / Wishlist ─────────────────────────────────────────────────
+// ── Product ↔ Cart / Wishlist ─────────────────────────────────────────────────────
 Product.hasMany(CartItem,    { foreignKey: "product_id", as: "cartEntries",     onDelete: "CASCADE" });
 CartItem.belongsTo(Product,  { foreignKey: "product_id", as: "product" });
 
@@ -46,20 +51,19 @@ WishlistItem.belongsTo(Product,  { foreignKey: "product_id", as: "product" });
 
 
 // ── Category ↔ Product ────────────────────────────────────────────────────────
-// Product has a `category_id` FK column — wire it up so dashboard can include Category
 Category.hasMany(Product,    { foreignKey: "category_id", as: "products" });
-Product.belongsTo(Category,  { foreignKey: "category_id" });   // no alias — use default
+Product.belongsTo(Category,  { foreignKey: "category_id" });
 
 // ── Product ↔ SubCategory ─────────────────────────────────────────────────────
 Product.belongsTo(SubCategory, { foreignKey: "sub_category_id", as: "SubCategory", constraints: false });
 SubCategory.hasMany(Product,   { foreignKey: "sub_category_id", as: "products",    constraints: false });
 
-// ── Product ↔ Combo ───────────────────────────────────────────────────────────
+// ── Product ↔ Combo (legacy) ───────────────────────────────────────────────────
 Combo.hasMany(Product,   { foreignKey: "combo_id", as: "comboProducts", constraints: false });
 Product.belongsTo(Combo, { foreignKey: "combo_id", as: "Combo",         constraints: false });
 
 // ── Product ↔ Variant ─────────────────────────────────────────────────────────
-Product.hasMany(Variant,    { foreignKey: "product_id", as: "variants", onDelete: "CASCADE" });
+Product.hasMany(Variant,    { foreignKey: "product_id", as: "Variants", onDelete: "CASCADE" });
 Variant.belongsTo(Product,  { foreignKey: "product_id", as: "product" });
 
 // ── Product ↔ Review ──────────────────────────────────────────────────────────
@@ -72,6 +76,18 @@ Review.belongsTo(User,  { foreignKey: "customer_id", as: "Customer" });
 // ── Order ↔ OrderItem ────────────────────────────────────────────────────────
 Order.hasMany(OrderItem, { foreignKey: "order_id", as: "items", onDelete: "CASCADE" });
 OrderItem.belongsTo(Order, { foreignKey: "order_id" });
+
+// ── RootCombo ↔ ChildCombo ────────────────────────────────────────────────────
+RootCombo.hasMany(ChildCombo, { foreignKey: "root_combo_id", as: "children", onDelete: "CASCADE" });
+ChildCombo.belongsTo(RootCombo, { foreignKey: "root_combo_id", as: "rootCombo" });
+
+// ── ChildCombo ↔ ChildComboProduct ───────────────────────────────────────────
+ChildCombo.hasMany(ChildComboProduct, { foreignKey: "child_combo_id", as: "comboProducts", onDelete: "CASCADE" });
+ChildComboProduct.belongsTo(ChildCombo, { foreignKey: "child_combo_id", as: "childCombo" });
+
+// ── ChildComboProduct ↔ Product / Variant ─────────────────────────────────────
+ChildComboProduct.belongsTo(Product, { foreignKey: "product_id", as: "product", constraints: false });
+ChildComboProduct.belongsTo(Variant, { foreignKey: "variant_id", as: "variant", constraints: false });
 
 module.exports = {
   sequelize,
@@ -89,7 +105,6 @@ module.exports = {
   MarqueeMessage,
   Order,
   Address,
-  Category,
   Brand,
   Variant,
   Review,
@@ -97,4 +112,8 @@ module.exports = {
   Contact,
   OrderItem,
   Testimonial,
+  // New combo models
+  RootCombo,
+  ChildCombo,
+  ChildComboProduct,
 };

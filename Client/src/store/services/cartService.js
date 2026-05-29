@@ -1,6 +1,6 @@
 import cogoToast from "cogo-toast";
 import api from "../../api/axios";
-import { addToCart, increaseQuantity, deleteFromCart, decreaseQuantity, deleteAllFromCart } from "../slices/cart-slice";
+import { addToCart, addToCartSilent, increaseQuantity, deleteFromCart, decreaseQuantity, deleteAllFromCart } from "../slices/cart-slice";
 import { store } from "../store";
 
 /**
@@ -19,7 +19,7 @@ const requireAuth = (redirectPath = "/cart") => {
   return true;
 };
 
-export const addToCartService = async (dispatchOrProduct, optionalProduct) => {
+const addToCartBaseService = async (dispatchOrProduct, optionalProduct, silent = false) => {
   let dispatch = store.dispatch;
   let product = dispatchOrProduct;
 
@@ -28,7 +28,7 @@ export const addToCartService = async (dispatchOrProduct, optionalProduct) => {
     product = optionalProduct;
   }
 
-  if (!requireAuth(window.location.pathname)) return;
+  if (!requireAuth(window.location.pathname)) return false;
 
   try {
     const payload = {
@@ -68,11 +68,25 @@ export const addToCartService = async (dispatchOrProduct, optionalProduct) => {
       Variants: variants,
     };
 
-    dispatch(addToCart(formattedProduct));
+    if (silent) {
+      dispatch(addToCartSilent(formattedProduct));
+    } else {
+      dispatch(addToCart(formattedProduct));
+    }
+    return true;
   } catch (err) {
     cogoToast.error("Could not add to cart", { position: "top-center" });
     console.log(err);
+    return false;
   }
+};
+
+export const addToCartService = (dispatchOrProduct, optionalProduct) => {
+  return addToCartBaseService(dispatchOrProduct, optionalProduct, false);
+};
+
+export const addToCartSilentService = (dispatchOrProduct, optionalProduct) => {
+  return addToCartBaseService(dispatchOrProduct, optionalProduct, true);
 };
 
 export const deleteFromCartService = async (cartItemId) => {

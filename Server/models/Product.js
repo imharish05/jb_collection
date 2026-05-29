@@ -79,6 +79,16 @@ const Product = sequelize.define(
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
+    stockStatus: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "stock_status",
+    },
+    warningThreshold: {
+      type: DataTypes.INTEGER,
+      defaultValue: 5,
+      field: "warning_threshold",
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,

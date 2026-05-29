@@ -1,4 +1,4 @@
-import { Fragment, useState, useCallback, useEffect } from "react";
+import { Fragment, useState, useCallback, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SEO from "../../components/seo";
@@ -15,7 +15,10 @@ import {
 } from "../../store/services";
 import { fetchAddresses } from "../../store/services/addressService";
 import { setActiveAddress } from "../../store/slices/addressSlice";
+import { replaceCart } from "../../store/slices/cart-slice";
+import { createCheckoutFromCart } from "../../store/slices/checkout-slice";
 import api from "../../api/axios";
+import cogoToast from "cogo-toast";
 import "./Cart.css";
 
 const SHIPPING_THRESHOLD = 999;
@@ -23,24 +26,7 @@ const SHIPPING_COST = 60;
 const COD_FEE = 30;
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
-const formatCouponDesc = (c) => {
-  if (c.type === "percent") {
-    let s = `${parseFloat(c.value)}% OFF`;
-    if (c.max_discount) s += ` up to ₹${parseFloat(c.max_discount)}`;
-    return s;
-  }
-  return `₹${parseFloat(c.value)} OFF`;
-};
 
-const formatCouponCond = (c) => {
-  const parts = [];
-  if (parseFloat(c.min_order) > 0) parts.push(`Min order ₹${parseFloat(c.min_order)}`);
-  if (c.expires_at) {
-    const d = new Date(c.expires_at);
-    parts.push(`Valid till ${d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`);
-  }
-  return parts.join(" · ") || "No minimum order";
-};
 
 // ── Variant helpers (same logic as Wishlist) ─────────────────────────────────
 const safeAttrs = (raw) => {
@@ -82,31 +68,67 @@ const Cart = () => {
   const { cartItems } = useSelector((state) => state.cart);
   const { addresses, activeAddressId, loading: addrLoading } = useSelector((state) => state.address);
 
-  /* ── Coupon state ──────────────────────────────────────────────────────── */
-  const [couponInput, setCouponInput] = useState("");
-  const [coupon, setCoupon] = useState(null);
-  const [couponErr, setCouponErr] = useState("");
-  const [couponLoading, setCouponLoading] = useState(false);
-  const [couponOpen, setCouponOpen] = useState(false);
+  /* ── Expanded combos state ── */
+  const [expandedCombos, setExpandedCombos] = useState({});
+  const toggleComboExpanded = (cartItemId) => {
+    setExpandedCombos(prev => ({
+      ...prev,
+      [cartItemId]: !prev[cartItemId]
+    }));
+  };
 
-  /* ── Available coupons from backend ───────────────────────────────────── */
-  const [availableCoupons, setAvailableCoupons] = useState([]);
-  const [couponsLoading, setCouponsLoading] = useState(false);
-  const [couponsLoaded, setCouponsLoaded] = useState(false);
+  /* ── Cart Revalidation ───────────────────────────────────────────────────── */
+  const [revalidating, setRevalidating] = useState(false);
+  const [revalAlerts, setRevalAlerts] = useState([]);  // [{cartItemId, message, status}]
+  const revalDoneRef = useRef(false);
+
+  const revalidateCartItems = useCallback(async () => {
+    if (!cartItems || cartItems.length === 0 || revalDoneRef.current) return;
+    setRevalidating(true);
+    try {
+      const payload = {
+        items: cartItems.map(item => ({
+          cartItemId: item.cartItemId,
+          productId: item.id,
+          selectedVariantId: item.selectedVariantId || null,
+          quantity: item.quantity,
+          name: item.name,
+          selectedVariantName: item.selectedVariantName || null,
+          isCombo: item.isCombo || false,
+          childComboId: item.childComboId || null,
+          selectedProducts: item.selectedProducts || null,
+        })),
+      };
+      const res = await api.post("/cart/revalidate", payload);
+      const { hasChanges, items: results } = res.data;
+      if (!hasChanges) return;
+
+      // Build alert list for items that changed
+      const alerts = [];
+      const updatedCart = cartItems.map(item => {
+        const result = results.find(r => r.cartItemId === item.cartItemId);
+        if (!result || result.status === "OK") return item;
+        alerts.push({ cartItemId: item.cartItemId, message: result.message, status: result.status });
+        if (result.adjustedQty === 0) return null;  // mark for removal
+        return { ...item, quantity: result.adjustedQty };
+      }).filter(Boolean);
+
+      if (alerts.length > 0) {
+        setRevalAlerts(alerts);
+        dispatch(replaceCart(updatedCart));
+      }
+    } catch (err) {
+      console.warn("Cart revalidation failed:", err);
+    } finally {
+      setRevalidating(false);
+      revalDoneRef.current = true;
+    }
+  }, [cartItems, dispatch]);
 
   useEffect(() => {
-    if (couponOpen && !couponsLoaded) {
-      setCouponsLoading(true);
-      api
-        .get("/coupons/active")
-        .then((res) => setAvailableCoupons(res.data || []))
-        .catch(() => {})
-        .finally(() => {
-          setCouponsLoading(false);
-          setCouponsLoaded(true);
-        });
-    }
-  }, [couponOpen, couponsLoaded]);
+    revalidateCartItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (authUser?.id) dispatch(fetchAddresses());
@@ -122,38 +144,7 @@ const Cart = () => {
   });
 
   const shipping = subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
-  const couponDiscount = coupon ? parseFloat(coupon.discount) : 0;
-  const grandTotal = subtotal + shipping - couponDiscount;
-
-  /* ── Apply Coupon ──────────────────────────────────────────────────────── */
-  const applyCode = useCallback(
-    async (code) => {
-      const normalized = (code || couponInput).trim().toUpperCase();
-      if (!normalized) return;
-      setCouponLoading(true);
-      setCouponErr("");
-      setCoupon(null);
-      try {
-        const res = await api.post("/coupons/validate", {
-          code: normalized,
-          order_total: subtotal,
-        });
-        setCoupon(res.data);
-        setCouponInput(normalized);
-      } catch (err) {
-        setCouponErr(err.response?.data?.message || "Invalid coupon code");
-      } finally {
-        setCouponLoading(false);
-      }
-    },
-    [couponInput, subtotal]
-  );
-
-  const handleRemoveCoupon = () => {
-    setCoupon(null);
-    setCouponInput("");
-    setCouponErr("");
-  };
+  const grandTotal = subtotal + shipping;
 
   /* ── Empty Cart ────────────────────────────────────────────────────────── */
   if (!cartItems || cartItems.length === 0) {
@@ -266,6 +257,26 @@ const Cart = () => {
                   </div>
                 )} */}
 
+
+                {/* Revalidation alerts */}
+                {revalidating && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, marginBottom: 12, fontSize: 13, color: "#92400e" }}>
+                    <span style={{ fontSize: 18 }}>🔄</span>
+                    <span>Checking stock availability…</span>
+                  </div>
+                )}
+                {revalAlerts.length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                    {revalAlerts.map((alert, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 16px", background: alert.status === "OOS" || alert.status === "Discontinued" || alert.status === "Unavailable" ? "#fef2f2" : "#fffbeb", border: `1px solid ${alert.status === "OOS" || alert.status === "Discontinued" || alert.status === "Unavailable" ? "#fecaca" : "#fde68a"}`, borderRadius: 10, fontSize: 13, color: alert.status === "OOS" || alert.status === "Discontinued" || alert.status === "Unavailable" ? "#991b1b" : "#92400e" }}>
+                        <span style={{ fontSize: 16, flexShrink: 0 }}>{alert.status === "OOS" || alert.status === "Discontinued" || alert.status === "Unavailable" ? "⚠️" : "📦"}</span>
+                        <span style={{ flex: 1 }}>{alert.message}</span>
+                        <button onClick={() => setRevalAlerts(prev => prev.filter((_, j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "inherit", opacity: 0.6, padding: 0, lineHeight: 1 }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Cart Items */}
                 <div className="kg-items-card">
                   {cartItems.map((item) => {
@@ -309,7 +320,7 @@ const Cart = () => {
                       <div key={item.cartItemId} className="kg-cart-item">
                         {/* Image */}
                         <Link
-                          to={process.env.PUBLIC_URL + "/product/" + item.id}
+                          to={item.isCombo ? process.env.PUBLIC_URL + "/combo/root/" + item.rootComboId : process.env.PUBLIC_URL + "/product/" + item.id}
                           className="kg-item-img-wrap"
                         >
                           <img
@@ -327,8 +338,26 @@ const Cart = () => {
 
                         {/* Details */}
                         <div className="kg-item-details">
+                          {item.isCombo && (
+                            <span className="kg-combo-badge" style={{
+                              display: "inline-block",
+                              fontSize: "10px",
+                              fontWeight: 700,
+                              color: "#db1a5d",
+                              background: "#fff0f6",
+                              border: "1px solid #ffd6e7",
+                              borderRadius: "4px",
+                              padding: "2px 8px",
+                              marginBottom: "6px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              width: "fit-content"
+                            }}>
+                              🎁 Combo Offer ({item.comboType === "fixed" ? "Fixed Combo" : item.comboType === "mix_match" ? "Mix & Match" : "Combo"})
+                            </span>
+                          )}
                           <Link
-                            to={process.env.PUBLIC_URL + "/product/" + item.id}
+                            to={item.isCombo ? process.env.PUBLIC_URL + "/combo/root/" + item.rootComboId : process.env.PUBLIC_URL + "/product/" + item.id}
                             className="kg-item-name"
                           >
                             {item.name}
@@ -363,7 +392,138 @@ const Cart = () => {
                             </div>
                           ) : null}
 
-                                                    {/* Stock warning when near limit */}
+                          {item.isCombo && (
+                            <div className="kg-combo-toggle" style={{ marginTop: "6px", display: "flex", alignItems: "center" }}>
+                              <button
+                                onClick={() => toggleComboExpanded(item.cartItemId)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#db1a5d",
+                                  fontSize: "12px",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  padding: "0"
+                                }}
+                              >
+                                <span>{expandedCombos[item.cartItemId] ? "Hide Included Products" : "Show Included Products"}</span>
+                                <svg
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                  style={{
+                                    transform: expandedCombos[item.cartItemId] ? "rotate(180deg)" : "rotate(0deg)",
+                                    transition: "transform 0.2s"
+                                  }}
+                                >
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+
+                          {item.isCombo && expandedCombos[item.cartItemId] && (
+                            <div className="kg-combo-included-products" style={{
+                              marginTop: "10px",
+                              padding: "10px 12px",
+                              background: "#f8fafc",
+                              border: "1px dashed #e2e8f0",
+                              borderRadius: "8px"
+                            }}>
+                              <div style={{
+                                fontSize: "10px",
+                                fontWeight: 700,
+                                color: "#6b7280",
+                                marginBottom: "8px",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.06em"
+                              }}>
+                                Included Products
+                              </div>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                {Array.isArray(item.selectedProducts) && item.selectedProducts.length > 0 ? (
+                                  item.selectedProducts.map((p, idx) => {
+                                    const productImgSrc = p.image ? getImgUrl(p.image) : "/assets/img/products/products-1.jpeg";
+                                    return (
+                                      <div key={idx} style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "10px",
+                                        padding: "7px 9px",
+                                        background: "#fff",
+                                        border: "1px solid #e5e7eb",
+                                        borderRadius: "7px"
+                                      }}>
+                                        {/* Thumbnail */}
+                                        <img
+                                          src={productImgSrc}
+                                          alt={p.name || "product"}
+                                          style={{
+                                            width: "40px",
+                                            height: "40px",
+                                            borderRadius: "6px",
+                                            objectFit: "cover",
+                                            border: "1px solid #e5e7eb",
+                                            flexShrink: 0
+                                          }}
+                                          onError={(e) => e.target.src = "/assets/img/products/products-1.jpeg"}
+                                        />
+                                        {/* Info */}
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                          <div style={{
+                                            fontSize: "12px",
+                                            fontWeight: 600,
+                                            color: "#1f2937",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap"
+                                          }}>
+                                          {p.name || "Included Product"}
+                                          </div>
+                                          <div style={{ display: "flex", gap: "5px", marginTop: "4px", flexWrap: "wrap", alignItems: "center" }}>
+                                            {p.variantName && (
+                                              <span style={{
+                                                fontSize: "10px",
+                                                background: "#fff0f6",
+                                                color: "#db1a5d",
+                                                border: "1px solid #ffd6e7",
+                                                borderRadius: "4px",
+                                                padding: "1px 6px",
+                                                fontWeight: 600
+                                              }}>{p.variantName}</span>
+                                            )}
+                                            {p.quantity >= 1 && (
+                                              <span style={{
+                                                fontSize: "10px",
+                                                background: "#f3f4f6",
+                                                color: "#6b7280",
+                                                border: "1px solid #e5e7eb",
+                                                borderRadius: "4px",
+                                                padding: "1px 6px",
+                                                fontWeight: 600
+                                              }}>×{p.quantity}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })
+                                ) : (
+                                  <span style={{ fontSize: "11px", color: "#9ca3af", fontStyle: "italic" }}>
+                                    No product details available
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Stock warning when near limit */}
                           {maxStock < 10 && (
                             <div style={{ fontSize: 11, color: "#f59e0b", marginTop: 3 }}>
                               Only {maxStock} left in stock
@@ -448,156 +608,6 @@ const Cart = () => {
                   })}
                 </div>
 
-                {/* ── Coupons & Offers (Secondary Card) ───────────── */}
-                <div className="kg-coupons-card">
-                  {/* Header */}
-                  <div
-                    className="kg-coupons-header"
-                    onClick={() => setCouponOpen((o) => !o)}
-                    role="button"
-                    aria-expanded={couponOpen}
-                  >
-                    <div className="kg-coupons-header-left">
-                      <div className="kg-coupon-icon-wrap">🏷️</div>
-                      <div>
-                        <div className="kg-coupons-title">
-                          {coupon ? (
-                            <span style={{ color: "#16a34a" }}>Coupon Applied ✓</span>
-                          ) : (
-                            "Promo Codes & Offers"
-                          )}
-                        </div>
-                        <div className="kg-coupons-subtitle">
-                          {coupon
-                            ? `Saving ₹${couponDiscount.toFixed(2)} on this order`
-                            : "Tap to view available offers"}
-                        </div>
-                      </div>
-                    </div>
-                    <span className={`kg-coupons-toggle-icon ${couponOpen ? "open" : ""}`}>
-                      ▼
-                    </span>
-                  </div>
-
-                  {/* Applied chip (always visible) */}
-                  {coupon && (
-                    <div style={{ marginTop: 14 }}>
-                      <span className="kg-coupon-applied-chip">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        {coupon.coupon_code}
-                        <button className="kg-coupon-remove-btn" onClick={handleRemoveCoupon}>
-                          Remove
-                        </button>
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Expanded body */}
-                  {couponOpen && (
-                    <div className="kg-coupon-body">
-
-                      {/* Available coupon cards */}
-                      {couponsLoading && (
-                        <div className="kg-coupons-loading">
-                          <span>Loading offers...</span>
-                        </div>
-                      )}
-
-                      {/* {!couponsLoading && availableCoupons.length > 0 && (
-                        <>
-                          <p
-                            style={{
-                              fontSize: 12,
-                              color: "#888",
-                              marginBottom: 10,
-                              fontWeight: 600,
-                              textTransform: "uppercase",
-                              letterSpacing: 0.5,
-                            }}
-                          >
-                            Available Offers
-                          </p>
-                          <div className="kg-coupon-cards-grid">
-                            {availableCoupons.map((c) => {
-                              const isApplied = coupon?.coupon_code === c.code;
-                              const isEligible = subtotal >= parseFloat(c.min_order || 0);
-                              return (
-                                <div
-                                  key={c.id}
-                                  className={`kg-coupon-card ${isApplied ? "applied" : ""}`}
-                                  onClick={() => !isApplied && isEligible && applyCode(c.code)}
-                                  style={{ opacity: isEligible ? 1 : 0.55 }}
-                                  title={!isEligible ? `Min order ₹${c.min_order} required` : ""}
-                                >
-                                  <div className="kg-coupon-card-code">{c.code}</div>
-                                  <div className="kg-coupon-card-desc">
-                                    {formatCouponDesc(c)}
-                                  </div>
-                                  <div className="kg-coupon-card-cond">
-                                    {formatCouponCond(c)}
-                                  </div>
-                                  {!isApplied && isEligible && (
-                                    <div className="kg-coupon-card-tap">
-                                      ↗ Tap to apply
-                                    </div>
-                                  )}
-                                  {isApplied && (
-                                    <div
-                                      className="kg-coupon-card-tap"
-                                      style={{ color: "#16a34a" }}
-                                    >
-                                      ✓ Applied
-                                    </div>
-                                  )}
-                                  {!isEligible && (
-                                    <div
-                                      className="kg-coupon-card-tap"
-                                      style={{ color: "#f59e0b" }}
-                                    >
-                                      ⚠ Add ₹{(parseFloat(c.min_order) - subtotal).toFixed(0)} more
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </>
-                      )} */}
-
-                      {/* Manual input */}
-                      <p className="kg-coupon-manual-label">
-                        {availableCoupons.length > 0
-                          ? "Or enter a different code:"
-                          : "Enter promo code:"}
-                      </p>
-                      <div className="kg-coupon-input-row">
-                        <input
-                          type="text"
-                          className="kg-coupon-input"
-                          value={couponInput}
-                          onChange={(e) => {
-                            setCouponInput(e.target.value.toUpperCase());
-                            setCouponErr("");
-                          }}
-                          placeholder="E.g. KAMALI15"
-                          onKeyDown={(e) => e.key === "Enter" && applyCode()}
-                        />
-                        <button
-                          className="kg-coupon-apply-btn"
-                          onClick={() => applyCode()}
-                          disabled={couponLoading || !couponInput.trim()}
-                        >
-                          {couponLoading ? "..." : "Apply"}
-                        </button>
-                      </div>
-                      {couponErr && (
-                        <p className="kg-coupon-err">⚠ {couponErr}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
 
                 {/* Continue Shopping */}
                 <Link
@@ -724,12 +734,6 @@ const Cart = () => {
                         {shipping === 0 ? "FREE" : `₹${shipping}`}
                       </span>
                     </div>
-                    {couponDiscount > 0 && (
-                      <div className="kg-breakdown-row" style={{ color: "#16a34a" }}>
-                        <span>Coupon ({coupon.coupon_code})</span>
-                        <span>− ₹{couponDiscount.toFixed(2)}</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Total */}
@@ -742,38 +746,21 @@ const Cart = () => {
                     Inclusive of all taxes · COD +₹{COD_FEE}
                   </p>
 
-                  {couponDiscount > 0 && (
-                    <div
-                      style={{
-                        background: "#f0fdf4",
-                        border: "1px solid #86efac",
-                        borderRadius: 8,
-                        padding: "8px 12px",
-                        fontSize: 12,
-                        color: "#16a34a",
-                        fontWeight: 700,
-                        textAlign: "center",
-                        marginBottom: 14,
-                      }}
-                    >
-                      🎉 You're saving ₹{couponDiscount.toFixed(2)} on this order!
-                    </div>
-                  )}
-
                   {/* Checkout Button */}
                   <button
                     className="kg-checkout-btn"
-                    onClick={() =>
+                    onClick={() => {
+                      dispatch(createCheckoutFromCart(cartItems));
                       navigate(process.env.PUBLIC_URL + "/checkout", {
                         state: {
                           subtotal,
                           shipping,
-                          couponDiscount,
-                          couponCode: coupon?.coupon_code || null,
+                          couponDiscount: 0,
+                          couponCode: null,
                           grandTotal,
                         },
-                      })
-                    }
+                      });
+                    }}
                   >
                     Proceed to Checkout →
                   </button>

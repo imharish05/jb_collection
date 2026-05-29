@@ -104,7 +104,7 @@ function StockModal({ variant, onClose, onDone, showToast }) {
     const toastId = showToast.loading(mode === 'add' ? 'Adding stock…' : 'Reducing stock…');
     try {
       await dispatch(editVariant({ id: variant.id, data: { stock: preview } }));
-      showToast.success(mode === 'add' ? `✅ Added ${parsed} units` : `✅ Reduced ${parsed} units`, toastId);
+      showToast.success(mode === 'add' ? ` Added ${parsed} units` : `Reduced ${parsed} units`, toastId);
       onDone(variant.id, preview);
       onClose();
     } catch (err) {

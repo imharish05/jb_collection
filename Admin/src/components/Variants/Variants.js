@@ -33,6 +33,9 @@ function safeAttrs(raw) {
   return [];
 }
 
+const KEY_ALIASES = { color: 'Colour', colour: 'Colour', size: 'Size', material: 'Material', finish: 'Finish', capacity: 'Capacity' };
+function normalKey(k) { return KEY_ALIASES[k?.toLowerCase()] || k; }
+
 // Convert a saved variant row → VariantBuilder SKU shape
 function variantToSku(v) {
   const attrs = safeAttrs(v.attributes);
@@ -89,14 +92,6 @@ export default function Variants({ showToast }) {
   }, []);
 
   // ── Derive existing option matrix whenever productId changes in ADD mode ──
-  // Reads the already-loaded `rows` (variant list) for the selected product and
-  // reconstructs the option axes so VariantBuilder knows what dimensions exist.
-  // e.g. product has Colour:[Red], Size:[SM,M], Material:[Glass]
-  //   → existingOptions = [
-  //       { id:'Colour',   key:'Colour',   values:['Red'] },
-  //       { id:'Size',     key:'Size',     values:['SM','M'] },
-  //       { id:'Material', key:'Material', values:['Glass'] },
-  //     ]
   useEffect(() => {
     if (mode !== 'add' || !productId) {
       setExistingOptions(null);
@@ -113,8 +108,9 @@ export default function Variants({ showToast }) {
     productVariants.forEach(v => {
       safeAttrs(v.attributes).forEach(a => {
         if (!a.key || !a.value || a.key === 'Custom Note') return;
-        if (!optionMap[a.key]) optionMap[a.key] = new Set();
-        optionMap[a.key].add(a.value);
+        const k = normalKey(a.key);
+        if (!optionMap[k]) optionMap[k] = new Set();
+        optionMap[k].add(a.value);
       });
     });
     const keys = Object.keys(optionMap);
@@ -126,7 +122,8 @@ export default function Variants({ showToast }) {
     setExistingOptions(
       keys.map(k => ({ id: k, key: k, values: [...optionMap[k]] }))
     );
-    setSkus([]); // reset SKUs so VariantBuilder regenerates from new options
+    // Pre-seed skus with mapped existing variants so the VariantBuilder preserves their data
+    setSkus(productVariants.map(variantToSku));
   }, [productId, mode, rows]);
 
   // ── Open ADD form ─────────────────────────────────────────────────────────
@@ -191,27 +188,63 @@ export default function Variants({ showToast }) {
     return !Object.keys(next).length;
   };
 
-  // ── Submit ADD (one API call per SKU) ─────────────────────────────────────
+  // ── Submit ADD (differential sync) ────────────────────────────────────────
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!validateAdd()) return;
 
-    const tid = showToast.loading(`Adding ${skus.length} variant${skus.length > 1 ? 's' : ''}…`);
+    // Retrieve existing variants of this product in database
+    const existingDbVariants = rows.filter(r => String(r.productId) === String(productId));
+
+    // Perform differential sync
+    const toUpdate = skus.filter(s => s.id && !String(s.id).startsWith('new_'));
+    const toCreate = skus.filter(s => !s.id || String(s.id).startsWith('new_'));
+    const toDelete = existingDbVariants.filter(ev => !skus.some(s => String(s.id) === String(ev.id)));
+
+    const totalOps = toUpdate.length + toCreate.length + toDelete.length;
+    const tid = showToast.loading(`Syncing ${totalOps} variant operations…`);
     try {
-      for (const sku of skus) {
-        const attrs = sku.combo?.length
-          ? sku.combo.map(c => ({ key: c.key, value: c.value }))
-          : (sku.attributes || []).filter(a => a.key && a.value);
+      // 1. Delete removed combinations
+      for (const v of toDelete) {
+        await dispatch(removeVariant(v.id));
+      }
+
+      // 2. Update existing ones
+      for (const s of toUpdate) {
+        const attrs = s.combo?.length
+          ? s.combo.map(c => ({ key: c.key, value: c.value }))
+          : (s.attributes || []).filter(a => a.key && a.value);
+
+        await dispatch(editVariant({
+          id: s.id,
+          data: {
+            productId,
+            variantName: s.variantName,
+            mrp:         s.mrp,
+            salesPrice:  s.salesPrice,
+            stock:       s.stock,
+            status:      s.status || 'Active',
+            attributes:  attrs,
+            imageFile:   s.imageFile || undefined,
+          },
+        }));
+      }
+
+      // 3. Create newly generated combinations
+      for (const s of toCreate) {
+        const attrs = s.combo?.length
+          ? s.combo.map(c => ({ key: c.key, value: c.value }))
+          : (s.attributes || []).filter(a => a.key && a.value);
 
         await dispatch(createVariant({
           productId,
-          variantName: sku.variantName,
-          mrp:         sku.mrp,
-          salesPrice:  sku.salesPrice,
-          stock:       sku.stock,
-          status:      sku.status || 'Active',
+          variantName: s.variantName,
+          mrp:         s.mrp,
+          salesPrice:  s.salesPrice,
+          stock:       s.stock,
+          status:      s.status || 'Active',
           attributes:  attrs,
-          imageFile:   sku.imageFile || undefined,
+          imageFile:   s.imageFile || undefined,
         }));
       }
       showToast.success(`${skus.length} variant${skus.length > 1 ? 's' : ''} added!`, tid);
@@ -232,8 +265,13 @@ export default function Variants({ showToast }) {
       ? s.combo.map(c => ({ key: c.key, value: c.value }))
       : (s.attributes || []).filter(a => a.key && a.value);
 
-    const tid = showToast.loading('Updating variant…');
+    const tid = showToast.loading(
+      editSkus.length > 1
+        ? `Updating variant + adding ${editSkus.length - 1} new…`
+        : 'Updating variant…'
+    );
     try {
+      // Always update the original variant (editSkus[0])
       await dispatch(editVariant({
         id: editingId,
         data: {
@@ -247,7 +285,32 @@ export default function Variants({ showToast }) {
           imageFile:   s.imageFile || undefined,
         },
       }));
-      showToast.success('Variant updated!', tid);
+
+      // If adding new option values created extra SKUs, save them as new variants
+      if (editSkus.length > 1) {
+        for (const newSku of editSkus.slice(1)) {
+          const newAttrs = newSku.combo?.length
+            ? newSku.combo.map(c => ({ key: c.key, value: c.value }))
+            : (newSku.attributes || []).filter(a => a.key && a.value);
+          await dispatch(createVariant({
+            productId,
+            variantName: newSku.variantName,
+            mrp:         newSku.mrp         || s.mrp,
+            salesPrice:  newSku.salesPrice  || s.salesPrice,
+            stock:       newSku.stock       ?? 0,
+            status:      newSku.status      || 'Active',
+            attributes:  newAttrs,
+            imageFile:   newSku.imageFile   || undefined,
+          }));
+        }
+      }
+
+      showToast.success(
+        editSkus.length > 1
+          ? `Variant updated + ${editSkus.length - 1} new variant${editSkus.length > 2 ? 's' : ''} created!`
+          : 'Variant updated!',
+        tid
+      );
       closeForm();
       dispatch(fetchVariants());
     } catch (err) {
@@ -323,9 +386,13 @@ export default function Variants({ showToast }) {
                 <ErrorMsg field="productId" />
                 {/* Info banner — shown when product already has variants */}
                 {productId && existingOptions && existingOptions.length > 0 && (
-                  <div style={{ marginTop: 8, padding: '8px 12px', background: '#EEF9F0', border: '1px solid #A7D7AF', borderRadius: 8, fontSize: 12, color: '#2d6a35' }}>
-                    ℹ️ This product already has <strong>{existingOptions.length}</strong> option dimension{existingOptions.length > 1 ? 's' : ''} (
-                    {existingOptions.map(o => o.key).join(', ')}). New values you add will be <strong>auto-expanded</strong> into full combinations.
+                  <div style={{ marginTop: 8, padding: '12px 16px', background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 8, fontSize: 13, color: '#92400E', lineHeight: '1.5' }}>
+                    <strong>⚠️ Cartesian Synchronization Warning:</strong> This product already has <strong>{existingOptions.length}</strong> option dimension{existingOptions.length > 1 ? 's' : ''} ({existingOptions.map(o => o.key).join(', ')}).
+                    <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
+                      <li>To add new option values (e.g., a new color or size), add them to the existing option categories.</li>
+                      <li><strong>Adding or changing option categories</strong> will regenerate the matrix. Any existing variants that do not match the new categories will be <strong>permanently deleted</strong> upon saving.</li>
+                      <li>Check the <strong>📦 SKUs ({skus.length})</strong> tab to confirm the final list of variants before saving.</li>
+                    </ul>
                   </div>
                 )}
               </div>

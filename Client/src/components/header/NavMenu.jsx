@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { useSelector } from "react-redux";
 
 const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
-  const { categories = [], events = [], combos = [] } = useSelector((state) => state.navMenu || {});
+  const { categories = [], events = [], combos = [], rootCombos = [] } = useSelector((state) => state.navMenu || {});
 
   const S = process.env.PUBLIC_URL + "/shop";
   const arrow = sidebarMenu
@@ -93,14 +93,14 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
       )}
 
       {/* Combos row */}
-      {combos.length > 0 && (
+      {rootCombos.length > 0 && (
         <>
           <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#aaa", margin: "0 0 14px", padding: 0 }}>Combos</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "18px 14px" }}>
-            {combos.map((combo) => (
+            {rootCombos.map((combo) => (
               <Link
-                key={combo.value ?? combo.id}
-                to={combo.id ? `${S}?combo=${combo.id}` : `${S}?combo=all`}
+                key={combo.id}
+                to={`${S}?combo=${combo.id}`}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", width: 72 }}
               >
                 <span style={{
@@ -111,7 +111,7 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
                   {combo.image ? (
                     <img
                       src={`${process.env.REACT_APP_IMG_URL}/uploads/${combo.image.replace(/^\/?(uploads\/)?/, "")}`}
-                      alt={combo.label}
+                      alt={combo.name}
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       onError={e => { e.target.style.display = "none"; }}
                     />
@@ -119,7 +119,7 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
                     <span style={{ fontSize: 22 }}>🎁</span>
                   )}
                 </span>
-                <span style={{ fontSize: 11, color: "#333", textAlign: "center", lineHeight: 1.3, fontWeight: 500 }}>{combo.label}</span>
+                <span style={{ fontSize: 11, color: "#333", textAlign: "center", lineHeight: 1.3, fontWeight: 500 }}>{combo.name}</span>
               </Link>
             ))}
           </div>
