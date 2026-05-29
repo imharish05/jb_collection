@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import styles from './Dashboard.module.css';
 import { loadDashboard, loadChart } from '../../redux/services/dashboardService';
 
@@ -24,7 +24,7 @@ const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 2022 }, (_, i) => CURRE
 
 export default function Dashboard() {
   const dispatch = useDispatch();
-  const { stats, recentProducts, totalStock, orderCounts, monthlyData, loading, graphLoading } = useSelector(state => state.dashboard);
+  const { stats, recentProducts, totalStock, orderCounts, monthlyData, monthlySalesData, loading, graphLoading } = useSelector(state => state.dashboard);
   const [mounted, setMounted] = useState(false);
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
   const isFirstChartLoad = useRef(true);
@@ -137,6 +137,40 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className={styles.chartCard} style={{ marginTop: 20 , marginBottom : 20}}>
+        <div className={styles.cardHdr}>
+          <div>
+            <h3 className={styles.cardTitle}>Sales Overview</h3>
+            <p className={styles.cardSub}>Monthly revenue trend for {selectedYear}</p>
+          </div>
+        </div>
+        {graphLoading ? (
+          <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, fontWeight: 500 }}>
+            Loading sales chart…
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={monthlySalesData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+              <defs>
+                <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#45b369" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="#45b369" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+              <XAxis dataKey="m" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+              <Tooltip
+                formatter={(v) => [`₹${Number(v || 0).toLocaleString('en-IN')}`, 'Revenue']}
+                labelStyle={{ color: '#9ca3af', fontSize: 11, fontWeight: 600 }}
+                contentStyle={{ background: '#1b2431', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#fff' }}
+              />
+              <Area type="monotone" dataKey="amount" stroke="#45b369" strokeWidth={3} fill="url(#salesGrad)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       <div className={styles.tableCard}>

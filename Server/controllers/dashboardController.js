@@ -81,4 +81,34 @@ const getMonthlyOrders = async (req, res) => {
   }
 };
 
-module.exports = { getStats, getMonthlyOrders };
+// ─── GET /api/dashboard/monthly-sales?year=2025 ──────────────────────────────
+const getMonthlySales = async (req, res) => {
+  try {
+    const year = parseInt(req.query.year, 10) || new Date().getFullYear();
+    const start = new Date(`${year}-01-01T00:00:00.000Z`);
+    const end = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+
+    const orders = await Order.findAll({
+      where: {
+        createdAt: { [Op.gte]: start, [Op.lt]: end },
+        status: { [Op.ne]: "cancelled" },
+      },
+      attributes: ["createdAt", "totalAmount"],
+    });
+
+    const LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const sales = Array(12).fill(0);
+    orders.forEach((o) => {
+      const month = new Date(o.createdAt).getMonth();
+      const amount = parseFloat(o.totalAmount || 0);
+      sales[month] += Number.isFinite(amount) ? amount : 0;
+    });
+
+    return res.json(LABELS.map((m, i) => ({ m, amount: Number(sales[i].toFixed(2)) })));
+  } catch (err) {
+    console.error("[Dashboard] getMonthlySales error:", err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { getStats, getMonthlyOrders, getMonthlySales };

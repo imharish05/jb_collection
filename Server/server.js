@@ -29,6 +29,7 @@ const contactRoutes = require("./routes/contact");
 const customerRoutes = require("./routes/customers");
 const dashboardRoutes = require("./routes/dashboard");
 const testimonialRoutes = require("./routes/testimonials");
+const shippingRoutes = require("./routes/shipping");
 
 // New combo routes (Root/Child system)
 const newComboRoutes = require("./routes/combos");
@@ -67,6 +68,7 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/testimonials", testimonialRoutes);
+app.use("/api/shipping", shippingRoutes);
 // New combo routes (Root/Child/ChildProduct system)
 app.use("/api/combos", newComboRoutes);
 // Health check

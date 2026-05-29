@@ -118,6 +118,29 @@ const Product = sequelize.define(
       allowNull: true,
       field: "combo_id",
     },
+
+    // ── Shipping (optional; used for logistics calculation) ──────────────────
+    shippingWeight: {
+      type: DataTypes.DECIMAL(10, 3),
+      allowNull: true,
+      field: "shipping_weight",
+    },
+    shippingDimensions: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: "shipping_dimensions", // { length, breadth, height }
+    },
+    freeShipping: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: "free_shipping",
+    },
+    shippingClass: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "shipping_class", // "fragile", "oversized", etc.
+    },
   },
   {
     tableName: "products",

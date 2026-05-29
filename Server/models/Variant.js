@@ -14,6 +14,10 @@ const Variant = sequelize.define("Variant", {
   attributes:  { type: DataTypes.JSON,           defaultValue: [], allowNull: true },
   status:      { type: DataTypes.STRING,         defaultValue: "Active" },
   image:       { type: DataTypes.STRING,         allowNull: true },
+
+  // ── Shipping overrides (optional) ─────────────────────────────────────────
+  shippingWeight: { type: DataTypes.DECIMAL(10, 3), allowNull: true, field: "shipping_weight" },
+  shippingDimensions: { type: DataTypes.JSON, allowNull: true, field: "shipping_dimensions" },
   
   // Moved inside the column definitions block
   createdAt: {

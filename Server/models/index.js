@@ -20,6 +20,9 @@ const Coupon      = require("./Coupon");
 const Contact     = require("./Contact");
 const OrderItem   = require("./OrderItem");
 const Testimonial = require("./Testimonial");
+const ShippingSetting = require("./ShippingSetting");
+const DeliveryZone = require("./DeliveryZone");
+const DeliveryZonePincode = require("./DeliveryZonePincode");
 
 // ── New Root/Child Combo models ───────────────────────────────────────────────
 const RootCombo         = require("./RootCombo");
@@ -77,6 +80,10 @@ Review.belongsTo(User,  { foreignKey: "customer_id", as: "Customer" });
 Order.hasMany(OrderItem, { foreignKey: "order_id", as: "items", onDelete: "CASCADE" });
 OrderItem.belongsTo(Order, { foreignKey: "order_id" });
 
+// ── Shipping: zones ↔ pincodes ──────────────────────────────────────────────
+DeliveryZone.hasMany(DeliveryZonePincode, { foreignKey: "zone_id", as: "pincodes", onDelete: "CASCADE" });
+DeliveryZonePincode.belongsTo(DeliveryZone, { foreignKey: "zone_id", as: "zone" });
+
 // ── RootCombo ↔ ChildCombo ────────────────────────────────────────────────────
 RootCombo.hasMany(ChildCombo, { foreignKey: "root_combo_id", as: "children", onDelete: "CASCADE" });
 ChildCombo.belongsTo(RootCombo, { foreignKey: "root_combo_id", as: "rootCombo" });
@@ -112,6 +119,9 @@ module.exports = {
   Contact,
   OrderItem,
   Testimonial,
+  ShippingSetting,
+  DeliveryZone,
+  DeliveryZonePincode,
   // New combo models
   RootCombo,
   ChildCombo,

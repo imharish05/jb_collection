@@ -1,6 +1,6 @@
 import api from "../../api/axiosInstance";
 import toast from "react-hot-toast";
-import { setLoading, setDashboardData, setError, setOrderCounts, setGraphLoading, setMonthlyData, setGraphError } from "../slices/dashboardSlice";
+import { setLoading, setDashboardData, setError, setOrderCounts, setGraphLoading, setMonthlyData, setMonthlySalesData, setGraphError } from "../slices/dashboardSlice";
 
 let dashboardLoaded = false;
 
@@ -38,8 +38,12 @@ export const fetchOrderCounts = () => async (dispatch) => {
 export const fetchMonthlyOrders = (year) => async (dispatch) => {
     dispatch(setGraphLoading());
     try {
-        const res = await api.get(`/dashboard/monthly-orders?year=${year}`);
-        dispatch(setMonthlyData(res.data));
+        const [ordersRes, salesRes] = await Promise.all([
+            api.get(`/dashboard/monthly-orders?year=${year}`),
+            api.get(`/dashboard/monthly-sales?year=${year}`),
+        ]);
+        dispatch(setMonthlyData(ordersRes.data));
+        dispatch(setMonthlySalesData(salesRes.data));
     } catch (err) {
         dispatch(setGraphError());
         throw err;
