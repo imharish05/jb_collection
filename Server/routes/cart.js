@@ -7,6 +7,7 @@ const {
   increaseQuantity,
   decreaseQuantity,
   clearCart,
+  revalidateCart,
 } = require("../controllers/cartController");
 const { protect } = require("../middleware/auth");
 
@@ -18,5 +19,6 @@ router.delete("/remove/:cartItemId", removeFromCart);
 router.patch("/increase/:cartItemId", increaseQuantity);
 router.patch("/decrease/:cartItemId", decreaseQuantity);
 router.delete("/clear", clearCart);
+router.post("/revalidate", revalidateCart);
 
 module.exports = router;

@@ -219,7 +219,6 @@ const decreaseQuantity = async (req, res, next) => {
   }
 };
 
-// DELETE /api/cart/clear
 const clearCart = async (req, res, next) => {
   try {
     await CartItem.destroy({ where: { userId: req.user.id } });
@@ -229,4 +228,268 @@ const clearCart = async (req, res, next) => {
   }
 };
 
-module.exports = { getCart, addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart };
+const revalidateCart = async (req, res, next) => {
+  try {
+    const { items } = req.body;
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ message: "items array is required" });
+    }
+
+    const { ChildCombo, ChildComboProduct, Product, Variant } = require("../models");
+
+    const results = [];
+    let hasChanges = false;
+
+    for (const item of items) {
+      const { cartItemId, productId, selectedVariantId, quantity, isCombo, childComboId } = item;
+      
+      // 1. Combo product revalidation
+      if (isCombo && childComboId) {
+        const child = await ChildCombo.findByPk(childComboId, {
+          include: [{
+            model: ChildComboProduct,
+            as: "comboProducts",
+            include: [
+              { model: Product, as: "product", include: [{ model: Variant, as: "Variants" }] },
+              { model: Variant, as: "variant" }
+            ]
+          }]
+        });
+
+        if (!child || !child.isActive) {
+          results.push({
+            cartItemId,
+            originalQty: quantity,
+            adjustedQty: 0,
+            status: "Unavailable",
+            message: `Combo "${item.name || 'this combo'}" is no longer available.`
+          });
+          hasChanges = true;
+          continue;
+        }
+
+        // Fixed combo stock calculation
+        if (child.type === "fixed") {
+          let minStock = Infinity;
+          let oosItemName = "";
+          
+          for (const cp of child.comboProducts) {
+            const v = cp.variantId ? cp.variant : null;
+            const stock = v ? Number(v.stock || 0) : Number(cp.product?.stock || 0);
+            const factor = Math.floor(stock / (cp.quantity || 1));
+            if (factor < minStock) {
+              minStock = factor;
+              if (stock < (cp.quantity || 1)) {
+                oosItemName = cp.product?.name || "constituent product";
+              }
+            }
+          }
+
+          if (minStock <= 0) {
+            results.push({
+              cartItemId,
+              originalQty: quantity,
+              adjustedQty: 0,
+              status: "OOS",
+              message: `Combo "${child.name}" is out of stock (due to ${oosItemName}).`
+            });
+            hasChanges = true;
+          } else if (quantity > minStock) {
+            results.push({
+              cartItemId,
+              originalQty: quantity,
+              adjustedQty: minStock,
+              status: "Adjusted",
+              message: `Quantity for "${child.name}" adjusted from ${quantity} to ${minStock} due to constituent stock limits.`
+            });
+            hasChanges = true;
+          } else {
+            results.push({
+              cartItemId,
+              originalQty: quantity,
+              adjustedQty: quantity,
+              status: "OK"
+            });
+          }
+        } else {
+          // Mix & match combo validation: we need to check selected products
+          const selections = item.selectedProducts || [];
+          let mixMatchValid = true;
+          let oosName = "";
+
+          for (const sel of selections) {
+            const cp = child.comboProducts.find(c => String(c.productId) === String(sel.productId));
+            if (!cp) continue;
+            
+            const v = sel.variantId
+              ? cp.product?.Variants?.find(x => String(x.id) === String(sel.variantId))
+              : null;
+            const stock = v ? Number(v.stock || 0) : Number(cp.product?.stock || 0);
+            
+            const neededQty = (sel.quantity || 1) * quantity;
+            if (stock < neededQty) {
+              mixMatchValid = false;
+              oosName = cp.product?.name || "constituent product";
+              break;
+            }
+          }
+
+          if (!mixMatchValid) {
+            let possibleQty = quantity;
+            for (const sel of selections) {
+              const cp = child.comboProducts.find(c => String(c.productId) === String(sel.productId));
+              if (!cp) continue;
+              const v = sel.variantId
+                ? cp.product?.Variants?.find(x => String(x.id) === String(sel.variantId))
+                : null;
+              const stock = v ? Number(v.stock || 0) : Number(cp.product?.stock || 0);
+              const limitPerCombo = sel.quantity || 1;
+              const maxComboQty = Math.floor(stock / limitPerCombo);
+              if (maxComboQty < possibleQty) {
+                possibleQty = maxComboQty;
+              }
+            }
+
+            if (possibleQty <= 0) {
+              results.push({
+                cartItemId,
+                originalQty: quantity,
+                adjustedQty: 0,
+                status: "OOS",
+                message: `Mix & Match "${child.name}" is out of stock (due to ${oosName}).`
+              });
+            } else {
+              results.push({
+                cartItemId,
+                originalQty: quantity,
+                adjustedQty: possibleQty,
+                status: "Adjusted",
+                message: `Quantity for "${child.name}" adjusted from ${quantity} to ${possibleQty} due to item stock limits.`
+              });
+            }
+            hasChanges = true;
+          } else {
+            results.push({
+              cartItemId,
+              originalQty: quantity,
+              adjustedQty: quantity,
+              status: "OK"
+            });
+          }
+        }
+      }
+      // 2. Variable product (variant) revalidation
+      else if (selectedVariantId) {
+        const variant = await Variant.findByPk(selectedVariantId, {
+          include: [{ model: Product, as: "product" }]
+        });
+
+        if (!variant || variant.status === "Inactive" || variant.stockStatus === "Discontinued") {
+          results.push({
+            cartItemId,
+            originalQty: quantity,
+            adjustedQty: 0,
+            status: "Discontinued",
+            message: `Variant "${item.name} (${item.selectedVariantName || 'selected option'})" is discontinued or no longer available.`
+          });
+          hasChanges = true;
+        } else if (variant.stockStatus === "Temporarily Unavailable" || variant.product?.stockStatus === "Temporarily Unavailable") {
+          results.push({
+            cartItemId,
+            originalQty: quantity,
+            adjustedQty: 0,
+            status: "Unavailable",
+            message: `Variant "${item.name} (${item.selectedVariantName || 'selected option'})" is temporarily unavailable.`
+          });
+          hasChanges = true;
+        } else {
+          const stock = Number(variant.stock || 0);
+          if (stock <= 0) {
+            results.push({
+              cartItemId,
+              originalQty: quantity,
+              adjustedQty: 0,
+              status: "OOS",
+              message: `Variant "${item.name} (${item.selectedVariantName || 'selected option'})" is out of stock.`
+            });
+            hasChanges = true;
+          } else if (quantity > stock) {
+            results.push({
+              cartItemId,
+              originalQty: quantity,
+              adjustedQty: stock,
+              status: "Adjusted",
+              message: `Quantity for "${item.name} (${item.selectedVariantName || 'selected option'})" adjusted to ${stock} (available stock limit).`
+            });
+            hasChanges = true;
+          } else {
+            results.push({
+              cartItemId,
+              originalQty: quantity,
+              adjustedQty: quantity,
+              status: "OK"
+            });
+          }
+        }
+      }
+      // 3. Simple product revalidation
+      else {
+        const product = await Product.findByPk(productId);
+
+        if (!product || !product.isActive || product.stockStatus === "Discontinued") {
+          results.push({
+            cartItemId,
+            originalQty: quantity,
+            adjustedQty: 0,
+            status: "Discontinued",
+            message: `Product "${item.name || 'this item'}" is discontinued or no longer available.`
+          });
+          hasChanges = true;
+        } else if (product.stockStatus === "Temporarily Unavailable") {
+          results.push({
+            cartItemId,
+            originalQty: quantity,
+            adjustedQty: 0,
+            status: "Unavailable",
+            message: `Product "${product.name}" is temporarily unavailable.`
+          });
+          hasChanges = true;
+        } else {
+          const stock = Number(product.stock || 0);
+          if (stock <= 0) {
+            results.push({
+              cartItemId,
+              originalQty: quantity,
+              adjustedQty: 0,
+              status: "OOS",
+              message: `Product "${product.name}" is out of stock.`
+            });
+            hasChanges = true;
+          } else if (quantity > stock) {
+            results.push({
+              cartItemId,
+              originalQty: quantity,
+              adjustedQty: stock,
+              status: "Adjusted",
+              message: `Quantity for "${product.name}" adjusted to ${stock} (available stock limit).`
+            });
+            hasChanges = true;
+          } else {
+            results.push({
+              cartItemId,
+              originalQty: quantity,
+              adjustedQty: quantity,
+              status: "OK"
+            });
+          }
+        }
+      }
+    }
+
+    res.json({ success: true, hasChanges, items: results });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getCart, addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, revalidateCart };

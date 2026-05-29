@@ -1,4 +1,4 @@
-import { Fragment, useState, useCallback, useEffect } from "react";
+import { Fragment, useState, useCallback, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SEO from "../../components/seo";
@@ -15,7 +15,9 @@ import {
 } from "../../store/services";
 import { fetchAddresses } from "../../store/services/addressService";
 import { setActiveAddress } from "../../store/slices/addressSlice";
+import { replaceCart } from "../../store/slices/cart-slice";
 import api from "../../api/axios";
+import cogoToast from "cogo-toast";
 import "./Cart.css";
 
 const SHIPPING_THRESHOLD = 999;
@@ -73,6 +75,59 @@ const Cart = () => {
       [cartItemId]: !prev[cartItemId]
     }));
   };
+
+  /* ── Cart Revalidation ───────────────────────────────────────────────────── */
+  const [revalidating, setRevalidating] = useState(false);
+  const [revalAlerts, setRevalAlerts] = useState([]);  // [{cartItemId, message, status}]
+  const revalDoneRef = useRef(false);
+
+  const revalidateCartItems = useCallback(async () => {
+    if (!cartItems || cartItems.length === 0 || revalDoneRef.current) return;
+    setRevalidating(true);
+    try {
+      const payload = {
+        items: cartItems.map(item => ({
+          cartItemId: item.cartItemId,
+          productId: item.id,
+          selectedVariantId: item.selectedVariantId || null,
+          quantity: item.quantity,
+          name: item.name,
+          selectedVariantName: item.selectedVariantName || null,
+          isCombo: item.isCombo || false,
+          childComboId: item.childComboId || null,
+          selectedProducts: item.selectedProducts || null,
+        })),
+      };
+      const res = await api.post("/cart/revalidate", payload);
+      const { hasChanges, items: results } = res.data;
+      if (!hasChanges) return;
+
+      // Build alert list for items that changed
+      const alerts = [];
+      const updatedCart = cartItems.map(item => {
+        const result = results.find(r => r.cartItemId === item.cartItemId);
+        if (!result || result.status === "OK") return item;
+        alerts.push({ cartItemId: item.cartItemId, message: result.message, status: result.status });
+        if (result.adjustedQty === 0) return null;  // mark for removal
+        return { ...item, quantity: result.adjustedQty };
+      }).filter(Boolean);
+
+      if (alerts.length > 0) {
+        setRevalAlerts(alerts);
+        dispatch(replaceCart(updatedCart));
+      }
+    } catch (err) {
+      console.warn("Cart revalidation failed:", err);
+    } finally {
+      setRevalidating(false);
+      revalDoneRef.current = true;
+    }
+  }, [cartItems, dispatch]);
+
+  useEffect(() => {
+    revalidateCartItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (authUser?.id) dispatch(fetchAddresses());
@@ -200,6 +255,26 @@ const Cart = () => {
                     </div>
                   </div>
                 )} */}
+
+
+                {/* Revalidation alerts */}
+                {revalidating && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, marginBottom: 12, fontSize: 13, color: "#92400e" }}>
+                    <span style={{ fontSize: 18 }}>🔄</span>
+                    <span>Checking stock availability…</span>
+                  </div>
+                )}
+                {revalAlerts.length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                    {revalAlerts.map((alert, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 16px", background: alert.status === "OOS" || alert.status === "Discontinued" || alert.status === "Unavailable" ? "#fef2f2" : "#fffbeb", border: `1px solid ${alert.status === "OOS" || alert.status === "Discontinued" || alert.status === "Unavailable" ? "#fecaca" : "#fde68a"}`, borderRadius: 10, fontSize: 13, color: alert.status === "OOS" || alert.status === "Discontinued" || alert.status === "Unavailable" ? "#991b1b" : "#92400e" }}>
+                        <span style={{ fontSize: 16, flexShrink: 0 }}>{alert.status === "OOS" || alert.status === "Discontinued" || alert.status === "Unavailable" ? "⚠️" : "📦"}</span>
+                        <span style={{ flex: 1 }}>{alert.message}</span>
+                        <button onClick={() => setRevalAlerts(prev => prev.filter((_, j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "inherit", opacity: 0.6, padding: 0, lineHeight: 1 }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Cart Items */}
                 <div className="kg-items-card">

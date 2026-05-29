@@ -9,8 +9,8 @@ const fs   = require("fs");
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
-const PRODUCT_ATTRS = ["id", "name", "price", "discount", "image", "stock", "shortDescription"];
-const VARIANT_ATTRS = ["id", "variantName", "mrp", "salesPrice", "stock", "attributes", "image"];
+const PRODUCT_ATTRS = ["id", "name", "price", "discount", "image", "stock", "shortDescription", "stockStatus", "warningThreshold"];
+const VARIANT_ATTRS = ["id", "variantName", "mrp", "salesPrice", "stock", "attributes", "image", "stockStatus", "warningThreshold"];
 
 function imgUrl(img) {
   if (!img) return null;

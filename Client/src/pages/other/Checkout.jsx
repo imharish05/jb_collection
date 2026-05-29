@@ -9,7 +9,7 @@ import {
   addAddressService,
 } from "../../store/services/addressService";
 import { setActiveAddress } from "../../store/slices/addressSlice";
-import { deleteAllFromCart } from "../../store/slices/cart-slice";
+import { deleteAllFromCart, replaceCart } from "../../store/slices/cart-slice";
 import { getDiscountPrice } from "../../helpers/product";
 import { getImgUrl } from "../../helpers/imageUrl";
 import api from "../../api/axios";
@@ -194,6 +194,56 @@ const Checkout = () => {
       cogoToast.warn("Please select a billing address", { position: "top-center" });
       return;
     }
+
+    // ── Pre-order stock revalidation ──────────────────────────────────────
+    try {
+      const revalPayload = {
+        items: cartItems.map(item => ({
+          cartItemId: item.cartItemId,
+          productId: item.id,
+          selectedVariantId: item.selectedVariantId || null,
+          quantity: item.quantity,
+          name: item.name,
+          selectedVariantName: item.selectedVariantName || null,
+          isCombo: item.isCombo || false,
+          childComboId: item.childComboId || null,
+          selectedProducts: item.selectedProducts || null,
+        })),
+      };
+      const revalRes = await api.post("/cart/revalidate", revalPayload);
+      const { hasChanges, items: revalResults } = revalRes.data;
+
+      if (hasChanges) {
+        const blockers = revalResults.filter(r =>
+          r.adjustedQty === 0 && ["OOS", "Discontinued", "Unavailable"].includes(r.status)
+        );
+        const updatedCart = cartItems.map(item => {
+          const result = revalResults.find(r => r.cartItemId === item.cartItemId);
+          if (!result || result.status === "OK") return item;
+          if (result.adjustedQty === 0) return null;
+          return { ...item, quantity: result.adjustedQty };
+        }).filter(Boolean);
+        dispatch(replaceCart(updatedCart));
+
+        if (blockers.length > 0) {
+          cogoToast.error(
+            "Some items are no longer available. Please review your cart.",
+            { position: "top-center" }
+          );
+        } else {
+          cogoToast.warn(
+            "Some quantities were adjusted due to stock changes. Please review your cart.",
+            { position: "top-center" }
+          );
+        }
+        navigate(`${process.env.PUBLIC_URL}/cart`);
+        return;
+      }
+    } catch (revalErr) {
+      // Non-blocking: log and proceed if revalidation API fails
+      console.warn("Pre-order revalidation failed (proceeding):", revalErr);
+    }
+
     setPlacing(true);
     try {
       const payload = {
