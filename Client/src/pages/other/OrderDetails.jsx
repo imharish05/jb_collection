@@ -41,6 +41,14 @@ const toAmount = (value) => {
 
 const formatCurrency = (value) => `₹${(toAmount(value) ?? 0).toFixed(2)}`;
 
+const firstAmount = (...values) => {
+  for (const value of values) {
+    const amount = toAmount(value);
+    if (amount !== null) return amount;
+  }
+  return null;
+};
+
 const OrderDetails = () => {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
@@ -94,7 +102,7 @@ const OrderDetails = () => {
   };
 
   const itemPrice = (item) => {
-    const price = item.price ?? item.salesPrice ?? item.mrp ?? 0;
+    const price = item.salesPrice ?? item.price ?? item.unitPrice ?? item.sellingPrice ?? item.mrp ?? 0;
     return typeof price === "string" ? parseFloat(price) : price;
   };
 
@@ -141,21 +149,89 @@ const OrderDetails = () => {
     const qty = toAmount(item.quantity) ?? 1;
     return sum + itemPrice(item) * qty;
   }, 0);
+  const itemsListTotal = orderItems.reduce((sum, item) => {
+    const qty = toAmount(item.quantity) ?? 1;
+    const unitPrice = itemPrice(item);
+    const mrp = toAmount(item.mrp);
+    return sum + (mrp && mrp > unitPrice ? mrp : unitPrice) * qty;
+  }, 0);
   const totalAmount = toAmount(order.totalAmount) ?? 0;
   const rawShippingCharge = toAmount(order.shippingCharge);
   const shippingMethod = String(order.shippingMethod || "").toLowerCase();
   const isFreeShipping = rawShippingCharge === null || rawShippingCharge === 0 || shippingMethod === "free";
   const shippingCharge = isFreeShipping ? 0 : rawShippingCharge;
   const explicitSubtotal = toAmount(order.subtotal ?? order.subTotal ?? order.itemsSubtotal);
-  const baseSubtotal = explicitSubtotal ?? (itemsSubtotal > 0 ? itemsSubtotal : null);
+  const explicitDiscount = firstAmount(
+    order.discountAmount,
+    order.discountTotal,
+    order.productDiscount,
+    order.itemsDiscount,
+    order.discount_total
+  );
+  const discount = explicitDiscount ?? Math.max(0, itemsListTotal - itemsSubtotal);
+  const subtotalBeforeDiscount = itemsListTotal > 0 ? itemsListTotal : itemsSubtotal;
+  const subtotal = explicitSubtotal ?? Math.max(0, subtotalBeforeDiscount - discount);
+  const splitGst = firstAmount(order.cgstAmount, order.cgst) !== null ||
+    firstAmount(order.sgstAmount, order.sgst) !== null ||
+    firstAmount(order.igstAmount, order.igst) !== null
+      ? (firstAmount(order.cgstAmount, order.cgst) ?? 0) +
+        (firstAmount(order.sgstAmount, order.sgst) ?? 0) +
+        (firstAmount(order.igstAmount, order.igst) ?? 0)
+      : null;
+  const gstAmount = firstAmount(
+    order.gstAmount,
+    order.gstTotal,
+    order.taxAmount,
+    order.tax,
+    order.totalTax,
+    splitGst
+  ) ?? 0;
+  const gstRate = firstAmount(order.gstRate, order.taxRate);
   const couponCode = order.couponCode;
-  const explicitCouponDiscount = toAmount(order.couponDiscount);
+  const explicitCouponDiscount = firstAmount(order.couponDiscount, order.coupon_discount);
   const couponDiscount = explicitCouponDiscount ?? (
-    couponCode && baseSubtotal !== null
-      ? Math.max(0, baseSubtotal + shippingCharge - totalAmount)
+    couponCode
+      ? Math.max(0, subtotal + gstAmount + shippingCharge - totalAmount)
       : 0
   );
-  const subtotal = baseSubtotal ?? Math.max(0, totalAmount - shippingCharge + couponDiscount);
+  const priceRows = [
+    discount > 0 && {
+      key: "items-total",
+      label: "Items Total",
+      value: formatCurrency(subtotalBeforeDiscount),
+    },
+    discount > 0 && {
+      key: "discount",
+      label: "Discount",
+      value: `- ${formatCurrency(discount)}`,
+      className: "breakdown-row--discount",
+      footerClassName: "discount-line",
+    },
+    {
+      key: "subtotal",
+      label: "Subtotal",
+      value: formatCurrency(subtotal),
+    },
+    gstAmount > 0 && {
+      key: "gst",
+      label: gstRate ? `GST (${gstRate}%)` : "GST",
+      value: formatCurrency(gstAmount),
+      className: "breakdown-row--gst",
+    },
+    {
+      key: "shipping",
+      label: "Shipping",
+      value: isFreeShipping ? "FREE" : formatCurrency(shippingCharge),
+      valueClassName: isFreeShipping ? "shipping-free" : "",
+    },
+    couponCode && couponDiscount > 0 && {
+      key: "coupon",
+      label: `Coupon (${couponCode})`,
+      value: `- ${formatCurrency(couponDiscount)}`,
+      className: "breakdown-row--coupon",
+      footerClassName: "coupon-line",
+    },
+  ].filter(Boolean);
 
   return (
     <Fragment>
@@ -198,22 +274,12 @@ const OrderDetails = () => {
                         <span className="mini-label">Price Breakdown</span>
                         <i className="fa fa-credit-card"></i>
                       </div>
-                      <div className="breakdown-row">
-                        <span>Subtotal</span>
-                        <strong>{formatCurrency(subtotal)}</strong>
-                      </div>
-                      <div className="breakdown-row">
-                        <span>Shipping</span>
-                        <strong className={isFreeShipping ? "shipping-free" : ""}>
-                          {isFreeShipping ? "FREE" : formatCurrency(shippingCharge)}
-                        </strong>
-                      </div>
-                      {couponCode && (
-                        <div className="breakdown-row breakdown-row--coupon">
-                          <span>Coupon <em>({couponCode})</em></span>
-                          <strong>- {formatCurrency(couponDiscount)}</strong>
+                      {priceRows.map((row) => (
+                        <div key={row.key} className={`breakdown-row ${row.className || ""}`}>
+                          <span>{row.label}</span>
+                          <strong className={row.valueClassName || ""}>{row.value}</strong>
                         </div>
-                      )}
+                      ))}
                       <div className="breakdown-row breakdown-row--grand">
                         <span>Grand Total</span>
                         <strong>{formatCurrency(totalAmount)}</strong>
@@ -258,22 +324,12 @@ const OrderDetails = () => {
                       )}
 
                       <div className="premium-total-footer">
-                        <div className="total-line">
-                          <span>Subtotal</span>
-                          <span>{formatCurrency(subtotal)}</span>
-                        </div>
-                        <div className="total-line">
-                          <span>Shipping</span>
-                          <span className={isFreeShipping ? "shipping-free" : ""}>
-                            {isFreeShipping ? "FREE" : formatCurrency(shippingCharge)}
-                          </span>
-                        </div>
-                        {couponCode && (
-                          <div className="total-line coupon-line">
-                            <span>Coupon ({couponCode})</span>
-                            <span>- {formatCurrency(couponDiscount)}</span>
+                        {priceRows.map((row) => (
+                          <div key={row.key} className={`total-line ${row.footerClassName || ""}`}>
+                            <span>{row.label}</span>
+                            <span className={row.valueClassName || ""}>{row.value}</span>
                           </div>
-                        )}
+                        ))}
                         <div className="total-line grand-total">
                           <span>Grand Total</span>
                           <span>{formatCurrency(totalAmount)}</span>

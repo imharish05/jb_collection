@@ -1,24 +1,40 @@
 /* Theme variables */
+/* Font size scale
+   --font-size-2xs: 10px   badges, tiny metadata
+   --font-size-xs: 11px    labels, compact captions
+   --font-size-sm: 12px    secondary text, helper/error text
+   --font-size-md: 13px    compact controls and dense UI text
+   --font-size-base: 14px  default body text
+   --font-size-lg: 16px    section labels and small headings
+   --font-size-xl: 18px    card/page subheadings
+*/
 :root {
   --theme-color: #db1a5d;
-      --theme-color-2: #0d1b40;
-        }
+  --theme-color-2: #0d1b40;
+  --font-size-2xs: 10px;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+}
         
 /* Alternate theme classes */
 .theme-pink {
   --theme-color: #db1a5d;
-      --theme-color-2: #0d1b40;
-        }
+  --theme-color-2: #0d1b40;
+}
         
 .theme-green {
   --theme-color: #db1a5d;
-      --theme-color-2: #0d1b40;
-        }
+  --theme-color-2: #0d1b40;
+}
         
 .theme-blue {
   --theme-color: #db1a5d;
-      --theme-color-2: #0d1b40;
-        }
+  --theme-color-2: #0d1b40;
+}
         
 
 

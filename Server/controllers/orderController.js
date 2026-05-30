@@ -1,5 +1,5 @@
 // controllers/orderController.js
-const { Order, CartItem, User, Product, Variant, OrderItem, Address } = require("../models");
+const { Order, CartItem, User, Product, Variant, OrderItem, Address, Coupon } = require("../models");
 const sequelize = require("../config/database");
 const { sendOrderConfirmationEmail } = require("../utils/mailer");
 const { shiprocketPost } = require("../utils/shiprocket");
@@ -66,6 +66,7 @@ const createOrder = async (req, res, next) => {
       billingAddressId,
       paymentMethod,
       couponCode,
+      couponDiscount,
       notes,
       shippingCharge,
       estimatedDeliveryDays,
@@ -160,14 +161,55 @@ const createOrder = async (req, res, next) => {
       itemsWithDetails.push(itemData);
     }
 
-    // Validate that client total is at least the items subtotal (prevents price tampering)
-    // We don't validate shipping/discounts here as those are still being finalized
+    let serverCouponDiscount = 0;
+    let normalizedCouponCode = couponCode || null;
+
+    if (normalizedCouponCode) {
+      const coupon = await Coupon.findOne({
+        where: { code: normalizedCouponCode, is_active: true },
+        transaction,
+      });
+
+      if (!coupon) {
+        await transaction.rollback();
+        return res.status(400).json({ message: "Invalid coupon code" });
+      }
+
+      if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+        await transaction.rollback();
+        return res.status(400).json({ message: "Coupon has expired" });
+      }
+
+      if (serverComputedTotal < parseFloat(coupon.min_order || 0)) {
+        await transaction.rollback();
+        return res.status(400).json({
+          message: `Minimum order of ₹${coupon.min_order} required`,
+        });
+      }
+
+      serverCouponDiscount = coupon.type === "percent"
+        ? (serverComputedTotal * parseFloat(coupon.value || 0)) / 100
+        : parseFloat(coupon.value || 0);
+
+      if (coupon.max_discount) {
+        serverCouponDiscount = Math.min(serverCouponDiscount, parseFloat(coupon.max_discount));
+      }
+      serverCouponDiscount = parseFloat(serverCouponDiscount.toFixed(2));
+      normalizedCouponCode = coupon.code;
+    } else if (parseFloat(couponDiscount || 0) > 0) {
+      await transaction.rollback();
+      return res.status(400).json({ message: "Coupon code is required for a discount" });
+    }
+
+    // Validate that client total is not below the server subtotal after any valid coupon.
+    // Shipping can vary by courier, so it is not used as a minimum here.
     const clientTotal = parseFloat(totalAmount);
-    if (clientTotal < serverComputedTotal - 1) {
+    const minimumAllowedTotal = Math.max(0, serverComputedTotal - serverCouponDiscount);
+    if (clientTotal < minimumAllowedTotal - 1) {
       await transaction.rollback();
       return res.status(400).json({
-        message: `Order total too low. Items subtotal is ₹${serverComputedTotal.toFixed(2)}, received ₹${clientTotal.toFixed(2)}`,
-        expectedMinimum: serverComputedTotal,
+        message: `Order total too low. Expected at least ₹${minimumAllowedTotal.toFixed(2)}, received ₹${clientTotal.toFixed(2)}`,
+        expectedMinimum: minimumAllowedTotal,
         receivedTotal: clientTotal,
       });
     }
@@ -179,7 +221,7 @@ const createOrder = async (req, res, next) => {
       billingAddressId: billingAddressRef,
       paymentMethod: paymentMethod || "cod",
       paymentStatus: "pending",
-      couponCode,
+      couponCode: normalizedCouponCode,
       notes,
       shippingCharge: parseFloat(shippingCharge || 0),
       estimatedDeliveryDays: estimatedDeliveryDays || null,

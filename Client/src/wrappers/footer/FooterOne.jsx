@@ -14,7 +14,6 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         .km-footer {
           background: #ffffff;
           padding: 70px 0 40px;
-          font-family: 'Poppins', sans-serif;
           border-top: 1px solid #eeeeee;
         }
 
@@ -110,34 +109,60 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         }
 
         /* ──────────────────────────────────────────────
-           MOBILE  ≤ 600px  →  single column, cards
+           MOBILE  ≤ 600px  →  logo, links, address, copyright
            ────────────────────────────────────────────── */
         @media (max-width: 600px) {
           .km-footer { padding: 44px 0 28px; }
 
-          .km-brand-block {
+          .km-footer > div {
+            display: flex;
             flex-direction: column;
-            gap: 24px;
             align-items: center;
-            text-align: center;
-            padding-bottom: 28px;
-            margin-bottom: 28px;
           }
 
-          .km-brand-inner { display: flex; flex-direction: column; align-items: center; }
-          .km-brand p { max-width: 280px; }
-          .km-social { justify-content: center; }
+          .km-brand-block {
+            display: contents;
+          }
 
-          .km-address-inline { flex: unset; width: 100%; }
+          .km-brand-inner {
+            order: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 24px;
+          }
+          .km-brand p { max-width: 280px; margin-top: 8px; }
+          .km-social { justify-content: center; margin-top: 16px; }
+
+          .km-address-inline {
+            order: 3;
+            flex: unset;
+            width: 100%;
+            margin-bottom: 24px;
+            text-align: center;
+          }
           .km-address-inline .km-title { text-align: center; }
           .km-address-item { justify-content: flex-start; max-width: 220px; margin: 0 auto 11px; }
 
           .km-links-block {
-            grid-template-columns: 1fr 1fr;
-            gap: 28px 20px;
+            order: 2;
+            width: 100%;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 24px 18px;
+            padding: 24px 0;
+            margin-bottom: 24px;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            text-align: left;
           }
 
           .km-bottom {
+            order: 4;
+            width: 100%;
+            margin-top: 0;
+            padding-top: 18px;
             flex-direction: column;
             align-items: center;
             text-align: center;

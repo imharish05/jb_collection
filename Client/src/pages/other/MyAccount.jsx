@@ -294,11 +294,7 @@ const handleDelete = (id) => {
       <div style={{ display: "flex", gap: 8, marginTop: 6, justifyContent: "center" }}>
         <button
           onClick={() => hide()} // Correctly closes the toast on cancel
-          style={{
-            fontSize: 12, padding: "6px 12px", borderRadius: 6,
-            border: "1px solid #e0e0e0", background: "#fff",
-            color: "#777", cursor: "pointer", fontWeight: 500
-          }}
+          className="km-account-btn km-account-btn--secondary km-account-btn--compact"
         >
           Cancel
         </button>
@@ -308,11 +304,7 @@ const handleDelete = (id) => {
             dispatch(deleteAddressService(id)); 
             // REMOVED: cogoToast.success here to prevent double toasts
           }}
-          style={{
-            fontSize: 12, padding: "6px 14px", borderRadius: 6,
-            border: "none", background: "#db1a5d",
-            color: "#fff", cursor: "pointer", fontWeight: 600
-          }}
+          className="km-account-btn km-account-btn--danger km-account-btn--compact"
         >
           Delete
         </button>
@@ -574,23 +566,23 @@ const toggleVisibility = (field) => {
                                   <p style={{ margin: 0, fontSize: 13, color: "#777" }}>
                                     <i className="fa fa-phone" style={{ marginRight: 5 }}></i>{addr.phone}
                                   </p>
-                                  <div style={{ display: "flex", gap: 10, marginTop: 14, borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
+                                  <div className="km-address-actions">
                                     <button
                                       onClick={(e) => { e.stopPropagation(); openEditForm(addr); }}
-                                      style={{ fontSize: 12, color: "#db1a5d", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: 600 }}
+                                      className="km-account-btn km-account-btn--secondary km-account-btn--compact"
                                     >
                                       <i className="fa fa-edit"></i> Edit
                                     </button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); handleDelete(addr.id); }}
-                                      style={{ fontSize: 12, color: "#d9534f", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: 600 }}
+                                      className="km-account-btn km-account-btn--danger km-account-btn--compact"
                                     >
                                       <i className="fa fa-trash"></i> Remove
                                     </button>
                                     {!isDef && (
                                       <button
                                         onClick={(e) => { e.stopPropagation(); handleSetDefault(addr.id); }}
-                                        style={{ fontSize: 12, color: "#2e7d32", background: "none", border: "none", cursor: "pointer", padding: 0, marginLeft: "auto", fontWeight: 600 }}
+                                        className="km-account-btn km-account-btn--secondary km-account-btn--compact km-account-btn--push"
                                       >
                                         <i className="fa fa-star-o"></i> Set Default
                                       </button>
@@ -616,17 +608,7 @@ const toggleVisibility = (field) => {
                                   key={type}
                                   type="button"
                                   onClick={() => setForm((p) => ({ ...p, addressType: type }))}
-                                  style={{
-                                    padding: "7px 18px",
-                                    borderRadius: 20,
-                                    border: `1.5px solid ${form.addressType === type ? "#db1a5d" : "#e0e0e0"}`,
-                                    background: form.addressType === type ? "#fdf0ff" : "#fff",
-                                    color: form.addressType === type ? "#a020c0" : "#555",
-                                    fontWeight: form.addressType === type ? 600 : 400,
-                                    fontSize: 13,
-                                    cursor: "pointer",
-                                    transition: "all 0.15s",
-                                  }}
+                                  className={`km-address-type-btn ${form.addressType === type ? "active" : ""}`}
                                 >
                                   {type === "Home" ? "🏠" : type === "Work" ? "💼" : "📍"} {type}
                                 </button>
@@ -737,14 +719,15 @@ const toggleVisibility = (field) => {
                           <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "flex-end" }}>
                             <button
                               onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); setAddrErrors({}); }}
-                              style={{ padding: "10px 24px", borderRadius: 6, border: "1.5px solid #e0e0e0", background: "#fff", color: "#555", fontSize: 13, cursor: "pointer", fontWeight: 500 }}
+                              className="km-account-btn km-account-btn--secondary"
                             >
                               Cancel
                             </button>
                             <button
                               onClick={handleFormSubmit}
                               disabled={addrLoading}
-                              style={{ padding: "10px 28px", borderRadius: 6, border: "none", background: "#db1a5d", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: addrLoading ? 0.7 : 1 }}
+                              className="km-account-btn km-account-btn--primary"
+                              style={{ opacity: addrLoading ? 0.7 : 1 }}
                             >
                               {addrLoading ? "Saving..." : editingId ? "Update Address" : "Save Address"}
                             </button>

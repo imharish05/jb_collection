@@ -94,6 +94,13 @@ button {
   color: #000;
 }
 
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
 a,
 button,
 img,

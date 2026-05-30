@@ -65,6 +65,15 @@
 .breakdown-row--coupon strong {
   color: #16a34a;
 }
+.breakdown-row--discount span,
+.discount-line span:last-child,
+.breakdown-row--discount strong {
+  color: #16a34a;
+}
+.breakdown-row--gst span,
+.breakdown-row--gst strong {
+  color: #475569;
+}
 .breakdown-row em {
   color: inherit;
   font-style: normal;

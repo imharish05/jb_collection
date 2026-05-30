@@ -872,6 +872,185 @@
 .kco-item-list::-webkit-scrollbar { width: 4px; }
 .kco-item-list::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
 
+.kco-coupon-panel {
+  margin: 0 0 16px;
+  padding: 16px 0;
+  border-top: 1.5px solid #f5f5f5;
+  border-bottom: 1.5px solid #f5f5f5;
+}
+
+.kco-coupon-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  color: #111;
+  cursor: pointer;
+}
+
+.kco-coupon-title {
+  display: block;
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  color: #111;
+}
+
+.kco-coupon-subtitle {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-size-xs);
+  color: #888;
+  font-weight: 500;
+}
+
+.kco-coupon-chevron {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f5f5f7;
+  color: #777;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.kco-coupon-chevron.open {
+  transform: rotate(180deg);
+}
+
+.kco-coupon-applied-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  color: #16a34a;
+  border-radius: 999px;
+  padding: 4px 9px 4px 12px;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.kco-coupon-remove-inline {
+  color: #dc2626;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+  padding-left: 2px;
+}
+
+.kco-coupon-body {
+  margin-top: 14px;
+}
+
+.kco-coupon-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.kco-coupon-chip {
+  border: 1.5px dashed #e0e0e0;
+  border-radius: 999px;
+  background: #fafafa;
+  color: #555;
+  padding: 7px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.kco-coupon-chip:hover,
+.kco-coupon-chip.active {
+  border-color: #db1a5d;
+  background: #fff5f8;
+  color: #db1a5d;
+}
+
+.kco-coupon-chip span {
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.kco-coupon-chip small {
+  font-size: var(--font-size-2xs);
+  color: inherit;
+  font-weight: 600;
+}
+
+.kco-coupon-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.kco-coupon-input {
+  min-width: 0;
+  flex: 1;
+  height: 40px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fff;
+  color: #111;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0 12px;
+  text-transform: uppercase;
+}
+
+.kco-coupon-input:focus {
+  border-color: #db1a5d;
+}
+
+.kco-coupon-apply-btn {
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: #db1a5d;
+  color: #fff;
+  padding: 0 16px;
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.kco-coupon-apply-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.kco-coupon-apply-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.kco-coupon-error {
+  margin-top: 8px;
+  color: #dc2626;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.kco-coupon-muted {
+  color: #999;
+  font-size: var(--font-size-sm);
+  margin-bottom: 12px;
+}
+
 .kco-item-card {
   display: flex;
   gap: 12px;
@@ -1195,6 +1374,18 @@
   .kco-same-billing-pill {
     font-size: 12px;
     padding: 8px 14px;
+  }
+
+  .kco-coupon-toggle {
+    align-items: flex-start;
+  }
+
+  .kco-coupon-input-row {
+    flex-direction: column;
+  }
+
+  .kco-coupon-apply-btn {
+    width: 100%;
   }
 }
 

@@ -271,6 +271,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
@@ -452,5 +453,152 @@
 }
 
 .no-border { border: none !important; }
+
+/* Account button system */
+.km-account-btn,
+.full-btn-dark,
+.full-btn-light,
+.add-new-pill,
+.btn-view-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.km-account-btn--primary,
+.full-btn-dark {
+  background: #db1a5d;
+  border: 1.5px solid #db1a5d;
+  color: #fff;
+}
+
+.km-account-btn--primary:hover,
+.full-btn-dark:hover {
+  background: #bd164f;
+  border-color: #bd164f;
+  color: #fff;
+}
+
+.km-account-btn--secondary,
+.full-btn-light,
+.add-new-pill,
+.btn-view-order {
+  background: transparent;
+  border: 1.5px solid #db1a5d;
+  color: #db1a5d;
+}
+
+.km-account-btn--secondary:hover,
+.full-btn-light:hover,
+.add-new-pill:hover,
+.btn-view-order:hover {
+  background: #db1a5d;
+  border-color: #db1a5d;
+  color: #fff;
+}
+
+.km-account-btn--danger,
+.logout-link {
+  background: transparent;
+  border: 1.5px solid #e74c3c;
+  color: #e74c3c !important;
+}
+
+.km-account-btn--danger:hover,
+.logout-link:hover {
+  background: #e74c3c;
+  border-color: #e74c3c;
+  color: #fff !important;
+}
+
+.km-account-btn--push {
+  margin-left: auto;
+}
+
+.km-account-btn--compact {
+  min-height: 32px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  font-size: var(--font-size-sm);
+}
+
+.nav-links .logout-link {
+  border-radius: 999px;
+  border-top: 1.5px solid #e74c3c !important;
+  margin-top: 15px;
+  padding: 9px 20px;
+}
+
+.tab-header-flex .add-new-pill {
+  min-height: 38px;
+  padding: 0 18px;
+  border-width: 1.5px;
+  border-radius: 999px;
+  white-space: nowrap;
+  line-height: 1;
+  flex-shrink: 0;
+  box-shadow: 0 6px 14px rgba(219, 26, 93, 0.08);
+}
+
+.tab-header-flex .add-new-pill i {
+  width: auto;
+  margin-right: 5px;
+  font-size: 12px;
+}
+
+.km-address-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.km-address-type-btn {
+  padding: 9px 20px;
+  border-radius: 999px;
+  border: 1.5px solid #e0e0e0;
+  background: #fff;
+  color: #555;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.km-address-type-btn:hover,
+.km-address-type-btn.active {
+  border-color: #db1a5d;
+  background: #fff5f8;
+  color: #db1a5d;
+}
+
+@media (max-width: 576px) {
+  .tab-header-flex {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profile-edit-form .full-btn-dark,
+  .profile-edit-form .full-btn-light {
+    width: 100%;
+  }
+
+  .km-account-btn--push {
+    margin-left: 0;
+  }
+}
 
 

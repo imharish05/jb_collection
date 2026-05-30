@@ -47,6 +47,28 @@ const resolveCartImg = (img) => {
   return raw ? getImgUrl(raw) : "/assets/img/products/products-1.jpeg";
 };
 
+const toAmount = (value) => Number.parseFloat(value || 0) || 0;
+
+const withGrandTotal = (pricing) => {
+  const subtotal = toAmount(pricing.subtotal);
+  const shipping = toAmount(pricing.shipping);
+  const couponDiscount = toAmount(pricing.couponDiscount);
+
+  return {
+    ...pricing,
+    subtotal,
+    shipping,
+    couponDiscount,
+    grandTotal: Math.max(0, subtotal + shipping - couponDiscount),
+  };
+};
+
+const getCouponLabel = (coupon) => {
+  if (!coupon) return "";
+  const value = toAmount(coupon.value);
+  return coupon.type === "percent" ? `${value}% off` : `Rs. ${value} off`;
+};
+
 /* ── Constants ───────────────────────────────────────────────────────────── */
 const EMPTY_ADDR = {
   addressType: "Home",
@@ -123,17 +145,26 @@ const Checkout = () => {
 
   /* ── Pricing (passed from Cart or recomputed) ──────────────────────────── */
   useEffect(() => {
+    let sub = 0;
+    (checkoutItems || []).forEach((item) => {
+      sub += parseFloat(item.price || 0) * (currency.currencyRate || 1) * item.quantity;
+    });
+
     if (navState) {
-      setShippingPricing(navState);
+      setShippingPricing((prev) => withGrandTotal({
+        ...prev,
+        ...navState,
+        subtotal: sub || navState.subtotal,
+        couponDiscount: navState.couponCode ? navState.couponDiscount : prev.couponDiscount,
+        couponCode: navState.couponCode || prev.couponCode || null,
+        couponType: navState.couponType || prev.couponType || null,
+        couponValue: navState.couponValue ?? prev.couponValue ?? null,
+        coupon: navState.coupon || prev.coupon || null,
+      }));
     } else {
-      let sub = 0;
-      (checkoutItems || []).forEach((item) => {
-        sub += parseFloat(item.price || 0) * (currency.currencyRate || 1) * item.quantity;
-      });
-      setShippingPricing((prev) => ({
+      setShippingPricing((prev) => withGrandTotal({
         ...prev,
         subtotal: sub,
-        grandTotal: sub + prev.shipping - prev.couponDiscount,
       }));
     }
   }, [checkoutItems, currency.currencyRate, navState]);
@@ -161,13 +192,45 @@ const Checkout = () => {
     shipping: 0,
     couponDiscount: 0,
     couponCode: null,
+    couponType: null,
+    couponValue: null,
+    coupon: null,
     grandTotal: 0,
   });
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [activeCoupons, setActiveCoupons] = useState([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(false);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState("");
 
   /* ── Fetch addresses from backend ──────────────────────────────────────── */
   useEffect(() => {
     if (user?.id) dispatch(fetchAddresses());
   }, [user?.id, dispatch]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadActiveCoupons = async () => {
+      setLoadingCoupons(true);
+      try {
+        const res = await api.get("/coupons/active");
+        if (mounted) setActiveCoupons(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.warn("[Checkout] Active coupons fetch failed:", err.message);
+        if (mounted) setActiveCoupons([]);
+      } finally {
+        if (mounted) setLoadingCoupons(false);
+      }
+    };
+
+    loadActiveCoupons();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   /* ── Check shipping rates when address changes ───────────────────────── */
   useEffect(() => {
@@ -187,10 +250,9 @@ const Checkout = () => {
       if (result) {
         setShippingInfo(result);
         const newShipping = result.serviceable ? (result.shippingCharge || 0) : 0;
-        setShippingPricing((prev) => ({
+        setShippingPricing((prev) => withGrandTotal({
           ...prev,
           shipping: newShipping,
-          grandTotal: prev.subtotal + newShipping - prev.couponDiscount,
         }));
       } else {
         setShippingInfo(null);
@@ -321,6 +383,76 @@ const Checkout = () => {
     if (checked) setSelectedBillingAddrId(selectedShippingAddrId);
   };
 
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+
+    if (!code) {
+      setCouponError("Enter a coupon code.");
+      return;
+    }
+
+    if (shippingPricing.subtotal <= 0) {
+      setCouponError("Add items before applying a coupon.");
+      return;
+    }
+
+    setApplyingCoupon(true);
+    setCouponError("");
+
+    try {
+      const res = await api.post("/coupons/validate", {
+        code,
+        order_total: shippingPricing.subtotal,
+      });
+      const data = res.data || {};
+
+      if (!data.valid) {
+        throw new Error(data.message || "Coupon could not be applied.");
+      }
+
+      const couponCode = data.coupon_code || code;
+      const discount = toAmount(data.discount);
+      const coupon = {
+        code: couponCode,
+        discount,
+        type: data.type || null,
+        value: data.value ?? null,
+      };
+
+      setShippingPricing((prev) => withGrandTotal({
+        ...prev,
+        couponDiscount: discount,
+        couponCode,
+        couponType: data.type || null,
+        couponValue: data.value ?? null,
+        coupon,
+      }));
+      setCouponInput(couponCode);
+      setCouponOpen(true);
+    } catch (err) {
+      setCouponError(
+        err.response?.data?.message ||
+        err.message ||
+        "This coupon is not valid for your order."
+      );
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setShippingPricing((prev) => withGrandTotal({
+      ...prev,
+      couponDiscount: 0,
+      couponCode: null,
+      couponType: null,
+      couponValue: null,
+      coupon: null,
+    }));
+    setCouponInput("");
+    setCouponError("");
+  };
+
   /* ── Derived values ────────────────────────────────────────────────────── */
   const selectedShippingAddr = addresses.find((a) => a.id === selectedShippingAddrId);
   const selectedBillingAddr = billingSameAsShipping
@@ -431,6 +563,9 @@ const Checkout = () => {
         billingAddressId: selectedBillingAddrId,
         paymentMethod,
         couponCode: shippingPricing.couponCode || null,
+        couponDiscount: shippingPricing.couponDiscount || 0,
+        couponType: shippingPricing.couponType || null,
+        couponValue: shippingPricing.couponValue || null,
         notes: giftNote.trim() || null,
         shippingCharge: shippingInfo?.shippingCharge || 0,
         courier: shippingInfo?.courier || null,
@@ -1235,6 +1370,102 @@ if (attrsArray.length) {
                     })}
                   </div>
 
+                  <div className="kco-coupon-panel">
+                    <button
+                      type="button"
+                      className="kco-coupon-toggle"
+                      onClick={() => setCouponOpen((open) => !open)}
+                      aria-expanded={couponOpen}
+                    >
+                      <span>
+                        <span className="kco-coupon-title">Have a coupon?</span>
+                        <span className="kco-coupon-subtitle">Apply an available code before payment</span>
+                      </span>
+                      {shippingPricing.couponCode ? (
+                        <span className="kco-coupon-applied-badge">
+                          {shippingPricing.couponCode}
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            className="kco-coupon-remove-inline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveCoupon();
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleRemoveCoupon();
+                              }
+                            }}
+                          >
+                            Remove &times;
+                          </span>
+                        </span>
+                      ) : (
+                        <span className={`kco-coupon-chevron ${couponOpen ? "open" : ""}`}>⌄</span>
+                      )}
+                    </button>
+
+                    {couponOpen && (
+                      <div className="kco-coupon-body">
+                        {loadingCoupons ? (
+                          <div className="kco-coupon-muted">Loading coupons...</div>
+                        ) : activeCoupons.length > 0 ? (
+                          <div className="kco-coupon-chip-row">
+                            {activeCoupons.map((coupon) => (
+                              <button
+                                type="button"
+                                key={coupon.id || coupon.code}
+                                className={`kco-coupon-chip ${shippingPricing.couponCode === coupon.code ? "active" : ""}`}
+                                onClick={() => {
+                                  setCouponInput(coupon.code);
+                                  setCouponError("");
+                                }}
+                                title={getCouponLabel(coupon)}
+                              >
+                                <span>{coupon.code}</span>
+                                <small>{getCouponLabel(coupon)}</small>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="kco-coupon-muted">No active coupons right now.</div>
+                        )}
+
+                        <div className="kco-coupon-input-row">
+                          <input
+                            type="text"
+                            className="kco-coupon-input"
+                            value={couponInput}
+                            onChange={(e) => {
+                              setCouponInput(e.target.value.toUpperCase());
+                              setCouponError("");
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleApplyCoupon();
+                            }}
+                            placeholder="Enter coupon code"
+                            disabled={applyingCoupon}
+                          />
+                          <button
+                            type="button"
+                            className="kco-coupon-apply-btn"
+                            onClick={handleApplyCoupon}
+                            disabled={applyingCoupon || !couponInput.trim()}
+                          >
+                            {applyingCoupon ? "Applying..." : "Apply"}
+                          </button>
+                        </div>
+
+                        {couponError && (
+                          <div className="kco-coupon-error">{couponError}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   {/* ── Price Breakdown ── */}
                   <div className="kco-sum-rows">
                     <div className="kco-sum-row">
@@ -1255,7 +1486,7 @@ if (attrsArray.length) {
                           Delivery
                           {shippingInfo.estimatedDays && (
   <span style={{ fontSize: "0.85em", color: "#666" }}>
-    {" "}(Est. {shippingInfo.estimatedDays} {shippingInfo.estimatedDays == 1 ? "day" : "days"})
+    {" "}(Est. {shippingInfo.estimatedDays} {Number(shippingInfo.estimatedDays) === 1 ? "day" : "days"})
   </span>
 )}
                         </span>
