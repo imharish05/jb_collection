@@ -74,6 +74,16 @@ const Order = sequelize.define(
       allowNull: true,
       field: "estimated_delivery_days",
     },
+    shiprocketOrderId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "shiprocket_order_id",
+    },
+    shiprocketShipmentId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "shiprocket_shipment_id",
+    },
   },
   {
     tableName: "orders",

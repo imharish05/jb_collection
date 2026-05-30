@@ -15,6 +15,50 @@ const getOrderItemImage = (img) => {
   return raw ? getImgUrl(raw) : "/assets/img/products/products-1.jpeg";
 };
 
+// Parse variant attributes from a cart item into [{key, val}] array
+const resolveVariantTags = (item) => {
+  const tags = [];
+
+  // 1. Backend variant: selectedVariantName like "Color: Red · Size: M"
+  if (item.selectedVariantName) {
+    const parts = item.selectedVariantName.split(/·|,/).map(s => s.trim()).filter(Boolean);
+    parts.forEach(part => {
+      if (part.includes(":")) {
+        const [k, ...rest] = part.split(":");
+        tags.push({ key: k.trim(), val: rest.join(":").trim() });
+      } else {
+        tags.push({ key: "Variant", val: part });
+      }
+    });
+    return tags;
+  }
+
+  // 2. variation array with attributes
+  const v = Array.isArray(item.variation) ? item.variation[0] : null;
+  if (v) {
+    const raw = v.attributes;
+    const attrs = Array.isArray(raw)
+      ? raw
+      : typeof raw === "string"
+      ? (() => { try { return JSON.parse(raw); } catch { return []; } })()
+      : [];
+    if (attrs.length) {
+      attrs.forEach(a => tags.push({ key: a.key, val: a.value }));
+      return tags;
+    }
+    if (v.variantName) {
+      tags.push({ key: "Variant", val: v.variantName });
+      return tags;
+    }
+  }
+
+  // 3. Old-style color/size
+  if (item.selectedProductColor) tags.push({ key: "Color", val: item.selectedProductColor });
+  if (item.selectedProductSize) tags.push({ key: "Size", val: item.selectedProductSize });
+
+  return tags;
+};
+
 const OrderConfirmation = () => {
   const { state } = useLocation();
   const orderId = state?.orderId || "KG000000";
@@ -52,7 +96,7 @@ const OrderConfirmation = () => {
             }}
           >
             <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-            <h2 style={{ fontSize: 28, fontWeight: 700, color: "#2c2c2c", marginBottom: 8 }}>
+            <h2 style={{ fontSize: 28, fontWeight: 700, color: "#666", marginBottom: 8 }}>
               Thank you, {selectedAddr?.fullName?.split(" ")[0] || "Customer"}!
             </h2>
             <p style={{ color: "#666", fontSize: 16, marginBottom: 20 }}>
@@ -90,16 +134,44 @@ const OrderConfirmation = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {cartItems.map((item, i) => (
+                    {cartItems.map((item, i) => {
+                      const variantTags = resolveVariantTags(item);
+                      return (
                       <tr key={i} style={{ borderBottom: "1px solid #f0f0f0" }}>
                         <td style={tdStyle}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                             <img
                               src={getOrderItemImage(item.image)}
                               alt=""
-                              style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8 }}
+                              style={{ width: 52, height: 52, objectFit: "cover", borderRadius: 10, flexShrink: 0 }}
                             />
-                            <span style={{ fontSize: 14, fontWeight: 500 }}>{item.name}</span>
+                            <div>
+                              <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: variantTags.length ? 6 : 0 }}>
+                                {item.name}
+                              </div>
+                              {variantTags.length > 0 && (
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                                  {variantTags.map((tag, ti) => (
+                                    <span key={ti} style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 3,
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      color: "#555",
+                                      background: "#f4f4f6",
+                                      border: "1px solid #e4e4e8",
+                                      borderRadius: 20,
+                                      padding: "2px 9px",
+                                      lineHeight: 1.6,
+                                    }}>
+                                      <span style={{ color: "#999", fontWeight: 400 }}>{tag.key}:</span>
+                                      {" "}{tag.val}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "center" }}>{item.quantity}</td>
@@ -107,7 +179,8 @@ const OrderConfirmation = () => {
                           ₹{(item.price * item.quantity).toFixed(2)}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
                 <div style={{ borderTop: "2px solid #f0f0f0", marginTop: 12, paddingTop: 12 }}>

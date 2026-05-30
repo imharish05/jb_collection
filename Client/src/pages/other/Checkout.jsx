@@ -95,6 +95,7 @@ const PAYMENT_METHODS = [
 ════════════════════════════════════════════════════════════════════════════ */
 const Checkout = () => {
   const newAddrFormRef = useRef(null);
+  const navigatingRef = useRef(false); // prevents route guard from firing during nav
   const { pathname, state: navState } = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -109,6 +110,7 @@ const Checkout = () => {
 
   /* ── Route & Session Protection ── */
   useEffect(() => {
+    if (navigatingRef.current) return; // already navigating to confirmation
     if (!checkoutItems || checkoutItems.length === 0) {
       cogoToast.warn("Your checkout session is empty.", { position: "top-center" });
       navigate(`${process.env.PUBLIC_URL}/cart`);
@@ -444,6 +446,7 @@ const Checkout = () => {
         if (checkoutSource === "cart") {
           dispatch(deleteAllFromCart());
         }
+        navigatingRef.current = true;
         dispatch(clearCheckout());
         setTimeout(() => {
           navigate(`/order-confirmation`, {
@@ -515,6 +518,7 @@ const Checkout = () => {
               if (checkoutSource === "cart") {
                 dispatch(deleteAllFromCart());
               }
+              navigatingRef.current = true;
               dispatch(clearCheckout());
               setTimeout(() => {
                 navigate(`/order-confirmation`, {
@@ -525,6 +529,7 @@ const Checkout = () => {
                     billingAddress: selectedBillingAddr,
                     paymentMethod,
                     cartItems: checkoutItems,
+                    estimatedDays: shippingInfo?.estimatedDays || null,
                   },
                 });
               }, 1500);

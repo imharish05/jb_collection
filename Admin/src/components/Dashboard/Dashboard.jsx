@@ -17,7 +17,7 @@ function CustomTooltip({ active, payload, label }) {
       </p>
     </div>
   );
-}
+} 
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 2022 }, (_, i) => CURRENT_YEAR - i);
@@ -92,9 +92,16 @@ export default function Dashboard() {
               <h3 className={styles.cardTitle}>Monthly Orders</h3>
               <p className={styles.cardSub}>Order volume across {selectedYear}</p>
             </div>
-            <select className={styles.yearSelect} value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
-              {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
+            <div className={styles.yearSelectWrap}>
+              <select className={styles.yearSelect} value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
+                {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+              <span className={styles.yearSelectIcon}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+            </div>
           </div>
           {graphLoading ? (
             <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, fontWeight: 500 }}>
@@ -103,7 +110,7 @@ export default function Dashboard() {
           ) : (
             <ResponsiveContainer width="100%" height={360}>
               <BarChart data={monthlyData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={22}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                <CartesianGrid Dasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
                 <XAxis dataKey="m" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(72,127,255,0.06)', radius: 6 }} />
@@ -144,6 +151,16 @@ export default function Dashboard() {
           <div>
             <h3 className={styles.cardTitle}>Sales Overview</h3>
             <p className={styles.cardSub}>Monthly revenue trend for {selectedYear}</p>
+          </div>
+          <div className={styles.yearSelectWrap}>
+            <select className={styles.yearSelect} value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
+              {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <span className={styles.yearSelectIcon}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
           </div>
         </div>
         {graphLoading ? (

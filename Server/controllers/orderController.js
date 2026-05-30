@@ -2,6 +2,7 @@
 const { Order, CartItem, User, Product, Variant, OrderItem, Address } = require("../models");
 const sequelize = require("../config/database");
 const { sendOrderConfirmationEmail } = require("../utils/mailer");
+const { shiprocketPost } = require("../utils/shiprocket");
 
 // Dashboard sends these status values in the URL:
 //   new | confirmed | shipped | delivery | delivered | cancelled
@@ -226,6 +227,59 @@ const createOrder = async (req, res, next) => {
       }
     } catch (emailErr) {
       console.error("[Mailer] Failed to send order confirmation:", emailErr.message);
+    }
+
+    // Push order to Shiprocket (non-blocking — don't fail order if Shiprocket fails)
+    try {
+      const addr = createdOrder.shippingAddress;
+      const srItems = createdOrder.items.map((item) => ({
+        name: item.productName,
+        sku: item.selectedVariantId || item.productId,
+        units: item.quantity,
+        selling_price: parseFloat(item.salesPrice || item.price),
+        discount: parseFloat(item.discount || 0),
+        tax: 0,
+        hsn: 0,
+      }));
+
+      const srPayload = {
+        order_id: createdOrder.id,
+        order_date: new Date(createdOrder.createdAt).toISOString().slice(0, 19).replace("T", " "),
+        pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
+        billing_customer_name: addr.fullName,
+        billing_last_name: "",
+        billing_address: `${addr.street}${addr.apartment ? ", " + addr.apartment : ""}`,
+        billing_city: addr.city,
+        billing_pincode: addr.pincode,
+        billing_state: addr.state,
+        billing_country: addr.country || "India",
+        billing_email: req.user.email || "",
+        billing_phone: addr.phone,
+        shipping_is_billing: true,
+        order_items: srItems,
+        payment_method: (createdOrder.paymentMethod || "cod").toUpperCase() === "COD" ? "COD" : "Prepaid",
+        sub_total: parseFloat(createdOrder.totalAmount) - parseFloat(createdOrder.shippingCharge || 0),
+        length: 10,
+        breadth: 10,
+        height: 10,
+        weight: 0.5,
+      };
+
+      const srResponse = await shiprocketPost("/orders/create/adhoc", srPayload);
+      console.log("[Shiprocket] Order created:", srResponse?.order_id, "| Shipment:", srResponse?.shipment_id);
+
+      // Save Shiprocket IDs back to the order
+      if (srResponse?.order_id) {
+        await Order.update(
+          {
+            shiprocketOrderId: String(srResponse.order_id),
+            shiprocketShipmentId: srResponse.shipment_id ? String(srResponse.shipment_id) : null,
+          },
+          { where: { id: createdOrder.id } }
+        );
+      }
+    } catch (srErr) {
+      console.error("[Shiprocket] Failed to create order:", srErr?.response?.data || srErr.message);
     }
 
     return res.status(201).json(createdOrder);

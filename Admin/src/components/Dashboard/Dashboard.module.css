@@ -209,25 +209,52 @@
 }
 
 /* ── Year select dropdown ── */
+.yearSelectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .yearSelect {
   appearance: none;
   -webkit-appearance: none;
-  background: #e4f1ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23487fff' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 8px center;
-  color: #487fff;
-  border: none;
-  border-radius: 8px;
-  padding: 5px 28px 5px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  background: #fff;
+  color: #111827;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 7px 36px 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
   outline: none;
   white-space: nowrap;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  transition: background 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
-.yearSelect:hover { background-color: #d0e8ff; }
+
+.yearSelect:hover {
+  border-color: #487fff;
+  box-shadow: 0 0 0 3px rgba(72,127,255,0.1);
+}
+
+.yearSelect:focus {
+  border-color: #487fff;
+  box-shadow: 0 0 0 3px rgba(72,127,255,0.15);
+}
+
+.yearSelectIcon {
+  position: absolute;
+  right: 11px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  color: #487fff;
+}
+
 .yearSelect option { background: #fff; color: #111827; font-weight: 600; }
 
 /* ── Table card ── */

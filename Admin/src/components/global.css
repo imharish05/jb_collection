@@ -716,3 +716,46 @@ body {
   font-size: 12px;
   white-space: pre-wrap;
 }
+
+/* ── Status Dropdown ── */
+.km-status-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.km-status-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 5px 28px 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  outline: none;
+  transition: box-shadow 0.15s ease, opacity 0.15s ease;
+  line-height: 1.4;
+}
+
+.km-status-select:hover {
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+}
+
+.km-status-chevron {
+  position: absolute;
+  right: 9px;
+  font-size: 10px;
+  pointer-events: none;
+  line-height: 1;
+  opacity: 0.6;
+}
+
+/* Per-status colours */
+.km-status-pending  { background: #fff8e1; color: #b45309; border-color: #fde68a; }
+.km-status-confirmed { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+.km-status-processing { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+.km-status-shipped  { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+.km-status-delivered { background: #dcfce7; color: #166534; border-color: #86efac; }
+.km-status-cancelled { background: #fff1f2; color: #be123c; border-color: #fecdd3; }

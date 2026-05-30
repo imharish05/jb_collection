@@ -3,12 +3,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchOrders, changeOrderStatus } from '../../redux/services/ordersService';
 
-const STATUS_OPTIONS = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+const STATUS_OPTIONS = ['pending', 'confirmed','shipped','processing', 'delivered', 'cancelled'];
 const labelFor = s => ({
   pending: 'New / Pending',
   confirmed: 'Confirmed',
-  processing: 'Out for Delivery',
   shipped: 'Shipped',
+  processing: 'Out for Delivery',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
 }[s] || s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
@@ -110,6 +110,7 @@ export default function Orders({ status = null }) {
         subtotalAmount: safeNumber(o.subtotal ?? computedSubtotal, computedSubtotal),
         taxAmount: tax,
         discountAmount: discount,
+        shippingCharge: safeNumber(o.shippingCharge ?? o.shipping_charge ?? 0),
         customer_name: customerName,
         customer_email: customerEmail,
         customer_phone: customerPhone,
@@ -173,10 +174,18 @@ export default function Orders({ status = null }) {
                       : <span className="td-muted">—</span>}
                   </td>
                   <td>
-                    <select className={`km-status-select km-status-${order.status}`}
-                      value={order.status} onChange={e => updateStatus(order.id, e.target.value)}>
-                      {STATUS_OPTIONS.map(st => <option key={st} value={st}>{labelFor(st)}</option>)}
-                    </select>
+                    <div className="km-status-wrapper">
+                      <select
+                        className={`km-status-select km-status-${order.status}`}
+                        value={order.status}
+                        onChange={e => updateStatus(order.id, e.target.value)}
+                      >
+                        {STATUS_OPTIONS.map(st => (
+                          <option key={st} value={st}>{labelFor(st)}</option>
+                        ))}
+                      </select>
+                      <span className="km-status-chevron">▾</span>
+                    </div>
                   </td>
                   <td className="td-muted">
                     {order.createdAt
@@ -237,7 +246,12 @@ export default function Orders({ status = null }) {
                             <div className="km-detail-section-title">Payment Summary</div>
                             <div className="km-payment-row"><span className="td-muted">Subtotal</span><span>₹{safeNumber(order.subtotalAmount).toFixed(2)}</span></div>
                             <div className="km-payment-row"><span className="td-muted">Tax</span><span>₹{safeNumber(order.taxAmount).toFixed(2)}</span></div>
-                            <div className="km-payment-row"><span className="td-muted">Delivery</span><span className="td-green">FREE</span></div>
+                            <div className="km-payment-row">
+                              <span className="td-muted">Delivery</span>
+                              {safeNumber(order.shippingCharge) > 0
+                                ? <span>₹{safeNumber(order.shippingCharge).toFixed(2)}</span>
+                                : <span className="td-green">FREE</span>}
+                            </div>
                             {safeNumber(order.discountAmount) > 0 && (
                               <div className="km-payment-row">
                                 <span className="td-muted">Discount {order.couponCode ? `(${order.couponCode})` : ''}</span>
