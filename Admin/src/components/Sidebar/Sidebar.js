@@ -168,25 +168,6 @@ const NAV_ITEMS = [
     ],
   },
   {
-    section: 'Logistics',
-    items: [
-      { id: 'shipping_settings', label: 'Shipping Settings', icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M3 7h13v10H3z" />
-          <path d="M16 10h3l2 3v4h-5z" />
-          <circle cx="7.5" cy="18.5" r="1.5" />
-          <circle cx="17.5" cy="18.5" r="1.5" />
-        </svg>
-      )},
-      { id: 'delivery_zones', label: 'Delivery Zones', icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
-          <circle cx="12" cy="10" r="2.5" />
-        </svg>
-      )},
-    ],
-  },
-  {
     section: 'Support',
     items: [
       { id: 'contacts', label: 'Contact Requests', icon: (

@@ -66,6 +66,8 @@ const createOrder = async (req, res, next) => {
       paymentMethod,
       couponCode,
       notes,
+      shippingCharge,
+      estimatedDeliveryDays,
     } = req.body;
 
     const shippingId = shippingAddressId || req.body.shippingAddress?.id;
@@ -178,6 +180,8 @@ const createOrder = async (req, res, next) => {
       paymentStatus: "pending",
       couponCode,
       notes,
+      shippingCharge: parseFloat(shippingCharge || 0),
+      estimatedDeliveryDays: estimatedDeliveryDays || null,
     }, { transaction });
 
     // Create OrderItem records for each item

@@ -18,6 +18,25 @@ import cogoToast from "cogo-toast";
 import "./Checkout.css";
 import { useRef } from "react";
 
+// ── Helper: check Shiprocket serviceability ─────────────────────────────────
+const checkShippingServiceability = async (pincode, orderValue, weight = 0.5) => {
+  try {
+    console.log("[Checkout] Calling serviceability API with:", { pincode, orderValue, weight });
+    const res = await api.get("/shipping/serviceability", {
+      params: { pincode, orderValue, weight, cod: true },
+    });
+    console.log("[Checkout] Serviceability response:", res.data);
+    return res.data;
+  } catch (err) {
+    console.error("[Checkout] Serviceability check failed:", {
+      message: err.message,
+      status: err.response?.status,
+      data: err.response?.data,
+    });
+    return null;
+  }
+};
+
 // Resolve cart item image (array or JSON string) → full URL
 const parseJson = (v) => { try { return JSON.parse(v); } catch { return v; } };
 const resolveCartImg = (img) => {
@@ -41,12 +60,12 @@ const EMPTY_ADDR = {
 };
 
 const PAYMENT_METHODS = [
-  // {
-  //   id: "cod",
-  //   label: "Cash on Delivery",
-  //   icon: "💵",
-  //   desc: "Pay when your order arrives (+₹77 handling)",
-  // },
+  {
+    id: "cod",
+    label: "Cash on Delivery",
+    icon: "💵",
+    desc: "Pay when your order arrives",
+  },
   {
     id: "upi",
     label: "UPI / QR Pay",
@@ -99,22 +118,21 @@ const Checkout = () => {
   }, [checkoutItems, checkoutExpiresAt, navigate, dispatch]);
 
   /* ── Pricing (passed from Cart or recomputed) ──────────────────────────── */
-  const [pricing] = useState(() => {
-    if (navState) return navState;
-    let sub = 0;
-    (checkoutItems || []).forEach((item) => {
-      // item.price = final salesPrice from backend — no discount calculation
-      sub += parseFloat(item.price || 0) * (currency.currencyRate || 1) * item.quantity;
-    });
-    const ship = 0;
-    return {
-      subtotal: sub,
-      shipping: ship,
-      couponDiscount: 0,
-      couponCode: null,
-      grandTotal: sub + ship,
-    };
-  });
+  useEffect(() => {
+    if (navState) {
+      setShippingPricing(navState);
+    } else {
+      let sub = 0;
+      (checkoutItems || []).forEach((item) => {
+        sub += parseFloat(item.price || 0) * (currency.currencyRate || 1) * item.quantity;
+      });
+      setShippingPricing((prev) => ({
+        ...prev,
+        subtotal: sub,
+        grandTotal: sub + prev.shipping - prev.couponDiscount,
+      }));
+    }
+  }, [checkoutItems, currency.currencyRate, navState]);
 
   /* ── State ─────────────────────────────────────────────────────────────── */
   const [selectedShippingAddrId, setSelectedShippingAddrId] = useState(activeAddressId);
@@ -131,10 +149,54 @@ const Checkout = () => {
   const [shippingCollapsed, setShippingCollapsed] = useState(false);
   const [billingCollapsed, setBillingCollapsed] = useState(false);
 
+  // ── Serviceability & Shipping State ────────────────────────────────────
+  const [shippingInfo, setShippingInfo] = useState(null); // { serviceable, shippingCharge, courier, estimatedDays, codAvailable }
+  const [checkingServiceability, setCheckingServiceability] = useState(false);
+  const [shippingError, setShippingError] = useState(null); // For debugging
+  const [shippingPricing, setShippingPricing] = useState({
+    subtotal: 0,
+    shipping: 0,
+    couponDiscount: 0,
+    couponCode: null,
+    grandTotal: 0,
+  });
+
   /* ── Fetch addresses from backend ──────────────────────────────────────── */
   useEffect(() => {
     if (user?.id) dispatch(fetchAddresses());
   }, [user?.id, dispatch]);
+
+  /* ── Check shipping serviceability when address/price changes ────────── */
+  useEffect(() => {
+    const checkShipping = async () => {
+      if (!selectedShippingAddr?.pincode) {
+        setShippingInfo(null);
+        return;
+      }
+
+      setCheckingServiceability(true);
+      const result = await checkShippingServiceability(
+        selectedShippingAddr.pincode,
+        shippingPricing.subtotal
+      );
+      setCheckingServiceability(false);
+
+      if (result) {
+        setShippingInfo(result);
+        // Update pricing with shipping charge
+        const newShipping = result.serviceable ? (result.shippingCharge || 0) : 0;
+        setShippingPricing((prev) => ({
+          ...prev,
+          shipping: newShipping,
+          grandTotal: prev.subtotal + newShipping - prev.couponDiscount,
+        }));
+      } else {
+        setShippingInfo(null);
+      }
+    };
+
+    checkShipping();
+  }, [selectedShippingAddr?.pincode, shippingPricing.subtotal]);
 
   /* ── Mount-time inventory & price revalidation ── */
   useEffect(() => {
@@ -262,7 +324,20 @@ const Checkout = () => {
   const selectedBillingAddr = billingSameAsShipping
     ? selectedShippingAddr
     : addresses.find((a) => a.id === selectedBillingAddrId);
-  const grandTotalWithCOD = pricing.grandTotal;
+  
+  // Filter payment methods based on COD availability
+  const availablePaymentMethods = PAYMENT_METHODS.filter(
+    (pm) => pm.id !== "cod" || (shippingInfo?.codAvailable === true)
+  );
+
+  // Reset payment method to UPI if COD was selected but not available
+  useEffect(() => {
+    if (paymentMethod === "cod" && !shippingInfo?.codAvailable) {
+      setPaymentMethod("upi");
+    }
+  }, [shippingInfo?.codAvailable, paymentMethod]);
+
+  const grandTotalWithCOD = shippingPricing.grandTotal;
 
   const [razorpayOrderId, setRazorpayOrderId] = useState(null);
   const [processingRazorpay, setProcessingRazorpay] = useState(false);
@@ -352,12 +427,14 @@ const Checkout = () => {
           selectedProductColor: item.selectedProductColor || null,
           selectedProductSize: item.selectedProductSize || null,
         })),
-        totalAmount: pricing.grandTotal,
+        totalAmount: shippingPricing.grandTotal,
         shippingAddressId: selectedShippingAddrId,
         billingAddressId: selectedBillingAddrId,
         paymentMethod,
-        couponCode: pricing.couponCode || null,
+        couponCode: shippingPricing.couponCode || null,
         notes: giftNote.trim() || null,
+        shippingCharge: shippingInfo?.shippingCharge || 0,
+        estimatedDeliveryDays: shippingInfo?.estimatedDays || null,
       };
 
       const res = await api.post("/orders", payload);
@@ -398,7 +475,7 @@ const Checkout = () => {
       setProcessingRazorpay(true);
 
       const paymentRes = await api.post("/payment/create-order", {
-        amount: pricing.grandTotal,
+        amount: shippingPricing.grandTotal,
         currency: "INR",
       });
 
@@ -413,7 +490,7 @@ const Checkout = () => {
       const options = {
         key: process.env.REACT_APP_RAZORPAY_KEY_ID,
         order_id: rzpOrderId,
-        amount: Math.round(pricing.grandTotal * 100),
+        amount: Math.round(shippingPricing.grandTotal * 100),
         currency: "INR",
         name: "Kamali Gifts",
         description: `Order ${dbOrderId}`,
@@ -861,15 +938,23 @@ const Checkout = () => {
                       className="kco-next-btn"
                       disabled={
                         !selectedShippingAddr ||
-                        (!billingSameAsShipping && !selectedBillingAddr)
+                        (!billingSameAsShipping && !selectedBillingAddr) ||
+                        checkingServiceability ||
+                        (selectedShippingAddr && !shippingInfo)
                       }
                       style={{
                         opacity:
-                          !selectedShippingAddr || (!billingSameAsShipping && !selectedBillingAddr)
+                          !selectedShippingAddr ||
+                          (!billingSameAsShipping && !selectedBillingAddr) ||
+                          checkingServiceability ||
+                          (selectedShippingAddr && !shippingInfo)
                             ? 0.5
                             : 1,
                         cursor:
-                          !selectedShippingAddr || (!billingSameAsShipping && !selectedBillingAddr)
+                          !selectedShippingAddr ||
+                          (!billingSameAsShipping && !selectedBillingAddr) ||
+                          checkingServiceability ||
+                          (selectedShippingAddr && !shippingInfo)
                             ? "not-allowed"
                             : "pointer",
                       }}
@@ -880,6 +965,10 @@ const Checkout = () => {
                         }
                         if (!billingSameAsShipping && !selectedBillingAddr) {
                           cogoToast.warn("Please select a billing address", { position: "top-center" });
+                          return;
+                        }
+                        if (selectedShippingAddr && !shippingInfo) {
+                          cogoToast.error("Delivery not available to selected pincode", { position: "top-center" });
                           return;
                         }
                         if (!showNewAddrForm) setStep(2);
@@ -896,7 +985,7 @@ const Checkout = () => {
                     <h3 className="kco-card-title">Payment Method</h3>
 
                     <div style={{ marginTop: 20 }}>
-                      {PAYMENT_METHODS.map((pm) => (
+                      {availablePaymentMethods.map((pm) => (
                         <div
                           key={pm.id}
                           className={`kco-pay-card ${paymentMethod === pm.id ? "selected" : ""}`}
@@ -1122,18 +1211,44 @@ const Checkout = () => {
                   <div className="kco-sum-rows">
                     <div className="kco-sum-row">
                       <span>Subtotal</span>
-                      <span>₹{pricing.subtotal.toFixed(2)}</span>
+                      <span>₹{shippingPricing.subtotal.toFixed(2)}</span>
                     </div>
-                    <div className="kco-sum-row">
-                      <span>Delivery</span>
-                      <span style={pricing.shipping === 0 ? { color: "#16a34a", fontWeight: 700 } : {}}>
-                        {pricing.shipping === 0 ? "FREE" : `₹${pricing.shipping}`}
-                      </span>
-                    </div>
-                    {pricing.couponDiscount > 0 && (
+
+                    {/* Shipping Status & Charge */}
+                    {checkingServiceability && (
+                      <div className="kco-sum-row" style={{ color: "#666" }}>
+                        <span>Delivery</span>
+                        <span>⏳ Checking...</span>
+                      </div>
+                    )}
+
+                    {!checkingServiceability && shippingInfo && (
+                      <div className="kco-sum-row">
+                        <span>
+                          Delivery
+                          {shippingInfo.estimatedDays && (
+                            <span style={{ fontSize: "0.85em", color: "#666" }}>
+                              {" "}({shippingInfo.estimatedDays} days)
+                            </span>
+                          )}
+                        </span>
+                        <span style={shippingInfo.shippingCharge === 0 ? { color: "#16a34a", fontWeight: 700 } : {}}>
+                          {shippingInfo.shippingCharge === 0 ? "FREE" : `₹${shippingInfo.shippingCharge}`}
+                        </span>
+                      </div>
+                    )}
+
+                    {!checkingServiceability && !shippingInfo && selectedShippingAddr && (
+                      <div className="kco-sum-row" style={{ color: "#dc2626" }}>
+                        <span>Delivery</span>
+                        <span>❌ Not available</span>
+                      </div>
+                    )}
+
+                    {shippingPricing.couponDiscount > 0 && (
                       <div className="kco-sum-row kco-sum-row--green">
-                        <span>Coupon ({pricing.couponCode})</span>
-                        <span>− ₹{pricing.couponDiscount.toFixed(2)}</span>
+                        <span>Coupon ({shippingPricing.couponCode})</span>
+                        <span>− ₹{shippingPricing.couponDiscount.toFixed(2)}</span>
                       </div>
                     )}
                   </div>
@@ -1143,9 +1258,9 @@ const Checkout = () => {
                     <span style={{ color: "#db1a5d" }}>₹{grandTotalWithCOD.toFixed(2)}</span>
                   </div>
 
-                  {pricing.couponDiscount > 0 && (
+                  {shippingPricing.couponDiscount > 0 && (
                     <div className="kco-savings-banner">
-                      🎉 You save ₹{pricing.couponDiscount.toFixed(2)} with coupon!
+                      🎉 You save ₹{shippingPricing.couponDiscount.toFixed(2)} with coupon!
                     </div>
                   )}
 

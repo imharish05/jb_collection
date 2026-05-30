@@ -63,6 +63,17 @@ const Order = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    shippingCharge: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: "shipping_charge",
+      defaultValue: 0,
+    },
+    estimatedDeliveryDays: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: "estimated_delivery_days",
+    },
   },
   {
     tableName: "orders",

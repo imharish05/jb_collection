@@ -24,8 +24,6 @@ import HeroSlider from './components/HeroSlider/HeroSlider';
 import TimelessTreasures from './components/TimelessTreasures/TimelessTreasures';
 import Marquee from './components/Marquee/Marquee';
 import Testimonials from './components/Testimonials/Testimonials';
-import ShippingSettings from './components/Shipping/ShippingSettings';
-import DeliveryZones from './components/Shipping/DeliveryZones';
 
 import './components/global.css';
 import Swal from 'sweetalert2';
@@ -56,8 +54,6 @@ const PAGE_CONFIG = {
   timeless_treasures:  { title: 'Timeless Treasures' },
   marquee:             { title: 'Slider Messages' },
   testimonials:        { title: 'Testimonials' },
-  shipping_settings:   { title: 'Shipping Settings' },
-  delivery_zones:      { title: 'Delivery Zones' },
 };
 
 function AdminLayoutWrapper({ handleLogout }) {
@@ -108,8 +104,6 @@ function AdminLayoutWrapper({ handleLogout }) {
             <Route path="/timeless_treasures"  element={<TimelessTreasures  showToast={showToast} />} />
             <Route path="/marquee"             element={<Marquee            showToast={showToast} />} />
             <Route path="/testimonials"        element={<Testimonials       showToast={showToast} />} />
-            <Route path="/shipping_settings"   element={<ShippingSettings    showToast={showToast} />} />
-            <Route path="/delivery_zones"      element={<DeliveryZones       showToast={showToast} />} />
             <Route path="/"                    element={<Navigate to="/dashboard" />} />
           </Routes>
         </div>
