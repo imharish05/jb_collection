@@ -33,6 +33,14 @@ const getOrderItemImage = (img) => {
   return getImgUrl(raw);
 };
 
+const toAmount = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const amount = typeof value === "number" ? value : parseFloat(value);
+  return Number.isFinite(amount) ? amount : null;
+};
+
+const formatCurrency = (value) => `₹${(toAmount(value) ?? 0).toFixed(2)}`;
+
 const OrderDetails = () => {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
@@ -129,7 +137,25 @@ const OrderDetails = () => {
     try { shippingAddr = JSON.parse(shippingAddr); } catch { shippingAddr = {}; }
   }
   const orderItems = Array.isArray(order.items) ? order.items : [];
-  const orderTotal = typeof order.totalAmount === "string" ? parseFloat(order.totalAmount) : order.totalAmount;
+  const itemsSubtotal = orderItems.reduce((sum, item) => {
+    const qty = toAmount(item.quantity) ?? 1;
+    return sum + itemPrice(item) * qty;
+  }, 0);
+  const totalAmount = toAmount(order.totalAmount) ?? 0;
+  const rawShippingCharge = toAmount(order.shippingCharge);
+  const shippingMethod = String(order.shippingMethod || "").toLowerCase();
+  const isFreeShipping = rawShippingCharge === null || rawShippingCharge === 0 || shippingMethod === "free";
+  const shippingCharge = isFreeShipping ? 0 : rawShippingCharge;
+  const explicitSubtotal = toAmount(order.subtotal ?? order.subTotal ?? order.itemsSubtotal);
+  const baseSubtotal = explicitSubtotal ?? (itemsSubtotal > 0 ? itemsSubtotal : null);
+  const couponCode = order.couponCode;
+  const explicitCouponDiscount = toAmount(order.couponDiscount);
+  const couponDiscount = explicitCouponDiscount ?? (
+    couponCode && baseSubtotal !== null
+      ? Math.max(0, baseSubtotal + shippingCharge - totalAmount)
+      : 0
+  );
+  const subtotal = baseSubtotal ?? Math.max(0, totalAmount - shippingCharge + couponDiscount);
 
   return (
     <Fragment>
@@ -164,6 +190,33 @@ const OrderDetails = () => {
                       <div className="info-group">
                         <label>Order ID</label>
                         <p className="text-dark font-weight-bold">#{order.id}</p>
+                      </div>
+                    </div>
+
+                    <div className="side-card price-breakdown-card">
+                      <div className="breakdown-header">
+                        <span className="mini-label">Price Breakdown</span>
+                        <i className="fa fa-credit-card"></i>
+                      </div>
+                      <div className="breakdown-row">
+                        <span>Subtotal</span>
+                        <strong>{formatCurrency(subtotal)}</strong>
+                      </div>
+                      <div className="breakdown-row">
+                        <span>Shipping</span>
+                        <strong className={isFreeShipping ? "shipping-free" : ""}>
+                          {isFreeShipping ? "FREE" : formatCurrency(shippingCharge)}
+                        </strong>
+                      </div>
+                      {couponCode && (
+                        <div className="breakdown-row breakdown-row--coupon">
+                          <span>Coupon <em>({couponCode})</em></span>
+                          <strong>- {formatCurrency(couponDiscount)}</strong>
+                        </div>
+                      )}
+                      <div className="breakdown-row breakdown-row--grand">
+                        <span>Grand Total</span>
+                        <strong>{formatCurrency(totalAmount)}</strong>
                       </div>
                     </div>
                   </div>
@@ -207,15 +260,23 @@ const OrderDetails = () => {
                       <div className="premium-total-footer">
                         <div className="total-line">
                           <span>Subtotal</span>
-                          <span>₹{orderTotal?.toFixed(2) ?? "0.00"}</span>
+                          <span>{formatCurrency(subtotal)}</span>
                         </div>
                         <div className="total-line">
                           <span>Shipping</span>
-                          <span className="text-success">Free</span>
+                          <span className={isFreeShipping ? "shipping-free" : ""}>
+                            {isFreeShipping ? "FREE" : formatCurrency(shippingCharge)}
+                          </span>
                         </div>
+                        {couponCode && (
+                          <div className="total-line coupon-line">
+                            <span>Coupon ({couponCode})</span>
+                            <span>- {formatCurrency(couponDiscount)}</span>
+                          </div>
+                        )}
                         <div className="total-line grand-total">
-                          <span>Amount Paid</span>
-                          <span>₹{orderTotal?.toFixed(2) ?? "0.00"}</span>
+                          <span>Grand Total</span>
+                          <span>{formatCurrency(totalAmount)}</span>
                         </div>
                       </div>
                     </div>

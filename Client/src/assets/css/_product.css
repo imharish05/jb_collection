@@ -119,6 +119,16 @@ updated
 .product-tab-list {
   justify-content: center;
 }
+.product-tab-list--scroll {
+  overflow-x: auto;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.product-tab-list--scroll::-webkit-scrollbar {
+  display: none;
+}
 @media only screen and (max-width: 767px) {
   .product-tab-list.pt-30, .product-tab-list.pt-55 {
     padding: 10px 0 30px;
@@ -189,6 +199,47 @@ updated
 
 .product-tab-list .nav-item .nav-link.active::after {
   width: 100%; /* Line grows to full width when active */
+}
+@media only screen and (max-width: 768px) {
+  .product-tab-list--scroll {
+    justify-content: flex-start;
+    scroll-snap-type: x proximity;
+  }
+  .product-tab-list--scroll .nav-item {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+  .tab-product-carousel {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-padding-left: 15px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    margin-left: -15px;
+    margin-right: -15px;
+    padding: 0 15px 14px;
+    scrollbar-width: none;
+  }
+  .tab-product-carousel::-webkit-scrollbar {
+    display: none;
+  }
+  .tab-product-carousel > [class*="col-"] {
+    flex: 0 0 160px !important;
+    max-width: 160px !important;
+    width: 160px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+  .tab-product-carousel .product-wrap,
+  .tab-product-carousel .product-list-image-wrap,
+  .tab-product-carousel .mb-25 {
+    margin-bottom: 0;
+  }
 }
 .product-tab-list.product-tab-fruits a h4 {
   color: #000000;

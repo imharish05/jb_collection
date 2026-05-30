@@ -20,8 +20,7 @@ const TabProduct = ({
         <Tab.Container defaultActiveKey="customisable">
           <Nav
             variant="pills"
-            className="product-tab-list pt-30 pb-55 text-center"
-            style={{ overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap' }}
+            className="product-tab-list product-tab-list--scroll pt-30 pb-55 text-center"
           >
             <Nav.Item>
               <Nav.Link eventKey="customisable">
@@ -41,7 +40,7 @@ const TabProduct = ({
           </Nav>
           <Tab.Content>
             <Tab.Pane eventKey="customisable">
-              <div className="row">
+              <div className="row tab-product-carousel">
                 <ProductGrid
                   category={category}
                   type="customisable"
@@ -51,7 +50,7 @@ const TabProduct = ({
               </div>
             </Tab.Pane>
             <Tab.Pane eventKey="newArrival">
-              <div className="row">
+              <div className="row tab-product-carousel">
                 <ProductGrid
                   category={category}
                   type="newArrival"
@@ -61,7 +60,7 @@ const TabProduct = ({
               </div>
             </Tab.Pane>
             <Tab.Pane eventKey="hotDeals">
-              <div className="row">
+              <div className="row tab-product-carousel">
                 <ProductGrid
                   category={category}
                   type="hotDeals"

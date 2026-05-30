@@ -10,11 +10,20 @@ const resolveImg = (image) => {
 };
 
 const TestimonialOneSingle = ({ data }) => {
+  const rawRating = Number(data.rating ?? data.stars ?? 5);
+  const rating = Number.isFinite(rawRating) ? Math.min(5, Math.max(0, rawRating)) : 5;
+
   return (
     <div className="editorial-testimonial">
       <div className="testimonial-content">
         <div className="quote-badge">
           <i className="fa fa-quote-right"></i>
+        </div>
+
+        <div className="testimonial-stars" aria-label={`${rating} out of 5 star rating`}>
+          {[0, 1, 2, 3, 4].map((star) => (
+            <i key={star} className={`fa ${star < Math.round(rating) ? "fa-star" : "fa-star-o"}`}></i>
+          ))}
         </div>
         
         <p className="main-quote">{data.text}</p>
@@ -40,6 +49,8 @@ TestimonialOneSingle.propTypes = {
     designation: PropTypes.string.isRequired,
     text: PropTypes.string.isRequired,
     image: PropTypes.string.isRequired,
+    rating: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    stars: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   }).isRequired,
 };
 
