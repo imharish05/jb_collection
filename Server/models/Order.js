@@ -84,6 +84,11 @@ const Order = sequelize.define(
       allowNull: true,
       field: "shiprocket_shipment_id",
     },
+    transactionId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "transaction_id",
+    },
   },
   {
     tableName: "orders",

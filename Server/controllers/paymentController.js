@@ -68,6 +68,7 @@ const verifyPayment = async (req, res, next) => {
 
     order.paymentStatus = 'paid';
     order.paymentMethod = 'razorpay';
+    order.transactionId = razorpay_payment_id;
     await order.save();
 
     res.json({ success: true, message: 'Payment verified successfully', order });

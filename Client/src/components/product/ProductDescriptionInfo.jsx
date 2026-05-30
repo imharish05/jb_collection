@@ -70,10 +70,38 @@ const KEY_ALIASES = { color: "Colour", colour: "Colour", size: "Size", material:
 function normalKey(k) { return KEY_ALIASES[k?.toLowerCase()] || k; }
 const KEY_ORDER = ["Colour", "Size", "Material", "Finish", "Capacity"];
 
+function parseVariantNameAttrs(variantName) {
+  if (!variantName) return [];
+  const seen = new Set();
+  return String(variantName)
+    .split(/\s*(?:·|\||,|\/)\s*/)
+    .map(part => {
+      const idx = part.indexOf(":");
+      if (idx === -1) return null;
+      const key = normalKey(part.slice(0, idx).trim());
+      const value = part.slice(idx + 1).trim();
+      return key && value ? { key, value } : null;
+    })
+    .filter(attr => {
+      if (!attr || attr.key === "Custom Note") return false;
+      const key = attr.key.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function variantAttrs(variant) {
+  const attrs = safeAttrs(variant?.attributes)
+    .filter(a => a.key && a.value && a.key !== "Custom Note")
+    .map(a => ({ ...a, key: normalKey(a.key) }));
+  return attrs.length ? attrs : parseVariantNameAttrs(variant?.variantName);
+}
+
 function buildOptionMap(variants) {
   const map = {};
   variants.forEach(v => {
-    safeAttrs(v.attributes).forEach(a => {
+    variantAttrs(v).forEach(a => {
       if (!a.key || !a.value || a.key === "Custom Note") return;
       const k = normalKey(a.key);
       if (!map[k]) map[k] = new Set();
@@ -91,9 +119,7 @@ function buildVariantIndex(variants) {
   return variants.map(v => ({
     variant: v,
     attrMap: Object.fromEntries(
-      safeAttrs(v.attributes)
-        .filter(a => a.key && a.value && a.key !== "Custom Note")
-        .map(a => [normalKey(a.key), a.value])
+      variantAttrs(v).map(a => [normalKey(a.key), a.value])
     ),
   }));
 }
@@ -221,9 +247,7 @@ function buildInitialSelections(activeVariants) {
   // Always pick the very first active variant automatically
   const target = activeVariants[0];
   return Object.fromEntries(
-    safeAttrs(target.attributes)
-      .filter(a => a.key && a.value && a.key !== "Custom Note")
-      .map(a => [normalKey(a.key), a.value])
+    variantAttrs(target).map(a => [normalKey(a.key), a.value])
   );
 }
 
@@ -246,7 +270,7 @@ function CustomNoteSection({ variant }) {
               const val = part.slice(ci + 1).trim();
               return (
                 <span key={`${i}-${j}`} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, padding: "4px 12px", borderRadius: 8, background: "#fff", border: "1px solid #ebd1c5", color: "#6e3316", fontWeight: 500 }}>
-                  <span style={{ color: "#db1a5d", fontWeight: 700 }}>{k}:</span>{val}
+                  <span style={{ color: "#de1a67", fontWeight: 700 }}>{k}:</span>{val}
                 </span>
               );
             }
@@ -548,8 +572,7 @@ const ProductDescriptionInfo = ({
     // Sync ALL keys from the matched variant (keeps the UI fully consistent)
     const next = {};
     if (matched) {
-      safeAttrs(matched.attributes)
-        .filter(a => a.key && a.value && a.key !== "Custom Note")
+      variantAttrs(matched)
         .forEach(a => { next[normalKey(a.key)] = a.value; });
     } else {
       // No matching variant at all — commit just the clicked key
@@ -627,7 +650,7 @@ const ProductDescriptionInfo = ({
     if (hasNewVar) {
       const compatibleVariants = activeVariants.filter(v => {
         const attrs = {};
-        safeAttrs(v.attributes).filter(a => a.key && a.value && a.key !== "Custom Note")
+        variantAttrs(v)
           .forEach(a => { const k = normalKey(a.key); if (!attrs[k]) attrs[k] = []; attrs[k].push(a.value); });
         return Object.entries(selections).every(([k, val]) => {
           if (!val) return true;
@@ -636,7 +659,7 @@ const ProductDescriptionInfo = ({
       });
       const requiredKeys = new Set();
       compatibleVariants.forEach(v => {
-        safeAttrs(v.attributes).filter(a => a.key && a.value && a.key !== "Custom Note")
+        variantAttrs(v)
           .forEach(a => requiredKeys.add(normalKey(a.key)));
       });
       const missing = [...requiredKeys].filter(key => !selections[key]);
@@ -674,7 +697,7 @@ const ProductDescriptionInfo = ({
       let variantColor = selectedProductColor || null;
       let variantSize = selectedProductSize || null;
       if (selectedVariant) {
-        safeAttrs(selectedVariant.attributes).forEach(a => {
+        variantAttrs(selectedVariant).forEach(a => {
           if (!a.key || !a.value) return;
           const k = normalKey(a.key);
           if (k === "Colour") variantColor = a.value;
@@ -711,7 +734,7 @@ const ProductDescriptionInfo = ({
       let variantColor = selectedProductColor || null;
       let variantSize = selectedProductSize || null;
       if (selectedVariant) {
-        safeAttrs(selectedVariant.attributes).forEach(a => {
+        variantAttrs(selectedVariant).forEach(a => {
           if (!a.key || !a.value) return;
           const k = normalKey(a.key);
           if (k === "Colour") variantColor = a.value;
@@ -745,7 +768,7 @@ const ProductDescriptionInfo = ({
           const newQty = Math.min(existing.quantity + quantityCount, resolvedStock);
           const merged = { ...existing, quantity: newQty };
           dispatch(replaceCheckoutItems([merged]));
-          cogoToast.success(`Quantity updated to ${newQty}. Going to checkout…`, { position: "top-center" });
+          cogoToast.success(`Quantity updated to ${newQty}. Adding..`, { position: "top-center" });
           await new Promise((resolve) => setTimeout(resolve, 300));
           navigate(`${process.env.PUBLIC_URL}/checkout`);
           return;
@@ -962,7 +985,7 @@ const ProductDescriptionInfo = ({
       )}
 
       {/* Notify Me subscription */}
-      {stockState.allowNotify && (
+      {false && stockState.allowNotify && (
         <div style={{ marginTop: 10, marginBottom: 20, padding: "14px 18px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
             <span>✉️</span> Notify Me When Available
@@ -1002,37 +1025,40 @@ const ProductDescriptionInfo = ({
       {/* ── Add to cart / Affiliate ── */}
       {localProduct.affiliateLink ? (
         <div className="pdp-info__actions">
-          <a href={localProduct.affiliateLink} rel="noopener noreferrer" target="_blank" className="pdp-btn pdp-btn--primary">
+          <a href={localProduct.affiliateLink} rel="noopener noreferrer" target="_blank" className="pdp-btn pdp-btn--primary pdp-info__affiliate-btn">
             Buy Now
           </a>
         </div>
       ) : (
-        <div className="pdp-info__actions">
-          {/* Render Qty & Wishlist row if NOT discontinued */}
+        <div className={`pdp-info__actions pdp-info__actions--product${stockState.state === STOCK_STATES.DISCONTINUED ? " is-discontinued" : ""}`}>
+          {/* Quantity & Wishlist Row */}
           {stockState.state !== STOCK_STATES.DISCONTINUED && (
-            <div className="pdp-info__actions-row pdp-info__actions-row--top">
-              {/* Qty */}
-              <div className="pdp-qty">
+            <div className="pdp-product-actions-top" style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "18px" }}>
+              {/* Quantity Selector */}
+              <div className="pdp-qty pdp-info__purchase-cell pdp-info__purchase-cell--qty" style={{ display: "flex", alignItems: "center", border: "1.5px solid #e5e7eb", borderRadius: "8px", backgroundColor: "#fff", height: "46px", maxWidth: "140px", transition: "all 0.2s ease" }}>
                 <button
                   className="pdp-qty__btn"
                   onClick={() => setQuantityCount(q => Math.max(1, q - 1))}
                   disabled={quantityCount <= 1 || !stockState.isPurchasable}
+                  style={{ width: "40px", height: "100%", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", transition: "all 0.2s ease" }}
+                  title="Decrease quantity"
                 >
                   <svg width="14" height="2" viewBox="0 0 14 2">
                     <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="2"/>
                   </svg>
                 </button>
-                <span className="pdp-qty__count">{stockState.isPurchasable ? quantityCount : 0}</span>
+                <span className="pdp-qty__count" style={{ minWidth: "50px", textAlign: "center", fontSize: "15px", fontWeight: 600, color: "#111827", borderLeft: "1px solid #e5e7eb", borderRight: "1px solid #e5e7eb", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flex: 1, background: "#fafbfc" }}>
+                  {stockState.isPurchasable ? quantityCount : 0}
+                </span>
                 <button
                   className="pdp-qty__btn"
                   onClick={() => {
                     const maxStock = stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock;
                     setQuantityCount(q => q < maxStock - productCartQty ? q + 1 : q);
                   }}
-                  disabled={
-                    !stockState.isPurchasable ||
-                    quantityCount >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock) - productCartQty
-                  }
+                  disabled={!stockState.isPurchasable || quantityCount >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock) - productCartQty}
+                  style={{ width: "40px", height: "100%", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", transition: "all 0.2s ease" }}
+                  title="Increase quantity"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14">
                     <line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" strokeWidth="2"/>
@@ -1041,12 +1067,13 @@ const ProductDescriptionInfo = ({
                 </button>
               </div>
 
-              {/* Wishlist */}
+              {/* Wishlist Button */}
               <button
-                className={`pdp-btn pdp-btn--wishlist${isInWishlist ? " is-active" : ""}`}
+                className={`pdp-btn pdp-btn--wishlist pdp-info__purchase-cell pdp-info__purchase-cell--wishlist${isInWishlist ? " is-active" : ""}`}
+                onClick={handleWishlist}
                 disabled={isAuthenticated && isInWishlist}
                 title={isInWishlist ? "In your wishlist" : "Add to wishlist"}
-                onClick={handleWishlist}
+                style={{ width: "46px", height: "46px", padding: "0", borderRadius: "8px", background: "#fff", color: isInWishlist ? "#de1a67" : "#9ca3af", border: "1.5px solid " + (isInWishlist ? "#fbcfe8" : "#e5e7eb"), cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease", flexShrink: 0 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill={isInWishlist ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -1055,73 +1082,107 @@ const ProductDescriptionInfo = ({
             </div>
           )}
 
-          <div className="pdp-info__actions-row pdp-info__actions-row--bottom">
+          {/* CTA Buttons Row - Bootstrap 5 Grid */}
+          <div className="row g-2 pdp-product-actions-ctas">
             {stockState.isPurchasable ? (
               <>
                 {isAuthenticated && productCartQty > 0 ? (
-                  <Link to="/cart" className="pdp-btn pdp-btn--success">
-                    View Cart
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                    </svg>
-                  </Link>
-                ) : (
-                  <button
-                    className={`pdp-btn pdp-btn--primary${isAddingToCart ? " is-loading" : ""}`}
-                    onClick={handleAddToCart}
-                    disabled={
-                      isAddingToCart ||
-                      isBuyingNow ||
-                      (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))
-                    }
-                  >
-                    {isAddingToCart ? (
-                      <>
-                        <span className="pdp-btn-spinner" />
-                        Adding...
-                      </>
-                    ) : (
-                      <>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                        </svg>
-                        Add to Cart
-                      </>
-                    )}
-                  </button>
-                )}
-
-                <button
-                  className={`pdp-btn pdp-btn--buy${isBuyingNow ? " is-loading" : ""}`}
-                  onClick={handleBuyNow}
-                  disabled={
-                    isAddingToCart ||
-                    isBuyingNow ||
-                    (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))
-                  }
-                >
-                  {isBuyingNow ? (
-                    <>
-                      <span className="pdp-btn-spinner" />
-                      Going to Checkout...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                  <>
+                  <div className="col-12 pdp-info__purchase-cell pdp-info__purchase-cell--primary">
+                    <Link to="/cart" style={{ width: "100%", height: "46px", background: "#111827", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none" }} onMouseEnter={(e) => e.currentTarget.style.background = "#1f2937"} onMouseLeave={(e) => e.currentTarget.style.background = "#111827"}>
+                      View Cart
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                       </svg>
-                      Buy Now
-                    </>
-                  )}
-                </button>
+                    </Link>
+                  </div>
+                  <div className="col-12 col-sm-6 pdp-info__purchase-cell pdp-info__purchase-cell--secondary">
+                    <button
+                      onClick={handleBuyNow}
+                      disabled={isAddingToCart || isBuyingNow || (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))}
+                      style={{ width: "100%", height: "46px", background: "#f16e35", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(241,110,53,0.2)" }}
+                      title="Buy this product now"
+                    >
+                      {isBuyingNow ? (
+                        <>
+                          <span style={{ display: "inline-block", width: "15px", height: "15px", border: "2px solid rgba(255,255,255,0.35)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.65s linear infinite" }} />
+                          Going to Checkout...
+                        </>
+                      ) : (
+                        <>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                          Buy Now
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="col-12 col-sm-6 pdp-info__purchase-cell pdp-info__purchase-cell--primary">
+                      <button
+                        onClick={handleAddToCart}
+                        disabled={isAddingToCart || isBuyingNow || (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))}
+                        style={{ width: "100%", height: "46px", background: "#de1a67", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(222,26,103,0.2)" }}
+                        title="Add this product to your cart"
+                      >
+                        {isAddingToCart ? (
+                          <>
+                            <span style={{ display: "inline-block", width: "15px", height: "15px", border: "2px solid rgba(255,255,255,0.35)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.65s linear infinite" }} />
+                            Adding...
+                          </>
+                        ) : (
+                          <>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                            </svg>
+                            Add to Cart
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="col-12 col-sm-6 pdp-info__purchase-cell pdp-info__purchase-cell--secondary">
+                      <button
+                        onClick={handleBuyNow}
+                        disabled={isAddingToCart || isBuyingNow || (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))}
+                        style={{ width: "100%", height: "46px", background: "#f16e35", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(241,110,53,0.2)" }}
+                        title="Buy this product now"
+                      >
+                        {isBuyingNow ? (
+                          <>
+                            <span style={{ display: "inline-block", width: "15px", height: "15px", border: "2px solid rgba(255,255,255,0.35)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.65s linear infinite" }} />
+                            Going to Checkout...
+                          </>
+                        ) : (
+                          <>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                            Buy Now
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
+                )}
               </>
             ) : (
-              <button className="pdp-btn pdp-btn--disabled" disabled style={{ width: "100%" }}>
-                {stockState.buttonText}
-              </button>
+              <div className="col-12 pdp-info__purchase-cell pdp-info__purchase-cell--full">
+                <button style={{ width: "100%", height: "46px", background: "#e5e7eb", color: "#9ca3af", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px", border: "none", cursor: "not-allowed" }}>
+                  {stockState.buttonText}
+                </button>
+              </div>
             )}
           </div>
+
+          <style>{`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       )}
 
@@ -1163,8 +1224,17 @@ const ProductDescriptionInfo = ({
         .pdp-info {
           padding-left: 32px;
         }
+        @media (max-width: 1023px) {
+          .pdp-info {
+            padding-left: 0;
+            margin-top: 28px;
+          }
+        }
         @media (max-width: 767px) {
-          .pdp-info { padding-left: 0; margin-top: 28px; }
+          .pdp-info {
+            padding-left: 0;
+            margin-top: 20px;
+          }
         }
 
         .pdp-info__name {
@@ -1185,8 +1255,8 @@ const ProductDescriptionInfo = ({
         .pdp-info__rating-num {
           font-size: 13px;
           font-weight: 700;
-          color: #db1a5d;
-          background: #fdf2f5;
+          color: #fff;
+          background: #de1a67;
           border-radius: 6px;
           padding: 2px 8px;
         }
@@ -1195,14 +1265,14 @@ const ProductDescriptionInfo = ({
         .pdp-info__price-block {
           display: flex;
           align-items: baseline;
-          gap: 10px;
+          gap: 12px;
           flex-wrap: wrap;
           margin-bottom: 16px;
         }
         .pdp-info__price {
           font-size: 28px;
           font-weight: 800;
-          color: #db1a5d;
+          color: #de1a67;
           letter-spacing: -0.02em;
           line-height: 1;
         }
@@ -1261,7 +1331,7 @@ const ProductDescriptionInfo = ({
         }
         .pdp-attr-selected {
           font-size: 12px;
-          color: #db1a5d;
+          color: #de1a67;
           font-weight: 600;
         }
         .pdp-attr-options {
@@ -1297,7 +1367,7 @@ const ProductDescriptionInfo = ({
         }
         .pdp-swatch.is-selected {
           border-color: #fff !important;
-          outline: 2px solid #db1a5d;
+          outline: 2px solid #de1a67;
           box-shadow: 0 4px 10px rgba(219,26,93,0.25);
         }
         .pdp-swatch.is-disabled {
@@ -1348,14 +1418,14 @@ const ProductDescriptionInfo = ({
           overflow: hidden;
         }
         .pdp-chip:hover:not(:disabled) {
-          border-color: #db1a5d;
-          color: #db1a5d;
+          border-color: #de1a67;
+          color: #de1a67;
           background: #fdf2f5;
         }
         .pdp-chip.is-selected {
-          border-color: #db1a5d;
+          border-color: #de1a67;
           background: #fdf2f5;
-          color: #db1a5d;
+          color: #de1a67;
           font-weight: 600;
         }
         .pdp-chip.is-disabled {
@@ -1391,13 +1461,13 @@ const ProductDescriptionInfo = ({
           justify-content: center;
         }
         .pdp-size-chip:hover:not(:disabled) {
-          border-color: #db1a5d;
-          color: #db1a5d;
+          border-color: #de1a67;
+          color: #de1a67;
           background: #fdf2f5;
         }
         .pdp-size-chip.is-selected {
-          border-color: #db1a5d;
-          background: #db1a5d;
+          border-color: #de1a67;
+          background: #de1a67;
           color: #fff;
           font-weight: 700;
           box-shadow: 0 2px 8px rgba(219,26,93,0.25);
@@ -1492,8 +1562,123 @@ const ProductDescriptionInfo = ({
         .pdp-info__actions {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 18px;
           width: 100%;
+        }
+        .pdp-info__affiliate-btn {
+          width: 100%;
+        }
+        .pdp-info__actions--product {
+          display: grid;
+          grid-template-columns: minmax(150px, 170px) minmax(0, 1fr) minmax(0, 1fr) 46px;
+          align-items: center;
+          column-gap: 10px;
+          row-gap: 12px;
+        }
+        .pdp-info__actions--product .pdp-product-actions-top,
+        .pdp-info__actions--product .pdp-product-actions-ctas {
+          display: contents !important;
+        }
+        .pdp-info__actions--product .pdp-info__purchase-cell {
+          min-width: 0;
+          width: auto !important;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          flex: none !important;
+        }
+        .pdp-info__actions--product .pdp-info__purchase-cell--qty {
+          grid-column: 1;
+          grid-row: 1;
+          width: 100% !important;
+          max-width: none !important;
+        }
+        .pdp-info__actions--product .pdp-info__purchase-cell--primary {
+          grid-column: 2;
+          grid-row: 1;
+        }
+        .pdp-info__actions--product .pdp-info__purchase-cell--secondary {
+          grid-column: 3;
+          grid-row: 1;
+        }
+        .pdp-info__actions--product .pdp-info__purchase-cell--wishlist {
+          grid-column: 4;
+          grid-row: 1;
+          justify-self: end;
+          width: 46px !important;
+        }
+        .pdp-info__actions--product .pdp-info__purchase-cell--full {
+          grid-column: 2 / 4;
+          grid-row: 1;
+        }
+        .pdp-info__actions--product.is-discontinued .pdp-info__purchase-cell--full {
+          grid-column: 1 / -1;
+        }
+        .pdp-info__actions--product .pdp-info__purchase-cell--qty.pdp-qty,
+        .pdp-info__actions--product .pdp-info__purchase-cell .pdp-btn,
+        .pdp-info__actions--product .pdp-info__purchase-cell > .pdp-btn,
+        .pdp-info__actions--product .pdp-info__purchase-cell > a,
+        .pdp-info__actions--product .pdp-info__purchase-cell:not(.pdp-qty) > button {
+          width: 100% !important;
+        }
+        .pdp-info__actions--product .pdp-btn--wishlist {
+          width: 46px !important;
+        }
+        @media (min-width: 768px) and (max-width: 991px) {
+          .pdp-info__actions--product {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            column-gap: 12px;
+            row-gap: 12px;
+          }
+          .pdp-info__actions--product .pdp-info__purchase-cell--qty {
+            grid-column: 1;
+            grid-row: 1;
+          }
+          .pdp-info__actions--product .pdp-info__purchase-cell--wishlist {
+            grid-column: 2;
+            grid-row: 1;
+            justify-self: center;
+          }
+          .pdp-info__actions--product .pdp-info__purchase-cell--primary {
+            grid-column: 1;
+            grid-row: 2;
+          }
+          .pdp-info__actions--product .pdp-info__purchase-cell--secondary {
+            grid-column: 2;
+            grid-row: 2;
+          }
+          .pdp-info__actions--product .pdp-info__purchase-cell--full {
+            grid-column: 1 / -1;
+            grid-row: 2;
+          }
+        }
+        @media (max-width: 767px) {
+          .pdp-info__actions--product {
+            grid-template-columns: minmax(0, 1fr) 46px;
+            column-gap: 10px;
+            row-gap: 12px;
+          }
+          .pdp-info__actions--product .pdp-info__purchase-cell--qty {
+            grid-column: 1;
+            grid-row: 1;
+          }
+          .pdp-info__actions--product .pdp-info__purchase-cell--wishlist {
+            grid-column: 2;
+            grid-row: 1;
+            justify-self: end;
+          }
+          .pdp-info__actions--product .pdp-info__purchase-cell--primary {
+            grid-column: 1 / -1;
+            grid-row: 2;
+          }
+          .pdp-info__actions--product .pdp-info__purchase-cell--secondary {
+            grid-column: 1 / -1;
+            grid-row: 3;
+          }
+          .pdp-info__actions--product .pdp-info__purchase-cell--full {
+            grid-column: 1 / -1;
+            grid-row: 2;
+          }
         }
         .pdp-info__actions-row {
           display: flex;
@@ -1501,25 +1686,47 @@ const ProductDescriptionInfo = ({
           gap: 12px;
           width: 100%;
         }
+        .pdp-info__actions-row--top {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          justify-content: flex-start;
+          flex-wrap: nowrap;
+        }
         .pdp-info__actions-row--top .pdp-qty {
-          flex: 1;
-          max-width: 140px;
+          flex: 0 0 auto;
         }
         .pdp-info__actions-row--top .pdp-btn--wishlist {
           flex-shrink: 0;
+          margin-left: auto;
+        }
+        .pdp-info__actions-row--bottom {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 14px;
+          width: 100%;
         }
         .pdp-info__actions-row--bottom .pdp-btn {
-          flex: 1;
-          min-width: 0;
+          width: 100%;
         }
         .pdp-info__actions-row--bottom .pdp-btn--disabled {
-          flex: 1;
+          grid-column: 1 / -1;
           width: 100%;
         }
 
         @media (max-width: 767px) {
-          .pdp-info__actions-row--top .pdp-qty {
-            max-width: none;
+          .pdp-info__actions {
+            gap: 16px;
+          }
+          .pdp-info__actions-row--top {
+            gap: 12px;
+          }
+          .pdp-info__actions-row--bottom {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          .pdp-info__actions-row--bottom .pdp-btn {
+            width: 100%;
           }
         }
 
@@ -1527,12 +1734,17 @@ const ProductDescriptionInfo = ({
         .pdp-qty {
           display: inline-flex;
           align-items: center;
-          border: 1px solid #d1d5db;
+          border: 1.5px solid #e5e7eb;
           border-radius: 8px;
           overflow: hidden;
           background: #fff;
           height: 46px;
           justify-content: space-between;
+          transition: all 0.2s ease;
+        }
+        .pdp-qty:hover {
+          border-color: #d1d5db;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.06);
         }
         .pdp-qty__btn {
           width: 40px;
@@ -1543,25 +1755,36 @@ const ProductDescriptionInfo = ({
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #4b5563;
-          transition: all 0.15s;
-          flex: 1;
+          color: #6b7280;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          flex: 0 0 auto;
         }
-        .pdp-qty__btn:hover:not(:disabled) { background: #f3f4f6; color: #db1a5d; }
-        .pdp-qty__btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .pdp-qty__btn:hover:not(:disabled) {
+          background: #f9fafb;
+          color: #de1a67;
+        }
+        .pdp-qty__btn:active:not(:disabled) {
+          background: #f3f4f6;
+          transform: scale(0.95);
+        }
+        .pdp-qty__btn:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
         .pdp-qty__count {
-          min-width: 40px;
+          min-width: 50px;
           text-align: center;
           font-size: 15px;
           font-weight: 600;
           color: #111827;
-          border-left: 1px solid #d1d5db;
-          border-right: 1px solid #d1d5db;
+          border-left: 1px solid #e5e7eb;
+          border-right: 1px solid #e5e7eb;
           height: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
-          flex: 1.5;
+          flex: 1;
+          background: #fafbfc;
         }
 
         /* ── Buttons ── */
@@ -1582,31 +1805,43 @@ const ProductDescriptionInfo = ({
           white-space: nowrap;
           font-family: inherit;
         }
+        .pdp-btn:active:not(:disabled) {
+          transform: scale(0.95);
+        }
+
+        /* Add to Cart - Deep Pink */
         .pdp-btn--primary {
-          background: #db1a5d;
+          background: #de1a67;
           color: #fff;
-          box-shadow: 0 4px 12px rgba(219,26,93,0.2);
+          box-shadow: 0 4px 12px rgba(222,26,103,0.2);
           flex: 1;
           min-width: 0;
         }
-        .pdp-btn--primary:hover {
-          background: #be1249;
-          box-shadow: 0 6px 16px rgba(219,26,93,0.3);
-          transform: translateY(-1px);
-          color: #fff;
+        .pdp-btn--primary:hover:not(:disabled) {
+          background: #c41654;
+          box-shadow: 0 6px 18px rgba(222,26,103,0.3);
+          transform: translateY(-2px);
         }
+        .pdp-btn--primary:disabled {
+          background: #e5e7eb;
+          color: #9ca3af;
+          box-shadow: none;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        /* Buy Now - Vibrant Coral/Orange */
         .pdp-btn--buy {
-          background: #F15A24;
+          background: #f16e35;
           color: #fff;
-          box-shadow: 0 4px 12px rgba(241,90,36,0.2);
+          box-shadow: 0 4px 12px rgba(241,110,53,0.2);
           flex: 1;
           min-width: 0;
         }
         .pdp-btn--buy:hover:not(:disabled) {
-          background: #df4e1b;
-          box-shadow: 0 6px 16px rgba(241,90,36,0.3);
-          transform: translateY(-1px);
-          color: #fff;
+          background: #e05c24;
+          box-shadow: 0 6px 18px rgba(241,110,53,0.3);
+          transform: translateY(-2px);
         }
         .pdp-btn--buy:disabled {
           background: #e5e7eb;
@@ -1615,19 +1850,27 @@ const ProductDescriptionInfo = ({
           cursor: not-allowed;
           transform: none;
         }
+
         .pdp-btn--success {
           background: #111827;
           color: #fff;
           flex: 1;
           min-width: 0;
         }
-        .pdp-btn--success:hover { background: #1f2937; color: #fff; transform: translateY(-1px); }
+        .pdp-btn--success:hover {
+          background: #1f2937;
+          color: #fff;
+          transform: translateY(-2px);
+        }
+
         .pdp-btn--disabled {
           background: #e5e7eb;
           color: #9ca3af;
           cursor: not-allowed;
           flex: 1;
         }
+
+        /* Wishlist Button */
         .pdp-btn--wishlist {
           width: 46px;
           height: 46px;
@@ -1635,25 +1878,24 @@ const ProductDescriptionInfo = ({
           border-radius: 8px;
           background: #fff;
           color: #9ca3af;
-          border: 1px solid #d1d5db;
+          border: 1.5px solid #e5e7eb;
           flex-shrink: 0;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .pdp-btn--wishlist:hover:not(:disabled) {
-          background: #fdf2f5;
-          color: #db1a5d;
-          border-color: #fbcfe8;
+          border-color: #de1a67;
+          color: #de1a67;
+          background: #fff;
+          box-shadow: 0 4px 12px rgba(222,26,103,0.15);
+          transform: scale(1.05);
+        }
+        .pdp-btn--wishlist:active:not(:disabled) {
+          transform: scale(0.95);
         }
         .pdp-btn--wishlist.is-active {
-          background: #fdf2f5;
-          color: #db1a5d;
+          background: #fff5f7;
+          color: #de1a67;
           border-color: #fbcfe8;
-        }
-        .pdp-btn--primary:disabled {
-          background: #e5e7eb;
-          color: #9ca3af;
-          box-shadow: none;
-          cursor: not-allowed;
-          transform: none;
         }
 
         /* ── Loading spinner for buttons ── */
@@ -1670,56 +1912,70 @@ const ProductDescriptionInfo = ({
           animation: pdp-spin 0.65s linear infinite;
           flex-shrink: 0;
         }
-        .pdp-btn.is-loading {
-          opacity: 0.85;
-          cursor: not-allowed;
-          pointer-events: none;
-        }
 
-        /* ── Share ── */
+        /* ── Share section ── */
         .pdp-info__share {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 14px;
+          padding-top: 18px;
+          margin-top: 24px;
+          border-top: 1px solid #e5e7eb;
         }
         .pdp-info__share-label {
-          font-size: 11px;
+          font-size: 12px;
           font-weight: 700;
-          color: #9ca3af;
+          color: #6b7280;
           text-transform: uppercase;
           letter-spacing: 0.05em;
+          white-space: nowrap;
         }
         .pdp-info__share-links {
           display: flex;
+          align-items: center;
           gap: 8px;
         }
         .pdp-share-btn {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          width: 34px;
-          height: 34px;
-          border-radius: 6px;
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
           color: #fff;
           font-size: 14px;
           text-decoration: none;
-          transition: all 0.15s ease;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+          border: none;
+          padding: 0;
         }
-        .pdp-share-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.12); }
+        .pdp-share-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .pdp-share-btn:active {
+          transform: scale(0.95);
+        }
         .pdp-share-btn--fb { background: #1877f2; }
         .pdp-share-btn--x  { background: #1f2937; }
         .pdp-share-btn--wa { background: #25d366; }
+        .pdp-btn.is-loading {
+          opacity: 0.85;
+          cursor: not-allowed;
+          pointer-events: none;
+        }
 
         /* ── Combo ── */
         .pdp-combo {
           margin-bottom: 22px;
-          border: 1px solid #db1a5d;
+          border: 1px solid #de1a67;
           border-radius: 12px;
           overflow: hidden;
-          box-shadow: 0 4px 12px rgba(219,26,93,0.04);
+          box-shadow: 0 4px 12px rgba(222,26,103,0.08);
         }
         .pdp-combo__header {
-          background: #db1a5d;
+          background: #de1a67;
           padding: 14px 16px;
           display: flex;
           align-items: center;
@@ -1796,7 +2052,7 @@ const ProductDescriptionInfo = ({
           width: 18px;
           height: 18px;
           border-radius: 50%;
-          background: #db1a5d;
+          background: #de1a67;
           color: #fff;
           font-size: 10px;
           font-weight: 700;
@@ -1830,7 +2086,7 @@ const ProductDescriptionInfo = ({
           overflow: hidden;
           width: 100%;
         }
-        .pdp-combo__item-price { font-size: 12px; color: #db1a5d; font-weight: 600; }
+        .pdp-combo__item-price { font-size: 12px; color: #de1a67; font-weight: 600; }
 
         /* ── Status Pills ── */
         .status-pill {

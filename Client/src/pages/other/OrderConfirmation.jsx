@@ -96,7 +96,7 @@ const OrderConfirmation = () => {
             }}
           >
             <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-            <h2 style={{ fontSize: 28, fontWeight: 700, color: "#666", marginBottom: 8 }}>
+            <h2 style={{ fontSize: 28, fontWeight: 700, color: "#000", marginBottom: 8 }}>
               Thank you, {selectedAddr?.fullName?.split(" ")[0] || "Customer"}!
             </h2>
             <p style={{ color: "#666", fontSize: 16, marginBottom: 20 }}>

@@ -651,11 +651,11 @@ const ComboDetailPage = () => {
                     </>
                   )}
 
-                  <div className="pdp-info__actions" style={{ marginTop: 24 }}>
+                  <div className="pdp-info__actions pdp-info__actions--combo" style={{ marginTop: 24 }}>
                     {/* Qty stepper — shown for both fixed & mix_match unless out of stock */}
                     {!fixedOos && (
                       <div className="pdp-info__actions-row pdp-info__actions-row--top">
-                        <div className="pdp-qty">
+                        <div className="pdp-qty pdp-info__combo-cell pdp-info__combo-cell--qty">
                           <button
                             className="pdp-qty__btn"
                             onClick={() => setQty(q => Math.max(1, q - 1))}
@@ -683,7 +683,7 @@ const ComboDetailPage = () => {
                         </div>
                         {/* Show lowest-stock warning for fixed combo */}
                         {child.type === "fixed" && fixedMaxQty < Infinity && fixedMaxQty <= 5 && (
-                          <span style={{ fontSize: 11, color: fixedMaxQty <= 2 ? "#dc2626" : "#f59e0b", fontWeight: 600, alignSelf: "center" }}>
+                          <span className="pdp-combo-stock-note" style={{ fontSize: 11, color: fixedMaxQty <= 2 ? "#dc2626" : "#f59e0b", fontWeight: 600, alignSelf: "center" }}>
                             Only {fixedMaxQty} available
                           </span>
                         )}
@@ -692,19 +692,19 @@ const ComboDetailPage = () => {
 
                     <div className="pdp-info__actions-row pdp-info__actions-row--bottom">
                       {fixedOos ? (
-                        <button className="pdp-btn pdp-btn--disabled" disabled style={{ width: "100%" }}>
+                        <button className="pdp-btn pdp-btn--disabled pdp-info__combo-cell pdp-info__combo-cell--full" disabled style={{ width: "100%" }}>
                           Out of Stock
                         </button>
                       ) : isInCart ? (
                         <>
-                          <Link to={process.env.PUBLIC_URL + "/cart"} className="pdp-btn pdp-btn--success" style={{ flex: 1 }}>
+                          <Link to={process.env.PUBLIC_URL + "/cart"} className="pdp-btn pdp-btn--success pdp-info__combo-cell pdp-info__combo-cell--primary" style={{ flex: 1 }}>
                             View Cart
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 6 }}>
                               <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                             </svg>
                           </Link>
                           <button
-                            className="pdp-btn pdp-btn--buy"
+                            className="pdp-btn pdp-btn--buy pdp-info__combo-cell pdp-info__combo-cell--secondary"
                             onClick={handleBuyNow}
                             style={{ flex: 1 }}
                           >
@@ -717,7 +717,7 @@ const ComboDetailPage = () => {
                       ) : (
                         <>
                           <button
-                            className={clsx("pdp-btn", (child.type === "mix_match" && !canAdd) ? "pdp-btn--disabled" : "pdp-btn--primary")}
+                            className={clsx("pdp-btn pdp-info__combo-cell pdp-info__combo-cell--primary", (child.type === "mix_match" && !canAdd) ? "pdp-btn--disabled" : "pdp-btn--primary")}
                             onClick={handleAddToCart}
                             disabled={addingCart || (child.type === "mix_match" && !canAdd)}
                             style={{ flex: 1 }}
@@ -737,7 +737,7 @@ const ComboDetailPage = () => {
                             )}
                           </button>
                           <button
-                            className="pdp-btn pdp-btn--buy"
+                            className="pdp-btn pdp-btn--buy pdp-info__combo-cell pdp-info__combo-cell--secondary"
                             onClick={handleBuyNow}
                             disabled={addingCart || (child.type === "mix_match" && !canAdd)}
                             style={{ flex: 1 }}
@@ -813,6 +813,99 @@ const ComboDetailPage = () => {
           flex-direction: column;
           gap: 12px;
           width: 100%;
+        }
+        .pdp-info__actions--combo {
+          display: grid;
+          grid-template-columns: minmax(150px, 170px) minmax(0, 1fr) minmax(0, 1fr);
+          align-items: center;
+          column-gap: 10px;
+          row-gap: 12px;
+        }
+        .pdp-info__actions--combo .pdp-info__actions-row--top,
+        .pdp-info__actions--combo .pdp-info__actions-row--bottom {
+          display: contents !important;
+        }
+        .pdp-info__combo-cell {
+          min-width: 0;
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 !important;
+          flex: none !important;
+        }
+        .pdp-info__combo-cell--qty {
+          grid-column: 1;
+          grid-row: 1;
+          width: 100% !important;
+        }
+        .pdp-info__combo-cell--primary {
+          grid-column: 2;
+          grid-row: 1;
+        }
+        .pdp-info__combo-cell--secondary {
+          grid-column: 3;
+          grid-row: 1;
+        }
+        .pdp-info__combo-cell--full {
+          grid-column: 1 / -1;
+          grid-row: 1;
+        }
+        .pdp-combo-stock-note {
+          grid-column: 1 / -1;
+          grid-row: 2;
+        }
+        @media (min-width: 768px) and (max-width: 991px) {
+          .pdp-info__actions--combo {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            column-gap: 12px;
+            row-gap: 12px;
+          }
+          .pdp-info__combo-cell--qty {
+            grid-column: 1;
+            grid-row: 1;
+          }
+          .pdp-info__combo-cell--primary {
+            grid-column: 1;
+            grid-row: 2;
+          }
+          .pdp-info__combo-cell--secondary {
+            grid-column: 2;
+            grid-row: 2;
+          }
+          .pdp-info__combo-cell--full {
+            grid-column: 1 / -1;
+            grid-row: 2;
+          }
+          .pdp-combo-stock-note {
+            grid-column: 2;
+            grid-row: 1;
+            align-self: center;
+          }
+        }
+        @media (max-width: 767px) {
+          .pdp-info__actions--combo {
+            grid-template-columns: 1fr;
+            row-gap: 12px;
+          }
+          .pdp-info__combo-cell--qty {
+            grid-column: 1;
+            grid-row: 1;
+          }
+          .pdp-info__combo-cell--primary {
+            grid-column: 1;
+            grid-row: 2;
+          }
+          .pdp-info__combo-cell--secondary {
+            grid-column: 1;
+            grid-row: 3;
+          }
+          .pdp-info__combo-cell--full {
+            grid-column: 1;
+            grid-row: 2;
+          }
+          .pdp-combo-stock-note {
+            grid-column: 1;
+            grid-row: 4;
+          }
         }
         .pdp-info__actions-row {
           display: flex;
