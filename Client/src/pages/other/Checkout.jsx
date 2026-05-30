@@ -18,21 +18,23 @@ import cogoToast from "cogo-toast";
 import "./Checkout.css";
 import { useRef } from "react";
 
-// ── Helper: check Shiprocket serviceability ─────────────────────────────────
+// ── Helper: check Shiprocket shipping rates ─────────────────────────────────
 const checkShippingServiceability = async (pincode, orderValue, weight = 0.5) => {
   try {
-    console.log("[Checkout] Calling serviceability API with:", { pincode, orderValue, weight });
-    const res = await api.get("/shipping/serviceability", {
-      params: { pincode, orderValue, weight, cod: true },
+    const cod = true;
+    const res = await api.get("/shipping/rates", {
+      params: { pincode, weight, cod },
     });
-    console.log("[Checkout] Serviceability response:", res.data);
-    return res.data;
+    // Map new response shape to what checkout expects
+    return {
+      serviceable: res.data.serviceable,
+      shippingCharge: res.data.charge || 0,
+      courier: res.data.courier || null,
+      estimatedDays: res.data.estimatedDays || null,
+      codAvailable: cod,
+    };
   } catch (err) {
-    console.error("[Checkout] Serviceability check failed:", {
-      message: err.message,
-      status: err.response?.status,
-      data: err.response?.data,
-    });
+    console.error("[Checkout] Shipping rates check failed:", err.message);
     return null;
   }
 };
@@ -150,9 +152,8 @@ const Checkout = () => {
   const [billingCollapsed, setBillingCollapsed] = useState(false);
 
   // ── Serviceability & Shipping State ────────────────────────────────────
-  const [shippingInfo, setShippingInfo] = useState(null); // { serviceable, shippingCharge, courier, estimatedDays, codAvailable }
+  const [shippingInfo, setShippingInfo] = useState(null);
   const [checkingServiceability, setCheckingServiceability] = useState(false);
-  const [shippingError, setShippingError] = useState(null); // For debugging
   const [shippingPricing, setShippingPricing] = useState({
     subtotal: 0,
     shipping: 0,
@@ -166,7 +167,7 @@ const Checkout = () => {
     if (user?.id) dispatch(fetchAddresses());
   }, [user?.id, dispatch]);
 
-  /* ── Check shipping serviceability when address/price changes ────────── */
+  /* ── Check shipping rates when address changes ───────────────────────── */
   useEffect(() => {
     const checkShipping = async () => {
       if (!selectedShippingAddr?.pincode) {
@@ -183,7 +184,6 @@ const Checkout = () => {
 
       if (result) {
         setShippingInfo(result);
-        // Update pricing with shipping charge
         const newShipping = result.serviceable ? (result.shippingCharge || 0) : 0;
         setShippingPricing((prev) => ({
           ...prev,
@@ -196,7 +196,7 @@ const Checkout = () => {
     };
 
     checkShipping();
-  }, [selectedShippingAddr?.pincode, shippingPricing.subtotal]);
+  }, [selectedShippingAddrId, shippingPricing.subtotal]);
 
   /* ── Mount-time inventory & price revalidation ── */
   useEffect(() => {
@@ -324,7 +324,7 @@ const Checkout = () => {
   const selectedBillingAddr = billingSameAsShipping
     ? selectedShippingAddr
     : addresses.find((a) => a.id === selectedBillingAddrId);
-  
+
   // Filter payment methods based on COD availability
   const availablePaymentMethods = PAYMENT_METHODS.filter(
     (pm) => pm.id !== "cod" || (shippingInfo?.codAvailable === true)
@@ -376,7 +376,6 @@ const Checkout = () => {
           r.adjustedQty === 0 && ["OOS", "Discontinued", "Unavailable"].includes(r.status)
         );
 
-        // Update active checkout session items in Redux
         const updatedCheckout = checkoutItems.map(item => {
           const result = revalResults.find(r => r.cartItemId === item.cartItemId);
           if (!result || result.status === "OK") return item;
@@ -385,7 +384,6 @@ const Checkout = () => {
         }).filter(Boolean);
         dispatch(replaceCheckoutItems(updatedCheckout));
 
-        // If checkout source was cart, update the cart too
         if (checkoutSource === "cart") {
           const updatedCart = cartItems.map(item => {
             const result = revalResults.find(r => r.cartItemId === item.cartItemId);
@@ -411,7 +409,6 @@ const Checkout = () => {
         return;
       }
     } catch (revalErr) {
-      // Non-blocking: log and proceed if revalidation API fails
       console.warn("Pre-order revalidation failed (proceeding):", revalErr);
     }
 
@@ -434,6 +431,7 @@ const Checkout = () => {
         couponCode: shippingPricing.couponCode || null,
         notes: giftNote.trim() || null,
         shippingCharge: shippingInfo?.shippingCharge || 0,
+        courier: shippingInfo?.courier || null,
         estimatedDeliveryDays: shippingInfo?.estimatedDays || null,
       };
 
@@ -451,12 +449,14 @@ const Checkout = () => {
           navigate(`/order-confirmation`, {
             replace: true,
             state: {
-              orderId: id,
-              selectedShippingAddr,
-              billingAddress: selectedBillingAddr,
-              paymentMethod,
-              cartItems: checkoutItems,
-            },
+  orderId: id,
+  selectedShippingAddr,
+  billingAddress: selectedBillingAddr,
+  paymentMethod,
+  cartItems: checkoutItems,
+  estimatedDays: shippingInfo?.estimatedDays || null,  // ← add this
+},
+
           });
         }, 1000);
       }
@@ -627,18 +627,18 @@ const Checkout = () => {
                       <button
                         className="kco-add-new-btn"
                         onClick={() => {
-  setShowNewAddrForm((p) => {
-    if (!p) {
-      setTimeout(() => {
-        newAddrFormRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }, 50);
-    }
-    return !p;
-  });
-}}
+                          setShowNewAddrForm((p) => {
+                            if (!p) {
+                              setTimeout(() => {
+                                newAddrFormRef.current?.scrollIntoView({
+                                  behavior: "smooth",
+                                  block: "start",
+                                });
+                              }, 50);
+                            }
+                            return !p;
+                          });
+                        }}
                       >
                         {showNewAddrForm ? "✕ Cancel" : "+ Add New"}
                       </button>
@@ -712,7 +712,7 @@ const Checkout = () => {
                           )}
                         </div>
 
-                        {/* ── Billing Divider (checkbox centered between panels) ── */}
+                        {/* ── Billing Divider ── */}
                         <div className="kco-billing-divider">
                           <div className="kco-billing-divider-line" />
                           <label className="kco-same-billing-pill">
@@ -741,7 +741,6 @@ const Checkout = () => {
                             )}
                           </div>
 
-                          {/* Disabled overlay when same as shipping */}
                           {billingSameAsShipping && (
                             <div className="kco-billing-disabled-overlay">
                               <span className="kco-billing-disabled-msg">
@@ -789,8 +788,7 @@ const Checkout = () => {
 
                     {/* New Address Form */}
                     {showNewAddrForm && (
-                     <div className="kco-new-addr-form" ref={newAddrFormRef}>
-
+                      <div className="kco-new-addr-form" ref={newAddrFormRef}>
                         <h4 className="kco-new-addr-title">➕ New Address</h4>
 
                         <div className="kco-type-row">
@@ -884,12 +882,12 @@ const Checkout = () => {
                           </FormField>
                         </div>
 
-                        <label className="kco-default-check-row" style={{display : "flex"}}>
+                        <label className="kco-default-check-row" style={{ display: "flex" }}>
                           <input
                             type="checkbox"
                             checked={addrForm.isDefault}
                             onChange={(e) => setAddrForm((f) => ({ ...f, isDefault: e.target.checked }))}
-                            style={{ accentColor: "#db1a5d"}}
+                            style={{ accentColor: "#db1a5d" }}
                           />
                           Set as my default address
                         </label>
@@ -1072,51 +1070,77 @@ const Checkout = () => {
                         </span>
                         <span>
                           {PAYMENT_METHODS.find((p) => p.id === paymentMethod)?.label}
-                          {/* COD handling label — disabled
-                          {paymentMethod === "cod" && (
-                            <span style={{ color: "#888", fontSize: 12 }}> (+₹30 handling fee)</span>
-                          )}
-                          */}
                         </span>
                       </div>
                     </div>
 
                     {/* Items */}
-                    <div className="kco-review-section">
-                      <div className="kco-review-section-title" style={{ marginBottom: 12 }}>
-                        🛍 Items ({checkoutItems.length})
-                      </div>
-                      {checkoutItems.map((item) => {
-                        const price = parseFloat(item.price || 0);
-                        return (
-                          <div key={item.cartItemId} className="kco-review-item">
-                            <img
-                              src={resolveCartImg(item.image)}
-                              alt={item.name}
-                              className="kco-review-item-img"
-                              onError={(e) => { e.target.src = "/assets/img/products/products-1.jpeg"; }}
-                            />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {item.name}
-                              </div>
-                              {(item.selectedProductColor || item.selectedProductSize) && (
-                                <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
-                                  {item.selectedProductColor}
-                                  {item.selectedProductSize ? " / " + item.selectedProductSize : ""}
-                                </div>
-                              )}
-                              <div style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
-                                Qty: {item.quantity}
-                              </div>
-                            </div>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: "#db1a5d", flexShrink: 0 }}>
-                              ₹{(price * currency.currencyRate * item.quantity).toFixed(2)}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+<div className="kco-review-section">
+  <div className="kco-review-section-title" style={{ marginBottom: 12 }}>
+    🛍 Items ({checkoutItems.length})
+  </div>
+  {checkoutItems.map((item) => {
+    const price = parseFloat(item.price || 0);
+
+    // Build dynamic variant attrs
+    const attrs = [];
+    const v = Array.isArray(item.variation) ? item.variation[0] : null;
+const rawAttrs = v?.attributes;
+const attrsArray = Array.isArray(rawAttrs)
+  ? rawAttrs
+  : typeof rawAttrs === "string"
+  ? (() => { try { return JSON.parse(rawAttrs); } catch { return []; } })()
+  : [];
+
+if (attrsArray.length) {
+  attrsArray.forEach(a => attrs.push({ key: a.key, val: a.value }));
+} else if (item.selectedVariantName?.includes(":")) {
+      item.selectedVariantName.split("·").forEach(part => {
+        const [k, val] = part.split(":").map(s => s.trim());
+        if (k && val) attrs.push({ key: k, val });
+      });
+    } else if (item.selectedVariantName) {
+      attrs.push({ key: "Variant", val: item.selectedVariantName });
+    }
+
+    return (
+      <div key={item.cartItemId} className="kco-review-item">
+        <img
+          src={resolveCartImg(item.image)}
+          alt={item.name}
+          className="kco-review-item-img"
+          onError={(e) => { e.target.src = "/assets/img/products/products-1.jpeg"; }}
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {item.name}
+          </div>
+          {attrs.length > 0 && (
+            <div style={{ marginTop: 3, display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {attrs.map((a, i) => (
+                <span key={i} style={{
+                  fontSize: 10,
+                  color: "#666",
+                  background: "#f5f5f5",
+                  borderRadius: 4,
+                  padding: "2px 6px",
+                }}>
+                  {a.key}: {a.val}
+                </span>
+              ))}
+            </div>
+          )}
+          <div style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
+            Qty: {item.quantity}
+          </div>
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: "#db1a5d", flexShrink: 0 }}>
+          ₹{(price * currency.currencyRate * item.quantity).toFixed(2)}
+        </div>
+      </div>
+    );
+  })}
+</div>
 
                     {/* Place Order */}
                     <div className="kco-btn-row">
@@ -1158,11 +1182,10 @@ const Checkout = () => {
                   <div className="kco-item-list">
                     {checkoutItems.map((item) => {
                       const price = parseFloat(item.price || 0);
-                      const mrp   = parseFloat(item.selectedVariant?.mrp || item.variation?.[0]?.mrp || 0);
+                      const mrp = parseFloat(item.selectedVariant?.mrp || item.variation?.[0]?.mrp || 0);
                       const hasMrp = mrp > 0 && mrp > price;
                       const discount = hasMrp ? Math.round((1 - price / mrp) * 100) : 0;
 
-                      // Variant label: use selectedVariantName or build from variation attributes
                       const variantLabel = (() => {
                         if (item.selectedVariantName) return item.selectedVariantName;
                         const v = Array.isArray(item.variation) ? item.variation[0] : null;
@@ -1214,7 +1237,6 @@ const Checkout = () => {
                       <span>₹{shippingPricing.subtotal.toFixed(2)}</span>
                     </div>
 
-                    {/* Shipping Status & Charge */}
                     {checkingServiceability && (
                       <div className="kco-sum-row" style={{ color: "#666" }}>
                         <span>Delivery</span>
@@ -1227,10 +1249,10 @@ const Checkout = () => {
                         <span>
                           Delivery
                           {shippingInfo.estimatedDays && (
-                            <span style={{ fontSize: "0.85em", color: "#666" }}>
-                              {" "}({shippingInfo.estimatedDays} days)
-                            </span>
-                          )}
+  <span style={{ fontSize: "0.85em", color: "#666" }}>
+    {" "}(Est. {shippingInfo.estimatedDays} {shippingInfo.estimatedDays == 1 ? "day" : "days"})
+  </span>
+)}
                         </span>
                         <span style={shippingInfo.shippingCharge === 0 ? { color: "#16a34a", fontWeight: 700 } : {}}>
                           {shippingInfo.shippingCharge === 0 ? "FREE" : `₹${shippingInfo.shippingCharge}`}

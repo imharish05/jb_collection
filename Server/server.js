@@ -17,8 +17,6 @@ const marketingRoutes = require("./routes/marketing");
 const orderRoutes = require("./routes/orders");
 const addressRoutes = require("./routes/addressRoutes");
 const paymentRoutes = require("./routes/payment");
-
-// New routes
 const categoryRoutes = require("./routes/categories");
 const navRoutes = require("./routes/nav");
 const brandRoutes = require("./routes/brands");
@@ -30,8 +28,6 @@ const customerRoutes = require("./routes/customers");
 const dashboardRoutes = require("./routes/dashboard");
 const testimonialRoutes = require("./routes/testimonials");
 const shippingRoutes = require("./routes/shipping");
-
-// New combo routes (Root/Child system)
 const newComboRoutes = require("./routes/combos");
 
 const { protect } = require("./middleware/auth");
@@ -42,12 +38,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve uploaded images statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-
 app.use("/api/auth", authRoutes);
 app.use("/api/nav", navRoutes);
 app.use("/api/products", productRoutes);
@@ -58,7 +51,6 @@ app.use("/api/compare", protect, compareRoutes);
 app.use("/api/blogs", protect, blogRoutes);
 app.use("/api/orders", protect, orderRoutes);
 app.use("/api/payment", protect, paymentRoutes);
-
 app.use("/api/categories", categoryRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/variants", variantRoutes);
@@ -69,23 +61,17 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/shipping", shippingRoutes);
-// New combo routes (Root/Child/ChildProduct system)
 app.use("/api/combos", newComboRoutes);
-// Health check
+
 app.get("/api/health", (req, res) =>
   res.json({ status: "ok", service: "Kamali Gifts API", db: "MySQL" })
 );
 
-// Marketing routes: /api/hero-slides, /api/offer-banners, /api/marquee
 app.use("/api", categoryRoutes);
 app.use("/api", marketingRoutes);
 
-
-
 // 404 handler
 app.use((req, res) => res.status(404).json({ message: "Route not found" }));
-
-// Global error handler
 app.use(errorHandler);
 
 // ── DB + Server ───────────────────────────────────────────────────────────────
@@ -96,12 +82,10 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log("✅ MySQL database connected");
 
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0;');
-
+    await sequelize.query("SET FOREIGN_KEY_CHECKS = 0;");
     await sequelize.sync({ alter: true });
     console.log("✅ Models synced");
-
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1;');
+    await sequelize.query("SET FOREIGN_KEY_CHECKS = 1;");
 
     const { seedCoupons } = require("./controllers/couponController");
     await seedCoupons();

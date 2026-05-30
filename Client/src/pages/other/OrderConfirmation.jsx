@@ -8,6 +8,7 @@ const parseJson = (val) => {
   if (!val || typeof val !== "string") return val;
   try { return JSON.parse(val); } catch { return val; }
 };
+
 const getOrderItemImage = (img) => {
   const arr = Array.isArray(img) ? img : parseJson(img);
   const raw = Array.isArray(arr) ? arr[0] : (typeof img === "string" ? img : null);
@@ -20,8 +21,8 @@ const OrderConfirmation = () => {
   const selectedAddr = state?.selectedShippingAddr || state?.selectedAddr || {};
   const paymentMethod = state?.paymentMethod || "cod";
   const cartItems = state?.cartItems || [];
+  const estimatedDays = state?.estimatedDays || null;
 
-  // Compute total from cartItems if available
   const cartTotalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const PAYMENT_LABELS = {
@@ -38,10 +39,11 @@ const OrderConfirmation = () => {
       <SEO titleTemplate="Order Confirmed — Kamali Gifts" description="Your order has been placed successfully." />
       <LayoutOne headerTop="visible">
         <div className="container" style={{ padding: "80px 15px 100px" }}>
+
           {/* Thank you banner */}
           <div
             style={{
-              background:"linear-gradient(135deg, rgba(223, 77, 129, 0.4) 0%, rgb(255, 232, 214) 100%)",
+              background: "linear-gradient(135deg, rgba(223, 77, 129, 0.4) 0%, rgb(255, 232, 214) 100%)",
               borderRadius: 20,
               padding: "48px 32px",
               textAlign: "center",
@@ -74,6 +76,7 @@ const OrderConfirmation = () => {
 
           {/* Order details grid */}
           <div className="row" style={{ marginBottom: 32 }}>
+
             {/* Items */}
             <div className="col-lg-7">
               <div style={cardStyle}>
@@ -130,11 +133,19 @@ const OrderConfirmation = () => {
                 </div>
                 <div style={infoRow}>
                   <span style={infoLabel}>Address</span>
-                  <span style={infoValue}>{selectedAddr.street}, {selectedAddr.apartment}, {selectedAddr.city}, {selectedAddr.state} — {selectedAddr.pincode}</span>
+                  <span style={infoValue}>
+                    {selectedAddr.street}
+                    {selectedAddr.apartment ? ", " + selectedAddr.apartment : ""},{" "}
+                    {selectedAddr.city}, {selectedAddr.state} — {selectedAddr.pincode}
+                  </span>
                 </div>
                 <div style={{ ...infoRow, marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0" }}>
                   <span style={infoLabel}>🚚 Estimated delivery</span>
-                  <span style={{ ...infoValue, fontWeight: 600, color: "#2e7d32" }}>3–7 business days</span>
+                  <span style={{ ...infoValue, fontWeight: 600, color: "#2e7d32" }}>
+                    {estimatedDays
+                      ? `${estimatedDays} ${estimatedDays == 1 ? "day" : "days"}`
+                      : "3–7 business days"}
+                  </span>
                 </div>
               </div>
 
@@ -218,6 +229,7 @@ const OrderConfirmation = () => {
               Continue Shopping
             </Link>
           </div>
+
         </div>
       </LayoutOne>
     </Fragment>
