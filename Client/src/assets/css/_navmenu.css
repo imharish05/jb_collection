@@ -28,9 +28,7 @@
   transform: translateX(-50%) translateY(8px);
   z-index: 9999;
 
-  min-width: 640px;
-  max-width: 860px;
-  width: max-content;
+  width: min(860px, 92vw);
 
   background: #fff;
   border-radius: 16px;
@@ -38,6 +36,13 @@
     0 4px 6px -1px rgba(0,0,0,.07),
     0 12px 40px -4px rgba(0,0,0,.13),
     0 0 0 1px rgba(0,0,0,.05);
+
+  /* constrain height + scroll */
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
 
   /* hidden state */
   opacity: 0;
@@ -48,6 +53,10 @@
     transform 0.22s ease,
     visibility 0.22s;
 }
+
+.kg-mega-panel::-webkit-scrollbar { width: 4px; }
+.kg-mega-panel::-webkit-scrollbar-track { background: transparent; }
+.kg-mega-panel::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
 
 /* ── Open state ── */
 .kg-catalogue-item--open .kg-mega-panel,
@@ -169,6 +178,11 @@
   padding-top: 16px;
   display: flex;
   justify-content: flex-end;
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  margin: 0 -32px;
+  padding: 12px 32px;
 }
 
 .kg-mega-cta__btn {
@@ -193,12 +207,40 @@
   position: relative;
 }
 
-/* ── Sidebar mode: hide mega panel, fall back to normal link ── */
+/* ── Responsive: on narrower viewports anchor panel to left edge ── */
+@media (max-width: 1100px) {
+  .kg-mega-panel {
+    left: 0;
+    transform: translateY(8px);
+  }
+  .kg-catalogue-item--open .kg-mega-panel,
+  .kg-catalogue-item:hover .kg-mega-panel {
+    transform: translateY(0);
+  }
+  .kg-mega-cta {
+    margin: 0 -20px;
+    padding: 12px 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .kg-mega-inner {
+    padding: 20px 20px 16px;
+  }
+  .catalogue-card {
+    width: 68px;
+  }
+  .catalogue-card__img-wrap {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+/* ── Sidebar mode: hide mega panel ── */
 .sidebar-menu .kg-mega-panel {
   display: none;
 }
 
-/* ── Small tweaks for open chevron in sidebar ── */
 .sidebar-menu .kg-chevron {
   display: none;
 }
