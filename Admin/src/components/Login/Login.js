@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RiMailLine, RiLockPasswordLine, RiEyeLine, RiEyeOffLine, RiArrowRightLine } from 'react-icons/ri';
-import Swal from 'sweetalert2';
+import toast from 'react-hot-toast';
 import './Login.css';
 import { loginAdmin } from '../../redux/services/authService';
-import { useDispatch } from "react-redux";
 import logo from "../../assets/image.png"
 
 const Login = ({ onLoginSuccess }) => {
@@ -15,7 +14,14 @@ const Login = ({ onLoginSuccess }) => {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
-  const dispatch = useDispatch()
+  const showToastMsg = useCallback(Object.assign(
+    (msg) => toast(msg),
+    {
+      loading: (msg) => toast.loading(msg),
+      success: (msg, id) => id ? toast.success(msg, { id }) : toast.success(msg),
+      error:   (msg, id) => id ? toast.error(msg, { id })   : toast.error(msg),
+    }
+  ), []);
 
   const ErrorMsg = ({ field }) =>
     errors[field] ? <div className="glass-error-msg">{errors[field]}</div> : null;
@@ -24,16 +30,18 @@ const Login = ({ onLoginSuccess }) => {
     const newErrors = {};
     if (!email) newErrors.email = 'Email is required';
     if (!password) newErrors.password = 'Password is required';
+    if (newErrors.email) showToastMsg.error(newErrors.email);
+    if (newErrors.password) showToastMsg.error(newErrors.password);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Remove useDispatch — not needed
+  // Handle login with toast feedback
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
     setLoading(true);
-    await loginAdmin(navigate, { email, password }, onLoginSuccess); // ← fixed
+    await loginAdmin(navigate, { email, password }, onLoginSuccess, showToastMsg);
     setLoading(false);
   };
 
