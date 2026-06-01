@@ -1,28 +1,23 @@
 /* ═══════════════════════════════════════════════
    Kamali Gifts — NavMenu: clean mega-dropdown
    ═══════════════════════════════════════════════ */
-
 /* ── Catalogue trigger ── */
 .kg-catalogue-trigger {
   display: inline-flex;
   align-items: center;
   gap: 5px;
 }
-
 .kg-chevron {
   display: inline-flex;
   align-items: center;
   transition: transform 0.25s ease;
 }
-
 .kg-catalogue-item--open .kg-chevron,
 .kg-catalogue-item:hover .kg-chevron {
   transform: rotate(180deg);
 }
-
 /* ── Mega panel — rendered via portal at body level ── */
 .kg-mega-panel {
-  /* position: fixed + top/left/width set via inline style from JS */
   z-index: 99999;
   background: #fff;
   border-radius: 16px;
@@ -30,14 +25,11 @@
     0 4px 6px -1px rgba(0,0,0,.07),
     0 12px 40px -4px rgba(0,0,0,.13),
     0 0 0 1px rgba(0,0,0,.05);
-
   max-height: calc(100vh - 120px);
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: #e0e0e0 transparent;
-
-  /* hidden by default */
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -47,18 +39,15 @@
     transform 0.22s ease,
     visibility 0.22s;
 }
-
 .kg-mega-panel--open {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transform: translateY(0);
 }
-
 .kg-mega-panel::-webkit-scrollbar { width: 4px; }
 .kg-mega-panel::-webkit-scrollbar-track { background: transparent; }
 .kg-mega-panel::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
-
 /* ── Inner padding ── */
 .kg-mega-inner {
   padding: 28px 32px 20px;
@@ -66,7 +55,6 @@
   flex-direction: column;
   gap: 22px;
 }
-
 /* ── Section ── */
 .mega-section__title {
   font-size: 10px;
@@ -79,7 +67,6 @@
   align-items: center;
   gap: 8px;
 }
-
 .mega-section__title::after {
   content: "";
   flex: 1;
@@ -87,14 +74,12 @@
   background: linear-gradient(90deg, currentColor 0%, transparent 100%);
   opacity: 0.18;
 }
-
 /* ── Card grid ── */
 .mega-section__grid {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 10px;
 }
-
 /* ── Individual card ── */
 .catalogue-card {
   display: flex;
@@ -102,22 +87,19 @@
   align-items: center;
   gap: 7px;
   text-decoration: none !important;
-  width: 76px;
+  width: 95px;
   cursor: pointer;
   padding: 8px 4px;
   border-radius: 12px;
   transition: background 0.18s ease, transform 0.18s ease;
 }
-
 .catalogue-card:hover {
   background: #fdf2f6;
   transform: translateY(-2px);
 }
-
-/* Image circle */
 .catalogue-card__img-wrap {
-  width: 52px;
-  height: 52px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid #f0f0f0;
@@ -129,18 +111,15 @@
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
   position: relative;
 }
-
 .catalogue-card:hover .catalogue-card__img-wrap {
   border-color: #db1a5d;
   box-shadow: 0 0 0 3px rgba(219, 26, 93, 0.1);
 }
-
 .catalogue-card__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .catalogue-card__fallback {
   font-size: 20px;
   display: flex;
@@ -149,8 +128,6 @@
   width: 100%;
   height: 100%;
 }
-
-/* Label */
 .catalogue-card__label {
   font-size: 11px;
   font-weight: 500;
@@ -159,15 +136,12 @@
   line-height: 1.3;
   transition: color 0.18s ease;
 }
-
 .catalogue-card:hover .catalogue-card__label {
   color: #db1a5d;
 }
-
 /* ── Bottom CTA ── */
 .kg-mega-cta {
   border-top: 1px solid #f0f0f0;
-  padding-top: 16px;
   display: flex;
   justify-content: flex-end;
   position: sticky;
@@ -176,7 +150,6 @@
   margin: 0 -32px;
   padding: 12px 32px;
 }
-
 .kg-mega-cta__btn {
   font-size: 12px;
   font-weight: 600;
@@ -188,47 +161,33 @@
   border: 1.5px solid #db1a5d;
   transition: background 0.18s ease, color 0.18s ease;
 }
-
 .kg-mega-cta__btn:hover {
   background: #db1a5d;
   color: #fff !important;
 }
-
-/* ── Ensure parent <li> is positioned (kept for trigger alignment) ── */
 .main-menu nav ul li.kg-catalogue-item {
   position: relative;
 }
-
-/* ── Sidebar mode: hide mega panel trigger decoration ── */
 .sidebar-menu .kg-chevron {
   display: none;
 }
-
-
-
-
 /* ═══════════════════════════════════════════════
    Catalogue Page — horizontal row cards
    ═══════════════════════════════════════════════ */
-
 .kcat-page {
   max-width: 1100px;
   margin: 0 auto;
   padding: 48px 24px 88px;
 }
-
 .kcat-section {
   margin-bottom: 52px;
 }
-
-/* ── Section title ── */
 .kcat-section-title {
   display: flex;
   align-items: center;
   gap: 14px;
   margin-bottom: 20px;
 }
-
 .kcat-section-title span {
   font-size: 10px;
   font-weight: 700;
@@ -238,21 +197,16 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
-
 .kcat-section-title__line {
   flex: 1;
   height: 1px;
   background: #f0f0f0;
 }
-
-/* ── Vertical list of category row-cards ── */
 .kcat-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-
-/* ── Single row card ── */
 .kcat-row-card {
   display: flex;
   align-items: center;
@@ -264,13 +218,10 @@
   transition: border-color 0.2s, box-shadow 0.2s;
   min-height: 72px;
 }
-
 .kcat-row-card:hover {
   border-color: rgba(219, 26, 93, 0.2);
   box-shadow: 0 2px 16px rgba(219, 26, 93, 0.07);
 }
-
-/* Left: circle + name */
 .kcat-row-card__left {
   display: flex;
   align-items: center;
@@ -283,11 +234,7 @@
   align-self: stretch;
   transition: background 0.2s;
 }
-
-.kcat-row-card__left:hover {
-  background: #fdf9fb;
-}
-
+.kcat-row-card__left:hover { background: #fdf9fb; }
 .kcat-row-card__circle {
   width: 44px;
   height: 44px;
@@ -301,18 +248,11 @@
   flex-shrink: 0;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-
 .kcat-row-card__left:hover .kcat-row-card__circle {
   border-color: #db1a5d;
   box-shadow: 0 0 0 3px rgba(219, 26, 93, 0.1);
 }
-
-.kcat-row-card__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
+.kcat-row-card__img { width: 100%; height: 100%; object-fit: cover; }
 .kcat-row-card__emoji {
   font-size: 20px;
   display: flex;
@@ -321,7 +261,6 @@
   width: 100%;
   height: 100%;
 }
-
 .kcat-row-card__name {
   font-size: 13px;
   font-weight: 600;
@@ -329,25 +268,18 @@
   line-height: 1.3;
   transition: color 0.2s;
 }
-
-.kcat-row-card__left:hover .kcat-row-card__name {
-  color: #db1a5d;
-}
-
-/* Right: pills */
+.kcat-row-card__left:hover .kcat-row-card__name { color: #db1a5d; }
 .kcat-row-card__right {
   flex: 1;
   padding: 12px 20px;
   display: flex;
   align-items: center;
 }
-
 .kcat-row-card__pills {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
 }
-
 .kcat-pill {
   display: inline-block;
   font-size: 11px;
@@ -362,28 +294,23 @@
   white-space: nowrap;
   transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s;
 }
-
 .kcat-pill:hover {
   color: #db1a5d;
   border-color: rgba(219, 26, 93, 0.3);
   background: #fdf2f6;
   transform: translateY(-1px);
 }
-
 .kcat-row-card__no-sub {
   font-size: 11px;
   color: #ccc;
   font-style: italic;
 }
-
-/* ── Simple grid (events / combos) ── */
 .kcat-simple-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 20px 16px;
   align-items: start;
 }
-
 .kcat-simple-card {
   display: flex;
   flex-direction: column;
@@ -391,7 +318,6 @@
   gap: 9px;
   text-decoration: none !important;
 }
-
 .kcat-simple-card__circle {
   width: 64px;
   height: 64px;
@@ -405,13 +331,11 @@
   flex-shrink: 0;
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
-
 .kcat-simple-card:hover .kcat-simple-card__circle {
   border-color: #db1a5d;
   box-shadow: 0 0 0 4px rgba(219, 26, 93, 0.08);
   transform: translateY(-2px);
 }
-
 .kcat-simple-card__name {
   font-size: 11.5px;
   font-weight: 600;
@@ -420,32 +344,15 @@
   line-height: 1.35;
   transition: color 0.2s;
 }
-
-.kcat-simple-card:hover .kcat-simple-card__name {
-  color: #db1a5d;
-}
-
-/* ── Empty ── */
+.kcat-simple-card:hover .kcat-simple-card__name { color: #db1a5d; }
 .kcat-empty {
   color: #bbb;
   text-align: center;
   margin-top: 80px;
   font-size: 14px;
 }
-
-/* ── Responsive ── */
 @media (max-width: 640px) {
-  .kcat-row-card {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .kcat-row-card__left {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1.5px solid #f5f5f5;
-    align-self: auto;
-  }
-  .kcat-simple-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  .kcat-row-card { flex-direction: column; align-items: stretch; }
+  .kcat-row-card__left { width: 100%; border-right: none; border-bottom: 1.5px solid #f5f5f5; align-self: auto; }
+  .kcat-simple-grid { grid-template-columns: repeat(3, 1fr); }
 }

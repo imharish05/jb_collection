@@ -1,0 +1,318 @@
+:root {
+  --primary-color: #db1a5d;
+  --secondary-color: #0d1b40;
+  --bg-subtle: #f9f9f9;
+  --border-color: #d1d1d1;
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Page Layout Container */
+.kcat-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px 80px 20px;
+  font-family: inherit;
+}
+
+.kcat-section {
+  margin-bottom: 60px;
+}
+
+/* Section Title Stylings */
+.kcat-section-title {
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.kcat-section-title h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.kcat-section-title__indicator {
+  width: 40px;
+  height: 3px;
+  background-color: var(--primary-color);
+  border-radius: 2px;
+}
+
+/* Main Category Grid */
+.kcat-grid-main {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 30px;
+}
+
+/* Category Cards */
+.kcat-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition-smooth);
+}
+
+.kcat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(219, 26, 93, 0.12);
+  border-color: var(--primary-color);
+}
+
+.kcat-card__banner {
+  position: relative;
+  display: block;
+  height: 180px;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.kcat-card__image-wrapper {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-subtle);
+}
+
+.kcat-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: var(--transition-smooth);
+}
+
+.kcat-card:hover .kcat-card__img {
+  transform: scale(1.05);
+}
+
+.kcat-card__icon-fallback,
+.kcat-simple-card__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #ccc;
+}
+
+.kcat-fallback-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.kcat-card__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.0) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px;
+}
+
+.kcat-card__title {
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.kcat-card__count {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+}
+
+/* Category Content & Subcategory Pills */
+.kcat-card__content {
+  padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.kcat-card__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kcat-pill {
+  font-size: 13px;
+  color: var(--secondary-color);
+  background-color: var(--bg-subtle);
+  padding: 6px 14px;
+  border-radius: 20px;
+  text-decoration: none;
+  border: 1px solid var(--border-color);
+  transition: var(--transition-smooth);
+}
+
+.kcat-pill:hover {
+  background-color: #ffffff;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.kcat-pill--more {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.kcat-card__explore-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--primary-color);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.kcat-card__explore-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.kcat-card__explore-btn:hover svg {
+  transform: translateX(4px);
+}
+
+/* Secondary Grids (Events and Combos) */
+.kcat-grid-secondary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
+}
+
+.kcat-simple-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition-smooth);
+}
+
+.kcat-simple-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(219, 26, 93, 0.1);
+  border-color: var(--primary-color);
+}
+
+.kcat-simple-card__image-container {
+  height: 140px;
+  background-color: var(--bg-subtle);
+  overflow: hidden;
+}
+
+.kcat-simple-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: var(--transition-smooth);
+}
+
+.kcat-simple-card:hover .kcat-simple-card__img {
+  transform: scale(1.04);
+}
+
+.kcat-simple-card__info {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kcat-simple-card__name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.kcat-simple-card__link {
+  font-size: 12px;
+  color: var(--secondary-color);
+}
+
+/* Empty State Styles */
+.kcat-empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--secondary-color);
+}
+
+.kcat-empty-state .kcat-fallback-icon {
+  margin: 0 auto 16px auto;
+  opacity: 0.5;
+}
+
+.kcat-empty-state__btn {
+  display: inline-block;
+  margin-top: 20px;
+  background-color: var(--primary-color);
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+
+.kcat-empty-state__btn:hover {
+  opacity: 0.9;
+}
+
+/* Mobile Responsiveness Rules */
+@media (max-width: 480px) {
+  .kcat-grid-main {
+    grid-template-columns: 1fr;
+  }
+  .kcat-grid-secondary {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+  }
+  .kcat-simple-card__image-container {
+    height: 110px;
+  }
+}
+
+/* Deepened scrim overlay to guarantee text legibility */
+.kcat-card__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top, 
+    rgba(0, 0, 0, 0.85) 0%, 
+    rgba(0, 0, 0, 0.4) 50%, 
+    rgba(0, 0, 0, 0) 100%
+  );
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px;
+  pointer-events: none; /* Allows clicks to pass through to the image link safely */
+}
+
+/* Base title enhancements */
+.kcat-card__title {
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* High contrast Subtitle/Count styling */
+.kcat-card__subtitle {
+  color: #f0f0f0; /* Crisp near-white color */
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
