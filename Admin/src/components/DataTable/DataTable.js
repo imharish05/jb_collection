@@ -3,7 +3,7 @@ import tableStyles from '../Dashboard/Dashboard.module.css';
 import styles from './DataTable.module.css';
 
 const DEFAULT_PAGE_SIZE = 10;
-const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 500];
 
 function getPageNumbers(current, total) {
   if (total <= 7) {

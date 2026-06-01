@@ -366,6 +366,7 @@ body {
   outline: none;
   width: 100%;
   transition: border-color 0.15s, box-shadow 0.15s;
+  text-transform: capitalize;
 }
 .km-input:focus,
 .km-select:focus {

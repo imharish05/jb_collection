@@ -8,58 +8,96 @@ const S = process.env.PUBLIC_URL + "/shop";
 const IMG_BASE = process.env.REACT_APP_IMG_URL + "/uploads/";
 const imgSrc = (p) => p ? `${IMG_BASE}${p.replace(/^\/?(uploads\/)?/, "")}` : null;
 
-/* ── Horizontal scrollable row of image pills ── */
-const ImageRow = ({ items, toFn, labelKey, imageKey, emoji }) => (
-  <div className="mob-img-row">
-    {items.map((item) => {
-      const key   = item.value ?? item.id;
-      const label = item[labelKey] ?? item.label ?? item.name;
-      const img   = item[imageKey] ?? item.image;
-      return (
-        <Link key={key} to={toFn(item)} className="mob-img-card">
-          <span className="mob-img-card__circle">
-            {img
-              ? <img src={imgSrc(img)} alt={label} className="mob-img-card__img" onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }} />
-              : null}
-            <span className="mob-img-card__fallback" style={{ display: img ? "none" : "flex" }}>{emoji}</span>
-          </span>
-          <span className="mob-img-card__label">{label}</span>
+/* ── 40×40 thumbnail ── */
+const Thumb = ({ img, alt }) => (
+  <span className="mob-thumb">
+    {img
+      ? <img src={imgSrc(img)} alt={alt} className="mob-thumb__img"
+          onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }} />
+      : null}
+    <span className="mob-thumb__fallback" style={{ display: img ? "none" : "flex" }}>🖼</span>
+  </span>
+);
+
+/* ── Category row (image + label + optional subcategory expand) ── */
+const CategoryRow = ({ item, closeMenu }) => {
+  const [open, setOpen] = useState(false);
+  const subs = item.subcategories ?? [];
+  const hasS = subs.length > 0;
+
+  return (
+    <>
+      <div className="mob-list-row">
+        <Thumb img={item.image} alt={item.label} />
+        <Link
+          to={`${S}?category=${item.value}`}
+          className="mob-list-row__label"
+          onClick={hasS ? e => { e.preventDefault(); setOpen(o => !o); } : closeMenu}
+        >
+          {item.label}
         </Link>
-      );
-    })}
+        {hasS && (
+          <button
+            className="mob-list-row__chevron"
+            onClick={() => setOpen(o => !o)}
+            aria-expanded={open}
+            aria-label={`Toggle ${item.label} subcategories`}
+          >
+            <svg className={`mob-chevron-svg${open ? " mob-chevron-svg--open" : ""}`}
+              width="11" height="7" viewBox="0 0 12 7" fill="none">
+              <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {open && hasS && (
+        <div className="mob-subcat-list">
+          <Link
+            to={`${S}?category=${item.value}`}
+            className="mob-subcat-list__item mob-subcat-list__item--all"
+            onClick={closeMenu}
+          >
+            All {item.label}
+          </Link>
+          {subs.map(sub => (
+            <Link
+              key={sub.id}
+              to={`${S}?category=${item.value}&subcategory=${sub.value}`}
+              className="mob-subcat-list__item"
+              onClick={closeMenu}
+            >
+              {sub.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </>
+  );
+};
+
+/* ── Generic image row (events / combos) ── */
+const SimpleRow = ({ item, to, label, img, closeMenu }) => (
+  <div className="mob-list-row">
+    <Thumb img={img} alt={label} />
+    <Link to={to} className="mob-list-row__label" onClick={closeMenu}>
+      {label}
+    </Link>
   </div>
 );
 
-/* ── Collapsible catalogue section ── */
-const Section = ({ title, accent, children }) => {
-  const [open, setOpen] = useState(true);
-  return (
-    <div className="mob-section">
-      <button
-        className="mob-section__toggle"
-        style={{ "--accent": accent }}
-        onClick={() => setOpen(o => !o)}
-        aria-expanded={open}
-      >
-        <span className="mob-section__title">{title}</span>
-        <svg
-          className={`mob-section__chevron${open ? " mob-section__chevron--open" : ""}`}
-          width="12" height="7" viewBox="0 0 12 7" fill="none"
-        >
-          <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </button>
-      {open && <div className="mob-section__body">{children}</div>}
-    </div>
-  );
-};
+/* ── Section label ── */
+const SectionLabel = ({ title, accent }) => (
+  <div className="mob-section-label" style={{ "--accent": accent }}>{title}</div>
+);
 
 const MobileNavMenu = () => {
   const { categories = [], events = [], rootCombos = [] } = useSelector((s) => s.navMenu || {});
   const { isAuthenticated } = useSelector((s) => s.auth);
-  const dispatch  = useDispatch();
-  const navigate  = useNavigate();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [catalogueOpen, setCatalogueOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const closeMenu = () => {
     document.querySelector("#offcanvas-mobile-menu")?.classList.remove("active");
@@ -90,7 +128,7 @@ const MobileNavMenu = () => {
           </Link>
         </li>
 
-        {/* Catalogue accordion */}
+        {/* Catalogue */}
         <li className={`mob-nav__item mob-nav__item--parent${catalogueOpen ? " mob-nav__item--open" : ""}`}>
           <div className="mob-nav__row">
             <Link to={process.env.PUBLIC_URL + "/catalogue"} className="mob-nav__link" onClick={closeMenu}>
@@ -102,10 +140,8 @@ const MobileNavMenu = () => {
               aria-expanded={catalogueOpen}
               aria-label="Toggle catalogue"
             >
-              <svg
-                className={`mob-nav__arrow${catalogueOpen ? " mob-nav__arrow--open" : ""}`}
-                width="12" height="7" viewBox="0 0 12 7" fill="none"
-              >
+              <svg className={`mob-nav__arrow${catalogueOpen ? " mob-nav__arrow--open" : ""}`}
+                width="12" height="7" viewBox="0 0 12 7" fill="none">
                 <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
@@ -115,39 +151,44 @@ const MobileNavMenu = () => {
             <div className="mob-catalogue-panel">
 
               {categories.length > 0 && (
-                <Section title="Categories" accent="#db1a5d">
-                  <ImageRow
-                    items={categories}
-                    toFn={(c) => c.value ? `${S}?category=${c.value}` : S}
-                    labelKey="label"
-                    imageKey="image"
-                    emoji="🗂️"
-                  />
-                </Section>
+                <>
+                  <SectionLabel title="Categories" accent="#db1a5d" />
+                  {categories.map(cat => (
+                    <CategoryRow key={cat.value ?? cat.id} item={cat} closeMenu={closeMenu} />
+                  ))}
+                </>
               )}
 
               {events.length > 0 && (
-                <Section title="Events" accent="#f59e0b">
-                  <ImageRow
-                    items={events}
-                    toFn={(e) => `${S}?event=${e.value}`}
-                    labelKey="label"
-                    imageKey="image"
-                    emoji="🎉"
-                  />
-                </Section>
+                <>
+                  <SectionLabel title="Events" accent="#f59e0b" />
+                  {events.map(ev => (
+                    <SimpleRow
+                      key={ev.value ?? ev.id}
+                      item={ev}
+                      to={`${S}?event=${ev.value}`}
+                      label={ev.label}
+                      img={ev.image}
+                      closeMenu={closeMenu}
+                    />
+                  ))}
+                </>
               )}
 
               {rootCombos.length > 0 && (
-                <Section title="Combos" accent="#10b981">
-                  <ImageRow
-                    items={rootCombos}
-                    toFn={(c) => `${S}?combo=${c.id}`}
-                    labelKey="name"
-                    imageKey="image"
-                    emoji="🎁"
-                  />
-                </Section>
+                <>
+                  <SectionLabel title="Combos" accent="#10b981" />
+                  {rootCombos.map(c => (
+                    <SimpleRow
+                      key={c.id}
+                      item={c}
+                      to={`${S}?combo=${c.id}`}
+                      label={c.name}
+                      img={c.image}
+                      closeMenu={closeMenu}
+                    />
+                  ))}
+                </>
               )}
 
               <Link
@@ -162,27 +203,49 @@ const MobileNavMenu = () => {
         </li>
 
         {/* My Account */}
-        {isAuthenticated ? (
-          <li className="mob-nav__item">
-            <Link to={process.env.PUBLIC_URL + "/my-account"} className="mob-nav__link" onClick={closeMenu}>
-              My Account
-            </Link>
-            <div className="mob-account-links">
-              <Link to={process.env.PUBLIC_URL + "/my-account?tab=orders"} className="mob-account-link" onClick={closeMenu}>My Orders</Link>
-              <button className="mob-account-link mob-account-link--logout" onClick={handleLogout}>Logout</button>
+        <li className={`mob-nav__item mob-nav__item--parent${accountOpen ? " mob-nav__item--open" : ""}`}>
+          <div className="mob-nav__row">
+            <span className="mob-nav__link mob-nav__link--toggle">My Account</span>
+            <button
+              className="mob-nav__expand"
+              onClick={() => setAccountOpen(o => !o)}
+              aria-expanded={accountOpen}
+              aria-label="Toggle account menu"
+            >
+              <svg className={`mob-nav__arrow${accountOpen ? " mob-nav__arrow--open" : ""}`}
+                width="12" height="7" viewBox="0 0 12 7" fill="none">
+                <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          {accountOpen && (
+            <div className="mob-account-dropdown">
+              {isAuthenticated ? (
+                <>
+                  <Link to={process.env.PUBLIC_URL + "/my-account"} className="mob-account-dropdown__item" onClick={closeMenu}>
+                    <i className="fa fa-user-o"></i> My Account
+                  </Link>
+                  <Link to={process.env.PUBLIC_URL + "/my-account?tab=orders"} className="mob-account-dropdown__item" onClick={closeMenu}>
+                    <i className="fa fa-shopping-bag"></i> My Orders
+                  </Link>
+                  <button className="mob-account-dropdown__item mob-account-dropdown__item--logout" onClick={handleLogout}>
+                    <i className="fa fa-sign-out"></i> Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link to={process.env.PUBLIC_URL + "/login"} className="mob-account-dropdown__item" onClick={closeMenu}>
+                    <i className="fa fa-sign-in"></i> Login
+                  </Link>
+                  <Link to={process.env.PUBLIC_URL + "/register"} className="mob-account-dropdown__item" onClick={closeMenu}>
+                    <i className="fa fa-user-plus"></i> Register
+                  </Link>
+                </>
+              )}
             </div>
-          </li>
-        ) : (
-          <li className="mob-nav__item">
-            <Link to={process.env.PUBLIC_URL + "/login"} className="mob-nav__link" onClick={closeMenu}>
-              My Account
-            </Link>
-            <div className="mob-account-links">
-              <Link to={process.env.PUBLIC_URL + "/login"} className="mob-account-link" onClick={closeMenu}>Login</Link>
-              <Link to={process.env.PUBLIC_URL + "/register"} className="mob-account-link" onClick={closeMenu}>Register</Link>
-            </div>
-          </li>
-        )}
+          )}
+        </li>
 
         {/* Contact */}
         <li className="mob-nav__item">

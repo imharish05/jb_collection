@@ -16,8 +16,15 @@ const MobileSearch = () => {
   return (
     <div className="offcanvas-mobile-search-area">
       <form onSubmit={handleSubmit}>
-        <input type="search" placeholder="Search products..." value={q} onChange={e => setQ(e.target.value)} />
-        <button type="submit"><i className="fa fa-search" /></button>
+        <input
+          type="search"
+          placeholder="Search products..."
+          value={q}
+          onChange={e => setQ(e.target.value)}
+        />
+        <button type="submit" aria-label="Search">
+          <i className="fa fa-search" />
+        </button>
       </form>
     </div>
   );

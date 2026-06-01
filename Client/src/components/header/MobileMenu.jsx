@@ -1,66 +1,42 @@
-import React, { useEffect } from "react";
+import React from "react";
 import MobileMenuSearch from "./sub-components/MobileSearch";
 import MobileNavMenu from "./sub-components/MobileNavMenu";
 import MobileWidgets from "./sub-components/MobileWidgets";
+import { Link } from "react-router-dom";
 
 const MobileMenu = () => {
-  useEffect(() => {
-    const offCanvasNav = document.querySelector("#offcanvas-navigation");
-    const offCanvasNavSubMenu = offCanvasNav.querySelectorAll(".sub-menu");
-    const anchorLinks = offCanvasNav.querySelectorAll("a");
-
-    for (let i = 0; i < offCanvasNavSubMenu.length; i++) {
-      offCanvasNavSubMenu[i].insertAdjacentHTML(
-        "beforebegin",
-        "<span class='menu-expand'><i></i></span>"
-      );
-    }
-
-    const menuExpand = offCanvasNav.querySelectorAll(".menu-expand");
-    const numMenuExpand = menuExpand.length;
-
-    for (let i = 0; i < numMenuExpand; i++) {
-      menuExpand[i].addEventListener("click", e => {
-        sideMenuExpand(e);
-      });
-    }
-
-    for (let i = 0; i < anchorLinks.length; i++) {
-      anchorLinks[i].addEventListener("click", () => {
-        closeMobileMenu();
-      });
-    }
-  });
-
-  const sideMenuExpand = e => {
-    e.currentTarget.parentElement.classList.toggle("active");
-  };
-
   const closeMobileMenu = () => {
-    const offcanvasMobileMenu = document.querySelector(
-      "#offcanvas-mobile-menu"
-    );
-    offcanvasMobileMenu.classList.remove("active");
+    document.querySelector("#offcanvas-mobile-menu")?.classList.remove("active");
   };
 
   return (
     <div className="offcanvas-mobile-menu" id="offcanvas-mobile-menu">
-      <button
-        className="offcanvas-menu-close"
-        id="mobile-menu-close-trigger"
-        onClick={() => closeMobileMenu()}
-      >
-        <i className="pe-7s-close"></i>
-      </button>
       <div className="offcanvas-wrapper">
+        {/* Header bar */}
+        <div className="offcanvas-header">
+          <Link
+            to={process.env.PUBLIC_URL + "/"}
+            className="offcanvas-header__brand"
+            onClick={closeMobileMenu}
+          >
+            Kamali Gifts
+          </Link>
+          <button
+            className="offcanvas-menu-close"
+            id="mobile-menu-close-trigger"
+            onClick={closeMobileMenu}
+            aria-label="Close menu"
+          >
+            <i className="pe-7s-close"></i>
+          </button>
+        </div>
+
+        {/* Search */}
+        <MobileMenuSearch />
+
+        {/* Scrollable nav area */}
         <div className="offcanvas-inner-content">
-          {/* mobile search */}
-          <MobileMenuSearch />
-
-          {/* mobile nav menu */}
           <MobileNavMenu />
-
-          {/* mobile widgets */}
           <MobileWidgets />
         </div>
       </div>
@@ -69,4 +45,3 @@ const MobileMenu = () => {
 };
 
 export default MobileMenu;
-
