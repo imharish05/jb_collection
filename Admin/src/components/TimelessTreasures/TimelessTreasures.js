@@ -18,6 +18,58 @@ const getImageUrl = (imagePath) => {
   return `${BASE_URL}/uploads/${clean}`;
 };
 
+// Banner Image Dimension Validator
+const BANNER_DIMENSIONS = {
+  recommended: { width: 1920, height: 1080 },
+  minimum: { width: 1280, height: 720 },
+  aspectRatio: 16 / 9,
+  tolerance: 0.05, // 5% tolerance for aspect ratio
+};
+
+const validateImageDimensions = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        const actualRatio = width / height;
+        const expectedRatio = BANNER_DIMENSIONS.aspectRatio;
+        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
+
+        // Check minimum dimensions
+        if (width < BANNER_DIMENSIONS.minimum.width || height < BANNER_DIMENSIONS.minimum.height) {
+          resolve({
+            valid: false,
+            error: `Image too small. Minimum: ${BANNER_DIMENSIONS.minimum.width}×${BANNER_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        // Check aspect ratio
+        if (ratioDiff > BANNER_DIMENSIONS.tolerance) {
+          const recommendedHeight = Math.round(width / expectedRatio);
+          resolve({
+            valid: false,
+            error: `Incorrect aspect ratio. Use 16:9 (e.g., ${width}×${recommendedHeight}px or ${BANNER_DIMENSIONS.recommended.width}×${BANNER_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        resolve({
+          valid: true,
+          dimensions: { width, height },
+          isRecommended: width === BANNER_DIMENSIONS.recommended.width && height === BANNER_DIMENSIONS.recommended.height,
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 export default function TimelessTreasures({ showToast }) {
   const dispatch = useDispatch();
   const { items: rows, loading } = useSelector((state) => state.timelessTreasures);
@@ -32,6 +84,8 @@ export default function TimelessTreasures({ showToast }) {
   const [isActive, setIsActive]   = useState(true);
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview]     = useState(null);
+  const [errors, setErrors]       = useState({});
+  const [imageDimensions, setImageDimensions] = useState(null);
 
   const fileInputRef = useRef();
 
@@ -55,6 +109,8 @@ export default function TimelessTreasures({ showToast }) {
     setIsActive(true);
     setImageFile(null);
     setPreview(null);
+    setErrors({});
+    setImageDimensions(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -75,6 +131,12 @@ export default function TimelessTreasures({ showToast }) {
     setImageFile(null);
     const original = editingId ? rows.find((r) => r.id === editingId) : null;
     setPreview(original?.image ? getImageUrl(original.image) : null);
+    setImageDimensions(null);
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.image;
+      return newErrors;
+    });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -115,8 +177,21 @@ export default function TimelessTreasures({ showToast }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim()) { showToast.error('Title is required'); return; }
-    if (!editingId && !imageFile) { showToast.error('Banner image is required'); return; }
+    
+    const newErrors = {};
+    if (!title.trim()) newErrors.title = 'Title is required';
+    if (!editingId && !imageFile) newErrors.image = 'Banner image is required';
+    
+    // Validate image dimensions if new image is selected
+    if (imageFile && imageDimensions && !imageDimensions.valid) {
+      newErrors.image = imageDimensions.error;
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showToast.error(Object.values(newErrors)[0]);
+      return;
+    }
 
     const fd = new FormData();
     fd.append('title', title);
@@ -174,6 +249,9 @@ export default function TimelessTreasures({ showToast }) {
               <div className="km-field km-field-full">
                 <label className="km-label">
                   Banner Image {!editingId && <span style={{ color: '#ef4444' }}>*</span>}
+                  <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 8 }}>
+                    {BANNER_DIMENSIONS.recommended.width}×{BANNER_DIMENSIONS.recommended.height}px (16:9) • Min: {BANNER_DIMENSIONS.minimum.width}×{BANNER_DIMENSIONS.minimum.height}px
+                  </span>
                 </label>
                 <div className="upload-grid-wrapper">
                   <div
@@ -187,7 +265,22 @@ export default function TimelessTreasures({ showToast }) {
                       style={{ display: 'none' }}
                       onChange={(e) => {
                         const file = e.target.files[0];
-                        if (file) setImageFile(file);
+                        if (file) {
+                          setImageFile(file);
+                          // Validate dimensions asynchronously
+                          validateImageDimensions(file).then((result) => {
+                            setImageDimensions(result);
+                            if (!result.valid) {
+                              setErrors(prev => ({ ...prev, image: result.error }));
+                            } else {
+                              setErrors(prev => {
+                                const newErrors = { ...prev };
+                                delete newErrors.image;
+                                return newErrors;
+                              });
+                            }
+                          });
+                        }
                       }}
                     />
                     <div className="drop-zone-info">
@@ -206,6 +299,39 @@ export default function TimelessTreasures({ showToast }) {
                     </div>
                   )}
                 </div>
+                
+                {/* Dimension Info */}
+                {imageDimensions && (
+                  <div style={{
+                    marginTop: 12,
+                    padding: 12,
+                    borderRadius: 8,
+                    fontSize: 13,
+                    backgroundColor: imageDimensions.valid ? '#f0fdf4' : '#fef2f2',
+                    border: `1px solid ${imageDimensions.valid ? '#dcfce7' : '#fee2e2'}`,
+                    color: imageDimensions.valid ? '#166534' : '#7f1d1d',
+                  }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                      {imageDimensions.valid ? '✓ Valid Dimensions' : '✗ Invalid Dimensions'}
+                    </div>
+                    <div style={{ fontSize: 12, opacity: 0.9 }}>
+                      {imageDimensions.dimensions.width} × {imageDimensions.dimensions.height}px
+                      {imageDimensions.isRecommended && ' (Recommended)'}
+                    </div>
+                    {!imageDimensions.valid && (
+                      <div style={{ fontSize: 12, marginTop: 6, fontWeight: 500 }}>
+                        {imageDimensions.error}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Image Error Message */}
+                {errors.image && (
+                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>
+                    ⚠ {errors.image}
+                  </div>
+                )}
               </div>
 
               {/* Title */}

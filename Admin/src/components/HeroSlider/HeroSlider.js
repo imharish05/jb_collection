@@ -18,6 +18,67 @@ const getImageUrl = (imagePath) => {
   return `${BASE_URL}/uploads/${clean}`;
 };
 
+// Helper: Count words in text
+const countWords = (text) => text.trim().split(/\s+/).filter(Boolean).length;
+
+// Helper: Get word/char limits
+const LIMITS = {
+  title: { chars: 50, words: 8 },
+  subtitle: { chars: 60, words: 10 },
+};
+
+// Banner Image Dimension Validator
+const BANNER_DIMENSIONS = {
+  recommended: { width: 1920, height: 1080 },
+  minimum: { width: 1280, height: 720 },
+  aspectRatio: 16 / 9,
+  tolerance: 0.05, // 5% tolerance for aspect ratio
+};
+
+const validateImageDimensions = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        const actualRatio = width / height;
+        const expectedRatio = BANNER_DIMENSIONS.aspectRatio;
+        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
+
+        // Check minimum dimensions
+        if (width < BANNER_DIMENSIONS.minimum.width || height < BANNER_DIMENSIONS.minimum.height) {
+          resolve({
+            valid: false,
+            error: `Image too small. Minimum: ${BANNER_DIMENSIONS.minimum.width}×${BANNER_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        // Check aspect ratio
+        if (ratioDiff > BANNER_DIMENSIONS.tolerance) {
+          const recommendedHeight = Math.round(width / expectedRatio);
+          resolve({
+            valid: false,
+            error: `Incorrect aspect ratio. Use 16:9 (e.g., ${width}×${recommendedHeight}px or ${BANNER_DIMENSIONS.recommended.width}×${BANNER_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        resolve({
+          valid: true,
+          dimensions: { width, height },
+          isRecommended: width === BANNER_DIMENSIONS.recommended.width && height === BANNER_DIMENSIONS.recommended.height,
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 export default function HeroSlider({ showToast }) {
   const dispatch = useDispatch();
   const { items: rows, loading } = useSelector((state) => state.heroSlider);
@@ -31,7 +92,22 @@ export default function HeroSlider({ showToast }) {
   const [isActive, setIsActive]     = useState(true);
   const [imageFile, setImageFile]   = useState(null);
   const [preview, setPreview]       = useState(null);
+  const [errors, setErrors]         = useState({});
+  const [imageDimensions, setImageDimensions] = useState(null);
   const fileInputRef = useRef();
+
+  // Validate text length and word count
+  const validateField = (field, value) => {
+    const limits = LIMITS[field];
+    if (!limits) return null;
+    
+    const charCount = value.length;
+    const wordCount = countWords(value);
+    
+    if (charCount > limits.chars) return `Max ${limits.chars} characters (you have ${charCount})`;
+    if (wordCount > limits.words) return `Max ${limits.words} words (you have ${wordCount})`;
+    return null;
+  };
 
   useEffect(() => { dispatch(fetchHeroSlides()); }, [dispatch]);
 
@@ -49,6 +125,8 @@ export default function HeroSlider({ showToast }) {
     setTitle(''); setSubtitle(''); setUrl('/shop');
     setSortOrder(0); setIsActive(true);
     setImageFile(null); setPreview(null);
+    setErrors({});
+    setImageDimensions(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -69,6 +147,12 @@ export default function HeroSlider({ showToast }) {
     setImageFile(null);
     const original = editingId ? rows.find((r) => r.id === editingId) : null;
     setPreview(original?.image ? getImageUrl(original.image) : null);
+    setImageDimensions(null);
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.image;
+      return newErrors;
+    });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -88,9 +172,31 @@ export default function HeroSlider({ showToast }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim()) { showToast.error('Title is required'); return; }
-    if (!editingId && !imageFile) { showToast.error('Slide image is required'); return; }
-
+    
+    // Validate title
+    const titleError = validateField('title', title);
+    const subtitleError = validateField('subtitle', subtitle);
+    
+    const newErrors = {};
+    if (!title.trim()) newErrors.title = 'Title is required';
+    else if (titleError) newErrors.title = titleError;
+    
+    if (subtitleError) newErrors.subtitle = subtitleError;
+    
+    if (!editingId && !imageFile) newErrors.image = 'Slide image is required';
+    
+    // Validate image dimensions if new image is selected
+    if (imageFile && imageDimensions && !imageDimensions.valid) {
+      newErrors.image = imageDimensions.error;
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showToast.error(Object.values(newErrors)[0]);
+      return;
+    }
+    
+    setErrors({});
     const fd = new FormData();
     fd.append('title', title);
     fd.append('subtitle', subtitle);
@@ -147,6 +253,9 @@ export default function HeroSlider({ showToast }) {
               <div className="km-field km-field-full">
                 <label className="km-label">
                   Slide Image {!editingId && <span style={{ color: '#ef4444' }}>*</span>}
+                  <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 8 }}>
+                    {BANNER_DIMENSIONS.recommended.width}×{BANNER_DIMENSIONS.recommended.height}px (16:9) • Min: {BANNER_DIMENSIONS.minimum.width}×{BANNER_DIMENSIONS.minimum.height}px
+                  </span>
                 </label>
                 <div className="upload-grid-wrapper">
                   <div
@@ -160,7 +269,22 @@ export default function HeroSlider({ showToast }) {
                       style={{ display: 'none' }}
                       onChange={(e) => {
                         const file = e.target.files[0];
-                        if (file) setImageFile(file);
+                        if (file) {
+                          setImageFile(file);
+                          // Validate dimensions asynchronously
+                          validateImageDimensions(file).then((result) => {
+                            setImageDimensions(result);
+                            if (!result.valid) {
+                              setErrors(prev => ({ ...prev, image: result.error }));
+                            } else {
+                              setErrors(prev => {
+                                const newErrors = { ...prev };
+                                delete newErrors.image;
+                                return newErrors;
+                              });
+                            }
+                          });
+                        }
                       }}
                     />
                     <div className="drop-zone-info">
@@ -179,32 +303,95 @@ export default function HeroSlider({ showToast }) {
                     </div>
                   )}
                 </div>
+                
+                {/* Dimension Info */}
+                {imageDimensions && (
+                  <div style={{
+                    marginTop: 12,
+                    padding: 12,
+                    borderRadius: 8,
+                    fontSize: 13,
+                    backgroundColor: imageDimensions.valid ? '#f0fdf4' : '#fef2f2',
+                    border: `1px solid ${imageDimensions.valid ? '#dcfce7' : '#fee2e2'}`,
+                    color: imageDimensions.valid ? '#166534' : '#7f1d1d',
+                  }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                      {imageDimensions.valid ? '✓ Valid Dimensions' : '✗ Invalid Dimensions'}
+                    </div>
+                    <div style={{ fontSize: 12, opacity: 0.9 }}>
+                      {imageDimensions.dimensions.width} × {imageDimensions.dimensions.height}px
+                      {imageDimensions.isRecommended && ' (Recommended)'}
+                    </div>
+                    {!imageDimensions.valid && (
+                      <div style={{ fontSize: 12, marginTop: 6, fontWeight: 500 }}>
+                        {imageDimensions.error}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Image Error Message */}
+                {errors.image && (
+                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>
+                    ⚠ {errors.image}
+                  </div>
+                )}
               </div>
 
               {/* Title */}
               <div className="km-field km-field-half">
-                <label className="km-label">Title <span style={{ color: '#ef4444' }}>*</span></label>
+                <label className="km-label">
+                  Title <span style={{ color: '#ef4444' }}>*</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 8 }}>
+                    {title.length}/{LIMITS.title.chars} chars · {countWords(title)}/{LIMITS.title.words} words
+                  </span>
+                </label>
                 <input
                   className="km-input"
                   type="text"
                   placeholder="e.g. Perfect Gifts for Every Celebration"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    const newTitle = e.target.value;
+                    setTitle(newTitle);
+                    const error = validateField('title', newTitle);
+                    setErrors(prev => ({ ...prev, title: error }));
+                  }}
+                  style={{
+                    borderColor: errors.title ? '#ef4444' : undefined,
+                    boxShadow: errors.title ? '0 0 0 2px rgba(239, 68, 68, 0.1)' : undefined,
+                  }}
+                  maxLength={LIMITS.title.chars}
                 />
+                {errors.title && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.title}</div>}
               </div>
 
               {/* Subtitle */}
               <div className="km-field km-field-half">
                 <label className="km-label">
                   Subtitle <span style={{ color: '#9ca3af', fontSize: 11 }}>(supports HTML)</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 8 }}>
+                    {subtitle.length}/{LIMITS.subtitle.chars} chars · {countWords(subtitle)}/{LIMITS.subtitle.words} words
+                  </span>
                 </label>
                 <input
                   className="km-input"
                   type="text"
                   placeholder="e.g. Handcrafted &amp; Meaningful"
                   value={subtitle}
-                  onChange={(e) => setSubtitle(e.target.value)}
+                  onChange={(e) => {
+                    const newSubtitle = e.target.value;
+                    setSubtitle(newSubtitle);
+                    const error = validateField('subtitle', newSubtitle);
+                    setErrors(prev => ({ ...prev, subtitle: error }));
+                  }}
+                  style={{
+                    borderColor: errors.subtitle ? '#ef4444' : undefined,
+                    boxShadow: errors.subtitle ? '0 0 0 2px rgba(239, 68, 68, 0.1)' : undefined,
+                  }}
+                  maxLength={LIMITS.subtitle.chars}
                 />
+                {errors.subtitle && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.subtitle}</div>}
               </div>
 
               {/* CTA Link */}

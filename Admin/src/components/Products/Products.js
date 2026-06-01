@@ -718,7 +718,7 @@ export default function Products({ showToast }) {
                       border: `1px solid ${KM.border}`, flexShrink: 0,
                     }}>
                       <img src={url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <button type="button" onClick={() => removeImage(index)}
+                      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeImage(index); }}
                         style={{
                           position: 'absolute', top: 5, right: 5,
                           background: '#ef4444', color: '#fff',
@@ -726,6 +726,7 @@ export default function Products({ showToast }) {
                           width: 20, height: 20, cursor: 'pointer',
                           fontSize: 11, lineHeight: 1, display: 'flex',
                           alignItems: 'center', justifyContent: 'center',
+                          zIndex: 10,
                         }}>✕</button>
                       <div style={{
                         position: 'absolute', bottom: 0, width: '100%',

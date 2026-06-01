@@ -12,41 +12,34 @@ const resolveImg = (image) => {
 
 const HeroSliderFourSingle = ({ data }) => {
   return (
-    <div className="slider-height-9 bg-gray d-flex align-items-center custom-hero-bg">
-      <div className="container">
-        <div className="row align-items-center">
-          {/* Text Content */}
-          <div className="col-12 col-md-6 order-2 order-md-1">
-            <div className="slider-content-11 slider-animated-1">
-              <h3 className="animated hero-top-title" style={{ animationDelay: "0.2s" }}>
-                {data.title}
-              </h3>
-              <h1
-                className="animated hero-main-title"
-                style={{ animationDelay: "0.2s" }}
-                dangerouslySetInnerHTML={{ __html: data.subtitle }}
-              />
-              <div className="slider-btn-11 btn-hover">
-                <Link
-                  className="animated hero-cta-btn"
-                  style={{ animationDelay: "0.3s" }}
-                  to={process.env.PUBLIC_URL + (data.url || "/shop")}
-                >
-                  EXPLORE NOW
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Image Content */}
-          <div className="col-12 col-md-6 order-1 order-md-2 text-center">
-            <div className="hero-image-wrap slider-animated-1">
-              <img
-                className="animated hero-slide-img"
-                style={{ animationDelay: "0.2s" }}
-                src={resolveImg(data.image)}
-                alt={data.title}
-              />
-            </div>
+    <div
+      className="kg-slide"
+      style={{ backgroundImage: `url(${resolveImg(data.image)})` }}
+    >
+      {/* dark gradient overlay */}
+      <div className="kg-slide__overlay" />
+
+      <div className="container kg-slide__container">
+        <div className="kg-slide__content">
+          {data.title && (
+            <p className="kg-slide__subtitle animated">{data.title}</p>
+          )}
+          {data.subtitle && (
+            <h1
+              className="kg-slide__title animated"
+              dangerouslySetInnerHTML={{ __html: data.subtitle }}
+            />
+          )}
+          <div className="kg-slide__cta animated">
+            <Link
+              to={process.env.PUBLIC_URL + (data.url || "/shop")}
+              className="kg-slide__btn"
+            >
+              Explore Now
+              <svg width="16" height="10" viewBox="0 0 16 10" fill="none" aria-hidden="true">
+                <path d="M1 5h14M10 1l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { EffectFade, Autoplay, Navigation } from 'swiper';
+import { Autoplay, Navigation, Pagination } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import HeroSliderFourSingle from "../../components/hero-slider/HeroSliderFourSingle.jsx";
 import { useSelector } from 'react-redux';
@@ -10,7 +10,6 @@ const HeroSliderFour = () => {
   const nextRef = useRef(null);
   const swiperRef = useRef(null);
 
-  // After everything mounts, wire the real DOM buttons into swiper
   useEffect(() => {
     if (!swiperRef.current) return;
     const swiper = swiperRef.current;
@@ -21,40 +20,41 @@ const HeroSliderFour = () => {
     swiper.navigation.update();
   }, [heroSliderData]);
 
-  return (
-    <div className="slider-area">
-      <div className="slider-active position-relative">
-        {heroSliderData?.length > 0 && (
-          <div style={{ position: 'relative' }}>
-            {/* Buttons BEFORE Swiper so refs are populated when onSwiper fires */}
-            <button ref={prevRef} className="hero-nav-btn hero-nav-prev">
-              <i className="fa fa-angle-left"></i>
-            </button>
-            <button ref={nextRef} className="hero-nav-btn hero-nav-next">
-              <i className="fa fa-angle-right"></i>
-            </button>
+  if (!heroSliderData?.length) return null;
 
-            <Swiper
-              modules={[EffectFade, Autoplay, Navigation]}
-              effect="fade"
-              fadeEffect={{ crossFade: true }}
-              loop={true}
-              speed={400}
-              autoplay={{ delay: 4000, disableOnInteraction: false }}
-              navigation={{ prevEl: prevRef.current, nextEl: nextRef.current }}
-              onSwiper={(swiper) => { swiperRef.current = swiper; }}
-              observer={true}
-              observeParents={true}
-            >
-              {heroSliderData.map((single, key) => (
-                <SwiperSlide key={key}>
-                  <HeroSliderFourSingle data={single} />
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        )}
-      </div>
+  return (
+    <div className="kg-hero">
+      <button ref={prevRef} className="kg-hero__nav kg-hero__nav--prev" aria-label="Previous slide">
+        <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+          <path d="M9 1L1 9l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      <button ref={nextRef} className="kg-hero__nav kg-hero__nav--next" aria-label="Next slide">
+        <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+          <path d="M1 1l8 8-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+
+      <Swiper
+        modules={[Autoplay, Navigation, Pagination]}
+        loop={true}
+        speed={700}
+        autoplay={{ delay: 5000, disableOnInteraction: false }}
+        navigation={{ prevEl: prevRef.current, nextEl: nextRef.current }}
+        pagination={{ el: '.kg-hero__dots', clickable: true, bulletClass: 'kg-hero__dot', bulletActiveClass: 'kg-hero__dot--active' }}
+        onSwiper={(swiper) => { swiperRef.current = swiper; }}
+        observer={true}
+        observeParents={true}
+        className="kg-hero__swiper"
+      >
+        {heroSliderData.map((single, key) => (
+          <SwiperSlide key={key}>
+            <HeroSliderFourSingle data={single} />
+          </SwiperSlide>
+        ))}
+      </Swiper>
+
+      <div className="kg-hero__dots" />
     </div>
   );
 };
