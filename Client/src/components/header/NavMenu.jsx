@@ -2,134 +2,173 @@ import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
 import { useSelector } from "react-redux";
+import { useState, useRef } from "react";
+
+
+const IMG_BASE = process.env.REACT_APP_IMG_URL + "/uploads/";
+
+const imgSrc = (path) =>
+  path ? `${IMG_BASE}${path.replace(/^\/?(uploads\/)?/, "")}` : null;
+
+/* ── Single image card used in the mega panel ── */
+const CatalogueCard = ({ to, image, label, emoji }) => (
+  <Link to={to} className="catalogue-card">
+    <span className="catalogue-card__img-wrap">
+      {image ? (
+        <img
+          src={imgSrc(image)}
+          alt={label}
+          className="catalogue-card__img"
+          onError={(e) => {
+            e.target.style.display = "none";
+            e.target.nextSibling.style.display = "flex";
+          }}
+        />
+      ) : null}
+      <span
+        className="catalogue-card__fallback"
+        style={{ display: image ? "none" : "flex" }}
+      >
+        {emoji}
+      </span>
+    </span>
+    <span className="catalogue-card__label">{label}</span>
+  </Link>
+);
+
+/* ── Mega panel section with title + grid of cards ── */
+const MegaSection = ({ title, accent, items, renderItem }) =>
+  items.length === 0 ? null : (
+    <div className="mega-section">
+      <p className="mega-section__title" style={{ "--accent": accent }}>
+        {title}
+      </p>
+      <div className="mega-section__grid">{items.map(renderItem)}</div>
+    </div>
+  );
 
 const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
-  const { categories = [], events = [], combos = [], rootCombos = [] } = useSelector((state) => state.navMenu || {});
+  const { categories = [], events = [], rootCombos = [] } = useSelector(
+    (state) => state.navMenu || {}
+  );
 
   const S = process.env.PUBLIC_URL + "/shop";
-  const arrow = sidebarMenu
-    ? <span><i className="fa fa-angle-right" /></span>
-    : <i className="fa fa-angle-down" />;
+  const [catalogueOpen, setCatalogueOpen] = useState(false);
+  const closeTimer = useRef(null);
+
+  const openPanel = () => {
+    clearTimeout(closeTimer.current);
+    setCatalogueOpen(true);
+  };
+  const scheduleClose = () => {
+    closeTimer.current = setTimeout(() => setCatalogueOpen(false), 160);
+  };
+
+  const arrow = sidebarMenu ? (
+    <span>
+      <i className="fa fa-angle-right" />
+    </span>
+  ) : (
+    <i className="fa fa-angle-down" />
+  );
 
   return (
-    <div className={clsx(sidebarMenu ? "sidebar-menu" : `main-menu ${menuWhiteClass || ""}`)}>
+    <div
+      className={clsx(
+        sidebarMenu ? "sidebar-menu" : `main-menu ${menuWhiteClass || ""}`,
+        "kg-nav"
+      )}
+    >
       <nav>
         <ul>
-          <li><Link to={process.env.PUBLIC_URL + "/"}>Home</Link></li>
-          <li><Link to={process.env.PUBLIC_URL + "/about"}>About</Link></li>
+          <li>
+            <Link to={process.env.PUBLIC_URL + "/"}>Home</Link>
+          </li>
+          <li>
+            <Link to={process.env.PUBLIC_URL + "/about"}>About</Link>
+          </li>
 
-          {/* Catalogue — mega panel with circular images */}
-<li>
-  <Link to={process.env.PUBLIC_URL + "/catalogue"}>Catalogue {arrow}</Link>
-  <ul className="mega-menu mega-menu-padding" style={{ width: "780px", left: "-120px" }}>
-    <li style={{ width: "100%", padding: 0 }}>
+          {/* ── Catalogue with custom mega panel ── */}
+          <li
+            className={clsx("kg-catalogue-item", catalogueOpen && "kg-catalogue-item--open")}
+            onMouseEnter={openPanel}
+            onMouseLeave={scheduleClose}
+          >
+            <Link to={process.env.PUBLIC_URL + "/catalogue"} className="kg-catalogue-trigger">
+              Catalogue
+              <span className="kg-chevron">
+                <svg width="12" height="7" viewBox="0 0 12 7" fill="none">
+                  <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+            </Link>
 
-      {/* Categories row */}
-      {categories.some(c => c.image) && (
-        <>
-          <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#aaa", margin: "0 0 14px", padding: 0 }}>Categories</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "18px 14px", marginBottom: 24 }}>
-            {categories.map((cat) => (
-              <Link
-                key={cat.value ?? cat.id}
-                to={cat.value ? `${S}?category=${cat.value}` : S}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", width: 72 }}
-              >
-                <span style={{
-                  width: 56, height: 56, borderRadius: "50%", overflow: "hidden",
-                  border: "2px solid #f0f0f0", flexShrink: 0, display: "flex",
-                  alignItems: "center", justifyContent: "center", background: "#f8f8f8",
-                }}>
-                  {cat.image ? (
-                    <img
-                      src={`${process.env.REACT_APP_IMG_URL}/uploads/${cat.image.replace(/^\/?(uploads\/)?/, "")}`}
-                      alt={cat.label}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      onError={e => { e.target.style.display = "none"; }}
+            {/* ─────────── MEGA PANEL ─────────── */}
+            <div
+              className="kg-mega-panel"
+              onMouseEnter={openPanel}
+              onMouseLeave={scheduleClose}
+            >
+              <div className="kg-mega-inner">
+
+                <MegaSection
+                  title="Categories"
+                  accent="#db1a5d"
+                  items={categories}
+                  renderItem={(cat) => (
+                    <CatalogueCard
+                      key={cat.value ?? cat.id}
+                      to={cat.value ? `${S}?category=${cat.value}` : S}
+                      image={cat.image}
+                      label={cat.label}
+                      emoji="🗂️"
                     />
-                  ) : (
-                    <span style={{ fontSize: 22 }}>🗂️</span>
                   )}
-                </span>
-                <span style={{ fontSize: 11, color: "#333", textAlign: "center", lineHeight: 1.3, fontWeight: 500 }}>{cat.label}</span>
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
+                />
 
-      {/* Events row */}
-      {events.length > 0 && (
-        <>
-          <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#aaa", margin: "0 0 14px", padding: 0 }}>Events</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "18px 14px" }}>
-            {events.map((evt) => (
-              <Link
-                key={evt.value}
-                to={`${S}?event=${evt.value}`}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", width: 72 }}
-              >
-                <span style={{
-                  width: 56, height: 56, borderRadius: "50%", overflow: "hidden",
-                  border: "2px solid #f0f0f0", flexShrink: 0, display: "flex",
-                  alignItems: "center", justifyContent: "center", background: "#f8f8f8",
-                }}>
-                  {evt.image ? (
-                    <img
-                      src={`${process.env.REACT_APP_IMG_URL}/uploads/${evt.image.replace(/^\/?(uploads\/)?/, "")}`}
-                      alt={evt.label}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      onError={e => { e.target.style.display = "none"; }}
+                <MegaSection
+                  title="Events"
+                  accent="#f59e0b"
+                  items={events}
+                  renderItem={(evt) => (
+                    <CatalogueCard
+                      key={evt.value}
+                      to={`${S}?event=${evt.value}`}
+                      image={evt.image}
+                      label={evt.label}
+                      emoji="🎉"
                     />
-                  ) : (
-                    <span style={{ fontSize: 22 }}>🎉</span>
                   )}
-                </span>
-                <span style={{ fontSize: 11, color: "#333", textAlign: "center", lineHeight: 1.3, fontWeight: 500 }}>{evt.label}</span>
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
+                />
 
-      {/* Combos row */}
-      {rootCombos.length > 0 && (
-        <>
-          <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#aaa", margin: "0 0 14px", padding: 0 }}>Combos</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "18px 14px" }}>
-            {rootCombos.map((combo) => (
-              <Link
-                key={combo.id}
-                to={`${S}?combo=${combo.id}`}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", width: 72 }}
-              >
-                <span style={{
-                  width: 56, height: 56, borderRadius: "50%", overflow: "hidden",
-                  border: "2px solid #f0f0f0", flexShrink: 0, display: "flex",
-                  alignItems: "center", justifyContent: "center", background: "#f8f8f8",
-                }}>
-                  {combo.image ? (
-                    <img
-                      src={`${process.env.REACT_APP_IMG_URL}/uploads/${combo.image.replace(/^\/?(uploads\/)?/, "")}`}
-                      alt={combo.name}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      onError={e => { e.target.style.display = "none"; }}
+                <MegaSection
+                  title="Combos"
+                  accent="#10b981"
+                  items={rootCombos}
+                  renderItem={(combo) => (
+                    <CatalogueCard
+                      key={combo.id}
+                      to={`${S}?combo=${combo.id}`}
+                      image={combo.image}
+                      label={combo.name}
+                      emoji="🎁"
                     />
-                  ) : (
-                    <span style={{ fontSize: 22 }}>🎁</span>
                   )}
-                </span>
-                <span style={{ fontSize: 11, color: "#333", textAlign: "center", lineHeight: 1.3, fontWeight: 500 }}>{combo.name}</span>
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
+                />
 
-    </li>
-  </ul>
-</li>
-          <li><Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link></li>
+                {/* CTA strip */}
+                <div className="kg-mega-cta">
+                  <Link to={process.env.PUBLIC_URL + "/catalogue"} className="kg-mega-cta__btn">
+                    View full catalogue →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
+          </li>
         </ul>
       </nav>
     </div>

@@ -1,0 +1,284 @@
+/* ═══════════════════════════════════════════════
+   Kamali Gifts — IconGroup: Search + Account
+   ═══════════════════════════════════════════════ */
+
+.ig-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ══════════════════════
+   SEARCH
+══════════════════════ */
+.ig-search {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  border-radius: 20px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  transition: width 0.3s cubic-bezier(.4,0,.2,1),
+              border-color 0.25s ease,
+              background 0.25s ease;
+  overflow: hidden;
+  width: 38px;
+  flex-shrink: 0;
+}
+
+.ig-search--open {
+  width: 220px;
+  border-color: #e0e0e0;
+  background: #fafafa;
+}
+
+.ig-search__icon-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  transition: color 0.15s;
+}
+.ig-search__icon-btn:hover { color: #db1a5d; }
+
+.ig-search__form {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease 0s;
+  min-width: 0;
+}
+.ig-search--open .ig-search__form {
+  opacity: 1;
+  transition-delay: 0.1s;
+}
+
+.ig-search__input {
+  flex: 1;
+  border: none !important;
+  outline: none !important;
+  background: transparent;
+  font-size: 13px;
+  color: #222;
+  padding: 0 4px;
+  min-width: 0;
+}
+.ig-search__input::placeholder { color: #aaa; }
+
+.ig-search__submit {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #db1a5d;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #fff;
+  margin-right: 4px;
+  transition: background 0.15s, transform 0.15s;
+}
+.ig-search__submit:hover { background: #b5164d; transform: scale(1.05); }
+
+/* ══════════════════════
+   ACCOUNT
+══════════════════════ */
+.ig-account {
+  position: relative;
+}
+
+.ig-account__trigger {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+}
+.ig-account__trigger:hover,
+.ig-account--open .ig-account__trigger {
+  color: #db1a5d;
+  background: rgba(219,26,93,.07);
+}
+
+/* initials avatar */
+.ig-account__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #db1a5d;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+}
+
+/* panel */
+.ig-account__panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 220px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow:
+    0 4px 6px -1px rgba(0,0,0,.07),
+    0 12px 40px -4px rgba(0,0,0,.13),
+    0 0 0 1px rgba(0,0,0,.05);
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  z-index: 9999;
+}
+.ig-account--open .ig-account__panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* logged-in user header */
+.ig-account__user-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.ig-account__user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #db1a5d, #f97316);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ig-account__user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #222;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+.ig-account__user-email {
+  font-size: 11px;
+  color: #aaa;
+  margin: 1px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.ig-account__divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 8px 0;
+}
+
+/* menu items */
+.ig-account__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-align: left;
+}
+.ig-account__item:hover {
+  background: #fdf2f6;
+  color: #db1a5d;
+}
+.ig-account__item svg { flex-shrink: 0; opacity: 0.6; }
+.ig-account__item:hover svg { opacity: 1; }
+
+.ig-account__item--logout {
+  color: #e53e3e;
+}
+.ig-account__item--logout:hover {
+  background: #fff5f5;
+  color: #c53030;
+}
+
+/* guest state */
+.ig-account__guest-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 3px;
+}
+.ig-account__guest-sub {
+  font-size: 11.5px;
+  color: #aaa;
+  margin: 0 0 14px;
+  line-height: 1.4;
+}
+.ig-account__auth-btns {
+  display: flex;
+  gap: 8px;
+}
+.ig-account__btn-primary {
+  flex: 1;
+  padding: 9px 0;
+  background: #db1a5d;
+  color: #fff !important;
+  text-decoration: none;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  transition: background 0.15s;
+}
+.ig-account__btn-primary:hover { background: #b5164d; }
+.ig-account__btn-outline {
+  flex: 1;
+  padding: 9px 0;
+  background: transparent;
+  color: #db1a5d !important;
+  text-decoration: none;
+  border-radius: 20px;
+  border: 1.5px solid #db1a5d;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  transition: background 0.15s, color 0.15s;
+}
+.ig-account__btn-outline:hover {
+  background: #db1a5d;
+  color: #fff !important;
+}

@@ -1,185 +1,196 @@
+import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { logoutAction } from "../../../store/slices/authSlice";
 import cogoToast from "cogo-toast";
 
 const S = process.env.PUBLIC_URL + "/shop";
+const IMG_BASE = process.env.REACT_APP_IMG_URL + "/uploads/";
+const imgSrc = (p) => p ? `${IMG_BASE}${p.replace(/^\/?(uploads\/)?/, "")}` : null;
+
+/* ── Horizontal scrollable row of image pills ── */
+const ImageRow = ({ items, toFn, labelKey, imageKey, emoji }) => (
+  <div className="mob-img-row">
+    {items.map((item) => {
+      const key   = item.value ?? item.id;
+      const label = item[labelKey] ?? item.label ?? item.name;
+      const img   = item[imageKey] ?? item.image;
+      return (
+        <Link key={key} to={toFn(item)} className="mob-img-card">
+          <span className="mob-img-card__circle">
+            {img
+              ? <img src={imgSrc(img)} alt={label} className="mob-img-card__img" onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }} />
+              : null}
+            <span className="mob-img-card__fallback" style={{ display: img ? "none" : "flex" }}>{emoji}</span>
+          </span>
+          <span className="mob-img-card__label">{label}</span>
+        </Link>
+      );
+    })}
+  </div>
+);
+
+/* ── Collapsible catalogue section ── */
+const Section = ({ title, accent, children }) => {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="mob-section">
+      <button
+        className="mob-section__toggle"
+        style={{ "--accent": accent }}
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+      >
+        <span className="mob-section__title">{title}</span>
+        <svg
+          className={`mob-section__chevron${open ? " mob-section__chevron--open" : ""}`}
+          width="12" height="7" viewBox="0 0 12 7" fill="none"
+        >
+          <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && <div className="mob-section__body">{children}</div>}
+    </div>
+  );
+};
 
 const MobileNavMenu = () => {
-  const { categories = [], events = [], combos = [], rootCombos = [] } = useSelector((state) => state.navMenu || {});
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const { categories = [], events = [], rootCombos = [] } = useSelector((s) => s.navMenu || {});
+  const { isAuthenticated } = useSelector((s) => s.auth);
+  const dispatch  = useDispatch();
+  const navigate  = useNavigate();
+  const [catalogueOpen, setCatalogueOpen] = useState(false);
+
+  const closeMenu = () => {
+    document.querySelector("#offcanvas-mobile-menu")?.classList.remove("active");
+  };
 
   const handleLogout = () => {
     dispatch(logoutAction());
     cogoToast.success("Logged out successfully", { position: "top-center" });
-    const menu = document.querySelector("#offcanvas-mobile-menu");
-    if (menu) menu.classList.remove("active");
+    closeMenu();
     navigate(process.env.PUBLIC_URL + "/");
   };
 
   return (
-    <nav className="offcanvas-navigation" id="offcanvas-navigation">
-      <ul>
-        <li>
-          <Link to={process.env.PUBLIC_URL + "/"}>Home</Link>
+    <nav className="mob-nav" id="offcanvas-navigation">
+      <ul className="mob-nav__list">
+
+        {/* Home */}
+        <li className="mob-nav__item">
+          <Link to={process.env.PUBLIC_URL + "/"} className="mob-nav__link" onClick={closeMenu}>
+            Home
+          </Link>
         </li>
 
-        <li>
-          <Link to={process.env.PUBLIC_URL + "/about"}>About</Link>
+        {/* About */}
+        <li className="mob-nav__item">
+          <Link to={process.env.PUBLIC_URL + "/about"} className="mob-nav__link" onClick={closeMenu}>
+            About
+          </Link>
         </li>
 
-        {/* Catalogue — circular images for all categories + events */}
-<li className="menu-item-has-children">
-  <Link to={process.env.PUBLIC_URL + "/catalogue"}>Catalogue</Link>
-  <ul className="sub-menu">
-
-    {/* Categories as circles */}
-    {categories.length > 0 && (
-      <li style={{ padding: "10px 0 4px" }}>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#aaa", display: "block", marginBottom: 10, paddingLeft: 4 }}>Categories</span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px 10px", paddingLeft: 4 }}>
-          {categories.map((cat) => (
-            <Link
-              key={cat.value ?? cat.id}
-              to={cat.value ? `${process.env.PUBLIC_URL}/shop?category=${cat.value}` : `${process.env.PUBLIC_URL}/shop`}
-              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, textDecoration: "none", width: 60 }}
-            >
-              <span style={{
-                width: 48, height: 48, borderRadius: "50%", overflow: "hidden",
-                border: "2px solid #e8e8e8", display: "flex", alignItems: "center",
-                justifyContent: "center", background: "#f5f5f5", flexShrink: 0,
-              }}>
-                {cat.image ? (
-                  <img
-                    src={`${process.env.REACT_APP_IMG_URL}/uploads/${cat.image.replace(/^\/?(uploads\/)?/, "")}`}
-                    alt={cat.label}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    onError={e => { e.target.style.display = "none"; }}
-                  />
-                ) : (
-                  <span style={{ fontSize: 18 }}>🗂️</span>
-                )}
-              </span>
-              <span style={{ fontSize: 10, color: "#444", textAlign: "center", lineHeight: 1.3, fontWeight: 500 }}>{cat.label}</span>
+        {/* Catalogue accordion */}
+        <li className={`mob-nav__item mob-nav__item--parent${catalogueOpen ? " mob-nav__item--open" : ""}`}>
+          <div className="mob-nav__row">
+            <Link to={process.env.PUBLIC_URL + "/catalogue"} className="mob-nav__link" onClick={closeMenu}>
+              Catalogue
             </Link>
-          ))}
-        </div>
-      </li>
-    )}
-
-    {/* Events as circles */}
-    {events.length > 0 && (
-      <li style={{ padding: "10px 0 4px" }}>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#aaa", display: "block", marginBottom: 10, paddingLeft: 4 }}>Events</span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px 10px", paddingLeft: 4 }}>
-          {events.map((evt) => (
-            <Link
-              key={evt.value}
-              to={`${process.env.PUBLIC_URL}/shop?event=${evt.value}`}
-              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, textDecoration: "none", width: 60 }}
+            <button
+              className="mob-nav__expand"
+              onClick={() => setCatalogueOpen(o => !o)}
+              aria-expanded={catalogueOpen}
+              aria-label="Toggle catalogue"
             >
-              <span style={{
-                width: 48, height: 48, borderRadius: "50%", overflow: "hidden",
-                border: "2px solid #e8e8e8", display: "flex", alignItems: "center",
-                justifyContent: "center", background: "#f5f5f5", flexShrink: 0,
-              }}>
-                {evt.image ? (
-                  <img
-                    src={`${process.env.REACT_APP_IMG_URL}/uploads/${evt.image.replace(/^\/?(uploads\/)?/, "")}`}
-                    alt={evt.label}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    onError={e => { e.target.style.display = "none"; }}
-                  />
-                ) : (
-                  <span style={{ fontSize: 18 }}>🗂️</span>
-                )}
-              </span>
-              <span style={{ fontSize: 10, color: "#444", textAlign: "center", lineHeight: 1.3, fontWeight: 500 }}>{evt.label}</span>
-            </Link>
-          ))}
-        </div>
-      </li>
-    )}
+              <svg
+                className={`mob-nav__arrow${catalogueOpen ? " mob-nav__arrow--open" : ""}`}
+                width="12" height="7" viewBox="0 0 12 7" fill="none"
+              >
+                <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
 
-    {/* Combos as circles */}
-    {rootCombos.length > 0 && (
-      <li style={{ padding: "10px 0 4px" }}>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#aaa", display: "block", marginBottom: 10, paddingLeft: 4 }}>Combos</span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px 10px", paddingLeft: 4 }}>
-          {rootCombos.map((combo) => (
-            <Link
-              key={combo.id}
-              to={`${process.env.PUBLIC_URL}/shop?combo=${combo.id}`}
-              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, textDecoration: "none", width: 60 }}
-            >
-              <span style={{
-                width: 48, height: 48, borderRadius: "50%", overflow: "hidden",
-                border: "2px solid #e8e8e8", display: "flex", alignItems: "center",
-                justifyContent: "center", background: "#f5f5f5", flexShrink: 0,
-              }}>
-                {combo.image ? (
-                  <img
-                    src={`${process.env.REACT_APP_IMG_URL}/uploads/${combo.image.replace(/^\/?(uploads\/)?/, "")}`}
-                    alt={combo.name}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    onError={e => { e.target.style.display = "none"; }}
-                  />
-                ) : (
-                  <span style={{ fontSize: 18 }}>🎁</span>
-                )}
-              </span>
-              <span style={{ fontSize: 10, color: "#444", textAlign: "center", lineHeight: 1.3, fontWeight: 500 }}>{combo.name}</span>
-            </Link>
-          ))}
-        </div>
-      </li>
-    )}
+          {catalogueOpen && (
+            <div className="mob-catalogue-panel">
 
-  </ul>
-</li>
-        {/* My Account — auth-aware */}
+              {categories.length > 0 && (
+                <Section title="Categories" accent="#db1a5d">
+                  <ImageRow
+                    items={categories}
+                    toFn={(c) => c.value ? `${S}?category=${c.value}` : S}
+                    labelKey="label"
+                    imageKey="image"
+                    emoji="🗂️"
+                  />
+                </Section>
+              )}
+
+              {events.length > 0 && (
+                <Section title="Events" accent="#f59e0b">
+                  <ImageRow
+                    items={events}
+                    toFn={(e) => `${S}?event=${e.value}`}
+                    labelKey="label"
+                    imageKey="image"
+                    emoji="🎉"
+                  />
+                </Section>
+              )}
+
+              {rootCombos.length > 0 && (
+                <Section title="Combos" accent="#10b981">
+                  <ImageRow
+                    items={rootCombos}
+                    toFn={(c) => `${S}?combo=${c.id}`}
+                    labelKey="name"
+                    imageKey="image"
+                    emoji="🎁"
+                  />
+                </Section>
+              )}
+
+              <Link
+                to={process.env.PUBLIC_URL + "/catalogue"}
+                className="mob-catalogue-cta"
+                onClick={closeMenu}
+              >
+                View full catalogue →
+              </Link>
+            </div>
+          )}
+        </li>
+
+        {/* My Account */}
         {isAuthenticated ? (
-          <li className="menu-item-has-children">
-            <Link to={process.env.PUBLIC_URL + "/my-account"}>
-              My Profile
+          <li className="mob-nav__item">
+            <Link to={process.env.PUBLIC_URL + "/my-account"} className="mob-nav__link" onClick={closeMenu}>
+              My Account
             </Link>
-            <ul className="sub-menu">
-              <li>
-                <Link to={process.env.PUBLIC_URL + "/my-account"}>My Account</Link>
-              </li>
-              <li>
-                <Link to={process.env.PUBLIC_URL + "/my-account?tab=orders"}>My Orders</Link>
-              </li>
-              <li>
-                <a
-                  href="#logout"
-                  onClick={(e) => { e.preventDefault(); handleLogout(); }}
-                  style={{ color: "#d9534f", fontWeight: 500 }}
-                >
-                  Logout
-                </a>
-              </li>
-            </ul>
+            <div className="mob-account-links">
+              <Link to={process.env.PUBLIC_URL + "/my-account?tab=orders"} className="mob-account-link" onClick={closeMenu}>My Orders</Link>
+              <button className="mob-account-link mob-account-link--logout" onClick={handleLogout}>Logout</button>
+            </div>
           </li>
         ) : (
-          <li className="menu-item-has-children">
-            <Link to={process.env.PUBLIC_URL + "/login"}>My Account</Link>
-            <ul className="sub-menu">
-              <li>
-                <Link to={process.env.PUBLIC_URL + "/login"}>Login</Link>
-              </li>
-              <li>
-                <Link to={process.env.PUBLIC_URL + "/register"}>Register</Link>
-              </li>
-            </ul>
+          <li className="mob-nav__item">
+            <Link to={process.env.PUBLIC_URL + "/login"} className="mob-nav__link" onClick={closeMenu}>
+              My Account
+            </Link>
+            <div className="mob-account-links">
+              <Link to={process.env.PUBLIC_URL + "/login"} className="mob-account-link" onClick={closeMenu}>Login</Link>
+              <Link to={process.env.PUBLIC_URL + "/register"} className="mob-account-link" onClick={closeMenu}>Register</Link>
+            </div>
           </li>
         )}
 
-        <li>
-          <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
+        {/* Contact */}
+        <li className="mob-nav__item">
+          <Link to={process.env.PUBLIC_URL + "/contact"} className="mob-nav__link" onClick={closeMenu}>
+            Contact Us
+          </Link>
         </li>
+
       </ul>
     </nav>
   );
