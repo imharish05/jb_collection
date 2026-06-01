@@ -6,40 +6,73 @@ import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
 
 const IMG_BASE = process.env.REACT_APP_IMG_URL;
+const getImgUrl = (path) =>
+  path ? `${IMG_BASE}/uploads/${path.replace(/^\/?(uploads\/)?/, "")}` : null;
 
-const getImgUrl = (path) => {
-  if (!path) return null;
-  return `${IMG_BASE}/uploads/${path.replace(/^\/?(uploads\/)?/, "")}`;
+const CategoryCard = ({ cat, shopBase }) => {
+  const subs = cat.subcategories ?? [];
+  const imgSrc = cat.image ? getImgUrl(cat.image) : null;
+
+  return (
+    <div className="kcat-row-card">
+      <Link
+        to={cat.value ? `${shopBase}?category=${cat.value}` : shopBase}
+        className="kcat-row-card__left"
+      >
+        <div className="kcat-row-card__circle">
+          {imgSrc ? (
+            <img src={imgSrc} alt={cat.label} className="kcat-row-card__img"
+              onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }} />
+          ) : null}
+          <span className="kcat-row-card__emoji" style={{ display: imgSrc ? "none" : "flex" }}>🗂️</span>
+        </div>
+        <span className="kcat-row-card__name">{cat.label}</span>
+      </Link>
+
+      <div className="kcat-row-card__right">
+        {subs.length > 0 ? (
+          <div className="kcat-row-card__pills">
+            {subs.map(sub => (
+              <Link
+                key={sub.value ?? sub.id}
+                to={`${shopBase}?category=${cat.value}&subcategory=${sub.value}`}
+                className="kcat-pill"
+              >
+                {sub.label}
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <span className="kcat-row-card__no-sub">Browse all →</span>
+        )}
+      </div>
+    </div>
+  );
 };
 
-const CircleCard = ({ to, imgSrc, label, emoji = "🗂️" }) => (
-  <Link
-    to={to}
-    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", textDecoration: "none" }}
-    className="catalogue-card"
-  >
-    <span style={{
-      width: "100%", aspectRatio: "1", borderRadius: "50%", overflow: "hidden",
-      border: "2px solid #eee", display: "flex", alignItems: "center",
-      justifyContent: "center", background: "#f8f8f8", flexShrink: 0,
-      transition: "all 0.3s ease",
-    }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = "#db1a5d"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(219, 26, 93, 0.2)"; e.currentTarget.style.transform = "scale(1.05)"; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = "#eee"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "scale(1)"; }}
-    >
+const SimpleCard = ({ to, imgSrc, label, emoji = "🗂️" }) => (
+  <Link to={to} className="kcat-simple-card">
+    <div className="kcat-simple-card__circle">
       {imgSrc ? (
-        <img src={imgSrc} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        <img src={imgSrc} alt={label} className="kcat-row-card__img"
           onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }} />
       ) : null}
-      <span style={{ fontSize: "max(24px, 4vw)", display: imgSrc ? "none" : "flex" }}>{emoji}</span>
-    </span>
-    <span style={{ fontSize: "clamp(11px, 2vw, 13px)", color: "#333", textAlign: "center", lineHeight: 1.3, fontWeight: 500, width: "100%" }}>{label}</span>
+      <span className="kcat-row-card__emoji" style={{ display: imgSrc ? "none" : "flex" }}>{emoji}</span>
+    </div>
+    <span className="kcat-simple-card__name">{label}</span>
   </Link>
+);
+
+const SectionTitle = ({ children }) => (
+  <div className="kcat-section-title">
+    <span>{children}</span>
+    <div className="kcat-section-title__line" />
+  </div>
 );
 
 const Catalogue = () => {
   const { pathname } = useLocation();
-  const { categories = [], events = [], rootCombos = [] } = useSelector((state) => state.navMenu || {});
+  const { categories = [], events = [], rootCombos = [] } = useSelector(s => s.navMenu || {});
   const S = process.env.PUBLIC_URL + "/shop";
 
   return (
@@ -52,91 +85,45 @@ const Catalogue = () => {
             { label: "Catalogue", path: process.env.PUBLIC_URL + pathname },
           ]}
         />
+        <div className="kcat-page">
 
-        <div style={{ width: "100%", padding: "60px 0 80px" }}>
-          
-          {/* Categories */}
           {categories.length > 0 && (
-            <section style={{ marginBottom: 56, padding: "0 20px" }}>
-              <h4 style={{ fontSize: "clamp(13px, 2.5vw, 16px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: "#999", marginBottom: 28, maxWidth: 1100, margin: "0 auto 28px" }}>
-                Categories
-              </h4>
-              <div style={{ 
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))",
-                gap: "clamp(16px, 3vw, 32px)",
-                maxWidth: 1100,
-                margin: "0 auto",
-                padding: "0 12px"
-              }}>
-                {categories.map((cat) => (
-                  <CircleCard
-                    key={cat.value ?? cat.id}
-                    to={cat.value ? `${S}?category=${cat.value}` : S}
-                    imgSrc={cat.image ? getImgUrl(cat.image) : null}
-                    label={cat.label}
-                  />
+            <section className="kcat-section">
+              <SectionTitle>Categories</SectionTitle>
+              <div className="kcat-list">
+                {categories.map(cat => (
+                  <CategoryCard key={cat.value ?? cat.id} cat={cat} shopBase={S} />
                 ))}
               </div>
             </section>
           )}
 
-          {/* Events */}
           {events.length > 0 && (
-            <section style={{ marginBottom: 56, padding: "0 20px" }}>
-              <h4 style={{ fontSize: "clamp(13px, 2.5vw, 16px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: "#999", marginBottom: 28, maxWidth: 1100, margin: "0 auto 28px" }}>
-                Shop by Event
-              </h4>
-              <div style={{ 
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))",
-                gap: "clamp(16px, 3vw, 32px)",
-                maxWidth: 1100,
-                margin: "0 auto",
-                padding: "0 12px"
-              }}>
-                {events.map((evt) => (
-                  <CircleCard
-                    key={evt.value}
-                    to={`${S}?event=${evt.value}`}
-                     imgSrc={evt.image ? getImgUrl(evt.image) : null}
-                    label={evt.label}
-                    emoji="🎉"
-                  />
+            <section className="kcat-section">
+              <SectionTitle>Shop by Event</SectionTitle>
+              <div className="kcat-simple-grid">
+                {events.map(evt => (
+                  <SimpleCard key={evt.value} to={`${S}?event=${evt.value}`}
+                    imgSrc={evt.image ? getImgUrl(evt.image) : null} label={evt.label} emoji="🎉" />
                 ))}
               </div>
             </section>
           )}
 
-          {/* Combos */}
           {rootCombos.length > 0 && (
-            <section style={{ padding: "0 20px" }}>
-              <h4 style={{ fontSize: "clamp(13px, 2.5vw, 16px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: "#999", marginBottom: 28, maxWidth: 1100, margin: "0 auto 28px" }}>
-                🎁 Combos
-              </h4>
-              <div style={{ 
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))",
-                gap: "clamp(16px, 3vw, 32px)",
-                maxWidth: 1100,
-                margin: "0 auto",
-                padding: "0 12px"
-              }}>
-                {rootCombos.map((combo) => (
-                  <CircleCard
-                    key={combo.id}
-                    to={`${S}?combo=${combo.id}`}
-                    imgSrc={combo.image ? getImgUrl(combo.image) : null}
-                    label={combo.name}
-                    emoji="🎁"
-                  />
+            <section className="kcat-section">
+              <SectionTitle>Combos</SectionTitle>
+              <div className="kcat-simple-grid">
+                {rootCombos.map(combo => (
+                  <SimpleCard key={combo.id} to={`${S}?combo=${combo.id}`}
+                    imgSrc={combo.image ? getImgUrl(combo.image) : null} label={combo.name} emoji="🎁" />
                 ))}
               </div>
             </section>
           )}
 
-          {categories.length === 0 && events.length === 0 && rootCombos.length === 0 && (
-            <p style={{ color: "#aaa", textAlign: "center", marginTop: 80 }}>No categories found.</p>
+          {!categories.length && !events.length && !rootCombos.length && (
+            <p className="kcat-empty">No categories found.</p>
           )}
         </div>
       </LayoutOne>
