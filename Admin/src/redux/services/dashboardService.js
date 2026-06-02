@@ -1,6 +1,6 @@
 import api from "../../api/axiosInstance";
 import toast from "react-hot-toast";
-import { setLoading, setDashboardData, setError, setOrderCounts, setGraphLoading, setMonthlyData, setMonthlySalesData, setGraphError } from "../slices/dashboardSlice";
+import { setLoading, setDashboardData, setError, setOrderCounts, setGraphLoading, setMonthlyData, setMonthlySalesData, setGraphError, setQuarterlyLoading, setQuarterlySalesData, setQuarterlyError } from "../slices/dashboardSlice";
 
 let dashboardLoaded = false;
 
@@ -50,15 +50,28 @@ export const fetchMonthlyOrders = (year) => async (dispatch) => {
     }
 };
 
+export const fetchQuarterlySales = (year) => async (dispatch) => {
+    dispatch(setQuarterlyLoading());
+    try {
+        const res = await api.get(`/dashboard/quarterly-sales?year=${year}`);
+        dispatch(setQuarterlySalesData(res.data));
+    } catch (err) {
+        dispatch(setQuarterlyError());
+        throw err;
+    }
+};
+
 export const loadDashboard = (dispatch) => {
     if (dashboardLoaded) return;
     dashboardLoaded = true;
 
+    const year = new Date().getFullYear();
     toast.promise(
         Promise.all([
             dispatch(fetchDashboardData()),
             dispatch(fetchOrderCounts()),
-            dispatch(fetchMonthlyOrders(new Date().getFullYear())),
+            dispatch(fetchMonthlyOrders(year)),
+            dispatch(fetchQuarterlySales(year)),
         ]),
         {
             loading: 'Loading dashboard…',
@@ -70,5 +83,6 @@ export const loadDashboard = (dispatch) => {
 };
 
 export const loadChart = (dispatch, year) => {
-        dispatch(fetchMonthlyOrders(year))
+    dispatch(fetchMonthlyOrders(year));
+    dispatch(fetchQuarterlySales(year));
 };

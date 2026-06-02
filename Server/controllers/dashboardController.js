@@ -111,4 +111,42 @@ const getMonthlySales = async (req, res) => {
   }
 };
 
-module.exports = { getStats, getMonthlyOrders, getMonthlySales };
+// ─── GET /api/dashboard/quarterly-sales?year=2025 ────────────────────────────
+// Returns quarterly sales + yearly total.
+// Response: { quarters: [{q:"Q1",amount:1200},{q:"Q2",...},...], yearly: 9800 }
+const getQuarterlySales = async (req, res) => {
+  try {
+    const year  = parseInt(req.query.year, 10) || new Date().getFullYear();
+    const start = new Date(`${year}-01-01T00:00:00.000Z`);
+    const end   = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+
+    const orders = await Order.findAll({
+      where: {
+        createdAt: { [Op.gte]: start, [Op.lt]: end },
+        status:    { [Op.ne]: "cancelled" },
+      },
+      attributes: ["createdAt", "totalAmount"],
+    });
+
+    // Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec
+    const qSales = [0, 0, 0, 0];
+    orders.forEach((o) => {
+      const month  = new Date(o.createdAt).getMonth(); // 0-11
+      const amount = parseFloat(o.totalAmount || 0);
+      if (Number.isFinite(amount)) qSales[Math.floor(month / 3)] += amount;
+    });
+
+    const yearly = qSales.reduce((a, b) => a + b, 0);
+    const quarters = ["Q1 (Jan–Mar)", "Q2 (Apr–Jun)", "Q3 (Jul–Sep)", "Q4 (Oct–Dec)"].map((q, i) => ({
+      q,
+      amount: Number(qSales[i].toFixed(2)),
+    }));
+
+    return res.json({ quarters, yearly: Number(yearly.toFixed(2)) });
+  } catch (err) {
+    console.error("[Dashboard] getQuarterlySales error:", err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { getStats, getMonthlyOrders, getMonthlySales, getQuarterlySales };

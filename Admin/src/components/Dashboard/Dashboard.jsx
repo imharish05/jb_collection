@@ -24,9 +24,10 @@ const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 2022 }, (_, i) => CURRE
 
 export default function Dashboard() {
   const dispatch = useDispatch();
-  const { stats, recentProducts, totalStock, orderCounts, monthlyData, monthlySalesData, loading, graphLoading } = useSelector(state => state.dashboard);
+  const { stats, recentProducts, totalStock, orderCounts, monthlyData, monthlySalesData, quarterlySalesData, loading, graphLoading, quarterlyLoading } = useSelector(state => state.dashboard);
   const [mounted, setMounted] = useState(false);
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
+  const [salesView, setSalesView] = useState('monthly'); // 'monthly' | 'quarterly'
   const isFirstChartLoad = useRef(true);
 
   useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
@@ -150,43 +151,165 @@ export default function Dashboard() {
         <div className={styles.cardHdr}>
           <div>
             <h3 className={styles.cardTitle}>Sales Overview</h3>
-            <p className={styles.cardSub}>Monthly revenue trend for {selectedYear}</p>
+            <p className={styles.cardSub}>
+              {salesView === 'quarterly'
+                ? `Quarterly revenue breakdown for ${selectedYear}`
+                : `Monthly revenue trend for ${selectedYear}`}
+            </p>
           </div>
-          <div className={styles.yearSelectWrap}>
-            <select className={styles.yearSelect} value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
-              {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-            <span className={styles.yearSelectIcon}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {/* View toggle */}
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: 3, gap: 2 }}>
+              {['monthly', 'quarterly'].map(v => (
+                <button
+                  key={v}
+                  onClick={() => setSalesView(v)}
+                  style={{
+                    padding: '5px 14px',
+                    borderRadius: 6,
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                    textTransform: 'capitalize',
+                    background: salesView === v ? '#487fff' : 'transparent',
+                    color: salesView === v ? '#fff' : '#9ca3af',
+                    transition: 'all 0.18s ease',
+                  }}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+            {/* Year picker */}
+            <div className={styles.yearSelectWrap}>
+              <select className={styles.yearSelect} value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
+                {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+              <span className={styles.yearSelectIcon}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+            </div>
           </div>
         </div>
-        {graphLoading ? (
-          <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, fontWeight: 500 }}>
-            Loading sales chart…
-          </div>
+
+        {salesView === 'monthly' ? (
+          graphLoading ? (
+            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, fontWeight: 500 }}>
+              Loading sales chart…
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={monthlySalesData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#45b369" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="#45b369" stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                <XAxis dataKey="m" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  formatter={(v) => [`₹${Number(v || 0).toLocaleString('en-IN')}`, 'Revenue']}
+                  labelStyle={{ color: '#9ca3af', fontSize: 11, fontWeight: 600 }}
+                  contentStyle={{ background: '#1b2431', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#fff' }}
+                />
+                <Area type="monotone" dataKey="amount" stroke="#45b369" strokeWidth={3} fill="url(#salesGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          )
         ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={monthlySalesData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-              <defs>
-                <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#45b369" stopOpacity={0.45} />
-                  <stop offset="100%" stopColor="#45b369" stopOpacity={0.05} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-              <XAxis dataKey="m" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-              <Tooltip
-                formatter={(v) => [`₹${Number(v || 0).toLocaleString('en-IN')}`, 'Revenue']}
-                labelStyle={{ color: '#9ca3af', fontSize: 11, fontWeight: 600 }}
-                contentStyle={{ background: '#1b2431', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#fff' }}
-              />
-              <Area type="monotone" dataKey="amount" stroke="#45b369" strokeWidth={3} fill="url(#salesGrad)" />
-            </AreaChart>
-          </ResponsiveContainer>
+          /* ── Quarterly view ── */
+          quarterlyLoading ? (
+            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, fontWeight: 500 }}>
+              Loading quarterly data…
+            </div>
+          ) : (
+            <>
+              {/* Yearly summary banner */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 8, margin: '8px 0 18px',
+                background: 'linear-gradient(135deg,rgba(69,179,105,0.12) 0%,rgba(72,127,255,0.12) 100%)',
+                border: '1px solid rgba(69,179,105,0.2)', borderRadius: 10, padding: '10px 20px',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#45b369" strokeWidth="2">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+                </svg>
+                <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: 500 }}>Yearly Total {selectedYear}:</span>
+                <span style={{ fontSize: 18, fontWeight: 700, color: '#45b369' }}>
+                  ₹{Number(quarterlySalesData?.yearly || 0).toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              {/* Quarter cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14, marginBottom: 20 }}>
+                {(['Q1 (Jan–Mar)','Q2 (Apr–Jun)','Q3 (Jul–Sep)','Q4 (Oct–Dec)']).map((label, i) => {
+                  const qData = quarterlySalesData?.quarters?.[i];
+                  const amount = qData?.amount || 0;
+                  const yearly = quarterlySalesData?.yearly || 1;
+                  const pct = yearly > 0 ? Math.round((amount / yearly) * 100) : 0;
+                  const colors = ['#487fff','#45b369','#ff9f29','#8252e9'];
+                  const color = colors[i];
+                  return (
+                    <div key={label} style={{
+                      background: 'rgba(255,255,255,0.03)', border: `1px solid ${color}33`,
+                      borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden',
+                    }}>
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: color, borderRadius: '12px 12px 0 0' }} />
+                      <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        {label}
+                      </p>
+                      <p style={{ margin: '8px 0 4px', fontSize: 20, fontWeight: 700, color: '#fff' }}>
+                        ₹{Number(amount).toLocaleString('en-IN')}
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                        <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 4 }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 4, transition: 'width 0.6s ease' }} />
+                        </div>
+                        <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, minWidth: 30 }}>{pct}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Quarterly bar chart */}
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={quarterlySalesData?.quarters || []} margin={{ top: 4, right: 4, left: -16, bottom: 0 }} barSize={40}>
+                  <defs>
+                    {['#487fff','#45b369','#ff9f29','#8252e9'].map((c, i) => (
+                      <linearGradient key={i} id={`qGrad${i}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={c} stopOpacity={1} />
+                        <stop offset="100%" stopColor={c} stopOpacity={0.6} />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                  <XAxis dataKey="q" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    formatter={(v) => [`₹${Number(v || 0).toLocaleString('en-IN')}`, 'Revenue']}
+                    labelStyle={{ color: '#9ca3af', fontSize: 11, fontWeight: 600 }}
+                    contentStyle={{ background: '#1b2431', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#fff' }}
+                  />
+                  <Bar dataKey="amount" radius={[6, 6, 0, 0]}
+                    fill="url(#qGrad0)"
+                    label={false}
+                    shape={(props) => {
+                      const { x, y, width, height, index } = props;
+                      const gradIds = ['qGrad0','qGrad1','qGrad2','qGrad3'];
+                      return <rect x={x} y={y} width={width} height={height} fill={`url(#${gradIds[index % 4]})`} rx={6} ry={6} />;
+                    }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </>
+          )
         )}
       </div>
 
