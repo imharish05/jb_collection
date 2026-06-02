@@ -15,9 +15,12 @@ const buildImagePath = (file) => {
 const deleteOldImage = (imagePath) => {
   if (!imagePath) return;
   const absPath = path.join(__dirname, "..", imagePath);
-  fs.unlink(absPath, (err) => {
-    if (err) console.warn("Could not delete old variant image:", err.message);
-  });
+  try {
+    if (process.env.DEBUG_DELETE === 'true') console.log('Attempting to delete variant image:', absPath);
+    if (fs.existsSync(absPath)) {
+      fs.unlink(absPath, (err) => { if (err) console.warn('Could not delete old variant image:', err.message); else if (process.env.DEBUG_DELETE === 'true') console.log('Deleted variant image:', absPath); });
+    }
+  } catch (e) { console.warn('deleteOldImage error:', e.message); }
 };
 
 const parseAttributes = (attributes) => {
@@ -276,6 +279,9 @@ const remove = async (req, res) => {
 
     // Clean up combo associations
     await ChildComboProduct.destroy({ where: { variantId: variant.id } });
+
+    // delete variant image file if present
+    try { deleteOldImage(variant.image); } catch (e) { /* continue */ }
 
     await variant.destroy();
     await syncProductVariants(productId);

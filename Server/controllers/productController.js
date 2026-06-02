@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const { Product, Variant, Category, Brand, SubCategory, Combo, ChildComboProduct, CartItem, WishlistItem, Review } = require("../models");
 const { Op }    = require("sequelize");
 const sequelize = require("../config/database");
@@ -46,6 +48,16 @@ const isAllCategory = value =>
 
 const generateSku = (prefix = "KM") =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+
+const deleteFileIfExists = (absPath) => {
+  if (!absPath) return;
+  try {
+    if (process.env.DEBUG_DELETE === 'true') console.log('Attempting to delete file:', absPath);
+    if (fs.existsSync(absPath)) {
+      fs.unlink(absPath, (err) => { if (err) console.warn('Could not delete file:', absPath, err.message); else if (process.env.DEBUG_DELETE === 'true') console.log('Deleted file:', absPath); });
+    }
+  } catch (e) { console.warn('deleteFileIfExists error:', e.message); }
+};
 
 // shape: rename variants → Variants for frontend compatibility
 const shape = (p) => {
@@ -244,6 +256,9 @@ const updateProduct = async (req, res, next) => {
       ? parsedVariants.reduce((s, v) => s + (parseInt(v.stock) || 0), 0)
       : product.stock;
 
+    // capture existing product images before update so we can remove any that get deleted
+    const existingProductImages = safeParse(product.image, []);
+
     await product.update({
       name:             productName     || product.name,
       price,
@@ -275,6 +290,7 @@ const updateProduct = async (req, res, next) => {
     if (parsedVariants) {
       // ── MAPPING COMBO VARIANTS ───────────────────────────────────────────
       const oldVariants = await Variant.findAll({ where: { productId: product.id } });
+      const oldVariantImages = oldVariants.map(v => v.image).filter(Boolean);
       const oldVariantNameMap = new Map();
       oldVariants.forEach(ov => {
         if (ov.id && ov.variantName) {
@@ -288,10 +304,12 @@ const updateProduct = async (req, res, next) => {
       // ─────────────────────────────────────────────────────────────────────
 
       await Variant.destroy({ where: { productId: product.id } });
+      const createdVariantImages = [];
       for (let i = 0; i < parsedVariants.length; i++) {
         const v = parsedVariants[i];
         const vImgFile = req.files ? req.files.find(f => f.fieldname === `variantImage_${i}`) : null;
         const vImage   = vImgFile ? `uploads/products/${vImgFile.filename}` : (v.image || null);
+        if (vImage) createdVariantImages.push(vImage);
         await Variant.create({
           productId:   product.id,
           variantName: v.variantName,
@@ -329,8 +347,39 @@ const updateProduct = async (req, res, next) => {
           }
         }
       }
+      // delete old variant images that are no longer referenced by new variants or product images
+      try {
+        const productImagesAfter = Array.isArray(image) ? image : [];
+        for (const img of oldVariantImages) {
+          if (!img) continue;
+          const inNewVariants = createdVariantImages.includes(img);
+          const inProductImgs = productImagesAfter.includes(img);
+          if (!inNewVariants && !inProductImgs && String(img).startsWith('uploads/')) {
+            const abs = path.join(__dirname, '..', img);
+            if (fs.existsSync(abs)) {
+              deleteFileIfExists(abs);
+            }
+          }
+        }
+      } catch (e) { console.warn('Error cleaning up old variant images:', e.message); }
       // ─────────────────────────────────────────────────────────────────────
     }
+
+    // Cleanup product images that were removed during update
+    try {
+      const oldImages = existingProductImages;
+      const newImageArray = Array.isArray(image) ? image : [];
+      const removed = oldImages.filter(i => i && !newImageArray.includes(i));
+      for (const r of removed) {
+        if (!r) continue;
+        if (String(r).startsWith('uploads/')) {
+          const abs = path.join(__dirname, '..', r);
+          if (fs.existsSync(abs)) {
+            deleteFileIfExists(abs);
+          }
+        }
+      }
+    } catch (e) { console.warn('Error cleaning up removed product images:', e.message); }
 
     const fresh = await Product.findByPk(product.id, { include: PRODUCT_INCLUDE });
     return res.json(shape(fresh));
@@ -346,6 +395,28 @@ const deleteProduct = async (req, res, next) => {
     const product = await Product.findByPk(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
     await product.update({ isActive: false });
+
+    // delete product images and variant images from disk
+    try {
+      const productImages = safeParse(product.image, []);
+      for (const img of productImages) {
+        if (img && String(img).startsWith('uploads/')) {
+          const abs = path.join(__dirname, '..', img);
+          if (fs.existsSync(abs)) {
+            deleteFileIfExists(abs);
+          }
+        }
+      }
+      const variants = await Variant.findAll({ where: { productId: product.id } });
+      for (const v of variants) {
+        if (v.image && String(v.image).startsWith('uploads/')) {
+          const abs = path.join(__dirname, '..', v.image);
+          if (fs.existsSync(abs)) {
+            deleteFileIfExists(abs);
+          }
+        }
+      }
+    } catch (e) { console.warn('Error deleting product files:', e.message); }
 
     // Clean up combo associations, variants, cart items, wishlist entries, and reviews
     await Promise.all([

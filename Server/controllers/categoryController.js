@@ -1,4 +1,26 @@
+const fs = require("fs");
+const path = require("path");
 const { Category, Event, Combo, SubCategory } = require("../models/Category");
+
+const deleteUploadFile = (imagePath) => {
+  if (!imagePath) return;
+  const candidates = [];
+  // handle stored paths like 'uploads/...' or just 'categories/...' etc.
+  candidates.push(imagePath);
+  if (!String(imagePath).startsWith('uploads/')) candidates.push(path.posix.join('uploads', imagePath));
+
+  for (const rel of candidates) {
+    try {
+      const abs = path.join(__dirname, '..', rel);
+      if (fs.existsSync(abs)) {
+        fs.unlink(abs, (err) => { if (err) console.warn('Could not delete file:', abs, err.message); });
+        return;
+      }
+    } catch (e) {
+      console.warn('deleteUploadFile error:', e.message);
+    }
+  }
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -123,9 +145,13 @@ const updateCategory = async (req, res) => {
       return res.status(404).json({ success: false, message: "Category not found" });
 
     const allowed = pick(req.body, ["label", "value", "sortOrder", "isActive"]);
-    if (req.file) allowed.image = `categories/${req.file.filename}`; // ← add
+      if (req.file) {
+        // delete old image if present
+        deleteUploadFile(category.image);
+        allowed.image = `uploads/categories/${req.file.filename}`;
+      }
 
-    await category.update(allowed);
+      await category.update(allowed);
     return res.status(200).json({ success: true, data: category });
   }catch (error) {
     console.error("updateCategory error:", error);
@@ -139,6 +165,9 @@ const deleteCategory = async (req, res) => {
     if (!category) {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
+
+    // delete image file if present
+    try { deleteUploadFile(category.image); } catch (e) { /* continue */ }
 
     await category.destroy();
     return res.status(200).json({ success: true, message: "Category deleted successfully" });
@@ -208,7 +237,10 @@ const updateEvent = async (req, res) => {
       return res.status(404).json({ success: false, message: "Event not found" });
 
     const allowed = pick(req.body, ["label", "value", "sortOrder", "isActive"]);
-    if (req.file) allowed.image = `events/${req.file.filename}`;  // ← add
+    if (req.file) {
+      deleteUploadFile(event.image);
+      allowed.image = `uploads/events/${req.file.filename}`;
+    }
 
     await event.update(allowed);
     return res.status(200).json({ success: true, data: event });
@@ -320,7 +352,12 @@ const updateCombo = async (req, res) => {
       "price", "discountedPrice", "description", "sortOrder", "isActive",
     ]);
 
-    if (req.file) allowed.image = `uploads/combos/${req.file.filename}`;
+    if (req.file) {
+      // delete old combo image if present
+      const combo = await Combo.findByPk(req.params.id);
+      if (combo) deleteUploadFile(combo.image);
+      allowed.image = `uploads/combos/${req.file.filename}`;
+    }
 
     if (allowed.productIds && typeof allowed.productIds === 'string') {
       try { allowed.productIds = JSON.parse(allowed.productIds); } catch { allowed.productIds = []; }
@@ -341,6 +378,9 @@ const deleteCombo = async (req, res) => {
     if (!combo) {
       return res.status(404).json({ success: false, message: "Combo not found" });
     }
+
+    // delete combo image file if present
+    try { deleteUploadFile(combo.image); } catch (e) { /* continue */ }
 
     await combo.destroy();
     return res.status(200).json({ success: true, message: "Combo deleted successfully" });

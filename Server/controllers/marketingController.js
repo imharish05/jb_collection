@@ -23,9 +23,13 @@ const deleteOldFile = (imagePath) => {
   // imagePath is like "uploads/hero-slides/123.jpeg"
   const abs = path.join(__dirname, "..", imagePath);
   if (fs.existsSync(abs)) {
-    fs.unlink(abs, (err) => {
-      if (err) console.warn("Could not delete old file:", abs, err.message);
-    });
+    try {
+      if (process.env.DEBUG_DELETE === 'true') console.log('Attempting to delete marketing file:', abs);
+      fs.unlink(abs, (err) => {
+        if (err) console.warn("Could not delete old file:", abs, err.message);
+        else if (process.env.DEBUG_DELETE === 'true') console.log('Deleted marketing file:', abs);
+      });
+    } catch (e) { console.warn('deleteOldFile error:', e.message); }
   }
 };
 

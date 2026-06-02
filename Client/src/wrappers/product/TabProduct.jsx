@@ -18,20 +18,40 @@ const TabProduct = ({
   const [hasCustomisable, setHasCustomisable] = useState(false);
   const [hasNewArrival, setHasNewArrival] = useState(false);
   const [hasHotDeals, setHasHotDeals] = useState(false);
+  const [customisableProducts, setCustomisableProducts] = useState([]);
+  const [newArrivalProducts, setNewArrivalProducts] = useState([]);
+  const [hotDealsProducts, setHotDealsProducts] = useState([]);
 
   useEffect(() => {
     // Check if products exist for each type
-    const customisableProducts = getProducts(products, category, "customisable");
-    const newArrivalProducts = getProducts(products, category, "newArrival");
-    const hotDealsProducts = getProducts(products, category, "hotDeals");
-    
-    setHasCustomisable(customisableProducts && customisableProducts.length > 0);
-    setHasNewArrival(newArrivalProducts && newArrivalProducts.length > 0);
-    setHasHotDeals(hotDealsProducts && hotDealsProducts.length > 0);
+    const customProds = getProducts(products, category, "customisable");
+    const newProds = getProducts(products, category, "newArrival");
+    const hotProds = getProducts(products, category, "hotDeals");
+
+    setCustomisableProducts(customProds || []);
+    setNewArrivalProducts(newProds || []);
+    setHotDealsProducts(hotProds || []);
+
+    setHasCustomisable((customProds && customProds.length > 0) || false);
+    setHasNewArrival((newProds && newProds.length > 0) || false);
+    setHasHotDeals((hotProds && hotProds.length > 0) || false);
   }, [products, category]);
 
-  // Determine default active tab priority: Customizable → Hot Deals → New Arrivals
-  const defaultTab = hasCustomisable ? "customisable" : hasHotDeals ? "hotDeals" : "newArrival";
+  // Determine default active tab priority: Customisable → Hot Deals → New Arrivals
+  const availableTabs = [];
+  if (hasCustomisable) availableTabs.push("customisable");
+  if (hasHotDeals) availableTabs.push("hotDeals");
+  if (hasNewArrival) availableTabs.push("newArrival");
+  const [activeTab, setActiveTab] = useState(null);
+
+  useEffect(() => {
+    // choose first available tab or keep current if still available
+    if (availableTabs.length > 0) {
+      setActiveTab(prev => (prev && availableTabs.includes(prev) ? prev : availableTabs[0]));
+    } else {
+      setActiveTab(null);
+    }
+  }, [hasCustomisable, hasHotDeals, hasNewArrival]);
 
   return (
     <div
@@ -39,7 +59,7 @@ const TabProduct = ({
     >
       <div className="container">
         <SectionTitle titleText="DAILY DEALS!" positionClass="text-center" />
-        <Tab.Container defaultActiveKey={defaultTab}>
+        <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
           <Nav
             variant="pills"
             className="product-tab-list product-tab-list--scroll pt-30 pb-55 text-center"
@@ -75,6 +95,7 @@ const TabProduct = ({
                     type="customisable"
                     limit={6}
                     spaceBottomClass="mb-25"
+                    productsList={customisableProducts}
                   />
                 </div>
               </Tab.Pane>
@@ -87,6 +108,7 @@ const TabProduct = ({
                     type="newArrival"
                     limit={6}
                     spaceBottomClass="mb-25"
+                    productsList={newArrivalProducts}
                   />
                 </div>
               </Tab.Pane>
@@ -99,6 +121,7 @@ const TabProduct = ({
                     type="hotDeals"
                     limit={6}
                     spaceBottomClass="mb-25"
+                    productsList={hotDealsProducts}
                   />
                 </div>
               </Tab.Pane>

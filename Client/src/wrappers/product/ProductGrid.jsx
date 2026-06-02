@@ -8,14 +8,15 @@ const ProductGrid = ({
   spaceBottomClass,
   category,
   type,
-  limit
+  limit,
+  productsList
 }) => {
   const { products } = useSelector((state) => state.product);
   const currency = useSelector((state) => state.currency || { currencyName: "INR", currencyRate: 1, currencySymbol: "₹" });
   const { cartItems } = useSelector((state) => state.cart);
   const { wishlistItems } = useSelector((state) => state.wishlist);
   const { compareItems } = useSelector((state) => state.compare);
-  const prods = getProducts(products, category, type, limit)
+  const prods = Array.isArray(productsList) ? productsList.slice(0, limit ? limit : productsList.length) : getProducts(products, category, type, limit)
   
   return (
     <Fragment>
