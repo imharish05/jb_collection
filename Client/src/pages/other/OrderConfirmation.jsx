@@ -63,7 +63,7 @@ const OrderConfirmation = () => {
   const { state } = useLocation();
   const orderId = state?.orderId || "KG000000";
   const selectedAddr = state?.selectedShippingAddr || state?.selectedAddr || {};
-  const paymentMethod = state?.paymentMethod || "cod";
+  const paymentMethod = state?.paymentMethod || "partial_cod";
   const cartItems = state?.cartItems || [];
   const estimatedDays = state?.estimatedDays || null;
   const partialCod = state?.partialCod || null;

@@ -85,12 +85,6 @@ const EMPTY_ADDR = {
 
 const PAYMENT_METHODS = [
   {
-    id: "cod",
-    label: "Cash on Delivery",
-    icon: "💵",
-    desc: "Pay when your order arrives",
-  },
-  {
     id: "partial_cod",
     label: "Partial COD",
     icon: "🔀",
@@ -179,7 +173,7 @@ const Checkout = () => {
   const [selectedShippingAddrId, setSelectedShippingAddrId] = useState(activeAddressId);
   const [selectedBillingAddrId, setSelectedBillingAddrId] = useState(null);
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState("upi");
+  const [paymentMethod, setPaymentMethod] = useState("partial_cod");
   const [showNewAddrForm, setShowNewAddrForm] = useState(false);
   const [addrForm, setAddrForm] = useState(EMPTY_ADDR);
   const [addrErrors, setAddrErrors] = useState({});
@@ -465,17 +459,25 @@ const Checkout = () => {
     ? selectedShippingAddr
     : addresses.find((a) => a.id === selectedBillingAddrId);
 
-  // Filter payment methods based on COD availability
+  // Filter payment methods based on COD availability (hide partial COD when COD not available)
   const availablePaymentMethods = PAYMENT_METHODS.filter(
-    (pm) => (pm.id !== "cod" && pm.id !== "partial_cod") || (shippingInfo?.codAvailable === true)
+    (pm) => pm.id !== "partial_cod" || (shippingInfo?.codAvailable === true)
   );
 
-  // Reset payment method if COD/partial_cod was selected but not available
+  // Reset payment method if Partial COD was selected but not available
   useEffect(() => {
-    if ((paymentMethod === "cod" || paymentMethod === "partial_cod") && !shippingInfo?.codAvailable) {
-      setPaymentMethod("upi");
+    if (paymentMethod === "partial_cod" && !shippingInfo?.codAvailable) {
+      const fallback = availablePaymentMethods.length ? availablePaymentMethods[0].id : "upi";
+      setPaymentMethod(fallback);
     }
-  }, [shippingInfo?.codAvailable, paymentMethod]);
+  }, [shippingInfo?.codAvailable, paymentMethod, availablePaymentMethods]);
+
+  // If COD becomes available after load, prefer Partial COD by default
+  useEffect(() => {
+    if (shippingInfo?.codAvailable && paymentMethod !== "partial_cod") {
+      setPaymentMethod("partial_cod");
+    }
+  }, [shippingInfo?.codAvailable]);
 
   const grandTotalWithCOD = shippingPricing.grandTotal;
 
