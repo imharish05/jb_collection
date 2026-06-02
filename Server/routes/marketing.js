@@ -28,7 +28,10 @@ const heroSlideStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, heroSlideUploadDir),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
-const uploadHeroSlide = multer({ storage: heroSlideStorage });
+const uploadHeroSlide = multer({
+  storage: heroSlideStorage,
+  limits: { fileSize: 3 * 1024 * 1024 },
+});
 
 // ── Offer Banner upload ──────────────────────────────────────
 const offerBannerUploadDir = path.join(__dirname, "../uploads/offer-banners");

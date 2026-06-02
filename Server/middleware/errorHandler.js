@@ -47,8 +47,11 @@ const errorHandler = (err, req, res, next) => {
   // ─── Multer File Upload Error ───────────────────────────
   if (err.code?.startsWith('LIMIT_')) {
     if (err.code === 'LIMIT_FILE_SIZE') {
+      const isHeroSlide = req.originalUrl?.includes('/hero-slides');
       return res.status(400).json({
-        message: 'File size exceeds the maximum limit of 5MB. Please upload a smaller image.',
+        message: isHeroSlide
+          ? 'Hero slide image must be 3MB or smaller. Please choose a smaller image.'
+          : 'File size exceeds the maximum limit. Please upload a smaller image.',
         code: 'FILE_TOO_LARGE'
       });
     }
