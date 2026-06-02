@@ -28,7 +28,7 @@ export const getProducts = (products, category, type, limit) => {
   }
   if (type && (type === "hotDeal" || type === "hotDeals")) {
     const hotProducts = finalProducts.filter(single =>
-      single.tag && single.tag.some(t => /hot.deal|🔥|\bhot\b/i.test(t))
+      (single.tag && single.tag.some(t => /hot.deal|🔥|\bhot\b/i.test(t))) || single.isHotDeal
     );
     return hotProducts.slice(0, limit ? limit : hotProducts.length);
   }

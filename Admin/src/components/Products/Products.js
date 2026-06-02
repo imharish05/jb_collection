@@ -267,7 +267,7 @@ export default function Products({ showToast }) {
       tag: Array.isArray(p.tag) ? p.tag.join(', ') : (p.tag || ''),
       isCustomisable: p.isCustomisable !== false,
       isNewArrival: !!p.isNew,
-      isHotDeal: false,
+      isHotDeal: !!p.isHotDeal,
     });
 
     // ── Map existing variants → VariantBuilder shape ──────────────────────
@@ -382,6 +382,7 @@ export default function Products({ showToast }) {
     fd.append('fullDescription', formData.fullDescription);
     fd.append('isNewArrival', formData.isNewArrival);
     fd.append('isCustomisable', formData.isCustomisable);
+    fd.append('isHotDeal', formData.isHotDeal);
 
     if (formData.subCategoryId) fd.append('subCategoryId', formData.subCategoryId);
     if (formData.subCategoryName) fd.append('subCategoryName', formData.subCategoryName);
@@ -823,6 +824,7 @@ export default function Products({ showToast }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {row.isNew && <span style={tag(KM.green, '#ecfdf5')}>NEW</span>}
                     {row.isCustomisable && <span style={tag(KM.teal, '#ecfeff')}>CUSTOM</span>}
+                    {row.isHotDeal && <span style={tag(KM.orange, KM.orangeLight)}>HOT DEAL</span>}
                   </div>
                 </td>
                 <td>

@@ -36,6 +36,16 @@ const Product = sequelize.define(
       defaultValue: false,
       field: "is_new",
     },
+    isCustomisable: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: "is_customisable",
+    },
+    isHotDeal: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: "is_hot_deal",
+    },
     rating: {
       type: DataTypes.DECIMAL(2, 1),
       defaultValue: 0,

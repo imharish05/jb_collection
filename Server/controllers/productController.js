@@ -142,14 +142,14 @@ const getProductById = async (req, res, next) => {
 // ─── POST /api/products/add ──────────────────────────────────────────────────
 // Body (multipart/form-data):
 //   productName*, categoryId, subCategoryId, brandId, comboId,
-//   isNewArrival, discount, offerEnd, tag (JSON string), fullDescription,
+//   isNewArrival, isCustomisable, isHotDeal, discount, offerEnd, tag (JSON string), fullDescription,
 //   shortDescription, variants (JSON string array of variant objects)
 // File: image (single)
 const createProduct = async (req, res, next) => {
   try {
     const {
       productName, categoryId, subCategoryId, brandId, comboId,
-      isNewArrival, discount, offerEnd, tag,
+      isNewArrival, isCustomisable, isHotDeal, discount, offerEnd, tag,
       shortDescription, fullDescription, variants,
     } = req.body;
 
@@ -176,6 +176,8 @@ const createProduct = async (req, res, next) => {
       discount:        discount    ? parseInt(discount)    : 0,
       offerEnd:        offerEnd    || null,
       isNew:           isNewArrival === "true" || isNewArrival === true,
+      isCustomisable:  isCustomisable === "true" || isCustomisable === true,
+      isHotDeal:       isHotDeal === "true" || isHotDeal === true,
       category:        categoryId  ? [String(categoryId)] : [],
       tag:             parsedTags,
       variation:       parsedVariants,
@@ -225,7 +227,7 @@ const updateProduct = async (req, res, next) => {
 
     const {
       productName, categoryId, subCategoryId, brandId, comboId,
-      isNewArrival, discount, offerEnd, tag,
+      isNewArrival, isCustomisable, isHotDeal, discount, offerEnd, tag,
       shortDescription, fullDescription, variants,
     } = req.body;
 
@@ -252,6 +254,12 @@ const updateProduct = async (req, res, next) => {
       isNew:            isNewArrival    !== undefined
                           ? (isNewArrival === "true" || isNewArrival === true)
                           : product.isNew,
+      isCustomisable:   isCustomisable  !== undefined
+                          ? (isCustomisable === "true" || isCustomisable === true)
+                          : product.isCustomisable,
+      isHotDeal:        isHotDeal       !== undefined
+                          ? (isHotDeal === "true" || isHotDeal === true)
+                          : product.isHotDeal,
       category:         categoryId      ? [String(categoryId)]            : product.category,
       tag:              parsedTags,
       variation:        parsedVariants  || product.variation,
