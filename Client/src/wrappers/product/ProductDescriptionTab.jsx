@@ -4,8 +4,8 @@ import clsx from "clsx";
 import Tab from "react-bootstrap/Tab";
 import Nav from "react-bootstrap/Nav";
 import { useSelector, useDispatch } from "react-redux";
-import { getProductReviews, submitReview } from "../../store/services/reviewService";
-import { clearReviews } from "../../store/slices/review-slice";
+import { getProductReviews, getReviewEligibility, submitReview } from "../../store/services/reviewService";
+import { clearEligibility, clearReviews } from "../../store/slices/review-slice";
 
 // ── Star picker ──────────────────────────────────────────────────────────────
 const StarPicker = ({ value, onChange }) => (
@@ -82,19 +82,26 @@ const RatingSummary = ({ reviews }) => {
 // ── Main component ───────────────────────────────────────────────────────────
 const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId }) => {
   const dispatch = useDispatch();
-  const { reviews, loading, submitting } = useSelector((state) => state.review);
+  const { reviews, loading, submitting, eligibility, eligibilityLoading } = useSelector((state) => state.review);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   const INITIAL_SHOW = 1;
   const [showAll, setShowAll]     = useState(false);
   const [rating, setRating]       = useState(0);
   const [feedback, setFeedback]   = useState("");
-  const [guestName, setGuestName] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [ratingErr, setRatingErr] = useState(false);
+  const showReviewForm = isAuthenticated && eligibility?.eligible;
+  const showReviewPanel = isAuthenticated && (eligibilityLoading || showReviewForm || submitted);
 
   // reset collapse when product changes
-  useEffect(() => { setShowAll(false); }, [productId]);
+  useEffect(() => {
+    setShowAll(false);
+    setSubmitted(false);
+    setRating(0);
+    setFeedback("");
+    setRatingErr(false);
+  }, [productId]);
 
   // Fetch reviews when productId changes
   useEffect(() => {
@@ -103,8 +110,16 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
     getProductReviews(dispatch, productId);
   }, [productId, dispatch]);
 
+  useEffect(() => {
+    dispatch(clearEligibility());
+    if (productId && isAuthenticated) {
+      getReviewEligibility(dispatch, productId);
+    }
+  }, [productId, isAuthenticated, dispatch]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!showReviewForm) return;
     if (!rating) { setRatingErr(true); return; }
     setRatingErr(false);
 
@@ -112,7 +127,6 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
       productId,
       feedback,
       rating,
-      ...(isAuthenticated ? {} : { guestName: guestName || "Guest" }),
     };
 
     const ok = await submitReview(dispatch, payload);
@@ -120,7 +134,7 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
       setSubmitted(true);
       setRating(0);
       setFeedback("");
-      setGuestName("");
+      getReviewEligibility(dispatch, productId);
     }
   };
 
@@ -157,7 +171,7 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
                 <div className="row">
 
                   {/* Left: existing reviews */}
-                  <div className="col-lg-7">
+                  <div className={showReviewPanel ? "col-lg-7" : "col-lg-12"}>
                     {loading ? (
                       <p style={{ color: "#aaa", padding: "20px 0" }}>Loading reviews…</p>
                     ) : reviews.length === 0 ? (
@@ -225,19 +239,18 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
                   </div>
 
                   {/* Right: submit form */}
+                  {showReviewPanel && (
                   <div className="col-lg-5">
                     <div className="ratting-form-wrapper pl-50">
-                      <h3>Add a Review</h3>
+                      {eligibilityLoading ? (
+                        <p style={{ color: "#aaa", padding: "20px 0" }}>Checking review eligibility...</p>
+                      ) : (
+                        <>
+                      {!submitted && <h3>Add a Review</h3>}
 
                       {submitted ? (
                         <div style={{ padding: "20px 0", color: "#4caf50", fontWeight: 600 }}>
                           ✅ Thank you! Your review has been submitted and is pending approval.
-                          <button
-                            onClick={() => setSubmitted(false)}
-                            style={{ display: "block", marginTop: 12, background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "6px 16px", cursor: "pointer", fontSize: 13, color: "#555" }}
-                          >
-                            Write another
-                          </button>
                         </div>
                       ) : (
                         <div className="ratting-form">
@@ -257,20 +270,6 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
                             </div>
 
                             <div className="row">
-                              {/* Guest name — only if not logged in */}
-                              {!isAuthenticated && (
-                                <div className="col-md-12">
-                                  <div className="rating-form-style mb-10">
-                                    <input
-                                      placeholder="Your name (optional)"
-                                      type="text"
-                                      value={guestName}
-                                      onChange={(e) => setGuestName(e.target.value)}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-
                               {/* Show logged-in user's name */}
                               {isAuthenticated && user?.name && (
                                 <div className="col-md-12">
@@ -303,8 +302,11 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
                           </form>
                         </div>
                       )}
+                        </>
+                      )}
                     </div>
                   </div>
+                  )}
                 </div>
               </Tab.Pane>
 

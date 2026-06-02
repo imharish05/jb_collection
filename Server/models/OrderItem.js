@@ -25,7 +25,7 @@ const OrderItem = sequelize.define(
       field: "product_name",
     },
     selectedVariantId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: true,
       field: "selected_variant_id",
     },
@@ -33,6 +33,18 @@ const OrderItem = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
       field: "selected_variant_name",
+    },
+    status: {
+      type: DataTypes.ENUM(
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "returned"
+      ),
+      allowNull: true,
     },
     variantAttributes: {
       type: DataTypes.JSON,

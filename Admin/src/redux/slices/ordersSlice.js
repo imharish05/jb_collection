@@ -11,8 +11,14 @@ const ordersSlice = createSlice({
             const order = state.items.find(o => o.id === action.payload.id);
             if (order) order.status = action.payload.status;
         },
+        updateItemStatus: (state, action) => {
+            const order = state.items.find(o => o.id === action.payload.orderId);
+            const items = order?.items || order?.orderItems || [];
+            const item = items.find(i => i.id === action.payload.itemId);
+            if (item) item.status = action.payload.status;
+        },
     },
 });
 
-export const { setLoading, setItems, setError, updateStatus } = ordersSlice.actions;
+export const { setLoading, setItems, setError, updateStatus, updateItemStatus } = ordersSlice.actions;
 export default ordersSlice.reducer;

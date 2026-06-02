@@ -1,9 +1,9 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
-import { fetchOrders, changeOrderStatus } from '../../redux/services/ordersService';
+import { fetchOrders, changeOrderStatus, changeOrderItemStatus } from '../../redux/services/ordersService';
 
-const STATUS_OPTIONS = ['pending', 'confirmed','shipped','processing', 'delivered', 'cancelled'];
+const STATUS_OPTIONS = ['pending', 'confirmed','shipped','processing', 'delivered', 'cancelled', 'returned'];
 const labelFor = s => ({
   pending: 'New / Pending',
   confirmed: 'Confirmed',
@@ -11,6 +11,7 @@ const labelFor = s => ({
   processing: 'Out for Delivery',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
+  returned: 'Returned',
 }[s] || s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
 const safeNumber = (v, fallback = 0) => {
   const n = typeof v === 'number' ? v : parseFloat(v);
@@ -136,6 +137,14 @@ export default function Orders({ status = null }) {
     }
   };
 
+  const updateItemStatus = async (orderId, itemId, newStatus) => {
+    try {
+      await dispatch(changeOrderItemStatus({ orderId, itemId, status: newStatus }));
+    } catch (err) {
+      console.error('Failed to update item status:', err);
+    }
+  };
+
   return (
     <div>
       <div className="section-header">
@@ -224,6 +233,19 @@ export default function Orders({ status = null }) {
                                     )}
                                     <span className="td-muted"> × {item.quantity}</span>
                                   </span>
+                                  {item.id && (
+                                    <select
+                                      className={`km-status-select km-status-${item.status || order.status || 'pending'}`}
+                                      value={item.status || order.status || 'pending'}
+                                      onChange={e => updateItemStatus(order.id, item.id, e.target.value)}
+                                      style={{ maxWidth: 145, height: 30, fontSize: 11, padding: '0 24px 0 8px' }}
+                                      title="Item delivery status"
+                                    >
+                                      {STATUS_OPTIONS.map(st => (
+                                        <option key={st} value={st}>{labelFor(st)}</option>
+                                      ))}
+                                    </select>
+                                  )}
                                   <span className="td-price-sm">₹{(safeNumber(item.price) * safeNumber(item.quantity, 1)).toFixed(2)}</span>
                                 </div>
                               ))

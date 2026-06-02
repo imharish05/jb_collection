@@ -8,6 +8,7 @@ const {
   getAllOrders,
   getOrdersByStatus,
   updateOrderStatus,
+  updateOrderItemStatus,
 } = require("../controllers/orderController");
 const { protect, adminOnly } = require("../middleware/auth");
 
@@ -27,6 +28,7 @@ router.get("/admin/all", adminOnly, getAllOrders);
 router.get("/status/:status", adminOnly, getOrdersByStatus);
 
 // ── Admin: update order status ────────────────────────────────────────────────
+router.patch("/:orderId/items/:itemId/status", adminOnly, updateOrderItemStatus);
 router.patch("/:id/status",       adminOnly, updateOrderStatus);
 router.put("/admin/:id/status",   adminOnly, updateOrderStatus);
 

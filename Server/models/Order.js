@@ -26,7 +26,8 @@ const Order = sequelize.define(
         "processing",
         "shipped",
         "delivered",
-        "cancelled"
+        "cancelled",
+        "returned"
       ),
       defaultValue: "pending",
     },

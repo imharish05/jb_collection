@@ -1,6 +1,7 @@
 // controllers/orderController.js
 const { Order, CartItem, User, Product, Variant, OrderItem, Address, Coupon } = require("../models");
 const sequelize = require("../config/database");
+const { Op } = require("sequelize");
 const { sendOrderConfirmationEmail } = require("../utils/mailer");
 const { shiprocketPost } = require("../utils/shiprocket");
 
@@ -17,7 +18,18 @@ const STATUS_MAP = {
   delivery:  "processing",   // "Out for Delivery" in dashboard = "processing" in DB
   delivered: "delivered",
   cancelled: "cancelled",
+  returned:  "returned",
 };
+
+const ORDER_ITEM_STATUS_OPTIONS = [
+  "pending",
+  "confirmed",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+  "returned",
+];
 
 // ─── GET /api/orders  (customer — own orders) ─────────────────────────────────
 const getMyOrders = async (req, res, next) => {
@@ -244,6 +256,7 @@ const createOrder = async (req, res, next) => {
         image: itemData.image || null,
         selectedProductColor: itemData.selectedProductColor || null,
         selectedProductSize: itemData.selectedProductSize || null,
+        status: order.status || "pending",
       }, { transaction });
     }
 
@@ -386,9 +399,29 @@ const updateOrderStatus = async (req, res, next) => {
     const order = await Order.findByPk(req.params.id);
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    if (status) order.status = status;
+    if (status) {
+      if (!ORDER_ITEM_STATUS_OPTIONS.includes(status)) {
+        return res.status(400).json({ message: "Invalid order status" });
+      }
+      order.status = status;
+    }
     if (paymentStatus) order.paymentStatus = paymentStatus;
     await order.save();
+
+    if (status) {
+      await OrderItem.update(
+        { status },
+        {
+          where: {
+            orderId: order.id,
+            [Op.or]: [
+              { status: { [Op.notIn]: ["cancelled", "returned"] } },
+              { status: { [Op.is]: null } },
+            ],
+          },
+        }
+      );
+    }
 
     // Fetch the order with items to return
     const updatedOrder = await Order.findByPk(order.id, {
@@ -405,6 +438,31 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
+// PATCH /api/orders/:orderId/items/:itemId/status (admin - product-wise item status)
+const updateOrderItemStatus = async (req, res, next) => {
+  try {
+    const { orderId, itemId } = req.params;
+    const { status } = req.body;
+
+    if (!ORDER_ITEM_STATUS_OPTIONS.includes(status)) {
+      return res.status(400).json({ message: "Invalid order item status" });
+    }
+
+    const order = await Order.findByPk(orderId);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    const item = await OrderItem.findOne({ where: { id: itemId, orderId } });
+    if (!item) return res.status(404).json({ message: "Order item not found" });
+
+    item.status = status;
+    await item.save();
+
+    return res.json(item);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getMyOrders,
   getOrderById,
@@ -412,4 +470,5 @@ module.exports = {
   getAllOrders,
   getOrdersByStatus,
   updateOrderStatus,
+  updateOrderItemStatus,
 };

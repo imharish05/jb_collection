@@ -35,7 +35,7 @@ const CartItem = sequelize.define(
       field: "selected_product_size",
     },
     selectedVariantId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: true,
       field: "selected_variant_id",
     },

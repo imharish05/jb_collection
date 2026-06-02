@@ -1,5 +1,5 @@
 import api from "../../api/axiosInstance";
-import { setLoading, setItems, setError, updateStatus } from "../slices/ordersSlice";
+import { setLoading, setItems, setError, updateStatus, updateItemStatus } from "../slices/ordersSlice";
 
 export const fetchOrders = () => async (dispatch) => {
     dispatch(setLoading());
@@ -17,6 +17,15 @@ export const changeOrderStatus = ({ id, status }) => async (dispatch) => {
     try {
         await api.patch(`/orders/${id}/status`, { status });
         dispatch(updateStatus({ id, status }));
+    } catch (err) {
+        throw err;
+    }
+};
+
+export const changeOrderItemStatus = ({ orderId, itemId, status }) => async (dispatch) => {
+    try {
+        await api.patch(`/orders/${orderId}/items/${itemId}/status`, { status });
+        dispatch(updateItemStatus({ orderId, itemId, status }));
     } catch (err) {
         throw err;
     }
