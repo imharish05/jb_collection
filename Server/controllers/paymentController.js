@@ -40,11 +40,39 @@ const createRazorpayOrder = async (req, res, next) => {
   }
 };
 
+// POST /api/payment/create-delivery-charge-order
+// Partial COD: creates Razorpay order for delivery charge ONLY
+const createDeliveryChargeOrder = async (req, res, next) => {
+  try {
+    const { deliveryCharge, currency = 'INR' } = req.body;
+
+    if (!deliveryCharge || deliveryCharge <= 0) {
+      return res.status(400).json({ message: 'Valid delivery charge amount is required' });
+    }
+
+    const options = {
+      amount: Math.round(deliveryCharge * 100),
+      currency,
+      receipt: `del_${Date.now()}`,
+      notes: { type: 'delivery_charge_only' },
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // POST /api/payment/verify
 // Call AFTER Razorpay callback — verify signature, update order paymentStatus
 const verifyPayment = async (req, res, next) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, dbOrderId } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, dbOrderId, isDeliveryCharge } = req.body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !dbOrderId) {
       return res.status(400).json({ message: 'Missing required payment verification fields' });
@@ -60,15 +88,24 @@ const verifyPayment = async (req, res, next) => {
       return res.status(400).json({ message: 'Payment verification failed: Invalid signature' });
     }
 
-    // Update order paymentStatus to paid
     const order = await Order.findByPk(dbOrderId);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    order.paymentStatus = 'paid';
-    order.paymentMethod = 'razorpay';
-    order.transactionId = razorpay_payment_id;
+    if (isDeliveryCharge) {
+      // Partial COD: mark delivery charge as paid, product cost still COD
+      order.deliveryChargePaid = true;
+      order.deliveryChargeTransactionId = razorpay_payment_id;
+      order.paymentStatus = 'partial';
+      order.paymentMethod = 'partial_cod';
+    } else {
+      // Full online payment
+      order.paymentStatus = 'paid';
+      order.paymentMethod = 'razorpay';
+      order.transactionId = razorpay_payment_id;
+    }
+
     await order.save();
 
     res.json({ success: true, message: 'Payment verified successfully', order });
@@ -77,4 +114,4 @@ const verifyPayment = async (req, res, next) => {
   }
 };
 
-module.exports = { createRazorpayOrder, verifyPayment };
+module.exports = { createRazorpayOrder, createDeliveryChargeOrder, verifyPayment };

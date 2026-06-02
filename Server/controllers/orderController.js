@@ -226,17 +226,23 @@ const createOrder = async (req, res, next) => {
       });
     }
 
+    const isPartialCod = (paymentMethod || "cod") === "partial_cod";
+
     const order = await Order.create({
       userId: req.user.id,
       totalAmount: parseFloat(totalAmount),
       shippingAddressId: shippingAddress.id,
       billingAddressId: billingAddressRef,
-      paymentMethod: paymentMethod || "cod",
-      paymentStatus: "pending",
+      paymentMethod: isPartialCod ? "partial_cod" : (paymentMethod || "cod"),
+      paymentStatus: isPartialCod ? "partial" : "pending",
       couponCode: normalizedCouponCode,
       notes,
       shippingCharge: parseFloat(shippingCharge || 0),
       estimatedDeliveryDays: estimatedDeliveryDays || null,
+      // For partial COD: product cost is paid on delivery
+      partialCodAmount: isPartialCod
+        ? parseFloat(totalAmount) - parseFloat(shippingCharge || 0)
+        : null,
     }, { transaction });
 
     // Create OrderItem records for each item

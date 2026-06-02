@@ -51,7 +51,7 @@ const Order = sequelize.define(
       defaultValue: "cod",
     },
     paymentStatus: {
-      type: DataTypes.ENUM("pending", "paid", "failed", "refunded"),
+      type: DataTypes.ENUM("pending", "paid", "failed", "refunded", "partial"),
       defaultValue: "pending",
       field: "payment_status",
     },
@@ -89,6 +89,23 @@ const Order = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
       field: "transaction_id",
+    },
+    // Partial COD: delivery charge paid online, product cost paid on delivery
+    deliveryChargePaid: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: "delivery_charge_paid",
+    },
+    deliveryChargeTransactionId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "delivery_charge_transaction_id",
+    },
+    partialCodAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: "partial_cod_amount",
+      comment: "Amount to be collected on delivery (product cost)",
     },
   },
   {

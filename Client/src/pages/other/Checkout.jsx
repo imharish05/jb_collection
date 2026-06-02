@@ -91,6 +91,12 @@ const PAYMENT_METHODS = [
     desc: "Pay when your order arrives",
   },
   {
+    id: "partial_cod",
+    label: "Partial COD",
+    icon: "🔀",
+    desc: "Pay delivery charge now · Product cost on delivery",
+  },
+  {
     id: "upi",
     label: "UPI / QR Pay",
     icon: "📱",
@@ -461,12 +467,12 @@ const Checkout = () => {
 
   // Filter payment methods based on COD availability
   const availablePaymentMethods = PAYMENT_METHODS.filter(
-    (pm) => pm.id !== "cod" || (shippingInfo?.codAvailable === true)
+    (pm) => (pm.id !== "cod" && pm.id !== "partial_cod") || (shippingInfo?.codAvailable === true)
   );
 
-  // Reset payment method to UPI if COD was selected but not available
+  // Reset payment method if COD/partial_cod was selected but not available
   useEffect(() => {
-    if (paymentMethod === "cod" && !shippingInfo?.codAvailable) {
+    if ((paymentMethod === "cod" || paymentMethod === "partial_cod") && !shippingInfo?.codAvailable) {
       setPaymentMethod("upi");
     }
   }, [shippingInfo?.codAvailable, paymentMethod]);
@@ -575,7 +581,10 @@ const Checkout = () => {
       const res = await api.post("/orders", payload);
       const id = res.data?.id || res.data?.orderId || "KG" + Date.now();
 
-      if (paymentMethod !== "cod") {
+      if (paymentMethod === "partial_cod") {
+        // Collect delivery charge via Razorpay, rest on delivery
+        initPartialCodPayment(id, shippingInfo?.shippingCharge || 0);
+      } else if (paymentMethod !== "cod") {
         initRazorpayPayment(id);
       } else {
         if (checkoutSource === "cart") {
@@ -604,6 +613,109 @@ const Checkout = () => {
       });
     } finally {
       setPlacing(false);
+    }
+  };
+
+  /* ── Initialize Partial COD Payment (delivery charge only) ────────────── */
+  const initPartialCodPayment = async (dbOrderId, deliveryCharge) => {
+    if (!deliveryCharge || deliveryCharge <= 0) {
+      // No delivery charge to collect — treat as plain COD
+      if (checkoutSource === "cart") dispatch(deleteAllFromCart());
+      navigatingRef.current = true;
+      dispatch(clearCheckout());
+      setTimeout(() => {
+        navigate(`/order-confirmation`, {
+          replace: true,
+          state: { orderId: dbOrderId, selectedShippingAddr, billingAddress: selectedBillingAddr, paymentMethod, cartItems: checkoutItems, estimatedDays: shippingInfo?.estimatedDays || null },
+        });
+      }, 1000);
+      return;
+    }
+
+    try {
+      setProcessingRazorpay(true);
+
+      const paymentRes = await api.post("/payment/create-delivery-charge-order", {
+        deliveryCharge,
+        currency: "INR",
+      });
+
+      const rzpOrderId = paymentRes.data.orderId;
+
+      if (!window.Razorpay) {
+        cogoToast.error("Razorpay SDK not loaded", { position: "top-center" });
+        return;
+      }
+
+      const productCost = shippingPricing.grandTotal - deliveryCharge;
+
+      const options = {
+        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+        order_id: rzpOrderId,
+        amount: Math.round(deliveryCharge * 100),
+        currency: "INR",
+        name: "Kamali Gifts",
+        description: `Delivery charge for Order ${dbOrderId}`,
+        customer_notify: 1,
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+          contact: selectedShippingAddr?.phone || "",
+        },
+        theme: { color: "#f15a24" },
+        handler: async (response) => {
+          try {
+            const verifyRes = await api.post("/payment/verify", {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              dbOrderId,
+              isDeliveryCharge: true,
+            });
+
+            if (verifyRes.data.success) {
+              cogoToast.success(
+                `Delivery charge ₹${deliveryCharge} paid! Pay ₹${productCost.toFixed(2)} on delivery.`,
+                { position: "top-center" }
+              );
+              if (checkoutSource === "cart") dispatch(deleteAllFromCart());
+              navigatingRef.current = true;
+              dispatch(clearCheckout());
+              setTimeout(() => {
+                navigate(`/order-confirmation`, {
+                  replace: true,
+                  state: {
+                    orderId: dbOrderId,
+                    selectedShippingAddr,
+                    billingAddress: selectedBillingAddr,
+                    paymentMethod: "partial_cod",
+                    cartItems: checkoutItems,
+                    estimatedDays: shippingInfo?.estimatedDays || null,
+                    partialCod: { deliveryChargePaid: deliveryCharge, amountDueOnDelivery: productCost },
+                  },
+                });
+              }, 1500);
+            }
+          } catch (verifyErr) {
+            cogoToast.error("Delivery charge verification failed", { position: "top-center" });
+            console.error("Partial COD verify error:", verifyErr);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            cogoToast.warn("Payment cancelled — your order is placed but delivery charge unpaid. Contact support.", { position: "top-center" });
+            setProcessingRazorpay(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      cogoToast.error("Could not initialize delivery charge payment", { position: "top-center" });
+      console.error("Partial COD init error:", err);
+    } finally {
+      setProcessingRazorpay(false);
     }
   };
 

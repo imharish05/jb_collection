@@ -66,6 +66,7 @@ const OrderConfirmation = () => {
   const paymentMethod = state?.paymentMethod || "cod";
   const cartItems = state?.cartItems || [];
   const estimatedDays = state?.estimatedDays || null;
+  const partialCod = state?.partialCod || null;
 
   const cartTotalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -76,6 +77,7 @@ const OrderConfirmation = () => {
     wallet: "Wallet",
     cod: "Cash on Delivery (COD)",
     razorpay: "Online Payment (Razorpay)",
+    partial_cod: "Partial COD (Delivery paid online)",
   };
 
   return (
@@ -226,24 +228,36 @@ const OrderConfirmation = () => {
                 <h4 style={cardTitle}>💳 Payment</h4>
                 <div style={infoRow}>
                   <span style={infoLabel}>Method</span>
-                  <span style={infoValue}>{PAYMENT_LABELS[paymentMethod]}</span>
+                  <span style={infoValue}>{PAYMENT_LABELS[paymentMethod] || paymentMethod}</span>
                 </div>
                 <div style={infoRow}>
                   <span style={infoLabel}>Status</span>
                   <span
                     style={{
                       ...infoValue,
-                      background: paymentMethod === "cod" ? "#fff3e0" : "#e8f5e9",
-                      color: paymentMethod === "cod" ? "rgba(223, 77, 129)" : "#2e7d32",
+                      background: paymentMethod === "cod" ? "#fff3e0" : paymentMethod === "partial_cod" ? "#fff8e1" : "#e8f5e9",
+                      color: paymentMethod === "cod" ? "rgba(223, 77, 129)" : paymentMethod === "partial_cod" ? "#e65100" : "#2e7d32",
                       padding: "2px 10px",
                       borderRadius: 20,
                       fontWeight: 600,
                       fontSize: 12,
                     }}
                   >
-                    {paymentMethod === "cod" ? "Pay on Delivery" : "Payment Received"}
+                    {paymentMethod === "cod" ? "Pay on Delivery" : paymentMethod === "partial_cod" ? "Delivery Charge Paid" : "Payment Received"}
                   </span>
                 </div>
+                {paymentMethod === "partial_cod" && partialCod && (
+                  <>
+                    <div style={infoRow}>
+                      <span style={infoLabel}>Delivery paid</span>
+                      <span style={{ ...infoValue, color: "#2e7d32", fontWeight: 700 }}>₹{partialCod.deliveryChargePaid?.toFixed(2)}</span>
+                    </div>
+                    <div style={{ ...infoRow, background: "#fff8e1", borderRadius: 8, padding: "8px 12px", marginTop: 8 }}>
+                      <span style={{ ...infoLabel, color: "#e65100" }}>Due on delivery</span>
+                      <span style={{ ...infoValue, color: "#e65100", fontWeight: 800, fontSize: 15 }}>₹{partialCod.amountDueOnDelivery?.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

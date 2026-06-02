@@ -215,7 +215,14 @@ export default function Orders({ status = null }) {
                           <div className="km-form-header-icon">📦</div>
                           <div>
                             <div className="km-form-header-title">Order #{order.id} — {order.customer_name}</div>
-                            <div className="km-form-header-sub">Payment: {order.paymentMethod || '—'} ({order.paymentStatus || '—'})</div>
+                            <div className="km-form-header-sub">
+                              Payment: {order.paymentMethod === 'partial_cod' ? '🔀 Partial COD' : (order.paymentMethod || '—')} ({order.paymentStatus || '—'})
+                              {order.paymentMethod === 'partial_cod' && order.partialCodAmount && (
+                                <span style={{ marginLeft: 8, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '1px 6px', fontSize: 11, fontWeight: 700 }}>
+                                  ₹{parseFloat(order.partialCodAmount).toFixed(2)} due on delivery
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="km-order-detail-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
