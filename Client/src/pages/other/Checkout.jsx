@@ -1413,23 +1413,24 @@ if (attrsArray.length) {
                         {loadingCoupons ? (
                           <div className="kco-coupon-muted">Loading coupons...</div>
                         ) : activeCoupons.length > 0 ? (
-                          <div className="kco-coupon-chip-row">
-                            {activeCoupons.map((coupon) => (
-                              <button
-                                type="button"
-                                key={coupon.id || coupon.code}
-                                className={`kco-coupon-chip ${shippingPricing.couponCode === coupon.code ? "active" : ""}`}
-                                onClick={() => {
-                                  setCouponInput(coupon.code);
-                                  setCouponError("");
-                                }}
-                                title={getCouponLabel(coupon)}
-                              >
-                                <span>{coupon.code}</span>
-                                <small>{getCouponLabel(coupon)}</small>
-                              </button>
-                            ))}
-                          </div>
+                          // <div className="kco-coupon-chip-row">
+                          //   {activeCoupons.map((coupon) => (
+                          //     <button
+                          //       type="button"
+                          //       key={coupon.id || coupon.code}
+                          //       className={`kco-coupon-chip ${shippingPricing.couponCode === coupon.code ? "active" : ""}`}
+                          //       onClick={() => {
+                          //         setCouponInput(coupon.code);
+                          //         setCouponError("");
+                          //       }}
+                          //       title={getCouponLabel(coupon)}
+                          //     >
+                          //       <span>{coupon.code}</span>
+                          //       <small>{getCouponLabel(coupon)}</small>
+                          //     </button>
+                          //   ))}
+                          // </div>
+                          <></>
                         ) : (
                           <div className="kco-coupon-muted">No active coupons right now.</div>
                         )}

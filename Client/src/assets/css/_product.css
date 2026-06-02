@@ -167,7 +167,7 @@ updated
 }
 /* Container styling */
 .product-tab-list {
-  border-bottom: 1px solid #e5e5e5; /* Light separator line */
+  border-bottom: none;
 }
 
 .product-tab-list .nav-item .nav-link {
@@ -185,20 +185,13 @@ updated
   font-weight: 700;
 }
 
-/* The Underline Effect */
+/* The Underline Effect - REMOVED */
 .product-tab-list .nav-item .nav-link::after {
-  content: '';
-  position: absolute;
-  bottom: -1px; /* Align with the border-bottom of the container */
-  left: 0;
-  width: 0;
-  height: 3px;
-  background-color: #db1a5d;
-  transition: width 0.3s ease;
+  display: none;
 }
 
 .product-tab-list .nav-item .nav-link.active::after {
-  width: 100%; /* Line grows to full width when active */
+  display: none;
 }
 @media only screen and (max-width: 768px) {
   .product-tab-list--scroll {
@@ -3588,8 +3581,8 @@ updated
 
 .price-rating-row {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    /* justify-content: space-between; */
+    /* align-items: center; */
 }
 
 .new-price { font-weight: 800; color: #db1a5d; font-size: 18px; }
@@ -3601,10 +3594,19 @@ updated
     .cart-action-overlay { bottom: 0; padding: 5px; }
     .cart-action-overlay button { padding: 8px; font-size: 10px; }
     .product-img-container { aspect-ratio: 1 / 1.05; }
-    .product-details-premium { padding: 12px 12px 14px; }
-    .product-details-premium h4 { font-size: 13px; margin: 4px 0 8px; }
-    .new-price { font-size: 14px; }
+    .product-details-premium { padding: 14px 12px 16px; }
+    .product-details-premium h4 { font-size: 14px; margin: 6px 0 10px; }
+    .price-rating-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .new-price { font-size: 15px; }
     .old-price { font-size: 11px; margin-left: 6px; }
+    .product-badges-left { left: 8px; top: 8px; gap: 4px; }
+    .product-badges-left span {
+        font-size: 10px;
+        padding: 5px 8px;
+        min-width: auto;
+        white-space: nowrap;
+    }
+    .product-rating-display { gap: 5px; margin-top: 6px; padding-top: 8px; }
 }
 
 /* LIST VIEW PREMIUM STYLES */
@@ -3877,8 +3879,8 @@ updated
 
 .price-rating-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  /* justify-content: space-between; */
+  /* align-items: center; */
 }
 
 .new-price { font-weight: 800; color: #db1a5d; font-size: 18px; }
@@ -3992,3 +3994,76 @@ updated
   .cart-action-overlay { bottom: 0; padding: 5px; }
   .cart-action-overlay button { padding: 8px; font-size: 10px; }
 }
+
+/* ─── NEW BADGE SYSTEM (LEFT SIDE) ─────────────────────────── */
+.product-badges-left {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 4;
+}
+
+.product-badges-left span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    max-width: 100%;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+    border-radius: 999px;
+    color: #ffffff;
+    box-shadow: 0 14px 26px rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.badge-discount {
+    background: linear-gradient(135deg, #db1a5d 0%, #b21649 100%);
+}
+
+.badge-new {
+    background: linear-gradient(135deg, #001d3d 0%, #2e2952 100%);
+}
+
+.badge-custom {
+    background: linear-gradient(135deg, #9c27b0 0%, #7f1f84 100%);
+}
+
+.badge-hot {
+    background: linear-gradient(135deg, #ff6b35 0%, #ff3c00 100%);
+}
+
+/* ─── RATING DISPLAY (BELOW PRICE) ─────────────────────────── */
+.product-rating-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(204, 204, 204, 0.35);
+}
+
+.product-rating-display .rating-number {
+    font-size: 11px;
+    color: #666;
+    font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .product-badges-left span {
+    font-size: 10px;
+    padding: 6px 10px;
+    min-width: auto;
+  }
+}
+

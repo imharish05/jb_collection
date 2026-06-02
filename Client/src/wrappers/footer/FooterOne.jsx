@@ -161,18 +161,18 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           .km-brand-desc { max-width: 100%; }
         }
 
-        /* ── Mobile (≤ 600px) ── */
-        @media (max-width: 600px) {
+        /* ── Mobile (≤ 767px) ── */
+        @media (max-width: 767px) {
           .km-footer { padding: 44px 0 0; }
           .km-footer-inner {
-            grid-template-columns: 1fr 1fr;
-            gap: 32px 20px;
+            grid-template-columns: 1fr;
+            gap: 32px;
           }
-          .km-brand-col { grid-column: span 2; text-align: center; }
+          .km-brand-col { grid-column: auto; text-align: center; }
           .km-brand-logo { margin: 0 auto 4px; }
           .km-brand-desc { max-width: 100%; font-size: 13px; }
           .km-social { justify-content: center; }
-          .km-contact-col { grid-column: span 2; }
+          .km-contact-col { grid-column: auto; }
           .km-bottom-bar {
             flex-direction: column;
             align-items: center;

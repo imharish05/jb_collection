@@ -36,10 +36,27 @@ const RelatedProductSlider = ({ spaceBottomClass, category }) => {
   const { cartItems } = useSelector((state) => state.cart);
   const { wishlistItems } = useSelector((state) => state.wishlist);
   const { compareItems } = useSelector((state) => state.compare);
-  // Exclude the currently viewed product from related products
-  const prods = getProducts(products, category, null, 7).filter(
-    (p) => String(p.id) !== String(currentProductId)
-  ).slice(0, 6);
+
+  // First, try to get products in the same category
+  let relatedProducts = products.filter(product => {
+    // Skip the current product
+    if (String(product.id) === String(currentProductId)) return false;
+
+    // Match by category — check multiple sources
+    const hasCategory = 
+      (Array.isArray(product.category) && product.category.includes(category)) ||
+      product.categoryId === category ||
+      product.Category?.value === category;
+
+    return hasCategory;
+  }).slice(0, 6);
+
+  // FALLBACK: If no category-specific products found, show any other products
+  if (relatedProducts.length === 0) {
+    relatedProducts = products
+      .filter(p => String(p.id) !== String(currentProductId))
+      .slice(0, 6);
+  }
   
   return (
     <div className={clsx("related-product-area", spaceBottomClass)}>
@@ -49,9 +66,9 @@ const RelatedProductSlider = ({ spaceBottomClass, category }) => {
           positionClass="text-center"
           spaceClass="mb-50"
         />
-        {prods?.length ? (
+        {relatedProducts?.length > 0 ? (
           <Swiper options={settings}>
-              {prods.map(product => (
+              {relatedProducts.map(product => (
                 <SwiperSlide key={product.id}>
                   <ProductGridSingle
                     product={product}

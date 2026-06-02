@@ -243,7 +243,7 @@ const OrderDetails = () => {
               <div className="col-xl-10">
                 <div className="order-nav-bar">
                   <Link to="/my-account?tab=orders"><i className="fa fa-long-arrow-left"></i> My Account</Link>
-                  <button className="minimal-btn" onClick={() => window.print()}><i className="fa fa-print"></i> Print Receipt</button>
+                  {/* <button className="minimal-btn" onClick={() => window.print()}><i className="fa fa-print"></i> Print Receipt</button> */}
                 </div>
 
                 <div className="premium-main-grid">

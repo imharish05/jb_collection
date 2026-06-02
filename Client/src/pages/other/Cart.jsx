@@ -728,24 +728,7 @@ const Cart = () => {
                       </span>
                       <span>₹{subtotal.toFixed(2)}</span>
                     </div>
-                    <div className="kg-breakdown-row">
-                      <span>Delivery</span>
-                      <span style={shipping === 0 ? { color: "#16a34a", fontWeight: 700 } : {}}>
-                        {shipping === 0 ? "FREE" : `₹${shipping}`}
-                      </span>
-                    </div>
                   </div>
-
-                  {/* Total */}
-                  <div className="kg-total-row">
-                    <span>Total</span>
-                    <span>₹{grandTotal.toFixed(2)}</span>
-                  </div>
-
-                  <p className="kg-tax-note">
-                    Inclusive of all taxes · COD +₹{COD_FEE}
-                  </p>
-
                   {/* Checkout Button */}
                   <button
                     className="kg-checkout-btn"

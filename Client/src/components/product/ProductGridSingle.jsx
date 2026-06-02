@@ -129,12 +129,20 @@ const ProductGridSingle = ({
             )}
           </Link>
 
-          {/* Badges */}
-          <div className="premium-badges">
+          {/* Badges - Left Side */}
+          <div className="product-badges-left">
             {product.discount > 0 && (
-              <span className="badge-pink">-{product.discount}%</span>
+              <span className="badge-discount">-{product.discount}%</span>
             )}
-            {product.new === true && <span className="badge-navy">NEW</span>}
+            {(product.isNew || product.new) && (
+              <span className="badge-new">NEW</span>
+            )}
+            {product.isCustomisable && (
+              <span className="badge-custom">Custom</span>
+            )}
+            {product.isHotDeal && (
+              <span className="badge-hot">Hot</span>
+            )}
           </div>
 
           {/* Floating Actions */}
@@ -194,12 +202,14 @@ const ProductGridSingle = ({
                 <span className="new-price">₹{finalProductPrice}</span>
               )}
             </div>
-            {product.rating > 0 && (
-              <div className="premium-rating">
-                <Rating ratingValue={product.rating} />
-              </div>
-            )}
           </div>
+
+          {product.rating > 0 && (
+            <div className="product-rating-display">
+              <Rating ratingValue={product.rating} />
+              <span className="rating-number">({product.rating})</span>
+            </div>
+          )}
         </div>
       </div>
 
