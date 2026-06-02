@@ -60,11 +60,11 @@ const Category = () => {
 };
 
   return (
-    <div className="category-area-wrapper pt-80 pb-80">
+    <div className="category-area-wrapper pt-30 pb-30">
       <div className="container position-relative">
         <div className="section-title text-center mb-50">
-          <h2 className="title-bold">Shop by Category</h2>
-          <div className="title-line"></div>
+          <h2 className="event-title pb-2">Shop by Category</h2>
+          <div className="event-subtitle">Custom creations that speak louder than words</div>
         </div>
 
         <div className="modern-slider-wrapper">

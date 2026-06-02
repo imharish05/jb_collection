@@ -87,6 +87,38 @@ export default function TimelessTreasures({ showToast }) {
   const [errors, setErrors]       = useState({});
   const [imageDimensions, setImageDimensions] = useState(null);
 
+  // Title / Badge limits
+  const TITLE_MAX_CHARS = 60;
+  const TITLE_MAX_WORDS = 8;
+  const OFF_MAX_CHARS = 30;
+  const OFF_MAX_WORDS = 4;
+
+  const countWords = (s) => (s || '').trim().split(/\s+/).filter(Boolean).length;
+
+  const handleTitleChange = (e) => {
+    let val = e.target.value || '';
+    if (val.length > TITLE_MAX_CHARS) val = val.slice(0, TITLE_MAX_CHARS);
+    const words = val.trim().split(/\s+/).filter(Boolean);
+    if (words.length > TITLE_MAX_WORDS) {
+      val = words.slice(0, TITLE_MAX_WORDS).join(' ');
+      if (val.length > TITLE_MAX_CHARS) val = val.slice(0, TITLE_MAX_CHARS);
+    }
+    setTitle(val);
+    setErrors(prev => { const n = { ...prev }; delete n.title; return n; });
+  };
+
+  const handleOffChange = (e) => {
+    let val = e.target.value || '';
+    if (val.length > OFF_MAX_CHARS) val = val.slice(0, OFF_MAX_CHARS);
+    const words = val.trim().split(/\s+/).filter(Boolean);
+    if (words.length > OFF_MAX_WORDS) {
+      val = words.slice(0, OFF_MAX_WORDS).join(' ');
+      if (val.length > OFF_MAX_CHARS) val = val.slice(0, OFF_MAX_CHARS);
+    }
+    setOff(val);
+    setErrors(prev => { const n = { ...prev }; delete n.off; return n; });
+  };
+
   const fileInputRef = useRef();
 
   useEffect(() => { dispatch(fetchOfferBanners()); }, [dispatch]);
@@ -179,14 +211,29 @@ export default function TimelessTreasures({ showToast }) {
     e.preventDefault();
     
     const newErrors = {};
-    if (!title.trim()) newErrors.title = 'Title is required';
+    const titleTrim = title.trim();
+    if (!titleTrim) newErrors.title = 'Title is required';
+    else {
+      if (titleTrim.length > TITLE_MAX_CHARS) newErrors.title = `Title must be ${TITLE_MAX_CHARS} characters or fewer`;
+      const tWords = countWords(titleTrim);
+      if (tWords > TITLE_MAX_WORDS) newErrors.title = `Title must be ${TITLE_MAX_WORDS} words or fewer`;
+    }
+
     if (!editingId && !imageFile) newErrors.image = 'Banner image is required';
-    
+
     // Validate image dimensions if new image is selected
     if (imageFile && imageDimensions && !imageDimensions.valid) {
       newErrors.image = imageDimensions.error;
     }
-    
+
+    // off validations
+    const offTrim = off.trim();
+    if (offTrim) {
+      if (offTrim.length > OFF_MAX_CHARS) newErrors.off = `Badge must be ${OFF_MAX_CHARS} characters or fewer`;
+      const offWords = countWords(offTrim);
+      if (offWords > OFF_MAX_WORDS) newErrors.off = `Badge must be ${OFF_MAX_WORDS} words or fewer`;
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       showToast.error(Object.values(newErrors)[0]);
@@ -299,6 +346,11 @@ export default function TimelessTreasures({ showToast }) {
                     </div>
                   )}
                 </div>
+                {errors.title && (
+                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 6 }}>
+                    ⚠ {errors.title}
+                  </div>
+                )}
                 
                 {/* Dimension Info */}
                 {imageDimensions && (
@@ -337,13 +389,23 @@ export default function TimelessTreasures({ showToast }) {
               {/* Title */}
               <div className="km-field km-field-half">
                 <label className="km-label">Title <span style={{ color: '#ef4444' }}>*</span></label>
-                <input
-                  className="km-input"
-                  type="text"
-                  placeholder="e.g. Divine Decor"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <input
+                    className="km-input"
+                    type="text"
+                    placeholder="e.g. Divine Decor"
+                    value={title}
+                    onChange={handleTitleChange}
+                  />
+                  <div style={{ fontSize: 12, color: '#6b7280' }}>
+                    {title.length}/{TITLE_MAX_CHARS} char · {countWords(title)}/{TITLE_MAX_WORDS} words
+                  </div>
+                </div>
+                {errors.off && (
+                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 6 }}>
+                    ⚠ {errors.off}
+                  </div>
+                )}
               </div>
 
               {/* Badge/Tag */}
@@ -351,13 +413,18 @@ export default function TimelessTreasures({ showToast }) {
                 <label className="km-label">
                   Badge / Tag <span style={{ color: '#9ca3af', fontSize: 11 }}>(e.g. NEW ARRIVAL, FLAT 20% OFF)</span>
                 </label>
-                <input
-                  className="km-input"
-                  type="text"
-                  placeholder="TRENDING"
-                  value={off}
-                  onChange={(e) => setOff(e.target.value)}
-                />
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <input
+                    className="km-input"
+                    type="text"
+                    placeholder="TRENDING"
+                    value={off}
+                    onChange={handleOffChange}
+                  />
+                  <div style={{ fontSize: 12, color: '#6b7280' }}>
+                    {off.length}/{OFF_MAX_CHARS} char · {countWords(off)}/{OFF_MAX_WORDS} words
+                  </div>
+                </div>
               </div>
 
               {/* Link */}

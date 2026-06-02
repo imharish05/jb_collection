@@ -8,7 +8,7 @@ const CategoryEvent = () => {
   const { events = [] } = useSelector((state) => state.navMenu || {});
 
   return (
-    <div className="event-section-wrapper pt-60 pb-60">
+    <div className="event-section-wrapper pt-40 pb-40">
       <div className="container">
         <div className="section-title text-center mb-40">
           <h2 className="event-title">Shop by Event</h2>

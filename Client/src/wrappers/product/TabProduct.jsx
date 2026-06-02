@@ -55,10 +55,13 @@ const TabProduct = ({
 
   return (
     <div
-      className={clsx("product-area", spaceTopClass, spaceBottomClass, bgColorClass)}
+      className={clsx("product-area pb-30 pt-30", bgColorClass)}
     >
       <div className="container">
-        <SectionTitle titleText="DAILY DEALS!" positionClass="text-center" />
+        <div className="section-title text-center">
+          <h2 className="event-title pb-2">Daily Deals</h2>
+          <div className="event-subtitle">Custom creations that speak louder than words</div>
+        </div>
         <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
           <Nav
             variant="pills"
