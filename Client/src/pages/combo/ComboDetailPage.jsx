@@ -69,21 +69,55 @@ function isOutOfStock(cp) {
 
 // ComboImageGallery removed in favor of ProductImageGallerySideThumb
 
-// ── Fixed combo: included products list (slider when >2, grid when ≤2) ─
+// ── Fixed combo: included products list
+// Both desktop & mobile: native horizontal scroll, no arrows, equal-height cards
 function FixedProductsList({ comboProducts }) {
-  const useSlider = comboProducts.length > 2;
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{ fontSize: 13, fontWeight: 600, color: "#1A3A6B", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
         Included Products
       </div>
-      {useSlider ? (
-        <ProductSlider items={comboProducts} renderCard={cp => <FixedProductCard cp={cp} />} />
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
-          {comboProducts.map(cp => <FixedProductCard key={cp.id} cp={cp} />)}
-        </div>
-      )}
+
+      <div className="fpl-scroll-track">
+        {comboProducts.map(cp => (
+          <div key={cp.id} className="fpl-card-wrap">
+            <FixedProductCard cp={cp} />
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        .fpl-scroll-track {
+          display: flex;
+          gap: 8px;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          padding: 2px 2px 8px;
+          align-items: stretch;
+        }
+        .fpl-scroll-track::-webkit-scrollbar { display: none; }
+        .fpl-card-wrap {
+          flex: 0 0 calc(25% - 6px);
+          min-width: 140px;
+          display: flex;
+          flex-direction: column;
+        }
+        @media (max-width: 767px) {
+          .fpl-card-wrap {
+            flex: 0 0 calc(50% - 4px);
+            min-width: 130px;
+          }
+        }
+        .fpl-card-wrap > div {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        }
+        .fpl-card-wrap > div > div:last-child {
+          flex: 1;
+        }
+      `}</style>
     </div>
   );
 }
@@ -136,55 +170,135 @@ function FixedProductCard({ cp }) {
   );
 }
 
-// ── Shared slider wrapper ─────────────────────────────────────────────────────
+// ── Shared drag/swipe slider — no arrows, 4 visible on desktop, 2 on mobile ──
 function ProductSlider({ items, renderCard }) {
-  const [idx, setIdx] = useState(0);
-  const visible = 2;
-  const canPrev = idx > 0;
-  const canNext = idx < items.length - visible;
-  const dotCount = Math.max(0, items.length - visible + 1);
+  const trackRef = React.useRef(null);
+  const [offset, setOffset] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const dragStart = React.useRef(null);
+  const offsetAtDragStart = React.useRef(0);
+
+  // Determine visible count via CSS media query match
+  const [visibleCount, setVisibleCount] = useState(
+    typeof window !== "undefined" && window.innerWidth < 768 ? 2 : 4
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = (e) => setVisibleCount(e.matches ? 2 : 4);
+    handler(mq);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const gap = 8;
+  const itemWidthPct = (100 - gap * (visibleCount - 1) / (visibleCount)) / visibleCount;
+  const maxOffset = Math.max(0, items.length - visibleCount);
+
+  const clampOffset = (val) => Math.max(0, Math.min(maxOffset, val));
+
+  // Get pixel width of one item step from the track element
+  const getStepPx = () => {
+    if (!trackRef.current) return 0;
+    const trackW = trackRef.current.offsetWidth;
+    return (trackW + gap) / visibleCount;
+  };
+
+  // ── Mouse drag ──
+  const onMouseDown = (e) => {
+    setDragging(true);
+    dragStart.current = e.clientX;
+    offsetAtDragStart.current = offset;
+  };
+  const onMouseMove = (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - dragStart.current;
+    const step = getStepPx();
+    if (step === 0) return;
+    const rawOffset = offsetAtDragStart.current - dx / step;
+    setOffset(clampOffset(rawOffset));
+  };
+  const onMouseUp = (e) => {
+    if (!dragging) return;
+    setDragging(false);
+    const dx = e.clientX - dragStart.current;
+    const step = getStepPx();
+    const snapped = Math.round(offsetAtDragStart.current - dx / step);
+    setOffset(clampOffset(snapped));
+  };
+
+  // ── Touch drag ──
+  const onTouchStart = (e) => {
+    dragStart.current = e.touches[0].clientX;
+    offsetAtDragStart.current = offset;
+  };
+  const onTouchMove = (e) => {
+    const dx = e.touches[0].clientX - dragStart.current;
+    const step = getStepPx();
+    if (step === 0) return;
+    const rawOffset = offsetAtDragStart.current - dx / step;
+    setOffset(clampOffset(rawOffset));
+  };
+  const onTouchEnd = (e) => {
+    const dx = e.changedTouches[0].clientX - dragStart.current;
+    const step = getStepPx();
+    const snapped = Math.round(offsetAtDragStart.current - dx / step);
+    setOffset(clampOffset(snapped));
+  };
+
+  const translatePct = offset * (itemWidthPct + gap / visibleCount);
+  const dotCount = Math.max(0, items.length - visibleCount + 1);
+  const dotIdx = Math.round(offset);
 
   return (
-    <div style={{ position: "relative", paddingBottom: 28 }}>
-      <div style={{ overflow: "hidden" }}>
-        <div style={{
-          display: "flex", gap: 8,
-          transform: `translateX(calc(${idx} * (-50% - 4px)))`,
-          transition: "transform 0.3s ease",
-        }}>
+    <div style={{ paddingBottom: dotCount > 1 ? 28 : 0 }}>
+      {/* track */}
+      <div
+        style={{ overflow: "hidden", cursor: dragging ? "grabbing" : "grab", userSelect: "none" }}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <div
+          ref={trackRef}
+          style={{
+            display: "flex",
+            gap: `${gap}px`,
+            transform: `translateX(calc(-${translatePct}% - ${offset * gap}px))`,
+            transition: dragging ? "none" : "transform 0.3s ease",
+          }}
+        >
           {items.map((item, i) => (
-            <div key={i} style={{ flex: "0 0 calc(50% - 4px)", minWidth: 0 }}>
+            <div
+              key={i}
+              style={{
+                flex: `0 0 calc(${100 / visibleCount}% - ${gap * (visibleCount - 1) / visibleCount}px)`,
+                minWidth: 0,
+                pointerEvents: dragging ? "none" : "auto",
+              }}
+            >
               {renderCard(item)}
             </div>
           ))}
         </div>
       </div>
-      {canPrev && (
-        <button onClick={() => setIdx(i => Math.max(0, i - 1))} style={{
-          position: "absolute", left: -14, top: "40%", transform: "translateY(-50%)",
-          width: 28, height: 28, borderRadius: "50%", border: "1px solid #E5E7EB",
-          background: "#fff", cursor: "pointer", display: "flex", alignItems: "center",
-          justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", zIndex: 2,
-          color: "#1A3A6B", fontSize: 14, lineHeight: 1,
-        }}>‹</button>
-      )}
-      {canNext && (
-        <button onClick={() => setIdx(i => Math.min(items.length - visible, i + 1))} style={{
-          position: "absolute", right: -14, top: "40%", transform: "translateY(-50%)",
-          width: 28, height: 28, borderRadius: "50%", border: "1px solid #E5E7EB",
-          background: "#fff", cursor: "pointer", display: "flex", alignItems: "center",
-          justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", zIndex: 2,
-          color: "#1A3A6B", fontSize: 14, lineHeight: 1,
-        }}>›</button>
-      )}
+
+      {/* dot indicators */}
       {dotCount > 1 && (
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 5 }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 12 }}>
           {Array.from({ length: dotCount }).map((_, i) => (
-            <button key={i} onClick={() => setIdx(i)} style={{
-              width: i === idx ? 16 : 6, height: 6, borderRadius: 3,
-              background: i === idx ? "#F15A24" : "#D1D5DB",
-              border: "none", cursor: "pointer", padding: 0, transition: "all 0.2s",
-            }} />
+            <button
+              key={i}
+              onClick={() => setOffset(i)}
+              style={{
+                width: i === dotIdx ? 16 : 6, height: 6, borderRadius: 3,
+                background: i === dotIdx ? "#F15A24" : "#D1D5DB",
+                border: "none", cursor: "pointer", padding: 0, transition: "all 0.2s",
+              }}
+            />
           ))}
         </div>
       )}
