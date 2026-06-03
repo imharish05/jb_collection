@@ -629,7 +629,7 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
             <TypeToggle value={form.type} onChange={f("type")} />
           </div>
 
-          <div className="km-field">
+          <div className="km-field km-field-full">
             <label className="km-label">Status</label>
             <select className="km-input" value={form.isActive} onChange={e => f("isActive")(e.target.value === "true")}>
               <option value="true">Active</option>
@@ -815,7 +815,7 @@ function RootComboForm({ initial, onSave, onCancel, showToast }) {
               onChange={e => setName(e.target.value)} placeholder="e.g. Birthday Combos" />
           </div>
 
-          <div className="km-field">
+          <div className="km-field km-field-full">
             <label className="km-label">Status</label>
             <select className="km-input" value={isActive} onChange={e => setIsActive(e.target.value === "true")}>
               <option value="true">Active</option>

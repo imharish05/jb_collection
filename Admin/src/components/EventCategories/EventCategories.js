@@ -282,7 +282,7 @@ export default function EventCategories({ showToast }) {
                 )}
               </div>
 
-              <div className="km-field km-field-half">
+              <div className="km-field km-field-full">
                 <label className="km-label">Status</label>
                 <select 
                   className="km-input" // Using km-input style for consistency
