@@ -70,6 +70,7 @@
 }
 
 .text-content p {
+  text-align: justify;
   color: #666;
   font-size: 15px;
   line-height: 1.6;

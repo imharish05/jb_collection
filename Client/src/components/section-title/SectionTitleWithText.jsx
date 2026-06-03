@@ -3,7 +3,7 @@ import clsx from "clsx";
 
 const SectionTitleWithText = ({ spaceTopClass, spaceBottomClass }) => {
   return (
-    <div className={clsx("welcome-area", spaceTopClass, spaceBottomClass)}>
+    <div className={clsx("welcome-area pt-30", spaceBottomClass)}>
       <div className="container">
         <div className="row align-items-center">
           {/* Image Side */}
@@ -27,7 +27,7 @@ const SectionTitleWithText = ({ spaceTopClass, spaceBottomClass }) => {
             <div className="welcome-content-two">
               <h5 className="sub-title">Who Are We</h5>
               <h2 className="main-title">Welcome To <span>Kamali Gifts</span></h2>
-              <p className="description">
+              <p className="description text-align-justify">
                 At Kamali Gift Factory, we believe every gift should tell a story. 
                 Established in 2025, we are a complete gift solution hub dedicated 
                 to curating and customizing thoughtful gifts for every occasion.
