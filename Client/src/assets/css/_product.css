@@ -4686,7 +4686,7 @@ updated
    DAILY DEALS MOBILE — 2 cards visible (horizontal scroll)
    ============================================================ */
 @media (max-width: 575px) {
-  .deal-scroll-inner .product-img-container { aspect-ratio: 1 / 1; }
+  /* .deal-scroll-inner .product-img-container { aspect-ratio: 1 / 1; } */
   .deal-scroll-inner .product-details-premium { padding: 8px 7px 10px; }
   .deal-scroll-inner .product-cat-tag { display: none; }
   .deal-scroll-inner .product-details-premium h4 {

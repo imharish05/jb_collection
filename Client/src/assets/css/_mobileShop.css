@@ -1,0 +1,453 @@
+/* ═══════════════════════════════════════════════════════
+   Kamali Gifts — Mobile Shop UX  (max-width 991px only)
+   Desktop layout is completely untouched.
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── 1. Hide sidebar on mobile, show it on desktop ─── */
+@media (max-width: 991px) {
+  .shop-sidebar-col { display: none !important; }
+  .shop-products-col { width: 100% !important; max-width: 100% !important; flex: 0 0 100% !important; }
+}
+
+/* ─── 2. Mobile search bar ─── */
+.mobile-shop-search {
+  display: none;
+}
+@media (max-width: 991px) {
+  .mobile-shop-search {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 0 0 14px;
+    background: #fff;
+    border: 1.5px solid #e8e8e8;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    transition: border-color 0.2s;
+  }
+  .mobile-shop-search:focus-within {
+    border-color: #db1a5d;
+    box-shadow: 0 2px 14px rgba(219,26,93,0.12);
+  }
+  .mobile-shop-search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #222;
+    background: transparent;
+    min-width: 0;
+  }
+  .mobile-shop-search input::placeholder { color: #aaa; }
+  .mobile-shop-search button {
+    background: #db1a5d;
+    border: none;
+    color: #fff;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 15px;
+    transition: background 0.15s;
+    border-radius: 0 26px 26px 0;
+  }
+  .mobile-shop-search button:active { background: #b5164e; }
+}
+
+/* ─── 3. Category pills (horizontal scroll) ─── */
+.mobile-cat-pills {
+  display: none;
+}
+@media (max-width: 991px) {
+  .mobile-cat-pills {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 2px 12px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin-bottom: 4px;
+  }
+  .mobile-cat-pills::-webkit-scrollbar { display: none; }
+  .mobile-cat-pills .cat-pill {
+    flex-shrink: 0;
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 1.5px solid #e8e8e8;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    color: #444;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .mobile-cat-pills .cat-pill:active,
+  .mobile-cat-pills .cat-pill:hover { background: #fdf2f6; border-color: #db1a5d; color: #db1a5d; }
+  .mobile-cat-pills .cat-pill.active {
+    background: #db1a5d;
+    border-color: #db1a5d;
+    color: #fff;
+    font-weight: 600;
+  }
+}
+
+/* ─── 4. Active filter chips bar ─── */
+.mobile-active-filters {
+  display: none;
+}
+@media (max-width: 991px) {
+  .mobile-active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .mobile-active-filters:empty { display: none; }
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #fdf0ff;
+    border: 1px solid #d070f0;
+    color: #8020b0;
+    border-radius: 16px;
+    padding: 4px 10px 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .filter-chip button {
+    background: none;
+    border: none;
+    color: #a030c8;
+    cursor: pointer;
+    padding: 0;
+    font-size: 15px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+  }
+  .filter-chip-price {
+    background: #fff5e6;
+    border-color: #f0a040;
+    color: #995500;
+  }
+  .filter-chip-price button { color: #cc7700; }
+}
+
+/* ─── 5. Sticky bottom filter bar ─── */
+.mobile-filter-bar {
+  display: none;
+}
+@media (max-width: 991px) {
+  .mobile-filter-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background: #fff;
+    border-top: 1px solid #ebebeb;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.10);
+    padding: 10px 16px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    gap: 10px;
+  }
+  .mobile-filter-bar__btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: none;
+    border-radius: 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 11px 16px;
+    transition: all 0.15s;
+  }
+  .mobile-filter-bar__btn--filter {
+    background: #db1a5d;
+    color: #fff;
+  }
+  .mobile-filter-bar__btn--filter:active { background: #b5164e; }
+  .mobile-filter-bar__btn--sort {
+    background: #f4f4f4;
+    color: #333;
+    border: 1.5px solid #e0e0e0;
+  }
+  .mobile-filter-bar__btn--sort:active { background: #e8e8e8; }
+  .filter-bar-badge {
+    background: #fff;
+    color: #db1a5d;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  /* push content above sticky bar */
+  .shop-area { padding-bottom: 80px !important; }
+}
+
+/* ─── 6. Filter drawer (slide up) ─── */
+.mobile-filter-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0,0,0,0);
+  transition: background 0.25s;
+}
+.mobile-filter-overlay.open {
+  display: block;
+  background: rgba(0,0,0,0.45);
+}
+.mobile-filter-drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 0 0 max(20px, env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  scrollbar-width: thin;
+}
+.mobile-filter-overlay.open .mobile-filter-drawer {
+  transform: translateY(0);
+}
+
+/* drawer handle */
+.drawer-handle {
+  width: 36px;
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  margin: 14px auto 0;
+}
+
+/* drawer header */
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.drawer-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #222;
+  margin: 0;
+}
+.drawer-header .drawer-close {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #555;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* drawer sections */
+.drawer-section {
+  padding: 18px 20px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.drawer-section:last-child { border-bottom: none; }
+.drawer-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #999;
+  margin: 0 0 14px;
+}
+
+/* price in drawer */
+.drawer-price-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.drawer-price-badge {
+  flex: 1;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.drawer-price-badge span { display: block; }
+.drawer-price-badge .badge-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.4px; }
+.drawer-price-badge .badge-val { font-size: 15px; font-weight: 700; color: #222; }
+.drawer-price-sep { color: #ccc; font-size: 14px; }
+
+/* filter chips grid (categories/events/combos inside drawer) */
+.drawer-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.drawer-chip {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1.5px solid #e8e8e8;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #444;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.drawer-chip:active { transform: scale(0.97); }
+.drawer-chip.active {
+  background: #db1a5d;
+  border-color: #db1a5d;
+  color: #fff;
+  font-weight: 600;
+}
+.drawer-chip-count {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* sort options in drawer */
+.drawer-sort-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.drawer-sort-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px;
+  border-radius: 14px;
+  border: 1.5px solid #efefef;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+.drawer-sort-option:active { transform: scale(0.98); }
+.drawer-sort-option.active {
+  border-color: #db1a5d;
+  background: #fff7f9;
+  box-shadow: 0 2px 12px rgba(219,26,93,0.10);
+}
+.sort-opt-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sort-opt-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.drawer-sort-option.active .sort-opt-icon {
+  background: #fce8ef;
+}
+.sort-opt-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  transition: color 0.15s;
+}
+.drawer-sort-option.active .sort-opt-label {
+  color: #db1a5d;
+  font-weight: 600;
+}
+.sort-opt-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+  font-size: 11px;
+  color: transparent;
+}
+.sort-opt-check--active {
+  background: #db1a5d;
+  border-color: #db1a5d;
+  color: #fff;
+}
+
+/* apply / clear footer */
+.drawer-footer {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid #f0f0f0;
+  background: #fff;
+  position: sticky;
+  bottom: 0;
+}
+.drawer-footer__clear {
+  flex: 1;
+  padding: 12px;
+  border-radius: 20px;
+  border: 1.5px solid #ddd;
+  background: #fff;
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.drawer-footer__clear:active { border-color: #db1a5d; color: #db1a5d; }
+.drawer-footer__apply {
+  flex: 2;
+  padding: 12px;
+  border-radius: 20px;
+  border: none;
+  background: #db1a5d;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.drawer-footer__apply:active { background: #b5164e; }

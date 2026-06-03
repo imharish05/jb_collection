@@ -27,7 +27,7 @@ const ShopTopAction = ({
         </p>
       </div>
 
-      <div className="shop-tab">
+      {/* <div className="shop-tab">
         <button
           onClick={e => {
             getLayout("grid two-column");
@@ -53,7 +53,7 @@ const ShopTopAction = ({
         >
           <i className="fa fa-list-ul" />
         </button>
-      </div>
+      </div> */}
     </div>
   );
 };
