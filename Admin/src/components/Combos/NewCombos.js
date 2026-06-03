@@ -274,22 +274,15 @@ function ImageUploadField({ label = "Image", imageFile, preview, fileInputRef, o
             </p>
           </div>
         </div>
-        {/* Always show preview tile — either the actual image or a placeholder — so layout is identical in add & edit mode */}
-        <div className="preview-tile fade-in" style={{ cursor: preview ? "default" : "pointer", border: preview ? "2px solid var(--primary-400, #60a5fa)" : "2px dashed var(--border-color, #E5E7EB)", background: preview ? undefined : "var(--neutral-50, #f9fafb)" }}
-          onClick={() => !preview && fileInputRef.current.click()}>
-          {preview ? (
-            <>
-              <img src={preview} alt="Preview" />
-              <button type="button" className="preview-remove" onClick={e => { e.stopPropagation(); onClear(); }}>✕</button>
-            </>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 6 }}>
-              <div style={{ fontSize: 28, opacity: 0.25 }}>🖼️</div>
-              <div style={{ fontSize: 9, color: "var(--neutral-400, #9ca3af)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center", lineHeight: 1.3 }}>No<br/>Image</div>
-            </div>
-          )}
-        </div>
+
+        {preview && (
+          <div className="preview-tile fade-in">
+            <img src={preview} alt="Preview" />
+            <button type="button" className="preview-remove" onClick={onClear}>✕</button>
+          </div>
+        )}
       </div>
+
       {validation && !validation.valid && (
         <div style={{ color: "#ef4444", fontSize: 12, marginTop: 8 }}>
           ⚠ {validation.error}

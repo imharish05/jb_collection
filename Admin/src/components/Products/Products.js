@@ -440,7 +440,7 @@ export default function Products({ showToast }) {
       ? (errors[field] || getFirstInvalidImageError())
       : errors[field];
 
-    return message ? <span style={errorStyle}>{message}</span> : null;
+    return message ? <span style={errorStyle}>{field === 'images' ? `⚠ ${message}` : message}</span> : null;
   };
 
   const validateProduct = () => {
