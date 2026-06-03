@@ -216,3 +216,24 @@
 }
 
 
+
+/* ── Scroll container (horizontal snap) ── */
+.category-scroll-container {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+.category-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Each page = exactly one viewport-width slot */
+.category-scroll-page {
+  flex: 0 0 100%;
+  width: 100%;
+  scroll-snap-align: start;
+  min-width: 0;
+}

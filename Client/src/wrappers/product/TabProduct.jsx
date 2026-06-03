@@ -1,136 +1,112 @@
 import PropTypes from "prop-types";
 import clsx from "clsx";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import Tab from "react-bootstrap/Tab";
-import Nav from "react-bootstrap/Nav";
 import SectionTitle from "../../components/section-title/SectionTitle";
 import ProductGrid from "./ProductGrid";
 import { getProducts } from "../../helpers/product";
 
-const TabProduct = ({
-  spaceTopClass,
-  spaceBottomClass,
-  bgColorClass,
-  category
-}) => {
+const SECTIONS = [
+  { key: "customisable", label: "Customisable", emoji: "🎨", type: "customisable" },
+  { key: "newArrival",   label: "New Arrivals",  emoji: "✨", type: "newArrival"   },
+  { key: "hotDeals",     label: "Hot Deals",     emoji: "🔥", type: "hotDeals"     },
+];
+
+const TabProduct = ({ spaceTopClass, spaceBottomClass, bgColorClass, category }) => {
   const { products } = useSelector((state) => state.product);
-  const [hasCustomisable, setHasCustomisable] = useState(false);
-  const [hasNewArrival, setHasNewArrival] = useState(false);
-  const [hasHotDeals, setHasHotDeals] = useState(false);
-  const [customisableProducts, setCustomisableProducts] = useState([]);
-  const [newArrivalProducts, setNewArrivalProducts] = useState([]);
-  const [hotDealsProducts, setHotDealsProducts] = useState([]);
 
-  useEffect(() => {
-    // Check if products exist for each type
-    const customProds = getProducts(products, category, "customisable");
-    const newProds = getProducts(products, category, "newArrival");
-    const hotProds = getProducts(products, category, "hotDeals");
+  const sectionData = SECTIONS.map((s) => ({
+    ...s,
+    items: getProducts(products, category, s.type) || [],
+  })).filter((s) => s.items.length > 0);
 
-    setCustomisableProducts(customProds || []);
-    setNewArrivalProducts(newProds || []);
-    setHotDealsProducts(hotProds || []);
-
-    setHasCustomisable((customProds && customProds.length > 0) || false);
-    setHasNewArrival((newProds && newProds.length > 0) || false);
-    setHasHotDeals((hotProds && hotProds.length > 0) || false);
-  }, [products, category]);
-
-  // Determine default active tab priority: Customisable → Hot Deals → New Arrivals
-  const availableTabs = [];
-  if (hasCustomisable) availableTabs.push("customisable");
-  if (hasHotDeals) availableTabs.push("hotDeals");
-  if (hasNewArrival) availableTabs.push("newArrival");
-  const [activeTab, setActiveTab] = useState(null);
-
-  useEffect(() => {
-    // choose first available tab or keep current if still available
-    if (availableTabs.length > 0) {
-      setActiveTab(prev => (prev && availableTabs.includes(prev) ? prev : availableTabs[0]));
-    } else {
-      setActiveTab(null);
-    }
-  }, [hasCustomisable, hasHotDeals, hasNewArrival]);
+  if (sectionData.length === 0) return null;
 
   return (
-    <div
-      className={clsx("product-area pb-30 pt-30", bgColorClass)}
-    >
+    <div className={clsx("deals-area pb-60 pt-60", bgColorClass)}>
       <div className="container">
-        <div className="section-title text-center">
+        <div className="section-title text-center mb-50">
           <h2 className="event-title pb-2">Daily Deals</h2>
           <div className="event-subtitle">Custom creations that speak louder than words</div>
         </div>
-        <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
-          <Nav
-            variant="pills"
-            className="product-tab-list product-tab-list--scroll pt-30 pb-55 text-center"
+
+        <div className="deals-sections">
+          {sectionData.map((section, idx) => (
+            <DealSection key={section.key} section={section} isLast={idx === sectionData.length - 1} category={category} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DealSection = ({ section, isLast, category }) => {
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 10);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, [section.items]);
+
+  const scroll = (dir) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * 280, behavior: "smooth" });
+  };
+
+  return (
+    <div className={clsx("deal-section", !isLast && "deal-section--divider")}>
+      {/* Section header */}
+      <div className="deal-section__header">
+        <div className="deal-section__title">
+          <span className="deal-section__emoji">{section.emoji}</span>
+          <h3 className="deal-section__name">{section.label}</h3>
+        </div>
+        <div className="deal-section__arrows">
+          <button
+            className={clsx("deal-arrow", !canScrollLeft && "deal-arrow--hidden")}
+            onClick={() => scroll(-1)}
+            aria-label="Scroll left"
           >
-            {hasCustomisable && (
-              <Nav.Item>
-                <Nav.Link eventKey="customisable">
-                  <h4>🎨 Customisable</h4>
-                </Nav.Link>
-              </Nav.Item>
-            )}
-            {hasNewArrival && (
-              <Nav.Item>
-                <Nav.Link eventKey="newArrival">
-                  <h4>✨ New Arrivals</h4>
-                </Nav.Link>
-              </Nav.Item>
-            )}
-            {hasHotDeals && (
-              <Nav.Item>
-                <Nav.Link eventKey="hotDeals">
-                  <h4>🔥 Hot Deals</h4>
-                </Nav.Link>
-              </Nav.Item>
-            )}
-          </Nav>
-          <Tab.Content>
-            {hasCustomisable && (
-              <Tab.Pane eventKey="customisable">
-                <div className="row tab-product-carousel">
-                  <ProductGrid
-                    category={category}
-                    type="customisable"
-                    limit={6}
-                    spaceBottomClass="mb-25"
-                    productsList={customisableProducts}
-                  />
-                </div>
-              </Tab.Pane>
-            )}
-            {hasNewArrival && (
-              <Tab.Pane eventKey="newArrival">
-                <div className="row tab-product-carousel">
-                  <ProductGrid
-                    category={category}
-                    type="newArrival"
-                    limit={6}
-                    spaceBottomClass="mb-25"
-                    productsList={newArrivalProducts}
-                  />
-                </div>
-              </Tab.Pane>
-            )}
-            {hasHotDeals && (
-              <Tab.Pane eventKey="hotDeals">
-                <div className="row tab-product-carousel">
-                  <ProductGrid
-                    category={category}
-                    type="hotDeals"
-                    limit={6}
-                    spaceBottomClass="mb-25"
-                    productsList={hotDealsProducts}
-                  />
-                </div>
-              </Tab.Pane>
-            )}
-          </Tab.Content>
-        </Tab.Container>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
+          </button>
+          <button
+            className={clsx("deal-arrow", !canScrollRight && "deal-arrow--hidden")}
+            onClick={() => scroll(1)}
+            aria-label="Scroll right"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" /></svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Horizontal scroll row */}
+      <div className="deal-scroll-track" ref={scrollRef}>
+        <div className="deal-scroll-inner">
+          <ProductGrid
+            category={category}
+            type={section.type}
+            limit={10}
+            spaceBottomClass="mb-0"
+            productsList={section.items}
+          />
+        </div>
       </div>
     </div>
   );
@@ -140,8 +116,7 @@ TabProduct.propTypes = {
   bgColorClass: PropTypes.string,
   category: PropTypes.string,
   spaceBottomClass: PropTypes.string,
-  spaceTopClass: PropTypes.string
+  spaceTopClass: PropTypes.string,
 };
 
 export default TabProduct;
-
