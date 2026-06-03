@@ -1,8 +1,7 @@
 import PropTypes from "prop-types";
 import clsx from "clsx";
-import { useState, useEffect, useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import SectionTitle from "../../components/section-title/SectionTitle";
 import ProductGrid from "./ProductGrid";
 import { getProducts } from "../../helpers/product";
 
@@ -32,7 +31,12 @@ const TabProduct = ({ spaceTopClass, spaceBottomClass, bgColorClass, category })
 
         <div className="deals-sections">
           {sectionData.map((section, idx) => (
-            <DealSection key={section.key} section={section} isLast={idx === sectionData.length - 1} category={category} />
+            <DealSection
+              key={section.key}
+              section={section}
+              isLast={idx === sectionData.length - 1}
+              category={category}
+            />
           ))}
         </div>
       </div>
@@ -72,7 +76,6 @@ const DealSection = ({ section, isLast, category }) => {
 
   return (
     <div className={clsx("deal-section", !isLast && "deal-section--divider")}>
-      {/* Section header */}
       <div className="deal-section__header">
         <div className="deal-section__title">
           <span className="deal-section__emoji">{section.emoji}</span>
@@ -84,19 +87,22 @@ const DealSection = ({ section, isLast, category }) => {
             onClick={() => scroll(-1)}
             aria-label="Scroll left"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
           </button>
           <button
             className={clsx("deal-arrow", !canScrollRight && "deal-arrow--hidden")}
             onClick={() => scroll(1)}
             aria-label="Scroll right"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
           </button>
         </div>
       </div>
 
-      {/* Horizontal scroll row */}
       <div className="deal-scroll-track" ref={scrollRef}>
         <div className="deal-scroll-inner">
           <ProductGrid
