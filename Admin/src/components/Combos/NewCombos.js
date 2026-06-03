@@ -13,6 +13,74 @@ import { confirmDelete } from "../../utils/sweetalert";
 
 const IMG_URL = process.env.REACT_APP_IMG_URL || "";
 
+const COMBO_IMAGE_DIMENSIONS = {
+  recommended: { width: 800, height: 960 },
+  minimum: { width: 400, height: 480 },
+  aspectRatio: 5 / 6,
+  tolerance: 0.05,
+  maxFileSize: 3 * 1024 * 1024,
+  formats: ["image/jpeg", "image/webp"],
+};
+
+const COMBO_IMAGE_REQUIREMENTS = "Recommended: 800×960px (5:6) • Min: 400×480px • Max: 3MB (JPG/WebP)";
+
+const validateComboImageDimensions = (file) => new Promise((resolve) => {
+  if (file.size > COMBO_IMAGE_DIMENSIONS.maxFileSize) {
+    resolve({
+      valid: false,
+      error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+    });
+    return;
+  }
+
+  if (!COMBO_IMAGE_DIMENSIONS.formats.includes(file.type)) {
+    resolve({
+      valid: false,
+      error: `Invalid format. Use JPG or WebP. You have: ${file.type || "unknown"}`,
+    });
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const { width, height } = img;
+      const expectedRatio = COMBO_IMAGE_DIMENSIONS.aspectRatio;
+      const ratioDiff = Math.abs((width / height) - expectedRatio) / expectedRatio;
+
+      if (width < COMBO_IMAGE_DIMENSIONS.minimum.width || height < COMBO_IMAGE_DIMENSIONS.minimum.height) {
+        resolve({
+          valid: false,
+          error: `Image too small. Minimum: ${COMBO_IMAGE_DIMENSIONS.minimum.width}×${COMBO_IMAGE_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
+          dimensions: { width, height },
+        });
+        return;
+      }
+
+      if (ratioDiff > COMBO_IMAGE_DIMENSIONS.tolerance) {
+        const recommendedHeight = Math.round(width / expectedRatio);
+        resolve({
+          valid: false,
+          error: `Incorrect aspect ratio. Use 5:6 portrait (e.g., ${width}×${recommendedHeight}px or ${COMBO_IMAGE_DIMENSIONS.recommended.width}×${COMBO_IMAGE_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+          dimensions: { width, height },
+        });
+        return;
+      }
+
+      resolve({
+        valid: true,
+        dimensions: { width, height },
+        isRecommended: width === COMBO_IMAGE_DIMENSIONS.recommended.width && height === COMBO_IMAGE_DIMENSIONS.recommended.height,
+      });
+    };
+    img.onerror = () => resolve({ valid: false, error: "Could not read image dimensions." });
+    img.src = e.target.result;
+  };
+  reader.onerror = () => resolve({ valid: false, error: "Could not read image file." });
+  reader.readAsDataURL(file);
+});
+
 // ── Shared CSS injected by every sub-component that renders forms ─────────────
 const COMBO_STYLES = `
   .km-form-card {
@@ -183,10 +251,10 @@ function buildVariantLabel(variant) {
 }
 
 // ── Categories-style Image Upload ─────────────────────────────────────────────
-function ImageUploadField({ label = "Image", imageFile, preview, fileInputRef, onFileChange, onClear }) {
+function ImageUploadField({ label = "Image", imageFile, preview, fileInputRef, onFileChange, onClear, validation }) {
   return (
     <div className="km-field km-field-full">
-      <label className="km-label">{label}</label>
+      <label className="km-label">{label} • {COMBO_IMAGE_REQUIREMENTS}</label>
       <div className="upload-grid-wrapper">
         <div
           className={`drop-zone-area ${imageFile ? "active-file" : ""}`}
@@ -195,7 +263,7 @@ function ImageUploadField({ label = "Image", imageFile, preview, fileInputRef, o
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/webp"
             style={{ display: "none" }}
             onChange={onFileChange}
           />
@@ -222,6 +290,11 @@ function ImageUploadField({ label = "Image", imageFile, preview, fileInputRef, o
           )}
         </div>
       </div>
+      {validation && !validation.valid && (
+        <div style={{ color: "#ef4444", fontSize: 12, marginTop: 8 }}>
+          ⚠ {validation.error}
+        </div>
+      )}
     </div>
   );
 }
@@ -436,6 +509,7 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
   });
   const [imgFile,    setImgFile]    = useState(null);
   const [imgPreview, setImgPreview] = useState(initial?.image ? getImg(initial.image) : null);
+  const [imageValidation, setImageValidation] = useState(null);
   const [saving,     setSaving]     = useState(false);
   const [pendingProducts, setPendingProducts] = useState([]);
   const imgRef = useRef();
@@ -446,8 +520,41 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
     ? Math.round((1 - parseFloat(form.comboPrice) / parseFloat(form.originalPrice)) * 100)
     : 0;
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (imgPreview?.startsWith("blob:")) URL.revokeObjectURL(imgPreview);
+    setImgFile(file);
+    setImgPreview(URL.createObjectURL(file));
+    setImageValidation(null);
+
+    validateComboImageDimensions(file).then((result) => {
+      setImageValidation(result);
+    });
+
+    e.target.value = "";
+  };
+
+  const handleClearImage = () => {
+    if (imgPreview?.startsWith("blob:")) URL.revokeObjectURL(imgPreview);
+    setImgFile(null);
+    setImgPreview(initial?.image ? getImg(initial.image) : null);
+    setImageValidation(null);
+    if (imgRef.current) imgRef.current.value = "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (imgFile) {
+      const imageCheck = imageValidation || await validateComboImageDimensions(imgFile);
+      setImageValidation(imageCheck);
+      if (!imageCheck.valid) {
+        showToast.error(imageCheck.error);
+        return;
+      }
+    }
+
     setSaving(true);
     const tid = showToast.loading(isEdit ? "Updating…" : "Creating…");
     try {
@@ -596,11 +703,9 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
             imageFile={imgFile}
             preview={imgPreview}
             fileInputRef={imgRef}
-            onFileChange={e => {
-              const file = e.target.files?.[0];
-              if (file) { setImgFile(file); setImgPreview(URL.createObjectURL(file)); }
-            }}
-            onClear={() => { setImgFile(null); setImgPreview(initial?.image ? getImg(initial.image) : null); }}
+            onFileChange={handleImageChange}
+            onClear={handleClearImage}
+            validation={imageValidation}
           />
 
           {/* Product picker — overflow visible so dropdown doesn't clip */}
@@ -637,11 +742,45 @@ function RootComboForm({ initial, onSave, onCancel, showToast }) {
   const [isActive,   setIsActive]   = useState(initial?.isActive !== false);
   const [imgFile,    setImgFile]    = useState(null);
   const [imgPreview, setImgPreview] = useState(initial?.image ? getImg(initial.image) : null);
+  const [imageValidation, setImageValidation] = useState(null);
   const [saving,     setSaving]     = useState(false);
   const imgRef = useRef();
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (imgPreview?.startsWith("blob:")) URL.revokeObjectURL(imgPreview);
+    setImgFile(file);
+    setImgPreview(URL.createObjectURL(file));
+    setImageValidation(null);
+
+    validateComboImageDimensions(file).then((result) => {
+      setImageValidation(result);
+    });
+
+    e.target.value = "";
+  };
+
+  const handleClearImage = () => {
+    if (imgPreview?.startsWith("blob:")) URL.revokeObjectURL(imgPreview);
+    setImgFile(null);
+    setImgPreview(initial?.image ? getImg(initial.image) : null);
+    setImageValidation(null);
+    if (imgRef.current) imgRef.current.value = "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (imgFile) {
+      const imageCheck = imageValidation || await validateComboImageDimensions(imgFile);
+      setImageValidation(imageCheck);
+      if (!imageCheck.valid) {
+        showToast.error(imageCheck.error);
+        return;
+      }
+    }
+
     setSaving(true);
     const tid = showToast.loading(isEdit ? "Updating…" : "Creating root combo…");
     try {
@@ -696,11 +835,9 @@ function RootComboForm({ initial, onSave, onCancel, showToast }) {
             imageFile={imgFile}
             preview={imgPreview}
             fileInputRef={imgRef}
-            onFileChange={e => {
-              const file = e.target.files?.[0];
-              if (file) { setImgFile(file); setImgPreview(URL.createObjectURL(file)); }
-            }}
-            onClear={() => { setImgFile(null); setImgPreview(initial?.image ? getImg(initial.image) : null); }}
+            onFileChange={handleImageChange}
+            onClear={handleClearImage}
+            validation={imageValidation}
           />
 
           <div className="km-form-actions">

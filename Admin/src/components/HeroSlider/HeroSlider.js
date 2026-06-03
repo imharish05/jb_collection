@@ -304,32 +304,6 @@ export default function HeroSlider({ showToast }) {
                   )}
                 </div>
                 
-                {/* Dimension Info */}
-                {imageDimensions && (
-                  <div style={{
-                    marginTop: 12,
-                    padding: 12,
-                    borderRadius: 8,
-                    fontSize: 13,
-                    backgroundColor: imageDimensions.valid ? '#f0fdf4' : '#fef2f2',
-                    border: `1px solid ${imageDimensions.valid ? '#dcfce7' : '#fee2e2'}`,
-                    color: imageDimensions.valid ? '#166534' : '#7f1d1d',
-                  }}>
-                    <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                      {imageDimensions.valid ? '✓ Valid Dimensions' : '✗ Invalid Dimensions'}
-                    </div>
-                    <div style={{ fontSize: 12, opacity: 0.9 }}>
-                      {imageDimensions.dimensions.width} × {imageDimensions.dimensions.height}px
-                      {imageDimensions.isRecommended && ' (Recommended)'}
-                    </div>
-                    {!imageDimensions.valid && (
-                      <div style={{ fontSize: 12, marginTop: 6, fontWeight: 500 }}>
-                        {imageDimensions.error}
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {/* Image Error Message */}
                 {errors.image && (
                   <div style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>

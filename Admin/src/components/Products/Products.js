@@ -432,9 +432,16 @@ export default function Products({ showToast }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const ErrorMsg = ({ field }) => errors[field]
-    ? <span style={errorStyle}>{errors[field]}</span>
-    : null;
+  const getFirstInvalidImageError = () =>
+    Object.values(imageDimensionsMap).find(result => result && !result.valid)?.error;
+
+  const ErrorMsg = ({ field }) => {
+    const message = field === 'images'
+      ? (errors[field] || getFirstInvalidImageError())
+      : errors[field];
+
+    return message ? <span style={errorStyle}>{message}</span> : null;
+  };
 
   const validateProduct = () => {
     const next = {};
@@ -448,11 +455,9 @@ export default function Products({ showToast }) {
     if (!variants.length) next.variants = 'Please add at least one variant';
     
     // Check image dimensions for newly added images
-    const invalidImageIndices = Object.entries(imageDimensionsMap)
-      .filter(([_, result]) => !result.valid)
-      .map(([idx]) => parseInt(idx, 10));
-    if (invalidImageIndices.length > 0) {
-      next.images = `Image(s) at position(s) ${invalidImageIndices.map(i => i + 1).join(', ')} have invalid dimensions`;
+    const firstInvalidImage = Object.values(imageDimensionsMap).find(result => result && !result.valid);
+    if (firstInvalidImage) {
+      next.images = firstInvalidImage.error || 'One or more product images have invalid dimensions';
     }
 
     variants.forEach((v, index) => {
@@ -848,29 +853,6 @@ export default function Products({ showToast }) {
                           {url.startsWith('blob:') ? 'New' : 'Saved'}
                         </div>
                       </div>
-                      
-                      {/* Dimension feedback for new images */}
-                      {imageDimensionsMap[index] && url.startsWith('blob:') && (
-                        <div style={{
-                          marginTop: 6,
-                          padding: 8,
-                          borderRadius: 6,
-                          fontSize: 11,
-                          backgroundColor: imageDimensionsMap[index].valid ? '#f0fdf4' : '#fef2f2',
-                          border: `1px solid ${imageDimensionsMap[index].valid ? '#dcfce7' : '#fee2e2'}`,
-                          color: imageDimensionsMap[index].valid ? '#166534' : '#7f1d1d',
-                          textAlign: 'center',
-                        }}>
-                          <div style={{ fontWeight: 600, fontSize: 10, marginBottom: 2 }}>
-                            {imageDimensionsMap[index].valid ? '✓ Valid' : '✗ Invalid'}
-                          </div>
-                          {imageDimensionsMap[index].dimensions && (
-                            <div style={{ fontSize: 10, opacity: 0.9 }}>
-                              {imageDimensionsMap[index].dimensions.width}×{imageDimensionsMap[index].dimensions.height}px
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
