@@ -22,7 +22,7 @@ const TabProduct = ({ spaceTopClass, spaceBottomClass, bgColorClass, category })
   if (sectionData.length === 0) return null;
 
   return (
-    <div className={clsx("deals-area pb-60 pt-60", bgColorClass)}>
+    <div className={clsx("deals-area pb-40 pt-40", bgColorClass)}>
       <div className="container">
         <div className="section-title text-center mb-50">
           <h2 className="event-title pb-2">Daily Deals</h2>
@@ -77,7 +77,7 @@ const DealSection = ({ section, isLast, category }) => {
   return (
     <div className={clsx("deal-section", !isLast && "deal-section--divider")}>
       <div className="deal-section__header">
-        <div className="deal-section__title">
+        <div className="deal-section__title text-center">
           <span className="deal-section__emoji">{section.emoji}</span>
           <h3 className="deal-section__name">{section.label}</h3>
         </div>

@@ -216,7 +216,7 @@ const Category = () => {
         </div>
 
         {/* Pagination dots */}
-        {totalPages > 1 && (
+        {/* {totalPages > 1 && (
           <div className="modern-pagination-container">
             <div className="modern-pagination">
               {pages.map((_, i) => (
@@ -229,7 +229,7 @@ const Category = () => {
               ))}
             </div>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

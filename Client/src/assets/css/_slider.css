@@ -3038,12 +3038,12 @@
   top: 50%;
   transform: translateY(-50%);
   z-index: 10;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,0.3);
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(6px);
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  border: none;
+  background: none;
+  backdrop-filter: none;
   color: #fff;
   display: flex;
   align-items: center;
@@ -3051,7 +3051,9 @@
   cursor: pointer;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.25s, background 0.25s, border-color 0.25s;
+  transition: opacity 0.25s, color 0.25s;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.6));
+  padding: 0;
 }
 
 .kg-hero:hover .kg-hero__nav {
@@ -3059,12 +3061,13 @@
   visibility: visible;
 }
 
-.kg-hero__nav--prev { left: 20px; }
-.kg-hero__nav--next { right: 20px; }
+.kg-hero__nav--prev { left: 14px; }
+.kg-hero__nav--next { right: 14px; }
 
 .kg-hero__nav:hover {
-  background: #db1a5d;
-  border-color: #db1a5d;
+  color: #db1a5d;
+  background: none;
+  border: none;
 }
 
 /* ── Dot pagination ── */
@@ -3122,13 +3125,11 @@
   .kg-slide__subtitle { font-size: 11px; letter-spacing: 2px; }
   .kg-slide__btn { padding: 12px 24px; font-size: 13px; }
   .kg-hero__nav {
-    width: 36px;
-    height: 36px;
     opacity: 1;
     visibility: visible;
   }
-  .kg-hero__nav--prev { left: 10px; }
-  .kg-hero__nav--next { right: 10px; }
+  .kg-hero__nav--prev { left: 8px; }
+  .kg-hero__nav--next { right: 8px; }
 }
 
 @media (max-width: 480px) {

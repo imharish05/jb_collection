@@ -129,21 +129,20 @@ const ProductGridSingle = ({
             )}
           </Link>
 
-          {/* Badges - Left Side */}
-          <div className="product-badges-left">
-            {product.discount > 0 && (
-              <span className="badge-discount">-{product.discount}%</span>
-            )}
-            {(product.isNew || product.new) && (
-              <span className="badge-new">NEW</span>
-            )}
-            {product.isCustomisable && (
-              <span className="badge-custom">Custom</span>
-            )}
-            {product.isHotDeal && (
-              <span className="badge-hot">Hot</span>
-            )}
-          </div>
+          {/* Single glassy badge - highest priority only */}
+          {(product.discount > 0 || product.isHotDeal || product.isNew || product.new || product.isCustomisable) && (
+            <div className="product-badge-single">
+              {product.isCustomisable ? (
+                <span className="badge-glass badge-glass--custom">Custom</span>
+              ) : product.discount > 0 ? (
+                <span className="badge-glass badge-glass--discount">-{product.discount}%</span>
+              ) : product.isHotDeal ? (
+                <span className="badge-glass badge-glass--hot">Hot</span>
+              ) : (
+                <span className="badge-glass badge-glass--new">New</span>
+              )}
+            </div>
+          )}
 
           {/* Floating Actions */}
           <div className="premium-action-list">
