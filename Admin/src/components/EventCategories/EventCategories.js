@@ -6,6 +6,77 @@ import { confirmDelete } from '../../utils/sweetalert';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
+// Event Image Dimension Validator (400×400px square)
+const EVENT_IMAGE_DIMENSIONS = {
+  recommended: { width: 400, height: 400 },
+  minimum: { width: 200, height: 200 },
+  aspectRatio: 1 / 1,
+  tolerance: 0.05,
+  maxFileSize: 3 * 1024 * 1024, // 3MB
+  formats: ['image/jpeg', 'image/webp'],
+};
+
+const validateEventImageDimensions = (file) => {
+  return new Promise((resolve) => {
+    // Check file size
+    if (file.size > EVENT_IMAGE_DIMENSIONS.maxFileSize) {
+      resolve({
+        valid: false,
+        error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+      });
+      return;
+    }
+
+    // Check file format
+    if (!EVENT_IMAGE_DIMENSIONS.formats.includes(file.type)) {
+      resolve({
+        valid: false,
+        error: `Invalid format. Use JPG or WebP. You have: ${file.type || 'unknown'}`,
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        const actualRatio = width / height;
+        const expectedRatio = EVENT_IMAGE_DIMENSIONS.aspectRatio;
+        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
+
+        // Check minimum dimensions
+        if (width < EVENT_IMAGE_DIMENSIONS.minimum.width || height < EVENT_IMAGE_DIMENSIONS.minimum.height) {
+          resolve({
+            valid: false,
+            error: `Image too small. Minimum: ${EVENT_IMAGE_DIMENSIONS.minimum.width}×${EVENT_IMAGE_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        // Check aspect ratio (1:1 square)
+        if (ratioDiff > EVENT_IMAGE_DIMENSIONS.tolerance) {
+          resolve({
+            valid: false,
+            error: `Incorrect aspect ratio. Use 1:1 square (e.g., ${width}×${width}px or ${EVENT_IMAGE_DIMENSIONS.recommended.width}×${EVENT_IMAGE_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        resolve({
+          valid: true,
+          dimensions: { width, height },
+          isRecommended: width === EVENT_IMAGE_DIMENSIONS.recommended.width && height === EVENT_IMAGE_DIMENSIONS.recommended.height,
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   if (imagePath.startsWith('http')) return imagePath;
@@ -23,6 +94,8 @@ export default function EventCategories({ showToast }) {
   const [isActive, setIsActive]   = useState(true);
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview]     = useState(null);
+  const [errors, setErrors]       = useState({});
+  const [imageDimensions, setImageDimensions] = useState(null);
   const fileInputRef = useRef();
 
   const generateSlug = (name) => {
@@ -43,6 +116,8 @@ export default function EventCategories({ showToast }) {
     setShowForm(false); setEditingId(null);
     setLabel(''); setIsActive(true);
     setImageFile(null); setPreview(null);
+    setErrors({});
+    setImageDimensions(null);
   };
 
   const handleEditClick = (row) => {
@@ -59,12 +134,34 @@ export default function EventCategories({ showToast }) {
     setImageFile(null);
     const original = editingId ? rows.find(r => r.id === editingId) : null;
     setPreview(original?.image ? getImageUrl(original.image) : null);
+    setImageDimensions(null);
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.image;
+      return newErrors;
+    });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!label) { showToast.error('Please enter an event name'); return; }
+    
+    const newErrors = {};
+    if (!label) newErrors.label = 'Please enter an event name';
+    if (!editingId && !imageFile) newErrors.image = 'Image is required';
+    
+    // Validate image dimensions if new image is selected
+    if (imageFile && imageDimensions && !imageDimensions.valid) {
+      newErrors.image = imageDimensions.error;
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showToast.error(Object.values(newErrors)[0]);
+      return;
+    }
+    
+    setErrors({});
 
     const data = new FormData();
     data.append('label', label);
@@ -131,7 +228,7 @@ export default function EventCategories({ showToast }) {
               </div>
 
               <div className="km-field km-field-full">
-                <label className="km-label">Event Image</label>
+                <label className="km-label">Event Image • Recommended: 400×400px (1:1) • Min: 200×200px • Max: 3MB (JPG/WebP)</label>
                 <div className="upload-grid-wrapper">
                   <div
                     className={`drop-zone-area ${imageFile ? 'active-file' : ''}`}
@@ -142,7 +239,24 @@ export default function EventCategories({ showToast }) {
                       type="file"
                       accept="image/*"
                       style={{ display: 'none' }}
-                      onChange={e => { const f = e.target.files[0]; if (f) setImageFile(f); }}
+                      onChange={e => {
+                        const f = e.target.files[0];
+                        if (f) {
+                          setImageFile(f);
+                          validateEventImageDimensions(f).then((result) => {
+                            setImageDimensions(result);
+                            if (!result.valid) {
+                              setErrors(prev => ({ ...prev, image: result.error }));
+                            } else {
+                              setErrors(prev => {
+                                const newErrors = { ...prev };
+                                delete newErrors.image;
+                                return newErrors;
+                              });
+                            }
+                          });
+                        }
+                      }}
                     />
                     <div className="drop-zone-info">
                       <div className="upload-icon text-center">{imageFile ? '✅' : '📸'}</div>
@@ -159,6 +273,39 @@ export default function EventCategories({ showToast }) {
                     </div>
                   )}
                 </div>
+                
+                {/* Dimension Info */}
+                {imageDimensions && (
+                  <div style={{
+                    marginTop: 12,
+                    padding: 12,
+                    borderRadius: 8,
+                    fontSize: 13,
+                    backgroundColor: imageDimensions.valid ? '#f0fdf4' : '#fef2f2',
+                    border: `1px solid ${imageDimensions.valid ? '#dcfce7' : '#fee2e2'}`,
+                    color: imageDimensions.valid ? '#166534' : '#7f1d1d',
+                  }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                      {imageDimensions.valid ? '✓ Valid Dimensions' : '✗ Invalid Dimensions'}
+                    </div>
+                    <div style={{ fontSize: 12, opacity: 0.9 }}>
+                      {imageDimensions.dimensions.width} × {imageDimensions.dimensions.height}px
+                      {imageDimensions.isRecommended && ' (Recommended)'}
+                    </div>
+                    {!imageDimensions.valid && (
+                      <div style={{ fontSize: 12, marginTop: 6, fontWeight: 500 }}>
+                        {imageDimensions.error}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Image Error Message */}
+                {errors.image && (
+                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>
+                    ⚠ {errors.image}
+                  </div>
+                )}
               </div>
 
               <div className="km-field km-field-half">

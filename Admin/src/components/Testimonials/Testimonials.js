@@ -17,7 +17,80 @@ const getImageUrl = (imagePath) => {
   const clean = imagePath.replace(/^\//, '').replace(/^uploads\//, '');
   return `${BASE_URL}/uploads/${clean}`;
 };
+// Helper: Count words in text
+const countWords = (text) => text.trim().split(/\s+/).filter(Boolean).length;
 
+// Helper: Get word/char limits
+const LIMITS = {
+  name: { chars: 60, words: 6 },
+  designation: { chars: 80, words: 8 },
+  text: { chars: 350, words: 60 },
+};
+
+// Image Dimension Validator for Testimonials (300×300px square)
+const TESTIMONIAL_DIMENSIONS = {
+  recommended: { width: 300, height: 300 },
+  minimum: { width: 120, height: 120 },
+  aspectRatio: 1 / 1,
+  tolerance: 0.05,
+};
+
+const validateImageDimensions = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        const actualRatio = width / height;
+        const expectedRatio = TESTIMONIAL_DIMENSIONS.aspectRatio;
+        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
+
+        // Check minimum dimensions
+        if (width < TESTIMONIAL_DIMENSIONS.minimum.width || height < TESTIMONIAL_DIMENSIONS.minimum.height) {
+          resolve({
+            valid: false,
+            error: `Image too small. Minimum: ${TESTIMONIAL_DIMENSIONS.minimum.width}×${TESTIMONIAL_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        // Check aspect ratio (1:1)
+        if (ratioDiff > TESTIMONIAL_DIMENSIONS.tolerance) {
+          const recommendedHeight = Math.round(width / expectedRatio);
+          resolve({
+            valid: false,
+            error: `Incorrect aspect ratio. Use 1:1 square (e.g., ${width}×${recommendedHeight}px or ${TESTIMONIAL_DIMENSIONS.recommended.width}×${TESTIMONIAL_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        resolve({
+          valid: true,
+          dimensions: { width, height },
+          isRecommended: width === TESTIMONIAL_DIMENSIONS.recommended.width && height === TESTIMONIAL_DIMENSIONS.recommended.height,
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+// Validate text length and word count
+const validateField = (field, value) => {
+  const limits = LIMITS[field];
+  if (!limits) return null;
+  
+  const charCount = value.length;
+  const wordCount = countWords(value);
+  
+  if (charCount > limits.chars) return `Max ${limits.chars} characters (you have ${charCount})`;
+  if (wordCount > limits.words) return `Max ${limits.words} words (you have ${wordCount})`;
+  return null;
+};
 export default function Testimonials({ showToast }) {
   const dispatch = useDispatch();
   const { items: rows, loading } = useSelector((state) => state.testimonials);
@@ -31,6 +104,8 @@ export default function Testimonials({ showToast }) {
   const [isActive, setIsActive]     = useState(true);
   const [imageFile, setImageFile]   = useState(null);
   const [preview, setPreview]       = useState(null);
+  const [errors, setErrors]         = useState({});
+  const [imageDimensions, setImageDimensions] = useState(null);
   const fileInputRef = useRef();
 
   useEffect(() => { dispatch(fetchTestimonials()); }, [dispatch]);
@@ -53,6 +128,8 @@ export default function Testimonials({ showToast }) {
     setIsActive(true);
     setImageFile(null);
     setPreview(null);
+    setErrors({});
+    setImageDimensions(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -73,6 +150,12 @@ export default function Testimonials({ showToast }) {
     setImageFile(null);
     const original = editingId ? rows.find((r) => r.id === editingId) : null;
     setPreview(original?.image ? getImageUrl(original.image) : null);
+    setImageDimensions(null);
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.image;
+      return newErrors;
+    });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -92,10 +175,41 @@ export default function Testimonials({ showToast }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) { showToast.error('Name is required'); return; }
-    if (!designation.trim()) { showToast.error('Designation is required'); return; }
-    if (!text.trim()) { showToast.error('Testimonial text is required'); return; }
-    if (!editingId && !imageFile) { showToast.error('Image is required'); return; }
+    
+    const newErrors = {};
+    
+    if (!name.trim()) newErrors.name = 'Name is required';
+    else {
+      const nameErr = validateField('name', name);
+      if (nameErr) newErrors.name = nameErr;
+    }
+    
+    if (!designation.trim()) newErrors.designation = 'Designation is required';
+    else {
+      const designErr = validateField('designation', designation);
+      if (designErr) newErrors.designation = designErr;
+    }
+    
+    if (!text.trim()) newErrors.text = 'Testimonial text is required';
+    else {
+      const textErr = validateField('text', text);
+      if (textErr) newErrors.text = textErr;
+    }
+    
+    if (!editingId && !imageFile) newErrors.image = 'Image is required';
+    
+    // Validate image dimensions if new image is selected
+    if (imageFile && imageDimensions && !imageDimensions.valid) {
+      newErrors.image = imageDimensions.error;
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showToast.error(Object.values(newErrors)[0]);
+      return;
+    }
+    
+    setErrors({});
 
     const fd = new FormData();
     fd.append('name', name);
@@ -166,7 +280,22 @@ export default function Testimonials({ showToast }) {
                       style={{ display: 'none' }}
                       onChange={(e) => {
                         const file = e.target.files[0];
-                        if (file) setImageFile(file);
+                        if (file) {
+                          setImageFile(file);
+                          // Validate dimensions asynchronously
+                          validateImageDimensions(file).then((result) => {
+                            setImageDimensions(result);
+                            if (!result.valid) {
+                              setErrors(prev => ({ ...prev, image: result.error }));
+                            } else {
+                              setErrors(prev => {
+                                const newErrors = { ...prev };
+                                delete newErrors.image;
+                                return newErrors;
+                              });
+                            }
+                          });
+                        }
                       }}
                     />
                     <div className="drop-zone-info">
@@ -185,43 +314,120 @@ export default function Testimonials({ showToast }) {
                     </div>
                   )}
                 </div>
+                
+                {/* Dimension Info */}
+                {imageDimensions && (
+                  <div style={{
+                    marginTop: 12,
+                    padding: 12,
+                    borderRadius: 8,
+                    fontSize: 13,
+                    backgroundColor: imageDimensions.valid ? '#f0fdf4' : '#fef2f2',
+                    border: `1px solid ${imageDimensions.valid ? '#dcfce7' : '#fee2e2'}`,
+                    color: imageDimensions.valid ? '#166534' : '#7f1d1d',
+                  }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                      {imageDimensions.valid ? '✓ Valid Dimensions' : '✗ Invalid Dimensions'}
+                    </div>
+                    <div style={{ fontSize: 12, opacity: 0.9 }}>
+                      {imageDimensions.dimensions.width} × {imageDimensions.dimensions.height}px
+                      {imageDimensions.isRecommended && ' (Recommended)'}
+                    </div>
+                    {!imageDimensions.valid && (
+                      <div style={{ fontSize: 12, marginTop: 6, fontWeight: 500 }}>
+                        {imageDimensions.error}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Image Error Message */}
+                {errors.image && (
+                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>
+                    ⚠ {errors.image}
+                  </div>
+                )}
               </div>
 
               {/* Name */}
               <div className="km-field km-field-half">
-                <label className="km-label">Author Name <span style={{ color: '#ef4444' }}>*</span></label>
+                <label className="km-label">
+                  Author Name <span style={{ color: '#ef4444' }}>*</span>
+                  <span style={{ fontSize: 11, color: errors.name ? '#ef4444' : '#9ca3af', marginLeft: 8 }}>
+                    {name.length}/{LIMITS.name.chars} chars · {countWords(name)}/{LIMITS.name.words} words
+                  </span>
+                </label>
                 <input
                   className="km-input"
                   type="text"
                   placeholder="e.g. Sarah Jenkins"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setName(val);
+                    const err = validateField('name', val);
+                    setErrors(prev => ({ ...prev, name: err }));
+                  }}
+                  style={{
+                    borderColor: errors.name ? '#ef4444' : undefined,
+                    boxShadow: errors.name ? '0 0 0 2px rgba(239, 68, 68, 0.1)' : undefined,
+                  }}
+                  maxLength={LIMITS.name.chars}
                 />
+                {errors.name && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.name}</div>}
               </div>
 
               {/* Designation */}
               <div className="km-field km-field-half">
-                <label className="km-label">Designation <span style={{ color: '#ef4444' }}>*</span></label>
+                <label className="km-label">
+                  Designation <span style={{ color: '#ef4444' }}>*</span>
+                  <span style={{ fontSize: 11, color: errors.designation ? '#ef4444' : '#9ca3af', marginLeft: 8 }}>
+                    {designation.length}/{LIMITS.designation.chars} chars · {countWords(designation)}/{LIMITS.designation.words} words
+                  </span>
+                </label>
                 <input
                   className="km-input"
                   type="text"
                   placeholder="e.g. CEO at TechFlow"
                   value={designation}
-                  onChange={(e) => setDesignation(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDesignation(val);
+                    const err = validateField('designation', val);
+                    setErrors(prev => ({ ...prev, designation: err }));
+                  }}
+                  style={{
+                    borderColor: errors.designation ? '#ef4444' : undefined,
+                    boxShadow: errors.designation ? '0 0 0 2px rgba(239, 68, 68, 0.1)' : undefined,
+                  }}
+                  maxLength={LIMITS.designation.chars}
                 />
+                {errors.designation && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.designation}</div>}
               </div>
 
               {/* Testimonial Text */}
               <div className="km-field km-field-full">
-                <label className="km-label">Testimonial Text <span style={{ color: '#ef4444' }}>*</span></label>
+                <label className="km-label">
+                  Testimonial Text <span style={{ color: '#ef4444' }}>*</span>
+                  <span style={{ fontSize: 11, color: errors.text ? '#ef4444' : '#9ca3af', marginLeft: 8 }}>
+                    {text.length}/{LIMITS.text.chars} chars · {countWords(text)}/{LIMITS.text.words} words
+                  </span>
+                </label>
                 <textarea
                   className="km-input"
                   placeholder="Share the client's feedback or success story..."
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setText(val);
+                    const err = validateField('text', val);
+                    setErrors(prev => ({ ...prev, text: err }));
+                  }}
                   rows={5}
-                  style={{ resize: 'vertical', minHeight: 120 }}
+                  style={{ resize: 'vertical', minHeight: 120, borderColor: errors.text ? '#ef4444' : undefined, boxShadow: errors.text ? '0 0 0 2px rgba(239, 68, 68, 0.1)' : undefined }}
+                  maxLength={LIMITS.text.chars}
                 />
+                {errors.text && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.text}</div>}
               </div>
 
               {/* Sort Order */}

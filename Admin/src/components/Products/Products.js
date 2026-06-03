@@ -12,6 +12,78 @@ import { confirmDelete } from '../../utils/sweetalert';
 const BASE_URL = process.env.REACT_APP_API_URL;
 const IMG_URL = process.env.REACT_APP_IMG_URL;
 
+// Product Image Dimension Validator (800×960px 5:6 portrait)
+const PRODUCT_IMAGE_DIMENSIONS = {
+  recommended: { width: 800, height: 960 },
+  minimum: { width: 400, height: 480 },
+  aspectRatio: 5 / 6,
+  tolerance: 0.05,
+  maxFileSize: 3 * 1024 * 1024, // 3MB
+  formats: ['image/jpeg', 'image/webp'],
+};
+
+const validateProductImageDimensions = (file) => {
+  return new Promise((resolve) => {
+    // Check file size
+    if (file.size > PRODUCT_IMAGE_DIMENSIONS.maxFileSize) {
+      resolve({
+        valid: false,
+        error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+      });
+      return;
+    }
+
+    // Check file format
+    if (!PRODUCT_IMAGE_DIMENSIONS.formats.includes(file.type)) {
+      resolve({
+        valid: false,
+        error: `Invalid format. Use JPG or WebP. You have: ${file.type || 'unknown'}`,
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        const actualRatio = width / height;
+        const expectedRatio = PRODUCT_IMAGE_DIMENSIONS.aspectRatio;
+        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
+
+        // Check minimum dimensions
+        if (width < PRODUCT_IMAGE_DIMENSIONS.minimum.width || height < PRODUCT_IMAGE_DIMENSIONS.minimum.height) {
+          resolve({
+            valid: false,
+            error: `Image too small. Minimum: ${PRODUCT_IMAGE_DIMENSIONS.minimum.width}×${PRODUCT_IMAGE_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        // Check aspect ratio (5:6)
+        if (ratioDiff > PRODUCT_IMAGE_DIMENSIONS.tolerance) {
+          const recommendedHeight = Math.round(width / expectedRatio);
+          resolve({
+            valid: false,
+            error: `Incorrect aspect ratio. Use 5:6 portrait (e.g., ${width}×${recommendedHeight}px or ${PRODUCT_IMAGE_DIMENSIONS.recommended.width}×${PRODUCT_IMAGE_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        resolve({
+          valid: true,
+          dimensions: { width, height },
+          isRecommended: width === PRODUCT_IMAGE_DIMENSIONS.recommended.width && height === PRODUCT_IMAGE_DIMENSIONS.recommended.height,
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   // Handle stringified array: "[\"uploads/products/123.jpeg\",...]"
@@ -196,6 +268,7 @@ export default function Products({ showToast }) {
   // ── Multi-image state ─────────────────────────────────────────────────────
   const [imageFiles, setImageFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
+  const [imageDimensionsMap, setImageDimensionsMap] = useState({});
   const fileInputRef = useRef();
 
   // ── SubCategories derived from selected category safely ───────────────────
@@ -224,6 +297,19 @@ export default function Products({ showToast }) {
   const handleFileChange = (e) => {
     const selected = Array.from(e.target.files);
     if (!selected.length) return;
+    
+    const currentLength = imageFiles.length;
+    
+    // Validate each file and add to state
+    selected.forEach((file, idx) => {
+      validateProductImageDimensions(file).then((result) => {
+        setImageDimensionsMap(prev => ({
+          ...prev,
+          [currentLength + idx]: result,
+        }));
+      });
+    });
+    
     setImageFiles(prev => [...prev, ...selected]);
     setPreviews(prev => [...prev, ...selected.map(f => URL.createObjectURL(f))]);
     e.target.value = null;
@@ -233,6 +319,20 @@ export default function Products({ showToast }) {
     if (previews[index]?.startsWith('blob:')) URL.revokeObjectURL(previews[index]);
     setPreviews(prev => prev.filter((_, i) => i !== index));
     setImageFiles(prev => prev.filter((_, i) => i !== index));
+    
+    // Rebuild imageDimensionsMap with updated indices
+    setImageDimensionsMap(prev => {
+      const newMap = {};
+      Object.entries(prev).forEach(([idx, val]) => {
+        const idxNum = parseInt(idx, 10);
+        if (idxNum < index) {
+          newMap[idxNum] = val;
+        } else if (idxNum > index) {
+          newMap[idxNum - 1] = val;
+        }
+      });
+      return newMap;
+    });
   };
 
   // ── Reset ─────────────────────────────────────────────────────────────────
@@ -245,6 +345,7 @@ export default function Products({ showToast }) {
     setVariants([blankVariantRow()]);
     setImageFiles([]);
     setPreviews([]);
+    setImageDimensionsMap({});
   };
 
   // ── Edit ──────────────────────────────────────────────────────────────────
@@ -325,6 +426,7 @@ export default function Products({ showToast }) {
     const imgs = p.images || (p.image ? (Array.isArray(p.image) ? p.image : [p.image]) : []);
     setPreviews(imgs.map(img => getImageUrl(img)));
     setImageFiles([]);
+    setImageDimensionsMap({});
     setErrors({});
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -344,6 +446,14 @@ export default function Products({ showToast }) {
     if (Number.isNaN(discount) || discount < 0 || discount > 100) next.discount = 'Discount must be between 0 and 100';
     if (!editingId && previews.length === 0 && imageFiles.length === 0) next.images = 'Please upload at least one product image';
     if (!variants.length) next.variants = 'Please add at least one variant';
+    
+    // Check image dimensions for newly added images
+    const invalidImageIndices = Object.entries(imageDimensionsMap)
+      .filter(([_, result]) => !result.valid)
+      .map(([idx]) => parseInt(idx, 10));
+    if (invalidImageIndices.length > 0) {
+      next.images = `Image(s) at position(s) ${invalidImageIndices.map(i => i + 1).join(', ')} have invalid dimensions`;
+    }
 
     variants.forEach((v, index) => {
       const messages = [];
@@ -694,7 +804,7 @@ export default function Products({ showToast }) {
               </div>
 
               <div style={{ gridColumn: 'span 2', ...fieldStyle }}>
-                <label style={labelStyle}>Product Gallery</label>
+                <label style={labelStyle}>Product Gallery • Recommended: 800×960px (5:6) • Min: 400×480px • Max: 3MB (JPG/WebP)</label>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', padding: '10px 0' }}>
                   <div
                     onClick={() => fileInputRef.current.click()}
@@ -713,29 +823,54 @@ export default function Products({ showToast }) {
                   </div>
 
                   {previews.map((url, index) => (
-                    <div key={index} style={{
-                      width: 100, height: 100, position: 'relative',
-                      borderRadius: 12, overflow: 'hidden',
-                      border: `1px solid ${KM.border}`, flexShrink: 0,
-                    }}>
-                      <img src={url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeImage(index); }}
-                        style={{
-                          position: 'absolute', top: 5, right: 5,
-                          background: '#ef4444', color: '#fff',
-                          border: 'none', borderRadius: '50%',
-                          width: 20, height: 20, cursor: 'pointer',
-                          fontSize: 11, lineHeight: 1, display: 'flex',
-                          alignItems: 'center', justifyContent: 'center',
-                          zIndex: 10,
-                        }}>✕</button>
+                    <div key={index}>
                       <div style={{
-                        position: 'absolute', bottom: 0, width: '100%',
-                        background: 'rgba(0,0,0,0.55)', color: '#fff',
-                        fontSize: 10, textAlign: 'center', padding: '2px 0',
+                        width: 100, height: 100, position: 'relative',
+                        borderRadius: 12, overflow: 'hidden',
+                        border: `1px solid ${KM.border}`, flexShrink: 0,
                       }}>
-                        {url.startsWith('blob:') ? 'New' : 'Saved'}
+                        <img src={url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeImage(index); }}
+                          style={{
+                            position: 'absolute', top: 5, right: 5,
+                            background: '#ef4444', color: '#fff',
+                            border: 'none', borderRadius: '50%',
+                            width: 20, height: 20, cursor: 'pointer',
+                            fontSize: 11, lineHeight: 1, display: 'flex',
+                            alignItems: 'center', justifyContent: 'center',
+                            zIndex: 10,
+                          }}>✕</button>
+                        <div style={{
+                          position: 'absolute', bottom: 0, width: '100%',
+                          background: 'rgba(0,0,0,0.55)', color: '#fff',
+                          fontSize: 10, textAlign: 'center', padding: '2px 0',
+                        }}>
+                          {url.startsWith('blob:') ? 'New' : 'Saved'}
+                        </div>
                       </div>
+                      
+                      {/* Dimension feedback for new images */}
+                      {imageDimensionsMap[index] && url.startsWith('blob:') && (
+                        <div style={{
+                          marginTop: 6,
+                          padding: 8,
+                          borderRadius: 6,
+                          fontSize: 11,
+                          backgroundColor: imageDimensionsMap[index].valid ? '#f0fdf4' : '#fef2f2',
+                          border: `1px solid ${imageDimensionsMap[index].valid ? '#dcfce7' : '#fee2e2'}`,
+                          color: imageDimensionsMap[index].valid ? '#166534' : '#7f1d1d',
+                          textAlign: 'center',
+                        }}>
+                          <div style={{ fontWeight: 600, fontSize: 10, marginBottom: 2 }}>
+                            {imageDimensionsMap[index].valid ? '✓ Valid' : '✗ Invalid'}
+                          </div>
+                          {imageDimensionsMap[index].dimensions && (
+                            <div style={{ fontSize: 10, opacity: 0.9 }}>
+                              {imageDimensionsMap[index].dimensions.width}×{imageDimensionsMap[index].dimensions.height}px
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

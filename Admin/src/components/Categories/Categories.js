@@ -8,6 +8,77 @@ import { confirmDelete } from '../../utils/sweetalert';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
+// Category Image Dimension Validator (400×400px square)
+const CATEGORY_IMAGE_DIMENSIONS = {
+  recommended: { width: 400, height: 400 },
+  minimum: { width: 200, height: 200 },
+  aspectRatio: 1 / 1,
+  tolerance: 0.05,
+  maxFileSize: 3 * 1024 * 1024, // 3MB
+  formats: ['image/jpeg', 'image/webp'],
+};
+
+const validateCategoryImageDimensions = (file) => {
+  return new Promise((resolve) => {
+    // Check file size
+    if (file.size > CATEGORY_IMAGE_DIMENSIONS.maxFileSize) {
+      resolve({
+        valid: false,
+        error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+      });
+      return;
+    }
+
+    // Check file format
+    if (!CATEGORY_IMAGE_DIMENSIONS.formats.includes(file.type)) {
+      resolve({
+        valid: false,
+        error: `Invalid format. Use JPG or WebP. You have: ${file.type || 'unknown'}`,
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        const actualRatio = width / height;
+        const expectedRatio = CATEGORY_IMAGE_DIMENSIONS.aspectRatio;
+        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
+
+        // Check minimum dimensions
+        if (width < CATEGORY_IMAGE_DIMENSIONS.minimum.width || height < CATEGORY_IMAGE_DIMENSIONS.minimum.height) {
+          resolve({
+            valid: false,
+            error: `Image too small. Minimum: ${CATEGORY_IMAGE_DIMENSIONS.minimum.width}×${CATEGORY_IMAGE_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        // Check aspect ratio (1:1 square)
+        if (ratioDiff > CATEGORY_IMAGE_DIMENSIONS.tolerance) {
+          resolve({
+            valid: false,
+            error: `Incorrect aspect ratio. Use 1:1 square (e.g., ${width}×${width}px or ${CATEGORY_IMAGE_DIMENSIONS.recommended.width}×${CATEGORY_IMAGE_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        resolve({
+          valid: true,
+          dimensions: { width, height },
+          isRecommended: width === CATEGORY_IMAGE_DIMENSIONS.recommended.width && height === CATEGORY_IMAGE_DIMENSIONS.recommended.height,
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   if (imagePath.startsWith('http')) return imagePath;
@@ -27,6 +98,8 @@ export default function Categories({ showToast }) {
   const [categoryName, setCategoryName]   = useState('');
   const [imageFile, setImageFile]         = useState(null);
   const [preview, setPreview]             = useState(null);
+  const [errors, setErrors]               = useState({});
+  const [imageDimensions, setImageDimensions] = useState(null);
   const fileInputRef = useRef();
 
   const generateSlug = (name) => {
@@ -60,6 +133,12 @@ export default function Categories({ showToast }) {
     setImageFile(null);
     const original = editingId ? rows.find(r => r.id === editingId) : null;
     setPreview(original?.image ? getImageUrl(original.image) : null);
+    setImageDimensions(null);
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.image;
+      return newErrors;
+    });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -69,11 +148,29 @@ export default function Categories({ showToast }) {
     setCategoryName('');
     setImageFile(null);
     setPreview(null);
+    setErrors({});
+    setImageDimensions(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!categoryName) { showToast.error('Please enter a category name'); return; }
+    
+    const newErrors = {};
+    if (!categoryName) newErrors.categoryName = 'Please enter a category name';
+    if (!editingId && !imageFile) newErrors.image = 'Image is required';
+    
+    // Validate image dimensions if new image is selected
+    if (imageFile && imageDimensions && !imageDimensions.valid) {
+      newErrors.image = imageDimensions.error;
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showToast.error(Object.values(newErrors)[0]);
+      return;
+    }
+    
+    setErrors({});
 
     const data = new FormData();
     data.append('label', categoryName);
@@ -143,7 +240,7 @@ const handleDelete = async (catId) => {
               </div>
 
               <div className="km-field km-field-full">
-                <label className="km-label">Category Image</label>
+                <label className="km-label">Category Image • Recommended: 400×400px (1:1) • Min: 200×200px • Max: 3MB (JPG/WebP)</label>
                 <div className="upload-grid-wrapper">
                   <div 
                     className={`drop-zone-area ${imageFile ? 'active-file' : ''}`}
@@ -154,9 +251,24 @@ const handleDelete = async (catId) => {
                       type="file"
                       accept="image/*"
                       style={{ display: 'none' }}
-                      onChange={e => {
+                      onChange={(e) => {
                         const file = e.target.files[0];
-                        if (file) setImageFile(file);
+                        if (file) {
+                          setImageFile(file);
+                          // Validate dimensions asynchronously
+                          validateCategoryImageDimensions(file).then((result) => {
+                            setImageDimensions(result);
+                            if (!result.valid) {
+                              setErrors(prev => ({ ...prev, image: result.error }));
+                            } else {
+                              setErrors(prev => {
+                                const newErrors = { ...prev };
+                                delete newErrors.image;
+                                return newErrors;
+                              });
+                            }
+                          });
+                        }
                       }}
                     />
                     <div className="drop-zone-info">
@@ -174,6 +286,39 @@ const handleDelete = async (catId) => {
                     </div>
                   )}
                 </div>
+                
+                {/* Dimension Info */}
+                {imageDimensions && (
+                  <div style={{
+                    marginTop: 12,
+                    padding: 12,
+                    borderRadius: 8,
+                    fontSize: 13,
+                    backgroundColor: imageDimensions.valid ? '#f0fdf4' : '#fef2f2',
+                    border: `1px solid ${imageDimensions.valid ? '#dcfce7' : '#fee2e2'}`,
+                    color: imageDimensions.valid ? '#166534' : '#7f1d1d',
+                  }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                      {imageDimensions.valid ? '✓ Valid Dimensions' : '✗ Invalid Dimensions'}
+                    </div>
+                    <div style={{ fontSize: 12, opacity: 0.9 }}>
+                      {imageDimensions.dimensions.width} × {imageDimensions.dimensions.height}px
+                      {imageDimensions.isRecommended && ' (Recommended)'}
+                    </div>
+                    {!imageDimensions.valid && (
+                      <div style={{ fontSize: 12, marginTop: 6, fontWeight: 500 }}>
+                        {imageDimensions.error}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Image Error Message */}
+                {errors.image && (
+                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>
+                    ⚠ {errors.image}
+                  </div>
+                )}
               </div>
 
               {/* Properly Aligned Form Actions */}

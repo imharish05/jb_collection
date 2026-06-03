@@ -88,35 +88,24 @@ export default function TimelessTreasures({ showToast }) {
   const [imageDimensions, setImageDimensions] = useState(null);
 
   // Title / Badge limits
-  const TITLE_MAX_CHARS = 60;
-  const TITLE_MAX_WORDS = 8;
-  const OFF_MAX_CHARS = 30;
-  const OFF_MAX_WORDS = 4;
+  const LIMITS = {
+    title: { chars: 40, words: 5 },
+    off: { chars: 20, words: 3 },
+  };
 
   const countWords = (s) => (s || '').trim().split(/\s+/).filter(Boolean).length;
 
-  const handleTitleChange = (e) => {
-    let val = e.target.value || '';
-    if (val.length > TITLE_MAX_CHARS) val = val.slice(0, TITLE_MAX_CHARS);
-    const words = val.trim().split(/\s+/).filter(Boolean);
-    if (words.length > TITLE_MAX_WORDS) {
-      val = words.slice(0, TITLE_MAX_WORDS).join(' ');
-      if (val.length > TITLE_MAX_CHARS) val = val.slice(0, TITLE_MAX_CHARS);
-    }
-    setTitle(val);
-    setErrors(prev => { const n = { ...prev }; delete n.title; return n; });
-  };
-
-  const handleOffChange = (e) => {
-    let val = e.target.value || '';
-    if (val.length > OFF_MAX_CHARS) val = val.slice(0, OFF_MAX_CHARS);
-    const words = val.trim().split(/\s+/).filter(Boolean);
-    if (words.length > OFF_MAX_WORDS) {
-      val = words.slice(0, OFF_MAX_WORDS).join(' ');
-      if (val.length > OFF_MAX_CHARS) val = val.slice(0, OFF_MAX_CHARS);
-    }
-    setOff(val);
-    setErrors(prev => { const n = { ...prev }; delete n.off; return n; });
+  // Validate text length and word count
+  const validateField = (field, value) => {
+    const limits = LIMITS[field];
+    if (!limits) return null;
+    
+    const charCount = value.length;
+    const wordCount = countWords(value);
+    
+    if (charCount > limits.chars) return `Max ${limits.chars} characters (you have ${charCount})`;
+    if (wordCount > limits.words) return `Max ${limits.words} words (you have ${wordCount})`;
+    return null;
   };
 
   const fileInputRef = useRef();
@@ -211,27 +200,24 @@ export default function TimelessTreasures({ showToast }) {
     e.preventDefault();
     
     const newErrors = {};
-    const titleTrim = title.trim();
-    if (!titleTrim) newErrors.title = 'Title is required';
+    
+    if (!title.trim()) newErrors.title = 'Title is required';
     else {
-      if (titleTrim.length > TITLE_MAX_CHARS) newErrors.title = `Title must be ${TITLE_MAX_CHARS} characters or fewer`;
-      const tWords = countWords(titleTrim);
-      if (tWords > TITLE_MAX_WORDS) newErrors.title = `Title must be ${TITLE_MAX_WORDS} words or fewer`;
+      const titleErr = validateField('title', title);
+      if (titleErr) newErrors.title = titleErr;
     }
-
+    
     if (!editingId && !imageFile) newErrors.image = 'Banner image is required';
-
+    
     // Validate image dimensions if new image is selected
     if (imageFile && imageDimensions && !imageDimensions.valid) {
       newErrors.image = imageDimensions.error;
     }
-
-    // off validations
-    const offTrim = off.trim();
-    if (offTrim) {
-      if (offTrim.length > OFF_MAX_CHARS) newErrors.off = `Badge must be ${OFF_MAX_CHARS} characters or fewer`;
-      const offWords = countWords(offTrim);
-      if (offWords > OFF_MAX_WORDS) newErrors.off = `Badge must be ${OFF_MAX_WORDS} words or fewer`;
+    
+    // off is optional but validate if present
+    if (off.trim()) {
+      const offErr = validateField('off', off);
+      if (offErr) newErrors.off = offErr;
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -239,6 +225,8 @@ export default function TimelessTreasures({ showToast }) {
       showToast.error(Object.values(newErrors)[0]);
       return;
     }
+    
+    setErrors({});
 
     const fd = new FormData();
     fd.append('title', title);
@@ -388,43 +376,58 @@ export default function TimelessTreasures({ showToast }) {
 
               {/* Title */}
               <div className="km-field km-field-half">
-                <label className="km-label">Title <span style={{ color: '#ef4444' }}>*</span></label>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <input
-                    className="km-input"
-                    type="text"
-                    placeholder="e.g. Divine Decor"
-                    value={title}
-                    onChange={handleTitleChange}
-                  />
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>
-                    {title.length}/{TITLE_MAX_CHARS} char · {countWords(title)}/{TITLE_MAX_WORDS} words
-                  </div>
-                </div>
-                {errors.off && (
-                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 6 }}>
-                    ⚠ {errors.off}
-                  </div>
-                )}
+                <label className="km-label">
+                  Title <span style={{ color: '#ef4444' }}>*</span>
+                  <span style={{ fontSize: 11, color: errors.title ? '#ef4444' : '#9ca3af', marginLeft: 8 }}>
+                    {title.length}/{LIMITS.title.chars} chars · {countWords(title)}/{LIMITS.title.words} words
+                  </span>
+                </label>
+                <input
+                  className="km-input"
+                  type="text"
+                  placeholder="e.g. Divine Decor"
+                  value={title}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setTitle(val);
+                    const err = validateField('title', val);
+                    setErrors(prev => ({ ...prev, title: err }));
+                  }}
+                  style={{
+                    borderColor: errors.title ? '#ef4444' : undefined,
+                    boxShadow: errors.title ? '0 0 0 2px rgba(239, 68, 68, 0.1)' : undefined,
+                  }}
+                  maxLength={LIMITS.title.chars}
+                />
+                {errors.title && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.title}</div>}
               </div>
 
               {/* Badge/Tag */}
               <div className="km-field km-field-half">
                 <label className="km-label">
-                  Badge / Tag <span style={{ color: '#9ca3af', fontSize: 11 }}>(e.g. NEW ARRIVAL, FLAT 20% OFF)</span>
+                  Badge / Tag <span style={{ color: '#9ca3af', fontSize: 11 }}>(e.g. NEW ARRIVAL, TRENDING)</span>
+                  <span style={{ fontSize: 11, color: errors.off ? '#ef4444' : '#9ca3af', marginLeft: 8 }}>
+                    {off.length}/{LIMITS.off.chars} chars · {countWords(off)}/{LIMITS.off.words} words
+                  </span>
                 </label>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <input
-                    className="km-input"
-                    type="text"
-                    placeholder="TRENDING"
-                    value={off}
-                    onChange={handleOffChange}
-                  />
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>
-                    {off.length}/{OFF_MAX_CHARS} char · {countWords(off)}/{OFF_MAX_WORDS} words
-                  </div>
-                </div>
+                <input
+                  className="km-input"
+                  type="text"
+                  placeholder="TRENDING"
+                  value={off}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setOff(val);
+                    const err = validateField('off', val);
+                    setErrors(prev => ({ ...prev, off: err }));
+                  }}
+                  style={{
+                    borderColor: errors.off ? '#ef4444' : undefined,
+                    boxShadow: errors.off ? '0 0 0 2px rgba(239, 68, 68, 0.1)' : undefined,
+                  }}
+                  maxLength={LIMITS.off.chars}
+                />
+                {errors.off && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.off}</div>}
               </div>
 
               {/* Link */}

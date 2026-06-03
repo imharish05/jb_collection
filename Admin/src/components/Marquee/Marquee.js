@@ -14,6 +14,27 @@ const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 5 };
 const labelStyle = { fontSize: 11, fontWeight: 500, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em' };
 const inputStyle = { padding: '9px 12px', border: `1px solid ${KM.border}`, borderRadius: 8, fontSize: 13, color: KM.text, background: '#fff', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box', textTransform: 'capitalize' };
 
+// Helper: Count words in text
+const countWords = (text) => text.trim().split(/\s+/).filter(Boolean).length;
+
+// Helper: Get field limits
+const LIMITS = {
+  message: { chars: 120, words: 20 },
+};
+
+// Validate text length and word count
+const validateField = (field, value) => {
+  const limits = LIMITS[field];
+  if (!limits) return null;
+  
+  const charCount = value.length;
+  const wordCount = countWords(value);
+  
+  if (charCount > limits.chars) return `Max ${limits.chars} characters (you have ${charCount})`;
+  if (wordCount > limits.words) return `Max ${limits.words} words (you have ${wordCount})`;
+  return null;
+};
+
 export default function Marquee({ showToast }) {
   const dispatch = useDispatch();
   const { items: marquees, loading } = useSelector(state => state.marquee || { items: [], loading: false });
@@ -22,6 +43,7 @@ export default function Marquee({ showToast }) {
   const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     dispatch(fetchMarquees());
@@ -32,6 +54,7 @@ export default function Marquee({ showToast }) {
     setEditingId(null);
     setMessage('');
     setIsActive(true);
+    setErrors({});
   };
 
   const handleEditClick = (row) => {
@@ -44,10 +67,22 @@ export default function Marquee({ showToast }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!message.trim()) { 
-      showToast.error('Please enter a marquee message'); 
-      return; 
+    
+    const newErrors = {};
+    
+    if (!message.trim()) newErrors.message = 'Message is required';
+    else {
+      const msgErr = validateField('message', message);
+      if (msgErr) newErrors.message = msgErr;
     }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showToast.error(Object.values(newErrors)[0]);
+      return;
+    }
+    
+    setErrors({});
 
     const data = { message: message.trim(), isActive };
     const toastId = showToast.loading(editingId ? 'Updating message...' : 'Adding message...');
@@ -109,16 +144,27 @@ export default function Marquee({ showToast }) {
           <div className="km-form-body">
             <form className="km-form-grid" onSubmit={handleSubmit}>
               <div className="km-field km-field-full">
-                <label className="km-label">Message Text</label>
+                <label className="km-label">
+                  Message Text
+                  <span style={{ fontSize: 11, color: errors.message ? '#ef4444' : '#9ca3af', marginLeft: 8 }}>
+                    {message.length}/{LIMITS.message.chars} chars · {countWords(message)}/{LIMITS.message.words} words
+                  </span>
+                </label>
                 <textarea
                   className="km-input"
                   placeholder="e.g. Free delivery on orders over ₹500"
-                  required
                   value={message}
-                  onChange={e => setMessage(e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setMessage(val);
+                    const err = validateField('message', val);
+                    setErrors(prev => ({ ...prev, message: err }));
+                  }}
                   rows={3}
-                  style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
+                  style={{ ...inputStyle, minHeight: '80px', resize: 'vertical', borderColor: errors.message ? '#ef4444' : undefined, boxShadow: errors.message ? '0 0 0 2px rgba(239, 68, 68, 0.1)' : undefined }}
+                  maxLength={LIMITS.message.chars}
                 />
+                {errors.message && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.message}</div>}
               </div>
 
               <div className="km-field km-field-full">

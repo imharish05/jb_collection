@@ -36,6 +36,78 @@ function safeAttrs(raw) {
 const KEY_ALIASES = { color: 'Colour', colour: 'Colour', size: 'Size', material: 'Material', finish: 'Finish', capacity: 'Capacity' };
 function normalKey(k) { return KEY_ALIASES[k?.toLowerCase()] || k; }
 
+// Product Image Dimension Validator (800×960px 5:6 portrait)
+const PRODUCT_IMAGE_DIMENSIONS = {
+  recommended: { width: 800, height: 960 },
+  minimum: { width: 400, height: 480 },
+  aspectRatio: 5 / 6,
+  tolerance: 0.05,
+  maxFileSize: 3 * 1024 * 1024, // 3MB
+  formats: ['image/jpeg', 'image/webp'],
+};
+
+const validateProductImageDimensions = (file) => {
+  return new Promise((resolve) => {
+    // Check file size
+    if (file.size > PRODUCT_IMAGE_DIMENSIONS.maxFileSize) {
+      resolve({
+        valid: false,
+        error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+      });
+      return;
+    }
+
+    // Check file format
+    if (!PRODUCT_IMAGE_DIMENSIONS.formats.includes(file.type)) {
+      resolve({
+        valid: false,
+        error: `Invalid format. Use JPG or WebP. You have: ${file.type || 'unknown'}`,
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        const actualRatio = width / height;
+        const expectedRatio = PRODUCT_IMAGE_DIMENSIONS.aspectRatio;
+        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
+
+        // Check minimum dimensions
+        if (width < PRODUCT_IMAGE_DIMENSIONS.minimum.width || height < PRODUCT_IMAGE_DIMENSIONS.minimum.height) {
+          resolve({
+            valid: false,
+            error: `Image too small. Minimum: ${PRODUCT_IMAGE_DIMENSIONS.minimum.width}×${PRODUCT_IMAGE_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        // Check aspect ratio (5:6)
+        if (ratioDiff > PRODUCT_IMAGE_DIMENSIONS.tolerance) {
+          const recommendedHeight = Math.round(width / expectedRatio);
+          resolve({
+            valid: false,
+            error: `Incorrect aspect ratio. Use 5:6 portrait (e.g., ${width}×${recommendedHeight}px or ${PRODUCT_IMAGE_DIMENSIONS.recommended.width}×${PRODUCT_IMAGE_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        resolve({
+          valid: true,
+          dimensions: { width, height },
+          isRecommended: width === PRODUCT_IMAGE_DIMENSIONS.recommended.width && height === PRODUCT_IMAGE_DIMENSIONS.recommended.height,
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 // Convert a saved variant row → VariantBuilder SKU shape
 function variantToSku(v) {
   const attrs = safeAttrs(v.attributes);
@@ -188,10 +260,34 @@ export default function Variants({ showToast }) {
     return !Object.keys(next).length;
   };
 
+  // ── Async image dimension validation ──────────────────────────────────────
+  const validateImageDimensions = async (skuList) => {
+    for (let i = 0; i < skuList.length; i++) {
+      const s = skuList[i];
+      if (s.imageFile) {
+        const result = await validateProductImageDimensions(s.imageFile);
+        if (!result.valid) {
+          setErrors(prev => ({
+            ...prev,
+            [`sku_${i}`]: `Image: ${result.error}`,
+          }));
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
   // ── Submit ADD (differential sync) ────────────────────────────────────────
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!validateAdd()) return;
+    
+    // Validate image dimensions
+    if (!(await validateImageDimensions(skus))) {
+      showToast.error('One or more variant images have invalid dimensions');
+      return;
+    }
 
     // Retrieve existing variants of this product in database
     const existingDbVariants = rows.filter(r => String(r.productId) === String(productId));
@@ -259,6 +355,12 @@ export default function Variants({ showToast }) {
   const handleEdit = async (e) => {
     e.preventDefault();
     if (!validateEdit()) return;
+    
+    // Validate image dimensions
+    if (!(await validateImageDimensions(editSkus))) {
+      showToast.error('One or more variant images have invalid dimensions');
+      return;
+    }
 
     const s = editSkus[0];
     const attrs = s.combo?.length

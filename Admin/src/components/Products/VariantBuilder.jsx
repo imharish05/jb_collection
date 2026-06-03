@@ -231,7 +231,7 @@ function SkuRow({ sku, index, onChange, errors = [] }) {
 
       {/* Image upload — big zone */}
       <div style={{ flexShrink: 0 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Image</div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Image • 800×960px (5:6) • Min: 400×480px</div>
         <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImg} />
         {sku.imagePreview ? (
           <div style={{ position: 'relative', width: 90, height: 90 }}>
