@@ -108,6 +108,7 @@ const DealSection = ({ section, isLast, category }) => {
           <ProductGrid
             category={category}
             type={section.type}
+            sectionType={section.type}
             limit={10}
             spaceBottomClass="mb-0"
             productsList={section.items}

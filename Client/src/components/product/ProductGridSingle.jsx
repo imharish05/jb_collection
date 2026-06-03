@@ -16,6 +16,7 @@ const ProductGridSingle = ({
   cartItem,
   wishlistItem,
   spaceBottomClass,
+  sectionType,
 }) => {
   const [modalShow, setModalShow] = useState(false);
   const dispatch = useDispatch();
@@ -129,20 +130,38 @@ const ProductGridSingle = ({
             )}
           </Link>
 
-          {/* Single glassy badge - highest priority only */}
-          {(product.discount > 0 || product.isHotDeal || product.isNew || product.new || product.isCustomisable) && (
-            <div className="product-badge-single">
-              {product.isCustomisable ? (
-                <span className="badge-glass badge-glass--custom">Custom</span>
-              ) : product.discount > 0 ? (
-                <span className="badge-glass badge-glass--discount">-{product.discount}%</span>
-              ) : product.isHotDeal ? (
-                <span className="badge-glass badge-glass--hot">Hot</span>
-              ) : (
-                <span className="badge-glass badge-glass--new">New</span>
-              )}
-            </div>
-          )}
+          {/* Badge — forced by section context, else highest-priority fallback */}
+          {(() => {
+            if (sectionType === "customisable" || (!sectionType && product.isCustomisable)) {
+              return (
+                <div className="product-badge-single">
+                  <span className="badge-glass badge-glass--custom">Custom</span>
+                </div>
+              );
+            }
+            if (sectionType === "newArrival" || (!sectionType && (product.isNew || product.new))) {
+              return (
+                <div className="product-badge-single">
+                  <span className="badge-glass badge-glass--new">New</span>
+                </div>
+              );
+            }
+            if (sectionType === "hotDeals" || (!sectionType && product.isHotDeal)) {
+              return (
+                <div className="product-badge-single">
+                  <span className="badge-glass badge-glass--hot">Hot</span>
+                </div>
+              );
+            }
+            if (!sectionType && product.discount > 0) {
+              return (
+                <div className="product-badge-single">
+                  <span className="badge-glass badge-glass--discount">-{product.discount}%</span>
+                </div>
+              );
+            }
+            return null;
+          })()}
 
           {/* Floating Actions */}
           <div className="premium-action-list">
@@ -236,6 +255,7 @@ ProductGridSingle.propTypes = {
   product: PropTypes.shape({}),
   spaceBottomClass: PropTypes.string,
   wishlistItem: PropTypes.shape({}),
+  sectionType: PropTypes.string,
 };
 
 export default ProductGridSingle;

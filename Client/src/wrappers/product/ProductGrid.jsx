@@ -8,6 +8,7 @@ const ProductGrid = ({
   spaceBottomClass,
   category,
   type,
+  sectionType,
   limit,
   productsList
 }) => {
@@ -27,6 +28,7 @@ const ProductGrid = ({
               spaceBottomClass={spaceBottomClass}
               product={product}
               currency={currency}
+              sectionType={sectionType}
               cartItem={
                 cartItems.find((cartItem) => cartItem.id === product.id)
               }
@@ -52,10 +54,10 @@ ProductGrid.propTypes = {
   spaceBottomClass: PropTypes.string,
   category: PropTypes.string,
   type: PropTypes.string,
+  sectionType: PropTypes.string,
   limit: PropTypes.number
 };
 
 
 
 export default ProductGrid;
-
