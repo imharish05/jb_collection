@@ -125,11 +125,14 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
               >
                 <div className="kg-mega-inner">
                   <MegaSection
-                    title="Categories" accent="#db1a5d" items={categories}
+                    title="Categories" accent="#db1a5d"
+                    items={[{ value: "__all__", label: "All Products", image: null }, ...categories]}
                     renderItem={(cat) => (
-                      <CatalogueCard key={cat.value ?? cat.id}
-                        to={cat.value ? `${S}?category=${cat.value}` : S}
-                        image={cat.image} label={cat.label} emoji="🗂️" />
+                      cat.value === "__all__"
+                        ? <CatalogueCard key="__all__" to={S} image={null} label="All Products" emoji="✨" />
+                        : <CatalogueCard key={cat.value ?? cat.id}
+                            to={cat.value ? `${S}?category=${cat.value}` : S}
+                            image={cat.image} label={cat.label} emoji="🗂️" />
                     )}
                   />
                   <MegaSection

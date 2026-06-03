@@ -150,9 +150,20 @@ const MobileNavMenu = () => {
           {catalogueOpen && (
             <div className="mob-catalogue-panel">
 
+                          <SectionLabel title="Products" accent="#db1a5d" />
+              <div className="mob-list-row mob-list-row--all-products">
+                <span className="mob-thumb mob-thumb--all">
+                  <span className="mob-thumb__fallback" style={{ display: "flex" }}>✨</span>
+                </span>
+                <Link to={S} className="mob-list-row__label mob-list-row__label--bold" onClick={closeMenu}>
+                  All Products
+                </Link>
+              </div>
+
               {categories.length > 0 && (
                 <>
                   <SectionLabel title="Categories" accent="#db1a5d" />
+                  
                   {categories.map(cat => (
                     <CategoryRow key={cat.value ?? cat.id} item={cat} closeMenu={closeMenu} />
                   ))}
