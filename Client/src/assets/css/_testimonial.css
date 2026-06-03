@@ -1,101 +1,246 @@
-.editorial-testimonial {
-  display: flex !important; /* Overriding slick's block display */
-  align-items: center;
-  gap: 40px;
-  padding: 50px;
-  background: #fff;
-  border-radius: 30px;
-  margin: 20px;
-  /* Subtle depth */
-  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.04);
+/* =========================================
+   TESTIMONIAL — Card Stack Design
+   Brand: #db1a5d | Fully responsive
+   ========================================= */
+
+.testimonial-section {
+  background: #fafafa;
+  overflow: hidden;
 }
 
-/* Text Section */
-.testimonial-content {
-  flex: 1;
+/* Section Header */
+.testimonial-section .section-title h2 {
+  font-size: 36px;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 10px;
+  letter-spacing: -0.5px;
+}
+
+.testimonial-section .section-title p {
+  font-size: 16px;
+  color: #888;
+  font-weight: 400;
+}
+
+/* Slider wrapper — constrain width so arrows sit outside */
+.testimonial-slick-wrapper {
+  max-width: 780px;
+  margin: 0 auto;
   position: relative;
 }
 
-.quote-badge {
-  width: 45px;
-  height: 45px;
-  background: #db1a5d;
-  color: #fff;
+/* Slick arrow overrides */
+.testimonial-slick-wrapper .slick-prev,
+.testimonial-slick-wrapper .slick-next {
+  width: 44px;
+  height: 44px;
+  background: #fff;
   border-radius: 50%;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  z-index: 10;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.testimonial-slick-wrapper .slick-prev { left: -54px; }
+.testimonial-slick-wrapper .slick-next { right: -54px; }
+.testimonial-slick-wrapper .slick-prev:hover,
+.testimonial-slick-wrapper .slick-next:hover {
+  background: #db1a5d;
+  box-shadow: 0 6px 20px rgba(219,26,93,0.3);
+}
+.testimonial-slick-wrapper .slick-prev::before,
+.testimonial-slick-wrapper .slick-next::before {
+  color: #333;
+  font-size: 16px;
+  opacity: 1;
+}
+.testimonial-slick-wrapper .slick-prev:hover::before,
+.testimonial-slick-wrapper .slick-next:hover::before {
+  color: #fff;
+}
+
+/* Dots */
+.testimonial-slick-wrapper .slick-dots {
+  bottom: -36px;
+}
+.testimonial-slick-wrapper .slick-dots li button::before {
+  font-size: 8px;
+  color: #ccc;
+  opacity: 1;
+}
+.testimonial-slick-wrapper .slick-dots li.slick-active button::before {
+  color: #db1a5d;
+}
+
+/* ── CARD ── */
+.testimonial-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 48px 48px 40px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.07);
+  display: flex !important;
+  flex-direction: column;
+  gap: 28px;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+
+/* Decorative accent strip at top */
+.testimonial-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #db1a5d, #ff6b9d);
+  border-radius: 24px 24px 0 0;
+}
+
+/* Big background quote mark */
+.testimonial-card::after {
+  content: '\201C';
+  position: absolute;
+  top: 20px;
+  right: 36px;
+  font-size: 140px;
+  line-height: 1;
+  color: #db1a5d;
+  opacity: 0.06;
+  font-family: Georgia, serif;
+  pointer-events: none;
+}
+
+/* Stars row */
+.tc-stars {
+  display: flex;
+  gap: 4px;
+}
+.tc-stars i {
+  font-size: 15px;
+  color: #f5a623;
+}
+.tc-stars i.fa-star-o {
+  color: #ddd;
+}
+
+/* Quote text */
+.tc-quote {
+  font-size: 17px;
+  line-height: 1.75;
+  color: #444;
+  font-style: italic;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Author row */
+.tc-author {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  margin-bottom: 25px;
-  box-shadow: 0 8px 15px rgba(108, 92, 231, 0.3);
+  gap: 16px;
+  margin-top: 4px;
 }
 
-.main-quote {
-  font-size: 20px;
-  line-height: 1.6;
-  color: #2d3436;
-  font-weight: 500;
-  margin-bottom: 30px;
-  font-style: italic;
+.tc-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #f5e6eb;
+  flex-shrink: 0;
 }
 
-.author-name {
-  font-size: 18px;
+.tc-author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tc-name {
+  font-size: 16px;
   font-weight: 800;
   color: #111;
   margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.2px;
 }
 
-.author-job {
-  font-size: 14px;
+.tc-designation {
+  font-size: 13px;
   color: #db1a5d;
   font-weight: 600;
 }
 
-/* Image Section with Overlap */
-.author-image-wrapper {
-  position: relative;
-  width: 180px;
-  height: 180px;
-  flex-shrink: 0;
+/* Divider between avatar and info */
+.tc-author-divider {
+  width: 2px;
+  height: 36px;
+  background: #f0dce3;
+  border-radius: 2px;
+  margin: 0 4px;
 }
 
-.image-bg-shape {
-  position: absolute;
-  top: 15px;
-  right: -15px;
-  width: 100%;
-  height: 100%;
-  background: #f1f2f6; /* Soft gray contrast */
-  border-radius: 20px;
-  z-index: 1;
-}
-
-.author-image-wrapper img {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 20px;
-  filter: saturate(1.2);
-}
-
-/* Responsive Fixes */
+/* ── TABLET ── */
 @media (max-width: 991px) {
-  .editorial-testimonial {
-    flex-direction: column-reverse;
-    text-align: center;
-    padding: 40px 30px;
+  .testimonial-slick-wrapper {
+    max-width: 100%;
   }
-  .quote-badge {
-    margin: 0 auto 20px;
+  .testimonial-slick-wrapper .slick-prev { left: 4px; }
+  .testimonial-slick-wrapper .slick-next { right: 4px; }
+  .testimonial-slick-wrapper .slick-prev,
+  .testimonial-slick-wrapper .slick-next {
+    width: 36px;
+    height: 36px;
   }
-  .author-image-wrapper {
-    margin-bottom: 30px;
+  .testimonial-card {
+    padding: 36px 32px 30px;
+    gap: 22px;
+    border-radius: 20px;
+  }
+  .tc-quote {
+    font-size: 16px;
   }
 }
 
-
+/* ── MOBILE ── */
+@media (max-width: 575px) {
+  .testimonial-section {
+    padding-top: 60px !important;
+    padding-bottom: 70px !important;
+  }
+  .testimonial-section .section-title h2 {
+    font-size: 26px;
+  }
+  .testimonial-slick-wrapper .slick-prev,
+  .testimonial-slick-wrapper .slick-next {
+    display: none !important;
+  }
+  .testimonial-card {
+    padding: 28px 22px 24px;
+    gap: 18px;
+    border-radius: 18px;
+    margin: 0 6px;
+  }
+  .testimonial-card::after {
+    font-size: 90px;
+    right: 16px;
+    top: 10px;
+  }
+  .tc-quote {
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .tc-avatar {
+    width: 52px;
+    height: 52px;
+  }
+  .tc-name {
+    font-size: 14px;
+  }
+  .tc-designation {
+    font-size: 12px;
+  }
+  .tc-stars i {
+    font-size: 13px;
+  }
+}

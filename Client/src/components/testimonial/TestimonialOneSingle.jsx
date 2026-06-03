@@ -14,29 +14,29 @@ const TestimonialOneSingle = ({ data }) => {
   const rating = Number.isFinite(rawRating) ? Math.min(5, Math.max(0, rawRating)) : 5;
 
   return (
-    <div className="editorial-testimonial">
-      <div className="testimonial-content">
-        <div className="quote-badge">
-          <i className="fa fa-quote-right"></i>
-        </div>
-
-        <div className="testimonial-stars" aria-label={`${rating} out of 5 star rating`}>
-          {[0, 1, 2, 3, 4].map((star) => (
-            <i key={star} className={`fa ${star < Math.round(rating) ? "fa-star" : "fa-star-o"}`}></i>
-          ))}
-        </div>
-        
-        <p className="main-quote">{data.text}</p>
-        
-        <div className="author-details">
-          <h4 className="author-name">{data.name}</h4>
-          <span className="author-job">{data.designation}</span>
-        </div>
+    <div className="testimonial-card">
+      {/* Stars */}
+      <div className="tc-stars" aria-label={`${rating} out of 5`}>
+        {[0, 1, 2, 3, 4].map((s) => (
+          <i key={s} className={`fa ${s < Math.round(rating) ? "fa-star" : "fa-star-o"}`} />
+        ))}
       </div>
 
-      <div className="author-image-wrapper">
-        <div className="image-bg-shape"></div>
-        <img src={resolveImg(data.image)} alt={data.name} className="img-fluid" />
+      {/* Quote */}
+      <p className="tc-quote">{data.text}</p>
+
+      {/* Author */}
+      <div className="tc-author">
+        <img
+          src={resolveImg(data.image)}
+          alt={data.name}
+          className="tc-avatar"
+        />
+        <div className="tc-author-divider" />
+        <div className="tc-author-info">
+          <h4 className="tc-name">{data.name}</h4>
+          <span className="tc-designation">{data.designation}</span>
+        </div>
       </div>
     </div>
   );
