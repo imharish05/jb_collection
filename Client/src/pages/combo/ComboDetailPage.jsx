@@ -69,76 +69,125 @@ function isOutOfStock(cp) {
 
 // ComboImageGallery removed in favor of ProductImageGallerySideThumb
 
-// ── Fixed combo: included products list (card-grid, same style as Mix & Match) ─
+// ── Fixed combo: included products list (slider when >2, grid when ≤2) ─
 function FixedProductsList({ comboProducts }) {
+  const useSlider = comboProducts.length > 2;
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{ fontSize: 13, fontWeight: 600, color: "#1A3A6B", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
         Included Products
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
-        {comboProducts.map(cp => {
-          const prod = cp.product;
-          const variant = cp.variant
-            || (cp.variantId && Array.isArray(prod?.Variants)
-              ? prod.Variants.find(v => String(v.id) === String(cp.variantId)) || null
-              : null);
-          const img = getProductImg(prod);
-          const low = isLowStock(cp);
-          const oos = isOutOfStock(cp);
-          const qty = cp.quantity || 1;
-          const sales = variant ? parseFloat(variant.salesPrice || 0) : parseFloat(prod?.price || 0);
-          const mrp   = variant ? parseFloat(variant.mrp || 0)        : parseFloat(prod?.price || 0);
-          return (
-            <div
-              key={cp.id}
-              style={{
-                border: `2px solid ${oos ? "#fecaca" : "#E5E7EB"}`,
-                borderRadius: 10,
-                overflow: "hidden",
-                background: oos ? "#fef9f9" : "#fff",
-                opacity: oos ? 0.75 : 1,
-                position: "relative",
-              }}
-            >
-              {/* Qty badge */}
-              {qty > 1 && (
-                <div style={{
-                  position: "absolute", top: 6, left: 6,
-                  minWidth: 20, height: 20, borderRadius: 10,
-                  background: "#1A3A6B", color: "#fff",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 9, fontWeight: 700, zIndex: 1, padding: "0 5px",
-                }}>×{qty}</div>
-              )}
-              {/* Image */}
-              <div style={{ paddingTop: "75%", position: "relative", background: "#F9FAFB", overflow: "hidden" }}>
-                {img
-                  ? <img src={img} alt={prod?.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                  : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, color: "#e5e7eb" }}>🎁</div>
-                }
-              </div>
-              {/* Info */}
-              <div style={{ padding: "8px 10px" }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#1A1A2E", lineHeight: 1.3, marginBottom: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {prod?.name}
-                </div>
-                {variant && (
-                  <div style={{ fontSize: 9, color: "#db1a5d", fontWeight: 600, marginBottom: 4, lineHeight: 1.4 }}>
-                    {variant.variantName}
-                  </div>
-                )}
-                <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-                  {sales > 0 && <span style={{ fontSize: 12, fontWeight: 700, color: "#F15A24" }}>₹{sales.toLocaleString("en-IN")}</span>}
-                  {mrp > sales && sales > 0 && <span style={{ fontSize: 10, color: "#6B7280", textDecoration: "line-through" }}>₹{mrp.toLocaleString("en-IN")}</span>}
-                </div>
-                {oos && <div style={{ fontSize: 10, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>Out of stock</div>}
-                {low && !oos && <div style={{ fontSize: 10, color: "#b45309", fontWeight: 600, marginTop: 2 }}>Only {cp.variant?.stock ?? cp.product?.stock} left</div>}
-              </div>
-            </div>
-          );
-        })}
+      {useSlider ? (
+        <ProductSlider items={comboProducts} renderCard={cp => <FixedProductCard cp={cp} />} />
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
+          {comboProducts.map(cp => <FixedProductCard key={cp.id} cp={cp} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FixedProductCard({ cp }) {
+  const prod = cp.product;
+  const variant = cp.variant
+    || (cp.variantId && Array.isArray(prod?.Variants)
+      ? prod.Variants.find(v => String(v.id) === String(cp.variantId)) || null
+      : null);
+  const img = getProductImg(prod);
+  const low = isLowStock(cp);
+  const oos = isOutOfStock(cp);
+  const qty = cp.quantity || 1;
+  return (
+    <div style={{
+      border: `2px solid ${oos ? "#fecaca" : "#E5E7EB"}`,
+      borderRadius: 10, overflow: "hidden",
+      background: oos ? "#fef9f9" : "#fff",
+      opacity: oos ? 0.75 : 1, position: "relative",
+    }}>
+      {qty > 1 && (
+        <div style={{
+          position: "absolute", top: 6, left: 6,
+          minWidth: 20, height: 20, borderRadius: 10,
+          background: "#1A3A6B", color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 9, fontWeight: 700, zIndex: 1, padding: "0 5px",
+        }}>×{qty}</div>
+      )}
+      <div style={{ paddingTop: "75%", position: "relative", background: "#F9FAFB", overflow: "hidden" }}>
+        {img
+          ? <img src={img} alt={prod?.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+          : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, color: "#e5e7eb" }}>🎁</div>
+        }
       </div>
+      <div style={{ padding: "8px 10px" }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "#1A1A2E", lineHeight: 1.3, marginBottom: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          {prod?.name}
+        </div>
+        {variant && (
+          <div style={{ fontSize: 9, color: "#db1a5d", fontWeight: 600, lineHeight: 1.4 }}>
+            {variant.variantName}
+          </div>
+        )}
+        {oos && <div style={{ fontSize: 10, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>Out of stock</div>}
+        {low && !oos && <div style={{ fontSize: 10, color: "#b45309", fontWeight: 600, marginTop: 2 }}>Only {cp.variant?.stock ?? cp.product?.stock} left</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── Shared slider wrapper ─────────────────────────────────────────────────────
+function ProductSlider({ items, renderCard }) {
+  const [idx, setIdx] = useState(0);
+  const visible = 2;
+  const canPrev = idx > 0;
+  const canNext = idx < items.length - visible;
+  const dotCount = Math.max(0, items.length - visible + 1);
+
+  return (
+    <div style={{ position: "relative", paddingBottom: 28 }}>
+      <div style={{ overflow: "hidden" }}>
+        <div style={{
+          display: "flex", gap: 8,
+          transform: `translateX(calc(${idx} * (-50% - 4px)))`,
+          transition: "transform 0.3s ease",
+        }}>
+          {items.map((item, i) => (
+            <div key={i} style={{ flex: "0 0 calc(50% - 4px)", minWidth: 0 }}>
+              {renderCard(item)}
+            </div>
+          ))}
+        </div>
+      </div>
+      {canPrev && (
+        <button onClick={() => setIdx(i => Math.max(0, i - 1))} style={{
+          position: "absolute", left: -14, top: "40%", transform: "translateY(-50%)",
+          width: 28, height: 28, borderRadius: "50%", border: "1px solid #E5E7EB",
+          background: "#fff", cursor: "pointer", display: "flex", alignItems: "center",
+          justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", zIndex: 2,
+          color: "#1A3A6B", fontSize: 14, lineHeight: 1,
+        }}>‹</button>
+      )}
+      {canNext && (
+        <button onClick={() => setIdx(i => Math.min(items.length - visible, i + 1))} style={{
+          position: "absolute", right: -14, top: "40%", transform: "translateY(-50%)",
+          width: 28, height: 28, borderRadius: "50%", border: "1px solid #E5E7EB",
+          background: "#fff", cursor: "pointer", display: "flex", alignItems: "center",
+          justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", zIndex: 2,
+          color: "#1A3A6B", fontSize: 14, lineHeight: 1,
+        }}>›</button>
+      )}
+      {dotCount > 1 && (
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 5 }}>
+          {Array.from({ length: dotCount }).map((_, i) => (
+            <button key={i} onClick={() => setIdx(i)} style={{
+              width: i === idx ? 16 : 6, height: 6, borderRadius: 3,
+              background: i === idx ? "#F15A24" : "#D1D5DB",
+              border: "none", cursor: "pointer", padding: 0, transition: "all 0.2s",
+            }} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -154,9 +203,6 @@ function MixMatchCard({ cp, selected, onToggle }) {
       ? prod.Variants.find(v => String(v.id) === String(cp.variantId))
       : null);
   
-  // Use variant's price if available, otherwise use product price
-  const sales = variant ? parseFloat(variant.salesPrice || 0) : parseFloat(prod?.price || 0);
-  const mrp = variant ? parseFloat(variant.mrp || 0) : parseFloat(prod?.price || 0);
   const variantId = cp.variantId || null;
   
   const oos = isOutOfStock(cp);
@@ -191,10 +237,6 @@ function MixMatchCard({ cp, selected, onToggle }) {
             {variant.variantName}
           </div>
         )}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#F15A24" }}>₹{sales.toLocaleString("en-IN")}</span>
-          {mrp > sales && <span style={{ fontSize: 10, color: "#6B7280", textDecoration: "line-through" }}>₹{mrp.toLocaleString("en-IN")}</span>}
-        </div>
         {oos && <div style={{ fontSize: 10, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>Out of stock</div>}
       </div>
     </div>
@@ -584,21 +626,7 @@ const ComboDetailPage = () => {
                         <FixedProductsList comboProducts={child.comboProducts} />
                       )}
 
-                      {/* Rule 1 — Hard OOS: one or more items are zero-stock */}
-                      {fixedOos && oosProducts.length > 0 && (
-                        <div style={{ marginTop: 10, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8 }}>
-                          <div style={{ fontSize: 13, color: "#dc2626", fontWeight: 700, marginBottom: 6 }}>
-                            ⚠️ Combo Unavailable — out of stock item{oosProducts.length > 1 ? "s" : ""}:
-                          </div>
-                          {oosProducts.map((cp, i) => (
-                            <div key={i} style={{ fontSize: 12, color: "#991b1b", display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#dc2626", flexShrink: 0, display: "inline-block" }} />
-                              {cp.product?.name || `Product #${cp.productId}`}
-                              {cp.variant?.variantName ? ` — ${cp.variant.variantName}` : ""}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+
 
                       {/* Rule 2 — Low stock warning: remaining qty limited */}
                       {!fixedOos && fixedMaxQty < Infinity && fixedMaxQty <= 5 && lowStockProducts.length > 0 && (
@@ -633,19 +661,36 @@ const ComboDetailPage = () => {
                         )}
                       </div>
 
-                      {/* Eligible products grid */}
+                      {/* Eligible products slider */}
                       {child.comboProducts && (
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8, marginBottom: 8 }}>
-                          {child.comboProducts.filter(cp => cp.isEligible).map(cp => {
-                            const isSel = selections.some(s =>
-                              String(s.productId) === String(cp.productId) &&
-                              String(s.variantId || "") === String(cp.variantId || "")
+                        <div style={{ marginBottom: 8 }}>
+                          {(() => {
+                            const eligible = child.comboProducts.filter(cp => cp.isEligible);
+                            const useSlider = eligible.length > 2;
+                            const cards = eligible.map(cp => {
+                              const isSel = selections.some(s =>
+                                String(s.productId) === String(cp.productId) &&
+                                String(s.variantId || "") === String(cp.variantId || "")
+                              );
+                              return { cp, isSel };
+                            });
+                            return useSlider ? (
+                              <ProductSlider
+                                items={cards}
+                                renderCard={({ cp, isSel }) => (
+                                  <MixMatchCard cp={cp} selected={isSel}
+                                    onToggle={(cp, vId) => handleToggle(cp, vId)} />
+                                )}
+                              />
+                            ) : (
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
+                                {cards.map(({ cp, isSel }) => (
+                                  <MixMatchCard key={cp.id} cp={cp} selected={isSel}
+                                    onToggle={(cp, vId) => handleToggle(cp, vId)} />
+                                ))}
+                              </div>
                             );
-                            return (
-                              <MixMatchCard key={cp.id} cp={cp} selected={isSel}
-                                onToggle={(cp, vId) => handleToggle(cp, vId)} />
-                            );
-                          })}
+                          })()}
                         </div>
                       )}
                     </>
