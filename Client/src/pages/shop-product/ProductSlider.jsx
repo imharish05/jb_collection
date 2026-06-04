@@ -10,9 +10,9 @@ import ProductImageDescriptionSlider from "../../wrappers/product/ProductImageDe
 
 const ProductSlider = () => {
   let { pathname } = useLocation();
-  let { id } = useParams();
+  let { slug } = useParams();
   const { products } = useSelector((state) => state.product);
-  const product = products.find(product => product.id === id);
+  const product = products.find(p => p.slug === slug || String(p.id) === String(slug));
 
   return (
     <Fragment>
@@ -55,4 +55,3 @@ const ProductSlider = () => {
 
 
 export default ProductSlider;
-

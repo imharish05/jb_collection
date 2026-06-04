@@ -175,7 +175,7 @@ const Wishlist = () => {
 
                           {/* Image */}
                           <div className="product-img-container">
-                            <Link to={`${process.env.PUBLIC_URL}/product/${item.id}`}>
+                            <Link to={`${process.env.PUBLIC_URL}/product/${item.slug || item.id}`}>
                               <img
                                 className="main-img"
                                 src={mainImage}
@@ -218,7 +218,7 @@ const Wishlist = () => {
                                 </a>
                               ) : hasVariants && !item.selectedVariantId ? (
                                 // Product has variants but none selected — send to product page
-                                <Link to={`${process.env.PUBLIC_URL}/product/${item.id}`} className="cart-action-btn">
+                                <Link to={`${process.env.PUBLIC_URL}/product/${item.slug || item.id}`} className="cart-action-btn">
                                   SELECT OPTIONS
                                 </Link>
                               ) : stock > 0 ? (
@@ -241,7 +241,7 @@ const Wishlist = () => {
                           <div className="product-details-premium">
                             <span className="product-cat-tag">Collection</span>
                             <h4>
-                              <Link to={`${process.env.PUBLIC_URL}/product/${item.id}`}>
+                              <Link to={`${process.env.PUBLIC_URL}/product/${item.slug || item.id}`}>
                                 {item.name}
                               </Link>
                             </h4>

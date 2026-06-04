@@ -6,6 +6,64 @@ import { confirmDelete } from '../../utils/sweetalert';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
+// ── Brand Logo Image Validator ───────────────────────────────────────────────
+const BRAND_LOGO_CONFIG = {
+  recommended: { width: 300, height: 120 },
+  minimum: { width: 80, height: 40 },
+  maxFileSize: 2 * 1024 * 1024, // 2MB
+  formats: ['image/jpeg', 'image/png', 'image/webp'],
+};
+
+const validateBrandLogo = (file) => {
+  return new Promise((resolve) => {
+    // Check file size
+    if (file.size > BRAND_LOGO_CONFIG.maxFileSize) {
+      resolve({
+        valid: false,
+        error: `File too large. Max: 2MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+      });
+      return;
+    }
+
+    // Check file format
+    if (!BRAND_LOGO_CONFIG.formats.includes(file.type)) {
+      resolve({
+        valid: false,
+        error: `Invalid format. Use JPG, PNG or WebP. You uploaded: ${file.type || 'unknown'}`,
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+
+        // Check minimum dimensions
+        if (width < BRAND_LOGO_CONFIG.minimum.width || height < BRAND_LOGO_CONFIG.minimum.height) {
+          resolve({
+            valid: false,
+            error: `Image too small. Minimum: ${BRAND_LOGO_CONFIG.minimum.width}×${BRAND_LOGO_CONFIG.minimum.height}px. You have: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        resolve({
+          valid: true,
+          dimensions: { width, height },
+          isRecommended:
+            width === BRAND_LOGO_CONFIG.recommended.width &&
+            height === BRAND_LOGO_CONFIG.recommended.height,
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   if (imagePath.startsWith('http')) return imagePath;
@@ -23,6 +81,8 @@ export default function Brands({ showToast }) {
   const [isActive, setIsActive]           = useState(true);
   const [logoFile, setLogoFile]           = useState(null);
   const [preview, setPreview]             = useState(null);
+  const [errors, setErrors]               = useState({});
+  const [logoDimensions, setLogoDimensions] = useState(null);
   const fileInputRef = useRef();
 
   useEffect(() => { dispatch(fetchBrands()); }, [dispatch]);
@@ -36,12 +96,14 @@ export default function Brands({ showToast }) {
   }, [logoFile]);
 
   const resetForm = () => {
-    setShowForm(false); 
+    setShowForm(false);
     setEditingId(null);
-    setBrandName(''); 
+    setBrandName('');
     setIsActive(true);
-    setLogoFile(null); 
+    setLogoFile(null);
     setPreview(null);
+    setErrors({});
+    setLogoDimensions(null);
   };
 
   const handleEditClick = (row) => {
@@ -50,12 +112,16 @@ export default function Brands({ showToast }) {
     setIsActive(row.isActive ?? true);
     setLogoFile(null);
     setPreview(row.logo ? getImageUrl(row.logo) : null);
+    setErrors({});
+    setLogoDimensions(null);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleClearImage = () => {
     setLogoFile(null);
+    setLogoDimensions(null);
+    setErrors(prev => { const e = { ...prev }; delete e.logo; return e; });
     const original = editingId ? rows.find(r => r.id === editingId) : null;
     setPreview(original?.logo ? getImageUrl(original.logo) : null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -63,10 +129,22 @@ export default function Brands({ showToast }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!brandName) { showToast.error('Please enter a brand name'); return; }
+    const newErrors = {};
+
+    if (!brandName.trim()) newErrors.brandName = 'Brand name is required';
+    if (!editingId && !logoFile) newErrors.logo = 'Brand logo is required';
+    if (logoFile && logoDimensions && !logoDimensions.valid) {
+      newErrors.logo = logoDimensions.error;
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showToast.error(Object.values(newErrors)[0]);
+      return;
+    }
 
     const data = new FormData();
-    data.append('name', brandName);
+    data.append('name', brandName.trim());
     data.append('isActive', isActive);
     if (logoFile) data.append('logo', logoFile);
 
@@ -119,49 +197,105 @@ export default function Brands({ showToast }) {
               <div className="km-form-header-sub">Fill in the details below</div>
             </div>
           </div>
-          
+
           <div className="km-form-body">
             <form className="km-form-grid" onSubmit={handleSubmit}>
+
+              {/* Brand Name */}
               <div className="km-field km-field-full">
                 <label className="km-label">Brand Name</label>
-                <input className="km-input" type="text" placeholder="e.g. Gillette" required
-                  value={brandName} onChange={e => setBrandName(e.target.value)} />
+                <input
+                  className={`km-input${errors.brandName ? ' km-input-error' : ''}`}
+                  type="text"
+                  placeholder="e.g. Gillette"
+                  value={brandName}
+                  onChange={e => {
+                    setBrandName(e.target.value);
+                    if (e.target.value.trim()) {
+                      setErrors(prev => { const n = { ...prev }; delete n.brandName; return n; });
+                    }
+                  }}
+                />
+                {errors.brandName && (
+                  <div className="km-error-msg">⚠ {errors.brandName}</div>
+                )}
               </div>
 
+              {/* Brand Logo */}
               <div className="km-field km-field-full">
-                <label className="km-label">Brand Logo</label>
+                <label className="km-label">
+                  Brand Logo&nbsp;
+                  <span className="km-label-hint">
+                    Recommended: 300×120px • Min: 80×40px • Max: 2MB (JPG / PNG / WebP)
+                  </span>
+                </label>
                 <div className="upload-grid-wrapper">
                   <div
-                    className={`drop-zone-area ${logoFile ? 'active-file' : ''}`}
+                    className={`drop-zone-area ${logoFile ? (logoDimensions?.valid === false ? 'error-file' : 'active-file') : ''}`}
                     onClick={() => fileInputRef.current.click()}
                   >
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp"
                       style={{ display: 'none' }}
-                      onChange={e => { const f = e.target.files[0]; if (f) setLogoFile(f); }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setLogoFile(file);
+                          validateBrandLogo(file).then((result) => {
+                            setLogoDimensions(result);
+                            if (!result.valid) {
+                              setErrors(prev => ({ ...prev, logo: result.error }));
+                            } else {
+                              setErrors(prev => {
+                                const n = { ...prev };
+                                delete n.logo;
+                                return n;
+                              });
+                            }
+                          });
+                        }
+                      }}
                     />
                     <div className="drop-zone-info">
-                      <div className="upload-icon text-center">{logoFile ? '✅' : '📸'}</div>
+                      <div className="upload-icon text-center">
+                        {logoFile
+                          ? (logoDimensions?.valid === false ? '❌' : '✅')
+                          : '📸'}
+                      </div>
                       <p className="upload-text">
-                        {logoFile ? <b>{logoFile.name}</b> : <>Click to <b>browse</b> or drag logo</>}
+                        {logoFile
+                          ? <b>{logoFile.name}</b>
+                          : <>Click to <b>browse</b> or drag logo</>}
                       </p>
+                      {logoFile && logoDimensions?.valid && logoDimensions.dimensions && (
+                        <p className="upload-dims">
+                          {logoDimensions.dimensions.width}×{logoDimensions.dimensions.height}px
+                          {logoDimensions.isRecommended && <span className="dims-ok"> ✓ Recommended size</span>}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   {preview && (
-                    <div className="preview-tile fade-in">
+                    <div className={`preview-tile fade-in${logoDimensions?.valid === false ? ' preview-tile-error' : ''}`}>
                       <img src={preview} alt="Preview" />
                       <button type="button" className="preview-remove" onClick={handleClearImage}>✕</button>
                     </div>
                   )}
                 </div>
+
+                {/* Logo error message */}
+                {errors.logo && (
+                  <div className="km-error-msg">⚠ {errors.logo}</div>
+                )}
               </div>
 
+              {/* Status */}
               <div className="km-field km-field-full">
                 <label className="km-label">Status</label>
-                <select 
+                <select
                   className="km-input"
                   value={isActive ? 'true' : 'false'}
                   onChange={e => setIsActive(e.target.value === 'true')}
@@ -171,8 +305,8 @@ export default function Brands({ showToast }) {
                 </select>
               </div>
 
-              {/* Properly Aligned Form Actions */}
-              <div className="km-form-actions" style={{display : "flex"}}>
+              {/* Form Actions */}
+              <div className="km-form-actions" style={{ display: 'flex' }}>
                 <button type="submit" className="km-btn-submit">
                   {editingId ? 'Update Brand' : 'Save Brand'}
                 </button>
@@ -238,6 +372,23 @@ export default function Brands({ showToast }) {
           grid-column: span 2;
         }
 
+        .km-label-hint {
+          font-size: 11px;
+          font-weight: 400;
+          color: #888;
+          margin-left: 6px;
+        }
+
+        .km-error-msg {
+          color: #ef4444;
+          font-size: 12px;
+          margin-top: 6px;
+        }
+
+        .km-input-error {
+          border-color: #ef4444 !important;
+        }
+
         .upload-grid-wrapper {
           display: flex;
           gap: 16px;
@@ -263,12 +414,30 @@ export default function Brands({ showToast }) {
           background: rgba(69, 179, 105, 0.05);
         }
 
+        .drop-zone-area.error-file {
+          border-color: #ef4444;
+          background: rgba(239, 68, 68, 0.04);
+        }
+
         .upload-text {
           font-size: 13px;
           color: #666;
           margin: 0;
+          text-align: center;
         }
-        
+
+        .upload-dims {
+          font-size: 11px;
+          color: #888;
+          margin: 4px 0 0;
+          text-align: center;
+        }
+
+        .dims-ok {
+          color: #45b369;
+          font-weight: 600;
+        }
+
         .upload-icon {
           text-align: center;
         }
@@ -281,6 +450,10 @@ export default function Brands({ showToast }) {
           position: relative;
           border: 2px solid #487fff;
           flex-shrink: 0;
+        }
+
+        .preview-tile-error {
+          border-color: #ef4444;
         }
 
         .preview-tile img {
@@ -302,11 +475,10 @@ export default function Brands({ showToast }) {
           cursor: pointer;
         }
 
-        /* BUTTON ALIGNMENT FIX */
         .km-form-actions {
           grid-column: span 2;
           display: flex;
-          justify-content: flex-end; /* Right-aligns the pair */
+          justify-content: flex-end;
           gap: 12px;
           margin-top: 10px;
           padding-top: 20px;

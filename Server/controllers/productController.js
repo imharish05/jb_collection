@@ -180,8 +180,14 @@ const getAllProducts = async (req, res, next) => {
 // ─── GET /api/products/:id ───────────────────────────────────────────────────
 const getProductById = async (req, res, next) => {
   try {
+    const param = req.params.id;
+    // Support both UUID (legacy) and slug (new clean URLs)
+    const where = isUuid(param)
+      ? { id: param, isActive: true }
+      : { slug: param, isActive: true };
+
     const product = await Product.findOne({
-      where: { id: req.params.id, isActive: true },
+      where,
       include: PRODUCT_INCLUDE,
     });
     if (!product) return res.status(404).json({ message: "Product not found" });

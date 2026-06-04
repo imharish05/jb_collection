@@ -63,7 +63,7 @@ const Compare = () => {
                                     to={
                                       process.env.PUBLIC_URL +
                                       "/product/" +
-                                      compareItem.id
+                                      (compareItem.slug || compareItem.id)
                                     }
                                     className="image"
                                   >
@@ -81,7 +81,7 @@ const Compare = () => {
                                       to={
                                         process.env.PUBLIC_URL +
                                         "/product/" +
-                                        compareItem.id
+                                        (compareItem.slug || compareItem.id)
                                       }
                                     >
                                       {compareItem.name}
@@ -100,7 +100,7 @@ const Compare = () => {
                                     ) : compareItem.variation &&
                                       compareItem.variation.length >= 1 ? (
                                       <Link
-                                        to={`${process.env.PUBLIC_URL}/product/${compareItem.id}`}
+                                        to={`${process.env.PUBLIC_URL}/product/${compareItem.slug || compareItem.id}`}
                                       >
                                         Select Option
                                       </Link>
@@ -231,5 +231,3 @@ const Compare = () => {
 };
 
 export default Compare;
-
-

@@ -60,7 +60,7 @@ const ProductGridListSingle = ({
           <div className="row align-items-center">
             <div className="col-xl-4 col-md-5 col-sm-6">
               <div className="list-image-container">
-                <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
+                <Link to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}>
                   <img className="default-img img-fluid" src={mainImage} alt={product.name} />
                 </Link>
                 {discountPct > 0 && <span className="list-badge">-{discountPct}%</span>}
@@ -70,7 +70,7 @@ const ProductGridListSingle = ({
               <div className="shop-list-content-premium">
                 <span className="list-tag">Kamali Exclusive</span>
                 <h3>
-                  <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
+                  <Link to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}>
                     {product.name}
                   </Link>
                 </h3>
@@ -94,7 +94,7 @@ const ProductGridListSingle = ({
                   {hasVariants ? (
                     <Link
                       className="list-cart-btn"
-                      to={process.env.PUBLIC_URL + "/product/" + product.id}
+                      to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}
                     >
                       View Product
                     </Link>
@@ -123,7 +123,7 @@ const ProductGridListSingle = ({
         /* ── GRID VIEW ── */
         <div className={clsx("product-card-premium", spaceBottomClass, !hoverImage && "single-image-card")}>
           <div className="product-img-container">
-            <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
+            <Link to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}>
               <img className="main-img" src={mainImage} alt={product.name} />
               {hoverImage && (
                 <img className="secondary-img" src={hoverImage} alt={product.name} />
@@ -146,7 +146,7 @@ const ProductGridListSingle = ({
               {hasVariants ? (
                 <Link
                   className="cart-action-btn"
-                  to={process.env.PUBLIC_URL + "/product/" + product.id}
+                  to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}
                 >
                   View Product
                 </Link>
@@ -166,7 +166,7 @@ const ProductGridListSingle = ({
           <div className="product-details-premium">
             <span className="product-cat-tag">Kamali Exclusive</span>
             <h4>
-              <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
+              <Link to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}>
                 {product.name}
               </Link>
             </h4>

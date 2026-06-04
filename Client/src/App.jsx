@@ -85,6 +85,7 @@ const App = () => {
         const resolvedDiscount = snap.discount ?? cartItem.product?.discount ?? 0;
         return {
           id: cartItem.productId,
+          slug: cartItem.product?.slug || null,
           cartItemId: cartItem.id,
           quantity: cartItem.quantity,
           selectedVariantId: cartItem.selectedVariantId != null ? Number(cartItem.selectedVariantId) : null,
@@ -141,12 +142,12 @@ const App = () => {
             {/* <Route path={process.env.PUBLIC_URL + "/combo/:id"} element={<ComboPage />} /> */}
 
             {/* Products */}
-            <Route path={process.env.PUBLIC_URL + "/product/:id"} element={<Product />} />
-            <Route path={process.env.PUBLIC_URL + "/product-tab-left/:id"} element={<ProductTabLeft />} />
-            <Route path={process.env.PUBLIC_URL + "/product-tab-right/:id"} element={<ProductTabRight />} />
-            <Route path={process.env.PUBLIC_URL + "/product-sticky/:id"} element={<ProductSticky />} />
-            <Route path={process.env.PUBLIC_URL + "/product-slider/:id"} element={<ProductSlider />} />
-            <Route path={process.env.PUBLIC_URL + "/product-fixed-image/:id"} element={<ProductFixedImage />} />
+            <Route path={process.env.PUBLIC_URL + "/product/:slug"} element={<Product />} />
+            <Route path={process.env.PUBLIC_URL + "/product-tab-left/:slug"} element={<ProductTabLeft />} />
+            <Route path={process.env.PUBLIC_URL + "/product-tab-right/:slug"} element={<ProductTabRight />} />
+            <Route path={process.env.PUBLIC_URL + "/product-sticky/:slug"} element={<ProductSticky />} />
+            <Route path={process.env.PUBLIC_URL + "/product-slider/:slug"} element={<ProductSlider />} />
+            <Route path={process.env.PUBLIC_URL + "/product-fixed-image/:slug"} element={<ProductFixedImage />} />
 
             {/* Auth */}
             <Route path="/login" element={<LoginRegister />} />

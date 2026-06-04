@@ -17,94 +17,77 @@ const getImageUrl = (imagePath) => {
   const clean = imagePath.replace(/^\//, '').replace(/^uploads\//, '');
   return `${BASE_URL}/uploads/${clean}`;
 };
-// Helper: Count words in text
+
 const countWords = (text) => text.trim().split(/\s+/).filter(Boolean).length;
 
-// Helper: Get word/char limits
 const LIMITS = {
-  name: { chars: 60, words: 6 },
-  designation: { chars: 80, words: 8 },
-  text: { chars: 350, words: 60 },
+  name:        { chars: 60,  words: 6  },
+  designation: { chars: 80,  words: 8  },
+  text:        { chars: 350, words: 60 },
 };
 
-// Image Dimension Validator for Testimonials (300×300px square)
-const TESTIMONIAL_DIMENSIONS = {
+const TESTIMONIAL_IMAGE_CONFIG = {
   recommended: { width: 300, height: 300 },
-  minimum: { width: 120, height: 120 },
+  minimum:     { width: 120, height: 120 },
   aspectRatio: 1 / 1,
-  tolerance: 0.05,
+  tolerance:   0.05,
+  maxFileSize: 2 * 1024 * 1024, // 2 MB
+  formats:     ['image/jpeg', 'image/png', 'image/webp'],
 };
 
-const validateImageDimensions = (file) => {
-  return new Promise((resolve) => {
+const validateImageDimensions = (file) =>
+  new Promise((resolve) => {
+    if (file.size > TESTIMONIAL_IMAGE_CONFIG.maxFileSize) {
+      resolve({ valid: false, error: `File too large. Max: 2MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB` });
+      return;
+    }
+    if (!TESTIMONIAL_IMAGE_CONFIG.formats.includes(file.type)) {
+      resolve({ valid: false, error: `Invalid format. Use JPG, PNG or WebP. You uploaded: ${file.type || 'unknown'}` });
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
         const { width, height } = img;
-        const actualRatio = width / height;
-        const expectedRatio = TESTIMONIAL_DIMENSIONS.aspectRatio;
-        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
-
-        // Check minimum dimensions
-        if (width < TESTIMONIAL_DIMENSIONS.minimum.width || height < TESTIMONIAL_DIMENSIONS.minimum.height) {
-          resolve({
-            valid: false,
-            error: `Image too small. Minimum: ${TESTIMONIAL_DIMENSIONS.minimum.width}×${TESTIMONIAL_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
-            dimensions: { width, height },
-          });
+        if (width < TESTIMONIAL_IMAGE_CONFIG.minimum.width || height < TESTIMONIAL_IMAGE_CONFIG.minimum.height) {
+          resolve({ valid: false, error: `Image too small. Minimum: ${TESTIMONIAL_IMAGE_CONFIG.minimum.width}×${TESTIMONIAL_IMAGE_CONFIG.minimum.height}px. You have: ${width}×${height}px`, dimensions: { width, height } });
           return;
         }
-
-        // Check aspect ratio (1:1)
-        if (ratioDiff > TESTIMONIAL_DIMENSIONS.tolerance) {
-          const recommendedHeight = Math.round(width / expectedRatio);
-          resolve({
-            valid: false,
-            error: `Incorrect aspect ratio. Use 1:1 square (e.g., ${width}×${recommendedHeight}px or ${TESTIMONIAL_DIMENSIONS.recommended.width}×${TESTIMONIAL_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
-            dimensions: { width, height },
-          });
+        const ratioDiff = Math.abs(width / height - TESTIMONIAL_IMAGE_CONFIG.aspectRatio) / TESTIMONIAL_IMAGE_CONFIG.aspectRatio;
+        if (ratioDiff > TESTIMONIAL_IMAGE_CONFIG.tolerance) {
+          resolve({ valid: false, error: `Incorrect aspect ratio. Use 1:1 square (e.g., ${width}×${width}px or ${TESTIMONIAL_IMAGE_CONFIG.recommended.width}×${TESTIMONIAL_IMAGE_CONFIG.recommended.height}px). Yours: ${width}×${height}px`, dimensions: { width, height } });
           return;
         }
-
-        resolve({
-          valid: true,
-          dimensions: { width, height },
-          isRecommended: width === TESTIMONIAL_DIMENSIONS.recommended.width && height === TESTIMONIAL_DIMENSIONS.recommended.height,
-        });
+        resolve({ valid: true, dimensions: { width, height }, isRecommended: width === TESTIMONIAL_IMAGE_CONFIG.recommended.width && height === TESTIMONIAL_IMAGE_CONFIG.recommended.height });
       };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   });
-};
 
-// Validate text length and word count
 const validateField = (field, value) => {
   const limits = LIMITS[field];
   if (!limits) return null;
-  
-  const charCount = value.length;
-  const wordCount = countWords(value);
-  
-  if (charCount > limits.chars) return `Max ${limits.chars} characters (you have ${charCount})`;
-  if (wordCount > limits.words) return `Max ${limits.words} words (you have ${wordCount})`;
+  if (value.length > limits.chars) return `Max ${limits.chars} characters (you have ${value.length})`;
+  if (countWords(value) > limits.words) return `Max ${limits.words} words (you have ${countWords(value)})`;
   return null;
 };
+
 export default function Testimonials({ showToast }) {
   const dispatch = useDispatch();
   const { items: rows, loading } = useSelector((state) => state.testimonials);
 
-  const [showForm, setShowForm]     = useState(false);
-  const [editingId, setEditingId]   = useState(null);
-  const [name, setName]             = useState('');
+  const [showForm, setShowForm]       = useState(false);
+  const [editingId, setEditingId]     = useState(null);
+  const [name, setName]               = useState('');
   const [designation, setDesignation] = useState('');
-  const [text, setText]             = useState('');
-  const [sortOrder, setSortOrder]   = useState(0);
-  const [isActive, setIsActive]     = useState(true);
-  const [imageFile, setImageFile]   = useState(null);
-  const [preview, setPreview]       = useState(null);
-  const [errors, setErrors]         = useState({});
+  const [text, setText]               = useState('');
+  const [sortOrder, setSortOrder]     = useState(0);
+  const [isActive, setIsActive]       = useState(true);
+  const [imageFile, setImageFile]     = useState(null);
+  const [preview, setPreview]         = useState(null);
+  const [errors, setErrors]           = useState({});
   const [imageDimensions, setImageDimensions] = useState(null);
   const fileInputRef = useRef();
 
@@ -112,24 +95,18 @@ export default function Testimonials({ showToast }) {
 
   useEffect(() => {
     if (imageFile) {
-      const objUrl = URL.createObjectURL(imageFile);
-      setPreview(objUrl);
-      return () => URL.revokeObjectURL(objUrl);
+      const url = URL.createObjectURL(imageFile);
+      setPreview(url);
+      return () => URL.revokeObjectURL(url);
     }
   }, [imageFile]);
 
   const resetForm = () => {
-    setShowForm(false);
-    setEditingId(null);
-    setName('');
-    setDesignation('');
-    setText('');
-    setSortOrder(0);
-    setIsActive(true);
-    setImageFile(null);
-    setPreview(null);
-    setErrors({});
-    setImageDimensions(null);
+    setShowForm(false); setEditingId(null);
+    setName(''); setDesignation(''); setText('');
+    setSortOrder(0); setIsActive(true);
+    setImageFile(null); setPreview(null);
+    setErrors({}); setImageDimensions(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -142,73 +119,36 @@ export default function Testimonials({ showToast }) {
     setIsActive(row.isActive ?? true);
     setImageFile(null);
     setPreview(row.image ? getImageUrl(row.image) : null);
+    setErrors({}); setImageDimensions(null);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleClearImage = () => {
-    setImageFile(null);
+    setImageFile(null); setImageDimensions(null);
     const original = editingId ? rows.find((r) => r.id === editingId) : null;
     setPreview(original?.image ? getImageUrl(original.image) : null);
-    setImageDimensions(null);
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors.image;
-      return newErrors;
-    });
+    setErrors(prev => { const n = { ...prev }; delete n.image; return n; });
     if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleDelete = (rowId, rowName) => {
-    confirmDelete({
-      title: 'Delete Testimonial?',
-      message: `Are you sure you want to delete the testimonial from "${rowName}"?`,
-      onConfirm: async () => {
-        try {
-          await dispatch(removeTestimonial(rowId));
-        } catch (err) {
-          console.error('Failed to delete testimonial:', err);
-        }
-      },
-    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     const newErrors = {};
-    
-    if (!name.trim()) newErrors.name = 'Name is required';
-    else {
-      const nameErr = validateField('name', name);
-      if (nameErr) newErrors.name = nameErr;
-    }
-    
+    if (!name.trim())        newErrors.name        = 'Name is required';
+    else { const err = validateField('name', name); if (err) newErrors.name = err; }
     if (!designation.trim()) newErrors.designation = 'Designation is required';
-    else {
-      const designErr = validateField('designation', designation);
-      if (designErr) newErrors.designation = designErr;
-    }
-    
-    if (!text.trim()) newErrors.text = 'Testimonial text is required';
-    else {
-      const textErr = validateField('text', text);
-      if (textErr) newErrors.text = textErr;
-    }
-    
+    else { const err = validateField('designation', designation); if (err) newErrors.designation = err; }
+    if (!text.trim())        newErrors.text        = 'Testimonial text is required';
+    else { const err = validateField('text', text); if (err) newErrors.text = err; }
     if (!editingId && !imageFile) newErrors.image = 'Image is required';
-    
-    // Validate image dimensions if new image is selected
-    if (imageFile && imageDimensions && !imageDimensions.valid) {
-      newErrors.image = imageDimensions.error;
-    }
-    
+    if (imageFile && imageDimensions && !imageDimensions.valid) newErrors.image = imageDimensions.error;
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       showToast.error(Object.values(newErrors)[0]);
       return;
     }
-    
     setErrors({});
 
     const fd = new FormData();
@@ -234,11 +174,22 @@ export default function Testimonials({ showToast }) {
     }
   };
 
+  const handleDelete = (rowId, rowName) => {
+    confirmDelete({
+      title: 'Delete Testimonial?',
+      message: `Are you sure you want to delete the testimonial from "${rowName}"?`,
+      onConfirm: async () => {
+        try { await dispatch(removeTestimonial(rowId)); }
+        catch (err) { console.error('Failed to delete testimonial:', err); }
+      },
+    });
+  };
+
   return (
-    <div className="tt-container">
+    <div className="categories-container">
       {/* ── Section Header ── */}
       <div className="section-header">
-        <div className="section-title">Testimonials (Client Success Stories)</div>
+        <div className="section-title">Testimonials</div>
         <button
           className="action-btn btn-edit"
           onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
@@ -263,149 +214,138 @@ export default function Testimonials({ showToast }) {
           <div className="km-form-body">
             <form className="km-form-grid" onSubmit={handleSubmit}>
 
-              {/* Image upload — full width */}
+              {/* Author Image */}
               <div className="km-field km-field-full">
                 <label className="km-label">
-                  Author Image {!editingId && <span style={{ color: '#ef4444' }}>*</span>}
+                  Author Image
+                  <span className="km-label-hint">Recommended: 300×300px (1:1) • Min: 120×120px • Max: 2MB (JPG / PNG / WebP)</span>
+                  {!editingId && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
                 </label>
                 <div className="upload-grid-wrapper">
                   <div
-                    className={`drop-zone-area ${imageFile ? 'active-file' : ''}`}
+                    className={`drop-zone-area ${imageFile ? (imageDimensions?.valid === false ? 'error-file' : 'active-file') : ''}`}
                     onClick={() => fileInputRef.current.click()}
                   >
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp"
                       style={{ display: 'none' }}
                       onChange={(e) => {
                         const file = e.target.files[0];
                         if (file) {
                           setImageFile(file);
-                          // Validate dimensions asynchronously
                           validateImageDimensions(file).then((result) => {
                             setImageDimensions(result);
                             if (!result.valid) {
                               setErrors(prev => ({ ...prev, image: result.error }));
                             } else {
-                              setErrors(prev => {
-                                const newErrors = { ...prev };
-                                delete newErrors.image;
-                                return newErrors;
-                              });
+                              setErrors(prev => { const n = { ...prev }; delete n.image; return n; });
                             }
                           });
                         }
                       }}
                     />
                     <div className="drop-zone-info">
-                      <div className="upload-icon">{imageFile ? '✅' : '📸'}</div>
+                      <div className="upload-icon">
+                        {imageFile ? (imageDimensions?.valid === false ? '❌' : '✅') : '📸'}
+                      </div>
                       <p className="upload-text">
-                        {imageFile
-                          ? <b>{imageFile.name}</b>
-                          : <>Click to <b>browse</b> or drag image</>}
+                        {imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b> or drag image</>}
                       </p>
+                      {imageFile && imageDimensions?.valid && imageDimensions.dimensions && (
+                        <p className="upload-dims">
+                          {imageDimensions.dimensions.width}×{imageDimensions.dimensions.height}px
+                          {imageDimensions.isRecommended && <span className="dims-ok"> ✓ Recommended size</span>}
+                        </p>
+                      )}
                     </div>
                   </div>
                   {preview && (
-                    <div className="preview-tile fade-in">
+                    <div className={`preview-tile fade-in${imageDimensions?.valid === false ? ' preview-tile-error' : ''}`}>
                       <img src={preview} alt="Preview" />
                       <button type="button" className="preview-remove" onClick={handleClearImage}>✕</button>
                     </div>
                   )}
                 </div>
-                
-                {/* Image Error Message */}
-                {errors.image && (
-                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>
-                    ⚠ {errors.image}
-                  </div>
-                )}
+                {errors.image && <div className="km-error-msg">⚠ {errors.image}</div>}
               </div>
 
-              {/* Name */}
-              <div className="km-field km-field-half">
+              {/* Author Name */}
+              <div className="km-field">
                 <label className="km-label">
                   Author Name <span style={{ color: '#ef4444' }}>*</span>
-                  <span style={{ fontSize: 11, color: errors.name ? '#ef4444' : '#9ca3af', marginLeft: 8 }}>
+                  <span className={`km-char-count${errors.name ? ' km-char-count-err' : ''}`}>
                     {name.length}/{LIMITS.name.chars} chars · {countWords(name)}/{LIMITS.name.words} words
                   </span>
                 </label>
                 <input
-                  className="km-input"
+                  className={`km-input${errors.name ? ' km-input-error' : ''}`}
                   type="text"
                   placeholder="e.g. Sarah Jenkins"
                   value={name}
+                  maxLength={LIMITS.name.chars}
                   onChange={(e) => {
                     const val = e.target.value;
                     setName(val);
                     const err = validateField('name', val);
-                    setErrors(prev => ({ ...prev, name: err }));
+                    setErrors(prev => ({ ...prev, name: err || undefined }));
                   }}
-                  style={{
-                    borderColor: errors.name ? '#ef4444' : undefined,
-                    boxShadow: errors.name ? '0 0 0 2px rgba(239, 68, 68, 0.1)' : undefined,
-                  }}
-                  maxLength={LIMITS.name.chars}
                 />
-                {errors.name && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.name}</div>}
+                {errors.name && <div className="km-error-msg">⚠ {errors.name}</div>}
               </div>
 
               {/* Designation */}
-              <div className="km-field km-field-half">
+              <div className="km-field">
                 <label className="km-label">
                   Designation <span style={{ color: '#ef4444' }}>*</span>
-                  <span style={{ fontSize: 11, color: errors.designation ? '#ef4444' : '#9ca3af', marginLeft: 8 }}>
+                  <span className={`km-char-count${errors.designation ? ' km-char-count-err' : ''}`}>
                     {designation.length}/{LIMITS.designation.chars} chars · {countWords(designation)}/{LIMITS.designation.words} words
                   </span>
                 </label>
                 <input
-                  className="km-input"
+                  className={`km-input${errors.designation ? ' km-input-error' : ''}`}
                   type="text"
                   placeholder="e.g. CEO at TechFlow"
                   value={designation}
+                  maxLength={LIMITS.designation.chars}
                   onChange={(e) => {
                     const val = e.target.value;
                     setDesignation(val);
                     const err = validateField('designation', val);
-                    setErrors(prev => ({ ...prev, designation: err }));
+                    setErrors(prev => ({ ...prev, designation: err || undefined }));
                   }}
-                  style={{
-                    borderColor: errors.designation ? '#ef4444' : undefined,
-                    boxShadow: errors.designation ? '0 0 0 2px rgba(239, 68, 68, 0.1)' : undefined,
-                  }}
-                  maxLength={LIMITS.designation.chars}
                 />
-                {errors.designation && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.designation}</div>}
+                {errors.designation && <div className="km-error-msg">⚠ {errors.designation}</div>}
               </div>
 
               {/* Testimonial Text */}
               <div className="km-field km-field-full">
                 <label className="km-label">
                   Testimonial Text <span style={{ color: '#ef4444' }}>*</span>
-                  <span style={{ fontSize: 11, color: errors.text ? '#ef4444' : '#9ca3af', marginLeft: 8 }}>
+                  <span className={`km-char-count${errors.text ? ' km-char-count-err' : ''}`}>
                     {text.length}/{LIMITS.text.chars} chars · {countWords(text)}/{LIMITS.text.words} words
                   </span>
                 </label>
                 <textarea
-                  className="km-input"
+                  className={`km-input${errors.text ? ' km-input-error' : ''}`}
                   placeholder="Share the client's feedback or success story..."
                   value={text}
+                  rows={5}
+                  maxLength={LIMITS.text.chars}
+                  style={{ resize: 'vertical', minHeight: 120 }}
                   onChange={(e) => {
                     const val = e.target.value;
                     setText(val);
                     const err = validateField('text', val);
-                    setErrors(prev => ({ ...prev, text: err }));
+                    setErrors(prev => ({ ...prev, text: err || undefined }));
                   }}
-                  rows={5}
-                  style={{ resize: 'vertical', minHeight: 120, borderColor: errors.text ? '#ef4444' : undefined, boxShadow: errors.text ? '0 0 0 2px rgba(239, 68, 68, 0.1)' : undefined }}
-                  maxLength={LIMITS.text.chars}
                 />
-                {errors.text && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.text}</div>}
+                {errors.text && <div className="km-error-msg">⚠ {errors.text}</div>}
               </div>
 
               {/* Sort Order */}
-              <div className="km-field km-field-half">
+              <div className="km-field">
                 <label className="km-label">Sort Order</label>
                 <input
                   className="km-input"
@@ -416,20 +356,21 @@ export default function Testimonials({ showToast }) {
                 />
               </div>
 
-              {/* Active toggle */}
-              <div className="km-field km-field-half" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 6 }}>
-                <input
-                  type="checkbox"
-                  id="testActive"
-                  checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                  style={{ width: 18, height: 18, cursor: 'pointer' }}
-                />
-                <label htmlFor="testActive" className="km-label" style={{ marginBottom: 0, cursor: 'pointer' }}>Active</label>
+              {/* Status */}
+              <div className="km-field">
+                <label className="km-label">Status</label>
+                <select
+                  className="km-input"
+                  value={isActive ? 'true' : 'false'}
+                  onChange={(e) => setIsActive(e.target.value === 'true')}
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
               </div>
 
               {/* Actions */}
-              <div className="km-form-actions">
+              <div className="km-form-action km-field-full "style={{display : "flex",gap : "10px"}}>
                 <button type="submit" className="km-btn-submit">
                   {editingId ? 'Update Testimonial' : 'Save Testimonial'}
                 </button>
@@ -459,31 +400,30 @@ export default function Testimonials({ showToast }) {
                     <img
                       src={getImageUrl(row.image)}
                       alt={row.name}
-                      width="90" height="54"
-                      style={{ borderRadius: 6, objectFit: 'cover' }}
-                      onError={(e) => { e.target.src = '/placeholder.jpg'; }}
+                      width="40" height="40"
+                      style={{ borderRadius: 8, objectFit: 'cover' }}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23eee'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='8' fill='%23999'%3ENo img%3C/text%3E%3C/svg%3E";
+                      }}
                     />
                   ) : (
-                    <div style={{ width: 90, height: 54, background: '#f0f0f0', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 12 }}>
-                      No image
-                    </div>
+                    <div style={{ width: 40, height: 40, background: '#f3f4f6', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>👤</div>
                   )}
                 </div>
               </td>
-              <td>
-                <strong>{row.name}</strong>
-              </td>
+              <td><strong>{row.name}</strong></td>
               <td style={{ fontSize: 13, color: '#666' }}>{row.designation}</td>
-              <td style={{ fontSize: 13, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <td style={{ fontSize: 13, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {row.text}
               </td>
-              <td className="td-center">{row.sortOrder}</td>
-              <td className="td-center">
-                <span className={`status ${row.isActive ? 'active' : 'inactive'}`}>
+              <td>{row.sortOrder}</td>
+              <td>
+                <span className={`status-pill ${row.isActive ? 'pill-active' : 'pill-inactive'}`}>
                   {row.isActive ? 'Active' : 'Inactive'}
                 </span>
               </td>
-              <td className="td-center">
+              <td>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
                   <button className="action-btn btn-del" onClick={() => handleDelete(row.id, row.name)}>Delete</button>
@@ -495,99 +435,29 @@ export default function Testimonials({ showToast }) {
       )}
 
       <style>{`
-        .tt-container {
-          padding: 20px;
-          background: #fff;
-          border-radius: 8px;
+        .km-label-hint {
+          font-size: 11px;
+          font-weight: 400;
+          color: #9ca3af;
+          margin-left: 6px;
         }
-        .section-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 24px;
-          padding-bottom: 16px;
-          border-bottom: 2px solid #f0f0f0;
+        .km-char-count {
+          font-size: 11px;
+          font-weight: 400;
+          color: #9ca3af;
+          margin-left: 8px;
         }
-        .section-title {
-          font-size: 20px;
-          font-weight: 700;
-          color: #1a1a1a;
+        .km-char-count-err {
+          color: #ef4444;
         }
-        .km-form-card {
-          background: #fafafa;
-          border-radius: 12px;
-          padding: 20px;
-          margin-bottom: 24px;
-          border: 1px solid #f0f0f0;
+        .km-error-msg {
+          color: #ef4444;
+          font-size: 12px;
+          margin-top: 6px;
         }
-        .km-form-header {
-          display: flex;
-          gap: 12px;
-          margin-bottom: 20px;
-          align-items: flex-start;
-        }
-        .km-form-header-icon {
-          width: 40px;
-          height: 40px;
-          background: #487fff;
-          color: white;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 18px;
-          font-weight: bold;
-          flex-shrink: 0;
-        }
-        .km-form-header-title {
-          font-size: 16px;
-          font-weight: 700;
-          color: #1a1a1a;
-          margin-bottom: 4px;
-        }
-        .km-form-header-sub {
-          font-size: 13px;
-          color: #999;
-        }
-        .km-form-body {
-          background: white;
-          border-radius: 8px;
-          padding: 16px;
-        }
-        .km-form-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 20px;
-        }
-        .km-field {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-        .km-field-full {
-          grid-column: span 2;
-        }
-        .km-field-half {
-          grid-column: span 1;
-        }
-        .km-label {
-          font-size: 13px;
-          font-weight: 600;
-          color: #333;
-          margin-bottom: 2px;
-        }
-        .km-input {
-          padding: 10px 12px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          font-size: 13px;
-          font-family: inherit;
-          transition: border-color 0.2s;
-        }
-        .km-input:focus {
-          outline: none;
-          border-color: #487fff;
-          box-shadow: 0 0 0 3px rgba(72, 127, 255, 0.1);
+        .km-input-error {
+          border-color: #ef4444 !important;
+          box-shadow: 0 0 0 2px rgba(239,68,68,0.1) !important;
         }
         .upload-grid-wrapper {
           display: flex;
@@ -598,8 +468,8 @@ export default function Testimonials({ showToast }) {
         .drop-zone-area {
           flex: 1;
           height: 110px;
-          border: 2px dashed rgba(0, 0, 0, 0.1);
-          background: rgba(0, 0, 0, 0.02);
+          border: 2px dashed rgba(0,0,0,0.1);
+          background: rgba(0,0,0,0.02);
           border-radius: 12px;
           display: flex;
           align-items: center;
@@ -607,136 +477,31 @@ export default function Testimonials({ showToast }) {
           cursor: pointer;
           transition: all 0.2s ease;
         }
-        .drop-zone-area.active-file {
-          border-color: #45b369;
-          background: rgba(69, 179, 105, 0.05);
-        }
-        .drop-zone-area:hover {
-          border-color: #487fff;
-          background: rgba(72, 127, 255, 0.04);
-        }
-        .drop-zone-info {
-          text-align: center;
-        }
-        .upload-icon {
-          text-align: center;
-          font-size: 20px;
-          margin-bottom: 4px;
-        }
-        .upload-text {
-          font-size: 13px;
-          color: #666;
-          margin: 0;
-        }
+        .drop-zone-area:hover { border-color: #487fff; background: rgba(72,127,255,0.04); }
+        .drop-zone-area.active-file { border-color: #45b369; background: rgba(69,179,105,0.05); }
+        .drop-zone-area.error-file  { border-color: #ef4444; background: rgba(239,68,68,0.04); }
+        .drop-zone-info { text-align: center; }
+        .upload-icon { font-size: 20px; margin-bottom: 4px; }
+        .upload-text { font-size: 13px; color: #666; margin: 0; }
+        .upload-dims { font-size: 11px; color: #9ca3af; margin: 4px 0 0; }
+        .dims-ok { color: #45b369; font-weight: 600; }
         .preview-tile {
-          width: 110px;
-          height: 110px;
-          border-radius: 12px;
-          overflow: hidden;
-          position: relative;
-          border: 2px solid #487fff;
+          width: 110px; height: 110px;
+          border-radius: 12px; overflow: hidden;
+          position: relative; border: 2px solid #487fff;
           flex-shrink: 0;
         }
-        .preview-tile img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
+        .preview-tile-error { border-color: #ef4444; }
+        .preview-tile img { width: 100%; height: 100%; object-fit: cover; }
         .preview-remove {
-          position: absolute;
-          top: 5px;
-          right: 5px;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: rgba(0,0,0,0.7);
-          color: white;
-          border: none;
-          cursor: pointer;
-          font-size: 11px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          position: absolute; top: 5px; right: 5px;
+          width: 20px; height: 20px; border-radius: 50%;
+          background: rgba(0,0,0,0.7); color: white;
+          border: none; cursor: pointer; font-size: 11px;
+          display: flex; align-items: center; justify-content: center;
         }
-        .km-form-actions {
-          grid-column: span 2;
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-          margin-top: 10px;
-          padding-top: 20px;
-          border-top: 1px solid rgba(0,0,0,0.05);
-        }
-        .km-btn-submit {
-          padding: 10px 24px;
-          background: #487fff;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: opacity 0.2s;
-          font-family: inherit;
-          font-size: 13px;
-        }
-        .km-btn-cancel {
-          padding: 10px 24px;
-          background: #f1f1f1;
-          color: #333;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          font-weight: 600;
-          cursor: pointer;
-          font-family: inherit;
-          font-size: 13px;
-        }
-        .km-btn-submit:hover, .km-btn-cancel:hover {
-          opacity: 0.8;
-        }
-        .img-thumb {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .img-thumb img {
-          max-width: 90px;
-          max-height: 54px;
-        }
-        .td-id {
-          font-weight: 600;
-          color: #487fff;
-        }
-        .td-center {
-          text-align: center;
-        }
-        .status {
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: 600;
-          display: inline-block;
-        }
-        .status.active {
-          background: rgba(69, 179, 105, 0.15);
-          color: #45b369;
-        }
-        .status.inactive {
-          background: rgba(239, 68, 68, 0.15);
-          color: #ef4444;
-        }
-        .km-loading {
-          text-align: center;
-          padding: 40px 20px;
-          color: #999;
-          font-size: 14px;
-        }
-        .fade-in {
-          animation: kmFadeIn 0.3s ease-out;
-        }
-        @keyframes kmFadeIn {
-          from { opacity: 0; transform: translateY(5px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
+        .pill-active   { background: rgba(69,179,105,0.15); color: #45b369; }
+        .pill-inactive { background: rgba(239,68,68,0.15);  color: #ef4444; }
       `}</style>
     </div>
   );

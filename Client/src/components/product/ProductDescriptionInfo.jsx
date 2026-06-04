@@ -388,7 +388,7 @@ function ComboProductsSection({ combo, allProducts }) {
           const variants = Array.isArray(p.Variants) ? p.Variants : [];
           const price = variants.length > 0 ? parseFloat(variants[0].salesPrice || 0) : parseFloat(p.price || 0);
           return (
-            <Link key={p.id} to={`${process.env.PUBLIC_URL}/product/${p.id}`} className="pdp-combo__item">
+            <Link key={p.id} to={`${process.env.PUBLIC_URL}/product/${p.slug || p.id}`} className="pdp-combo__item">
               <div className="pdp-combo__item-num">{idx + 1}</div>
               <div className="pdp-combo__item-img">
                 {img ? (

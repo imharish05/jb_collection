@@ -78,7 +78,7 @@ const ProductGridSingle = ({
       return;
     }
     if (Array.isArray(product.Variants) && product.Variants.length > 0) {
-      navigate(process.env.PUBLIC_URL + "/product/" + product.id);
+      navigate(process.env.PUBLIC_URL + "/product/" + (product.slug || product.id));
       return;
     }
     if (!product.stock || Number(product.stock) <= 0) {
@@ -111,7 +111,7 @@ const ProductGridSingle = ({
       <div className={clsx("product-card-premium", spaceBottomClass, !hoverImage && "single-image-card")}>
         <div className="product-img-container">
           <Link
-            to={process.env.PUBLIC_URL + "/product/" + product.id}
+            to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}
             style={{ position: "relative", zIndex: 2, display: "block" }}
           >
             <img
@@ -204,7 +204,7 @@ const ProductGridSingle = ({
         <div className="product-details-premium">
           <span className="product-cat-tag">Collection</span>
           <h4>
-            <Link to={process.env.PUBLIC_URL + "/product/" + product.id}>
+            <Link to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}>
               {product.name}
             </Link>
           </h4>

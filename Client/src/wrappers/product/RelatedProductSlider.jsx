@@ -30,17 +30,21 @@ const settings = {
 
 
 const RelatedProductSlider = ({ spaceBottomClass, category }) => {
-  const { id: currentProductId } = useParams();
+  const { slug: currentProductSlug, id: currentProductId } = useParams();
   const { products } = useSelector((state) => state.product);
   const currency = useSelector((state) => state.currency || { currencyName: "INR", currencyRate: 1, currencySymbol: "₹" });
   const { cartItems } = useSelector((state) => state.cart);
   const { wishlistItems } = useSelector((state) => state.wishlist);
   const { compareItems } = useSelector((state) => state.compare);
 
+  // currentParam is either a slug or a UUID (backward compat)
+  const currentParam = currentProductSlug || currentProductId;
+
   // First, try to get products in the same category
   let relatedProducts = products.filter(product => {
-    // Skip the current product
-    if (String(product.id) === String(currentProductId)) return false;
+    // Skip the current product — match by slug or id
+    if (product.slug && product.slug === currentParam) return false;
+    if (String(product.id) === String(currentParam)) return false;
 
     // Match by category — check multiple sources
     const hasCategory = 
@@ -54,7 +58,11 @@ const RelatedProductSlider = ({ spaceBottomClass, category }) => {
   // FALLBACK: If no category-specific products found, show any other products
   if (relatedProducts.length === 0) {
     relatedProducts = products
-      .filter(p => String(p.id) !== String(currentProductId))
+      .filter(p => {
+        if (p.slug && p.slug === currentParam) return false;
+        if (String(p.id) === String(currentParam)) return false;
+        return true;
+      })
       .slice(0, 6);
   }
   

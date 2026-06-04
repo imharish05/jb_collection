@@ -10,12 +10,12 @@ import ProductImageDescription from "../../wrappers/product/ProductImageDescript
 
 const Product = () => {
   let { pathname } = useLocation();
-  let { id } = useParams();
+  let { slug } = useParams();
   const { products } = useSelector((state) => state.product);
 
-  // Support both numeric IDs (static JSON) and UUIDs (backend)
+  // Find by slug (new clean URLs) — fall back to id for backward compat
   const product = products.find(
-    (p) => String(p.id) === String(id)
+    (p) => p.slug === slug || String(p.id) === String(slug)
   );
 
   // Guard: product not found yet (backend fetch in progress) or bad URL

@@ -10,9 +10,9 @@ import ProductImageDescription from "../../wrappers/product/ProductImageDescript
 
 const ProductFixedImage = () => {
   let { pathname } = useLocation();
-  let { id } = useParams();
+  let { slug } = useParams();
   const { products } = useSelector((state) => state.product);
-  const product = products.find(product => product.id === id);
+  const product = products.find(p => p.slug === slug || String(p.id) === String(slug));
 
 
   return (
@@ -57,4 +57,3 @@ const ProductFixedImage = () => {
 
 
 export default ProductFixedImage;
-

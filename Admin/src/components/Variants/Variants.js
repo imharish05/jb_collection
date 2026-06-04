@@ -43,7 +43,7 @@ const PRODUCT_IMAGE_DIMENSIONS = {
   aspectRatio: 5 / 6,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024, // 3MB
-  formats: ['image/jpeg', 'image/webp'],
+  formats: ['image/jpeg', 'image/webp',,'image/png'],
 };
 
 const validateProductImageDimensions = (file) => {
