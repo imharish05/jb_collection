@@ -49,6 +49,45 @@ const isAllCategory = value =>
 const generateSku = (prefix = "KM") =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
+const slugifyProductName = (value = "") => {
+  const slug = String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 90);
+  return slug || "product";
+};
+
+const isUuid = (value = "") =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value));
+
+const buildUniqueProductSlug = async (name, currentProductId = null) => {
+  const base = slugifyProductName(name);
+  let slug = base;
+  let suffix = 2;
+
+  while (true) {
+    const where = { slug };
+    if (currentProductId) where.id = { [Op.ne]: currentProductId };
+
+    const existing = await Product.findOne({ where, attributes: ["id"] });
+    if (!existing) return slug;
+
+    slug = `${base}-${suffix}`;
+    suffix += 1;
+  }
+};
+
+const ensureProductSlug = async (product) => {
+  if (!product || product.slug) return product?.slug || null;
+  const slug = await buildUniqueProductSlug(product.name, product.id);
+  await product.update({ slug });
+  product.slug = slug;
+  return slug;
+};
+
 const deleteFileIfExists = (absPath) => {
   if (!absPath) return;
   try {
@@ -71,6 +110,7 @@ const shape = (p) => {
   row.tag       = safeParse(row.tag,       []);
   row.variation = safeParse(row.variation, []);
   row.category  = safeParse(row.category,  []);
+  row.slug      = row.slug || slugifyProductName(row.name);
   // Parse Combo.productIds if it came back as a JSON string
   if (row.Combo && typeof row.Combo.productIds === 'string') {
     try { row.Combo.productIds = JSON.parse(row.Combo.productIds); } catch { row.Combo.productIds = []; }

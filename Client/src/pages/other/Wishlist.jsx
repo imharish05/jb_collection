@@ -119,7 +119,7 @@ const Wishlist = () => {
                     to={process.env.PUBLIC_URL + "/shop"}
                     style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"10px 20px", background:"#fff", border:"1.5px solid #e0e0e0", borderRadius:10, fontSize:13, fontWeight:700, color:"#333", textDecoration:"none" }}
                   >
-                    ← Continue Shopping
+                    ← Shop More
                   </Link>
                   <button
                     onClick={() => deleteAllFromWishlistService()}

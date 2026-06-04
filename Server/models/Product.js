@@ -18,6 +18,11 @@ const Product = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    slug: {
+      type: DataTypes.STRING,
+      unique: true,
+      allowNull: true,
+    },
     price: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,

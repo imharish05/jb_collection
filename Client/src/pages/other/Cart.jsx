@@ -614,7 +614,7 @@ const Cart = () => {
                   to={process.env.PUBLIC_URL + "/shop"}
                   className="kg-continue-link"
                 >
-                  ← Continue Shopping
+                  ← Shop More
                 </Link>
               </div>
 
