@@ -100,6 +100,7 @@ const App = () => {
           // Combo specific fields
           isCombo: snap.isCombo || false,
           rootComboId: snap.rootComboId || null,
+          comboSlug: snap.comboSlug || null,
           childComboId: snap.childComboId || null,
           selectedProducts: snap.products || null,
           comboType: snap.comboType || null,

@@ -37,9 +37,9 @@ const ProductImageDescription = ({ spaceTopClass, spaceBottomClass, galleryType,
         <div className="row">
           <div className="col-lg-6 col-md-6">
             {galleryType === "leftThumb" ? (
-              <ProductImageGallerySideThumb product={galleryProduct} thumbPosition="left" />
+              <ProductImageGallerySideThumb key={variantImage || "default"} product={galleryProduct} thumbPosition="left" />
             ) : galleryType === "rightThumb" ? (
-              <ProductImageGallerySideThumb product={galleryProduct} />
+              <ProductImageGallerySideThumb key={variantImage || "default"} product={galleryProduct} />
             ) : galleryType === "fixedImage" ? (
               <ProductImageFixed product={galleryProduct} />
             ) : (

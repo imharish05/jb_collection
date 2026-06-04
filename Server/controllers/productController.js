@@ -110,7 +110,7 @@ const shape = (p) => {
   row.tag       = safeParse(row.tag,       []);
   row.variation = safeParse(row.variation, []);
   row.category  = safeParse(row.category,  []);
-  row.slug      = row.slug || slugifyProductName(row.name);
+  row.slug      = row.slug || row.id;  // fallback to id — never non-unique name slug
   // Parse Combo.productIds if it came back as a JSON string
   if (row.Combo && typeof row.Combo.productIds === 'string') {
     try { row.Combo.productIds = JSON.parse(row.Combo.productIds); } catch { row.Combo.productIds = []; }
@@ -228,6 +228,7 @@ const createProduct = async (req, res, next) => {
     const product = await Product.create({
       sku:             `SKU-${Date.now()}`,
       name:            productName,
+      slug:            await buildUniqueProductSlug(productName),
       price,
       stock,
       image,
@@ -307,6 +308,9 @@ const updateProduct = async (req, res, next) => {
 
     await product.update({
       name:             productName     || product.name,
+      slug:             productName && productName !== product.name
+                          ? await buildUniqueProductSlug(productName, product.id)
+                          : (product.slug || await buildUniqueProductSlug(product.name, product.id)),
       price,
       stock,
       image,

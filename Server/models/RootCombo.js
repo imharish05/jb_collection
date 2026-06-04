@@ -11,6 +11,11 @@ const RootCombo = sequelize.define("RootCombo", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  slug: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: true,
+  },
   image: {
     type: DataTypes.STRING,
     allowNull: true,

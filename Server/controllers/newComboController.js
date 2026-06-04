@@ -7,6 +7,32 @@ const { Op } = require("sequelize");
 const path = require("path");
 const fs   = require("fs");
 
+// ── slug helpers ───────────────────────────────────────────────────────────────
+
+const slugifyName = (value = "") =>
+  String(value).trim().toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 90) || "combo";
+
+const isUuid = (v = "") =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v));
+
+const buildUniqueComboSlug = async (name, currentId = null) => {
+  const base = slugifyName(name);
+  let slug = base;
+  let suffix = 2;
+  while (true) {
+    const where = { slug };
+    if (currentId) where.id = { [Op.ne]: currentId };
+    const existing = await RootCombo.findOne({ where, attributes: ["id"] });
+    if (!existing) return slug;
+    slug = `${base}-${suffix}`;
+    suffix += 1;
+  }
+};
+
 // ── helpers ────────────────────────────────────────────────────────────────────
 
 const PRODUCT_ATTRS = ["id", "name", "price", "discount", "image", "stock", "shortDescription", "stockStatus", "warningThreshold"];
@@ -53,10 +79,13 @@ exports.getRootCombos = async (req, res) => {
   }
 };
 
-// GET /api/combos/:id  — full root + children + products
+// GET /api/combos/:id  — full root + children + products (accepts UUID or slug)
 exports.getRootComboById = async (req, res) => {
   try {
-    const root = await RootCombo.findByPk(req.params.id, {
+    const param = req.params.id;
+    const where = isUuid(param) ? { id: param } : { slug: param };
+    const root = await RootCombo.findOne({
+      where,
       include: [{
         model: ChildCombo,
         as: "children",
@@ -82,8 +111,10 @@ exports.createRootCombo = async (req, res) => {
     if (!name) return res.status(400).json({ message: "Name required" });
 
     const image = req.file ? `combos/${req.file.filename}` : null;
+    const slug = await buildUniqueComboSlug(name);
     const root = await RootCombo.create({
       name,
+      slug,
       image,
       isActive: isActive === "false" ? false : true,
     });
@@ -101,7 +132,10 @@ exports.updateRootCombo = async (req, res) => {
     if (!root) return res.status(404).json({ message: "Not found" });
 
     const { name, isActive } = req.body;
-    if (name !== undefined) root.name = name;
+    if (name !== undefined) {
+      root.name = name;
+      root.slug = await buildUniqueComboSlug(name, root.id);
+    }
     if (isActive !== undefined) root.isActive = isActive === "false" ? false : true;
 
     if (req.file) {
@@ -460,6 +494,7 @@ exports.addComboToCart = async (req, res) => {
     // Build snapshot for cart line item
     const snapshot = {
       rootComboId:  child.rootComboId,
+      comboSlug:    child.rootCombo?.slug || null,
       childComboId: child.id,
       comboName:    child.name,
       comboType:    child.type,

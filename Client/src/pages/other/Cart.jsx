@@ -320,7 +320,7 @@ const Cart = () => {
                       <div key={item.cartItemId} className="kg-cart-item">
                         {/* Image */}
                         <Link
-                          to={item.isCombo ? process.env.PUBLIC_URL + "/combo/root/" + item.rootComboId : process.env.PUBLIC_URL + "/product/" + (item.slug || item.id)}
+                          to={item.isCombo ? process.env.PUBLIC_URL + "/combo/root/" + (item.comboSlug || item.rootComboId) : process.env.PUBLIC_URL + "/product/" + (item.slug || item.id)}
                           className="kg-item-img-wrap"
                         >
                           <img
@@ -357,7 +357,7 @@ const Cart = () => {
                             </span>
                           )}
                           <Link
-                            to={item.isCombo ? process.env.PUBLIC_URL + "/combo/root/" + item.rootComboId : process.env.PUBLIC_URL + "/product/" + (item.slug || item.id)}
+                            to={item.isCombo ? process.env.PUBLIC_URL + "/combo/root/" + (item.comboSlug || item.rootComboId) : process.env.PUBLIC_URL + "/product/" + (item.slug || item.id)}
                             className="kg-item-name"
                           >
                             {item.name}
