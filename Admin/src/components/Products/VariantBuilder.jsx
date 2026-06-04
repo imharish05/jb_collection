@@ -7,6 +7,50 @@ const KM = {
   red: '#EF4444', redLight: '#FEF2F2',
 };
 
+// ── Variant Image Dimension Validator (same rules as product gallery) ─────────
+const VARIANT_IMAGE_RULES = {
+  recommended: { width: 800, height: 960 },
+  minimum: { width: 400, height: 480 },
+  aspectRatio: 5 / 6,
+  tolerance: 0.05,
+  maxFileSize: 3 * 1024 * 1024,
+  formats: ['image/jpeg', 'image/webp', 'image/png'],
+};
+
+const validateVariantImage = (file) => {
+  return new Promise((resolve) => {
+    if (file.size > VARIANT_IMAGE_RULES.maxFileSize) {
+      resolve({ valid: false, error: `File too large. Max 3MB. Yours: ${(file.size / 1024 / 1024).toFixed(2)}MB` });
+      return;
+    }
+    if (!VARIANT_IMAGE_RULES.formats.includes(file.type)) {
+      resolve({ valid: false, error: `Invalid format. Use JPG/WebP/PNG. Yours: ${file.type || 'unknown'}` });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        if (width < VARIANT_IMAGE_RULES.minimum.width || height < VARIANT_IMAGE_RULES.minimum.height) {
+          resolve({ valid: false, error: `Too small. Min: ${VARIANT_IMAGE_RULES.minimum.width}×${VARIANT_IMAGE_RULES.minimum.height}px. Yours: ${width}×${height}px` });
+          return;
+        }
+        const ratio = width / height;
+        const diff = Math.abs(ratio - VARIANT_IMAGE_RULES.aspectRatio) / VARIANT_IMAGE_RULES.aspectRatio;
+        if (diff > VARIANT_IMAGE_RULES.tolerance) {
+          const rh = Math.round(width / VARIANT_IMAGE_RULES.aspectRatio);
+          resolve({ valid: false, error: `Wrong ratio. Use 5:6 (e.g. ${width}×${rh}px). Yours: ${width}×${height}px` });
+          return;
+        }
+        resolve({ valid: true });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 // ── Predefined option types ────────────────────────────────────────────────────
 export const OPTION_PRESETS = {
   'Colour':    ['Red','Pink','Yellow','Green','Blue','Purple','Gold','Silver','White','Black','Rose Gold','Bronze','Copper','Multicolour'],
@@ -204,11 +248,20 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
 // ── SKU Row — card layout with big image upload ───────────────────────────────
 function SkuRow({ sku, index, onChange, errors = [] }) {
   const imgRef = useRef();
+  const [imgError, setImgError] = useState('');
 
   const handleImg = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    onChange({ ...sku, imageFile: file, imagePreview: URL.createObjectURL(file) });
+    setImgError('');
+    validateVariantImage(file).then((result) => {
+      if (!result.valid) {
+        setImgError(result.error);
+        e.target.value = null;
+        return;
+      }
+      onChange({ ...sku, imageFile: file, imagePreview: URL.createObjectURL(file) });
+    });
   };
 
   const hasErr = errors.length > 0;
@@ -237,7 +290,7 @@ function SkuRow({ sku, index, onChange, errors = [] }) {
           <div style={{ position: 'relative', width: 90, height: 90 }}>
             <img src={sku.imagePreview} alt="variant"
               style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 10, border: `2px solid ${KM.teal}`, display: 'block' }} />
-            <button type="button" onClick={() => onChange({ ...sku, imageFile: null, imagePreview: null })}
+            <button type="button" onClick={() => { onChange({ ...sku, imageFile: null, imagePreview: null }); setImgError(''); }}
               style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: KM.red, color: '#fff', border: '2px solid #fff', cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontWeight: 700 }}>✕</button>
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,180,216,0.85)', borderRadius: '0 0 8px 8px', fontSize: 10, color: '#fff', textAlign: 'center', padding: '3px 0', fontWeight: 600 }}>
               {sku.imagePreview.startsWith('blob:') ? 'New' : 'Saved'}
@@ -245,10 +298,13 @@ function SkuRow({ sku, index, onChange, errors = [] }) {
           </div>
         ) : (
           <div onClick={() => imgRef.current?.click()}
-            style={{ width: 90, height: 90, border: `2px dashed ${KM.teal}`, borderRadius: 10, background: '#F0FAFE', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            style={{ width: 90, height: 90, border: `2px dashed ${imgError ? KM.red : KM.teal}`, borderRadius: 10, background: imgError ? KM.redLight : '#F0FAFE', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
             <span style={{ fontSize: 26 }}>🖼️</span>
-            <span style={{ fontSize: 10, color: KM.teal, fontWeight: 700 }}>Upload</span>
+            <span style={{ fontSize: 10, color: imgError ? KM.red : KM.teal, fontWeight: 700 }}>Upload</span>
           </div>
+        )}
+        {imgError && (
+          <div style={{ fontSize: 10, color: KM.red, fontWeight: 600, marginTop: 4, maxWidth: 90, lineHeight: 1.3 }}>⚠ {imgError}</div>
         )}
       </div>
 
@@ -387,7 +443,7 @@ function BulkEditBar({ onApply }) {
 //   errors       — { [index]: string[] }
 //   existingOptions — pre-populated option matrix when editing
 // ═══════════════════════════════════════════════════════════════════════════════
-export default function VariantBuilder({ variants = [], onChange, errors = {}, existingOptions }) {
+export default function VariantBuilder({ variants = [], onChange, errors = {}, existingOptions, tab: tabProp, onTabChange }) {
   // Options = the matrix rows (Colour: [Red, Blue], Size: [S, M, L])
   const [options, setOptions] = useState(() => {
     if (existingOptions?.length) return existingOptions;
@@ -414,7 +470,9 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
     }
   }, [existingOptions]);
 
-  const [tab, setTab] = useState('options'); // 'options' | 'skus'
+  const [tabInternal, setTabInternal] = useState('options'); // 'options' | 'skus'
+  const tab = tabProp !== undefined ? tabProp : tabInternal;
+  const setTab = (t) => { setTabInternal(t); if (onTabChange) onTabChange(t); };
 
   const addOption = () => setOptions(o => [...o, { id: `opt_${Date.now()}`, key: '', values: [] }]);
   const removeOption = (i) => {
@@ -456,30 +514,81 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
   const allOtherKeys = (idx) => options.filter((_, i) => i !== idx).map(o => o.key).filter(Boolean);
 
   // ── AttributeRow export (for Variants.js standalone use) ──────────────────
+  const errorCount = Object.values(errors).filter(e => Array.isArray(e) && e.length > 0).length;
+  const hasErrors = errorCount > 0;
+
   return (
-    <div style={{ gridColumn: 'span 2', background: KM.bg, border: `1px solid ${KM.border}`, borderRadius: 12, overflow: 'hidden' }}>
+    <div style={{ gridColumn: 'span 2', background: KM.bg, border: `2px solid ${hasErrors ? KM.red : KM.border}`, borderRadius: 12, overflow: 'hidden', transition: 'border-color 0.2s' }}>
 
       {/* Header */}
-      <div style={{ background: KM.blue, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: hasErrors ? '#7f1d1d' : KM.blue, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'background 0.2s' }}>
         <div>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>🎁 Variant Options</span>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginLeft: 10 }}>
-            {totalCombos > 0 ? `${totalCombos} variant${totalCombos !== 1 ? 's' : ''} will be generated` : 'Define options below'}
-          </span>
+          {hasErrors ? (
+            <span style={{ fontSize: 12, color: '#fca5a5', marginLeft: 10, fontWeight: 600 }}>
+              ⚠ {errorCount} SKU{errorCount !== 1 ? 's' : ''} incomplete — fill in the details below
+            </span>
+          ) : (
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginLeft: 10 }}>
+              {totalCombos > 0 ? `${totalCombos} variant${totalCombos !== 1 ? 's' : ''} will be generated` : 'Define options below'}
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
-          {['options', 'skus'].map(t => (
-            <button key={t} type="button" onClick={() => setTab(t)}
-              style={{ padding: '5px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: tab === t ? KM.orange : 'rgba(255,255,255,0.15)', color: '#fff' }}>
-              {t === 'options' ? '⚙️ Options' : `📦 SKUs (${variants.length})`}
-            </button>
-          ))}
+          {['options', 'skus'].map(t => {
+            const isSkus = t === 'skus';
+            const skuHasError = isSkus && hasErrors;
+            const isActive = tab === t;
+            return (
+              <button key={t} type="button" onClick={() => setTab(t)}
+                style={{
+                  padding: '5px 14px', borderRadius: 6, border: skuHasError ? '2px solid #fca5a5' : 'none',
+                  cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                  background: isActive ? (skuHasError ? KM.red : KM.orange) : (skuHasError ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.15)'),
+                  color: '#fff',
+                  position: 'relative',
+                }}>
+                {t === 'options' ? '⚙️ Options' : `📦 SKUs (${variants.length})`}
+                {skuHasError && (
+                  <span style={{
+                    position: 'absolute', top: -8, right: -8,
+                    background: '#fbbf24', color: '#1a1a1a',
+                    borderRadius: '50%', width: 18, height: 18,
+                    fontSize: 10, fontWeight: 800,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    lineHeight: 1,
+                  }}>{errorCount}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Options tab */}
       {tab === 'options' && (
         <div style={{ padding: 16 }}>
+          {hasErrors && (
+            <div style={{
+              marginBottom: 12, padding: '10px 14px',
+              background: KM.redLight, border: `1px solid #fca5a5`,
+              borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <span style={{ fontSize: 18 }}>⚠️</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: KM.red }}>
+                  {errorCount} SKU{errorCount !== 1 ? 's are' : ' is'} incomplete
+                </div>
+                <div style={{ fontSize: 12, color: KM.red, marginTop: 2 }}>
+                  Switch to the <strong>📦 SKUs</strong> tab to fill in prices, stock and images.
+                </div>
+              </div>
+              <button type="button" onClick={() => setTab('skus')}
+                style={{ marginLeft: 'auto', padding: '6px 14px', background: KM.red, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                Fix SKUs →
+              </button>
+            </div>
+          )}
           <div style={{ marginBottom: 12, fontSize: 12, color: KM.muted }}>
             Add option types (Colour, Size, Material…) with their values. SKUs are auto-generated as a cartesian product.
           </div>
@@ -523,6 +632,18 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
             </div>
           ) : (
             <>
+              {hasErrors && (
+                <div style={{
+                  padding: '10px 16px',
+                  background: KM.redLight, borderBottom: `1px solid #fca5a5`,
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <span style={{ fontSize: 16 }}>⚠️</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: KM.red }}>
+                    {errorCount} SKU{errorCount !== 1 ? 's' : ''} need attention — rows highlighted below
+                  </span>
+                </div>
+              )}
               <BulkEditBar onApply={bulkApply} />
 
               <div style={{ maxHeight: 420, overflowY: 'auto' }}>

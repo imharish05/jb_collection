@@ -100,7 +100,19 @@ const getImageUrl = (imagePath) => {
   return `${IMG_URL}/uploads/${filename}`;
 };
 
-// ── Brand Colors ──────────────────────────────────────────────────────────────
+// Convert a full URL back to the relative path the server stores (uploads/products/file.jpg)
+const toRelativePath = (url) => {
+  if (!url || url.startsWith('blob:')) return null;
+  if (url.startsWith('http')) {
+    // Strip protocol + host, then normalise leading slash
+    try {
+      const pathname = new URL(url).pathname; // e.g. /uploads/products/abc.jpg
+      return pathname.replace(/^\//, ''); // → uploads/products/abc.jpg
+    } catch { /* fall through */ }
+  }
+  // Already relative
+  return url.replace(/^\//, '');
+};
 const KM = {
   orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B',
   green: '#39B54A', teal: '#00B4D8', border: '#E5E7EB',
@@ -264,12 +276,15 @@ export default function Products({ showToast }) {
 
   // ── Variants — now managed by VariantBuilder ──────────────────────────────
   const [variants, setVariants] = useState([blankVariantRow()]);
+  const [variantTab, setVariantTab] = useState('options'); // 'options' | 'skus'
 
   // ── Multi-image state ─────────────────────────────────────────────────────
   const [imageFiles, setImageFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [imageDimensionsMap, setImageDimensionsMap] = useState({});
+  const [originalPreviews, setOriginalPreviews] = useState([]); // snapshot on edit open
   const fileInputRef = useRef();
+  const variantBuilderRef = useRef();
 
   // ── SubCategories derived from selected category safely ───────────────────
   const selectedCategory = categories.find(c => String(c.id) === String(formData.categoryId));
@@ -278,6 +293,13 @@ export default function Products({ showToast }) {
   const subCategories = selectedCategory?.subcategories || selectedCategory?.subCategories || selectedCategory?.SubCategories || [];
 
   console.log(selectedCategory, "This si the nsjn");
+
+  // ── Scroll to VariantBuilder when tab forced to 'skus' on validation error ──
+  useEffect(() => {
+    if (variantTab === 'skus' && errors.variantErrors) {
+      variantBuilderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [variantTab, errors.variantErrors]);
 
   // ── Load data ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -343,9 +365,31 @@ export default function Products({ showToast }) {
     setFormData({ ...BLANK_FORM });
     setErrors({});
     setVariants([blankVariantRow()]);
+    setVariantTab('options');
     setImageFiles([]);
     setPreviews([]);
     setImageDimensionsMap({});
+    setOriginalPreviews([]);
+  };
+
+  // Cancel edit — restore original server images, discard local changes
+  const handleCancel = () => {
+    previews.forEach(url => { if (url?.startsWith('blob:')) URL.revokeObjectURL(url); });
+    if (editingId) {
+      // Restore snapshot taken when edit opened
+      setPreviews([...originalPreviews]);
+      setImageFiles([]);
+      setImageDimensionsMap({});
+      setShowForm(false);
+      setEditingId(null);
+      setFormData({ ...BLANK_FORM });
+      setErrors({});
+      setVariants([blankVariantRow()]);
+      setVariantTab('options');
+      setOriginalPreviews([]);
+    } else {
+      reset();
+    }
   };
 
   // ── Edit ──────────────────────────────────────────────────────────────────
@@ -424,7 +468,9 @@ export default function Products({ showToast }) {
     );
 
     const imgs = p.images || (p.image ? (Array.isArray(p.image) ? p.image : [p.image]) : []);
-    setPreviews(imgs.map(img => getImageUrl(img)));
+    const mappedImgs = imgs.map(img => getImageUrl(img));
+    setPreviews(mappedImgs);
+    setOriginalPreviews(mappedImgs); // snapshot for cancel
     setImageFiles([]);
     setImageDimensionsMap({});
     setErrors({});
@@ -451,14 +497,7 @@ export default function Products({ showToast }) {
     if (!formData.productName.trim()) next.productName = 'Product Name is required';
     if (!formData.categoryId) next.categoryId = 'Please select a category';
     if (Number.isNaN(discount) || discount < 0 || discount > 100) next.discount = 'Discount must be between 0 and 100';
-    if (!editingId && previews.length === 0 && imageFiles.length === 0) next.images = 'Please upload at least one product image';
     if (!variants.length) next.variants = 'Please add at least one variant';
-    
-    // Check image dimensions for newly added images
-    const firstInvalidImage = Object.values(imageDimensionsMap).find(result => result && !result.valid);
-    if (firstInvalidImage) {
-      next.images = firstInvalidImage.error || 'One or more product images have invalid dimensions';
-    }
 
     variants.forEach((v, index) => {
       const messages = [];
@@ -476,10 +515,15 @@ export default function Products({ showToast }) {
       if (v.stock === '') messages.push('Enter stock');
       else if (Number.isNaN(stock) || stock < 0) messages.push('Stock cannot be negative');
 
+      if (!v.imagePreview && !v.imageFile) messages.push('Upload a variant image');
+
       variantErrors[index] = messages;
     });
 
-    if (variantErrors.some(list => list.length)) next.variantErrors = variantErrors;
+    if (variantErrors.some(list => list.length)) {
+      next.variantErrors = variantErrors;
+      setVariantTab('skus');
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -548,7 +592,7 @@ export default function Products({ showToast }) {
         customLabel: findAttr('Custom Note'),
         subCategory: findAttr('Sub-type'),
         image: (!v.imageFile && v.imagePreview && !v.imagePreview.startsWith('blob:'))
-          ? v.imagePreview : undefined,
+          ? toRelativePath(v.imagePreview) : undefined,
         variantImageIndex: v.imageFile ? idx : undefined,
         status: v.status || 'Active',
       };
@@ -561,7 +605,10 @@ export default function Products({ showToast }) {
     });
 
     imageFiles.forEach(file => fd.append('images', file));
-    const savedImages = previews.filter(url => !url?.startsWith('blob:'));
+    const savedImages = previews
+      .filter(url => url && !url.startsWith('blob:'))
+      .map(url => toRelativePath(url))
+      .filter(Boolean);
     if (savedImages.length) fd.append('existingImages', JSON.stringify(savedImages));
 
     const tid = showToast.loading(editingId ? 'Updating…' : 'Adding…');
@@ -604,7 +651,7 @@ export default function Products({ showToast }) {
             <button className="action-btn" onClick={() => window.location.href = '/products'}
               style={{ background: '#eee', color: '#333' }}>Clear Filter</button>
           )}
-          <button className="action-btn btn-edit" onClick={() => showForm ? reset() : setShowForm(true)}>
+          <button className="action-btn btn-edit" onClick={() => showForm ? handleCancel() : setShowForm(true)}>
             {showForm ? 'Close' : '+ Add Product'}
           </button>
         </div>
@@ -732,14 +779,16 @@ export default function Products({ showToast }) {
                   placeholder="Materials, dimensions, customisation details, delivery time…" />
               </div>
 
-              <VariantBuilder variants={variants} errors={errors.variantErrors || []} onChange={(updated) => {
-                setVariants(updated);
-                const first = updated[0];
-                if (first?.mrp && first?.salesPrice && Number(first.mrp) > 0) {
-                  const auto = Math.round((1 - Number(first.salesPrice) / Number(first.mrp)) * 100);
-                  if (auto >= 0 && auto <= 100) setFormData(f => ({ ...f, discount: String(auto) }));
-                }
-              }} />
+              <div ref={variantBuilderRef} style={{ gridColumn: 'span 2' }}>
+                <VariantBuilder variants={variants} errors={errors.variantErrors || []} tab={variantTab} onTabChange={setVariantTab} onChange={(updated) => {
+                  setVariants(updated);
+                  const first = updated[0];
+                  if (first?.mrp && first?.salesPrice && Number(first.mrp) > 0) {
+                    const auto = Math.round((1 - Number(first.salesPrice) / Number(first.mrp)) * 100);
+                    if (auto >= 0 && auto <= 100) setFormData(f => ({ ...f, discount: String(auto) }));
+                  }
+                }} />
+              </div>
               <div style={{ gridColumn: 'span 2', marginTop: -10 }}>
                 <ErrorMsg field="variants" />
               </div>
@@ -808,60 +857,21 @@ export default function Products({ showToast }) {
                 ))}
               </div>
 
-              <div style={{ gridColumn: 'span 2', ...fieldStyle }}>
-                <label style={labelStyle}>Product Gallery • Recommended: 800×960px (5:6) • Min: 400×480px • Max: 3MB (JPG/WebP)</label>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', padding: '10px 0' }}>
-                  <div
-                    onClick={() => fileInputRef.current.click()}
-                    style={{
-                      width: 100, height: 100,
-                      border: `2px dashed ${KM.teal}`,
-                      borderRadius: 12,
-                      display: 'flex', flexDirection: 'column',
-                      alignItems: 'center', justifyContent: 'center',
-                      cursor: 'pointer', background: '#F0FAFE', flexShrink: 0,
-                    }}>
-                    <input ref={fileInputRef} type="file" multiple accept="image/*"
-                      style={{ display: 'none' }} onChange={handleFileChange} />
-                    <span style={{ fontSize: 22 }}>➕</span>
-                    <span style={{ fontSize: 11, color: KM.teal, fontWeight: 600, marginTop: 4 }}>Upload</span>
-                  </div>
+              {/* Hidden file input kept for programmatic use; gallery UI removed */}
+              <input ref={fileInputRef} type="file" multiple accept="image/*"
+                style={{ display: 'none' }} onChange={handleFileChange} />
 
-                  {previews.map((url, index) => (
-                    <div key={index}>
-                      <div style={{
-                        width: 100, height: 100, position: 'relative',
-                        borderRadius: 12, overflow: 'hidden',
-                        border: `1px solid ${KM.border}`, flexShrink: 0,
-                      }}>
-                        <img src={url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeImage(index); }}
-                          style={{
-                            position: 'absolute', top: 5, right: 5,
-                            background: '#ef4444', color: '#fff',
-                            border: 'none', borderRadius: '50%',
-                            width: 20, height: 20, cursor: 'pointer',
-                            fontSize: 11, lineHeight: 1, display: 'flex',
-                            alignItems: 'center', justifyContent: 'center',
-                            zIndex: 10,
-                          }}>✕</button>
-                        <div style={{
-                          position: 'absolute', bottom: 0, width: '100%',
-                          background: 'rgba(0,0,0,0.55)', color: '#fff',
-                          fontSize: 10, textAlign: 'center', padding: '2px 0',
-                        }}>
-                          {url.startsWith('blob:') ? 'New' : 'Saved'}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <ErrorMsg field="images" />
+              <div className="km-form-actions km-field-full" style={{display : "flex",gap : "10px"}}>
+                <button type="submit" className="km-btn-submit">
+                  {editingId ? 'Update Product' : 'Save Product'}
+                </button>
+                {editingId && (
+                  <button type="button" className="km-btn-cancel" onClick={handleCancel}
+                    >
+                    Cancel
+                  </button>
+                )}
               </div>
-
-              <button type="submit" style={submitBtn}>
-                {editingId ? 'Update Product' : 'Save Product'}
-              </button>
             </form>
           </div>
         </div>
@@ -874,7 +884,9 @@ export default function Products({ showToast }) {
           renderRow={(row, i) => {
             const firstVar = row.Variants?.[0];
             const stock = totalStock(row);
-            const imgs = row.images || (row.image ? (Array.isArray(row.image) ? row.image : [row.image]) : []);
+            const productImgs = row.images || (row.image ? (Array.isArray(row.image) ? row.image : [row.image]) : []);
+            const variantImgs = (row.Variants || []).map(v => v.image).filter(Boolean);
+            const imgs = productImgs.length ? productImgs : variantImgs;
             return (
               <tr key={row.id}>
                 <td style={{ color: KM.muted, fontSize: 11 }}>{i + 1}</td>
