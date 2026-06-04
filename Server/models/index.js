@@ -81,6 +81,9 @@ OrderItem.belongsTo(Order, { foreignKey: "order_id" });
 RootCombo.hasMany(ChildCombo, { foreignKey: "root_combo_id", as: "children", onDelete: "CASCADE" });
 ChildCombo.belongsTo(RootCombo, { foreignKey: "root_combo_id", as: "rootCombo" });
 
+ChildCombo.hasMany(Review, { foreignKey: "child_combo_id", as: "reviews", onDelete: "CASCADE" });
+Review.belongsTo(ChildCombo, { foreignKey: "child_combo_id", as: "childCombo" });
+
 // ── ChildCombo ↔ ChildComboProduct ───────────────────────────────────────────
 ChildCombo.hasMany(ChildComboProduct, { foreignKey: "child_combo_id", as: "comboProducts", onDelete: "CASCADE" });
 ChildComboProduct.belongsTo(ChildCombo, { foreignKey: "child_combo_id", as: "childCombo" });

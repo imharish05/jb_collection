@@ -464,8 +464,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 38px;
-  padding: 9px 20px;
+  /* min-height: 38px; */
+  /* padding: 9px 20px; */
   border-radius: 999px;
   font-size: var(--font-size-md);
   font-weight: 600;
@@ -567,7 +567,7 @@
 }
 
 .km-address-type-btn {
-  padding: 9px 20px;
+  padding: 9px 15px;
   border-radius: 999px;
   border: 1.5px solid #e0e0e0;
   background: #fff;

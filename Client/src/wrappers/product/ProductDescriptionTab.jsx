@@ -4,7 +4,7 @@ import clsx from "clsx";
 import Tab from "react-bootstrap/Tab";
 import Nav from "react-bootstrap/Nav";
 import { useSelector, useDispatch } from "react-redux";
-import { getProductReviews, getReviewEligibility, submitReview } from "../../store/services/reviewService";
+import { getReviewsByTarget, getReviewEligibilityByTarget, submitReview } from "../../store/services/reviewService";
 import { clearEligibility, clearReviews } from "../../store/slices/review-slice";
 
 // ── Star picker ──────────────────────────────────────────────────────────────
@@ -80,10 +80,18 @@ const RatingSummary = ({ reviews }) => {
 };
 
 // ── Main component ───────────────────────────────────────────────────────────
-const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId }) => {
+const ProductDescriptionTab = ({
+  spaceBottomClass,
+  productFullDesc,
+  productId,
+  childComboId,
+  reviewTargetType = "product",
+}) => {
   const dispatch = useDispatch();
   const { reviews, loading, submitting, eligibility, eligibilityLoading } = useSelector((state) => state.review);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const targetId = reviewTargetType === "combo" ? childComboId : productId;
+  const itemLabel = reviewTargetType === "combo" ? "combo" : "product";
 
   const INITIAL_SHOW = 1;
   const [showAll, setShowAll]     = useState(false);
@@ -101,21 +109,21 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
     setRating(0);
     setFeedback("");
     setRatingErr(false);
-  }, [productId]);
+  }, [targetId]);
 
-  // Fetch reviews when productId changes
+  // Fetch reviews when the target item changes.
   useEffect(() => {
-    if (!productId) return;
+    if (!targetId) return;
     dispatch(clearReviews());
-    getProductReviews(dispatch, productId);
-  }, [productId, dispatch]);
+    getReviewsByTarget(dispatch, { targetType: reviewTargetType, id: targetId });
+  }, [targetId, reviewTargetType, dispatch]);
 
   useEffect(() => {
     dispatch(clearEligibility());
-    if (productId && isAuthenticated) {
-      getReviewEligibility(dispatch, productId);
+    if (targetId && isAuthenticated) {
+      getReviewEligibilityByTarget(dispatch, { targetType: reviewTargetType, id: targetId });
     }
-  }, [productId, isAuthenticated, dispatch]);
+  }, [targetId, reviewTargetType, isAuthenticated, dispatch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -124,9 +132,9 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
     setRatingErr(false);
 
     const payload = {
-      productId,
       feedback,
       rating,
+      ...(reviewTargetType === "combo" ? { childComboId: targetId } : { productId: targetId }),
     };
 
     const ok = await submitReview(dispatch, payload);
@@ -134,7 +142,7 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
       setSubmitted(true);
       setRating(0);
       setFeedback("");
-      getReviewEligibility(dispatch, productId);
+      getReviewEligibilityByTarget(dispatch, { targetType: reviewTargetType, id: targetId });
     }
   };
 
@@ -284,7 +292,7 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
                                 <div className="rating-form-style form-submit">
                                   <textarea
                                     name="feedback"
-                                    placeholder="Share your experience with this product…"
+                                    placeholder={`Share your experience with this ${itemLabel}...`}
                                     value={feedback}
                                     onChange={(e) => setFeedback(e.target.value)}
                                     required
@@ -335,7 +343,9 @@ const ProductDescriptionTab = ({ spaceBottomClass, productFullDesc, productId })
 ProductDescriptionTab.propTypes = {
   spaceBottomClass: PropTypes.string,
   productFullDesc:  PropTypes.string,
-  productId:        PropTypes.string.isRequired,
+  productId:        PropTypes.string,
+  childComboId:     PropTypes.string,
+  reviewTargetType: PropTypes.oneOf(["product", "combo"]),
 };
 
 export default ProductDescriptionTab;

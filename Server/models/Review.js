@@ -4,6 +4,7 @@ const sequelize = require("../config/database");
 const Review = sequelize.define("Review", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   productId: { type: DataTypes.UUID, allowNull: true, field: "product_id" },
+  childComboId: { type: DataTypes.UUID, allowNull: true, field: "child_combo_id" },
   customerId: { type: DataTypes.UUID, allowNull: true, field: "customer_id" },
   guestName: { type: DataTypes.STRING, allowNull: true, field: "guest_name" },
   feedback: { type: DataTypes.TEXT, allowNull: false },

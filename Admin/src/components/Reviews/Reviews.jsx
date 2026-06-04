@@ -63,12 +63,25 @@ export default function Reviews() {
         </div>
       ) : (
         <DataTable
-          columns={['ID', 'Customer', 'Feedback', 'Rating', 'Status', 'Actions']}
+          columns={['ID', 'Customer', 'Item', 'Feedback', 'Rating', 'Status', 'Actions']}
           initialRows={rows}
           renderRow={(row) => (
             <tr key={row.id}>
               <td style={{ fontWeight: 600, color: '#6B7280' }}>#{row.id}</td>
               <td style={{ fontWeight: 600 }}>{row.Customer?.name || row.guestName || 'Guest'}</td>
+              <td style={{ fontSize: 12, color: '#374151' }}>
+                {row.childCombo ? (
+                  <>
+                    <span style={{ fontWeight: 700, color: '#F15A24' }}>Combo</span>
+                    <div>{row.childCombo.name}</div>
+                  </>
+                ) : row.product ? (
+                  <>
+                    <span style={{ fontWeight: 700, color: '#1A3A6B' }}>Product</span>
+                    <div>{row.product.name}</div>
+                  </>
+                ) : '—'}
+              </td>
               <td style={{ maxWidth: 300, color: '#374151', fontSize: 13 }}>{row.feedback}</td>
               <td style={{ color: '#F59E0B', fontWeight: 700, fontSize: 15, whiteSpace: 'nowrap' }}>{renderStars(row.rating)}</td>
               <td><span className={`status-pill ${pillClass[row.status]}`}>{row.status}</span></td>

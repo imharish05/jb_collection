@@ -468,7 +468,7 @@ const toggleVisibility = (field) => {
                             <div className="order-card-header">
                               <div className="header-left">
                                 <span className="order-label">Order</span>
-                                <span className="order-number">#{order.id}</span>
+                                {/* <span className="order-number">#{order.id}</span> */}
                               </div>
                               <div className="header-right">
                                 <span className={`status-pill ${order.status?.toLowerCase() || 'pending'}`}>{order.status || 'Pending'}</span>
@@ -489,7 +489,7 @@ const toggleVisibility = (field) => {
                             </div>
                             <div className="order-card-footer">
                               <div className="footer-left"><p>Placed on: <strong>{new Date(order.createdAt).toLocaleDateString()}</strong></p></div>
-                              <div className="footer-right">
+                              <div className="footer-right w-100 d-flex align-items-center justify-content-between">
                                 <span className="order-total-price">Total: ₹{order.totalAmount}</span>
                                 <Link to={`/order-details/${order.id}`} className="btn-view-order">Details</Link>
                               </div>

@@ -145,7 +145,7 @@ exports.deleteRootCombo = async (req, res) => {
 // POST /api/combos/child  — create child combo
 exports.createChildCombo = async (req, res) => {
   try {
-    const { rootComboId, name, description, type, originalPrice, comboPrice,
+    const { rootComboId, name, description, shortDescription, fullDescription, type, originalPrice, comboPrice,
             minQty, maxQty, allowDuplicates, allowedCategoryIds, isActive } = req.body;
 
     if (!rootComboId || !name || !type || !comboPrice) {
@@ -165,7 +165,9 @@ exports.createChildCombo = async (req, res) => {
     const child = await ChildCombo.create({
       rootComboId,
       name,
-      description: description || null,
+      description: shortDescription || description || null,
+      shortDescription: shortDescription || description || null,
+      fullDescription: fullDescription || null,
       image,
       type,
       originalPrice: originalPrice ? parseFloat(originalPrice) : null,
@@ -190,7 +192,7 @@ exports.updateChildCombo = async (req, res) => {
     const child = await ChildCombo.findByPk(req.params.id);
     if (!child) return res.status(404).json({ message: "Not found" });
 
-    const fields = ["name", "description", "type", "originalPrice", "comboPrice",
+    const fields = ["name", "description", "shortDescription", "fullDescription", "type", "originalPrice", "comboPrice",
                     "minQty", "maxQty", "allowDuplicates", "allowedCategoryIds", "isActive"];
 
     for (const f of fields) {
@@ -207,6 +209,12 @@ exports.updateChildCombo = async (req, res) => {
           child[f] = req.body[f];
         }
       }
+    }
+
+    if (req.body.shortDescription !== undefined) {
+      child.description = req.body.shortDescription || null;
+    } else if (req.body.description !== undefined && child.shortDescription == null) {
+      child.shortDescription = req.body.description || null;
     }
 
     if (req.file) {

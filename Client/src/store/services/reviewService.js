@@ -9,11 +9,17 @@ import {
   setError,
 } from "../slices/review-slice";
 
-// Fetch approved reviews for a product
-export const getProductReviews = async (dispatch, productId) => {
+const reviewPath = (targetType, id) =>
+  targetType === "combo" ? `/reviews/combo/${id}` : `/reviews/product/${id}`;
+
+const eligibilityPath = (targetType, id) =>
+  targetType === "combo" ? `/reviews/combo/eligibility/${id}` : `/reviews/eligibility/${id}`;
+
+// Fetch approved reviews for a product or child combo.
+export const getReviewsByTarget = async (dispatch, { targetType = "product", id }) => {
   dispatch(setLoading(true));
   try {
-    const res = await api.get(`/reviews/product/${productId}`);
+    const res = await api.get(reviewPath(targetType, id));
     dispatch(setReviews(res.data));
   } catch (err) {
     dispatch(setError("Failed to load reviews"));
@@ -23,16 +29,25 @@ export const getProductReviews = async (dispatch, productId) => {
   }
 };
 
-// Check whether the current user can review a product.
-export const getReviewEligibility = async (dispatch, productId) => {
+// Fetch approved reviews for a product.
+export const getProductReviews = async (dispatch, productId) =>
+  getReviewsByTarget(dispatch, { targetType: "product", id: productId });
+
+// Fetch approved reviews for a child combo.
+export const getComboReviews = async (dispatch, childComboId) =>
+  getReviewsByTarget(dispatch, { targetType: "combo", id: childComboId });
+
+// Check whether the current user can review a product or child combo.
+export const getReviewEligibilityByTarget = async (dispatch, { targetType = "product", id }) => {
   dispatch(setEligibilityLoading(true));
   try {
-    const res = await api.get(`/reviews/eligibility/${productId}`);
+    const res = await api.get(eligibilityPath(targetType, id));
     dispatch(setEligibility(res.data));
     return res.data;
   } catch (err) {
     const status = err.response?.status;
-    const msg = err.response?.data?.message || "You are not eligible to review this product.";
+    const itemLabel = targetType === "combo" ? "combo" : "product";
+    const msg = err.response?.data?.message || `You are not eligible to review this ${itemLabel}.`;
     const next = {
       eligible: false,
       hasReviewed: false,
@@ -44,6 +59,14 @@ export const getReviewEligibility = async (dispatch, productId) => {
     dispatch(setEligibilityLoading(false));
   }
 };
+
+// Check whether the current user can review a product.
+export const getReviewEligibility = async (dispatch, productId) =>
+  getReviewEligibilityByTarget(dispatch, { targetType: "product", id: productId });
+
+// Check whether the current user can review a child combo.
+export const getComboReviewEligibility = async (dispatch, childComboId) =>
+  getReviewEligibilityByTarget(dispatch, { targetType: "combo", id: childComboId });
 
 // Submit a new review for a delivered purchased item.
 export const submitReview = async (dispatch, payload) => {

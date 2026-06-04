@@ -492,7 +492,8 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
   const [form, setForm] = useState({
     name:           initial?.name || "",
     type:           initial?.type || "fixed",
-    description:    initial?.description || "",
+    shortDescription: initial?.shortDescription || initial?.description || "",
+    fullDescription:  initial?.fullDescription || "",
     originalPrice:  initial?.originalPrice || "",
     comboPrice:     initial?.comboPrice || "",
     minQty:         initial?.minQty || "",
@@ -638,10 +639,17 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
           </div>
 
           <div className="km-field km-field-full">
-            <label className="km-label">Description</label>
+            <label className="km-label">Short Description</label>
             <textarea className="km-input" style={{ minHeight: 60, resize: "vertical" }}
-              value={form.description} onChange={e => f("description")(e.target.value)}
-              placeholder="Brief description…" />
+              value={form.shortDescription} onChange={e => f("shortDescription")(e.target.value)}
+              placeholder="Brief combo summary..." />
+          </div>
+
+          <div className="km-field km-field-full">
+            <label className="km-label">Full Description</label>
+            <textarea className="km-input" style={{ minHeight: 100, resize: "vertical" }}
+              value={form.fullDescription} onChange={e => f("fullDescription")(e.target.value)}
+              placeholder="Detailed combo description, inclusions, customisation notes..." />
           </div>
 
           <div className="km-field">
@@ -968,7 +976,7 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
               <td>
                 <div>
                   <strong>{child.name}</strong>
-                  {child.description && <div style={{ fontSize: 11, color: "var(--neutral-400)", marginTop: 2 }}>{child.description}</div>}
+                  {(child.shortDescription || child.description) && <div style={{ fontSize: 11, color: "var(--neutral-400)", marginTop: 2 }}>{child.shortDescription || child.description}</div>}
                   {/* Small product thumbnails below name */}
                   {child.comboProducts && child.comboProducts.length > 0 && (
                     <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>

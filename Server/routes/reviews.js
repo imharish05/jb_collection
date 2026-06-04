@@ -1,9 +1,20 @@
 const express = require("express");
 const router = express.Router();
 const { protect, adminOnly } = require("../middleware/auth");
-const { getAll, getByProduct, getEligibility, create, update, remove } = require("../controllers/reviewController");
+const {
+  getAll,
+  getByProduct,
+  getByCombo,
+  getEligibility,
+  getComboEligibility,
+  create,
+  update,
+  remove,
+} = require("../controllers/reviewController");
 
 router.get("/product/:productId", getByProduct);
+router.get("/combo/eligibility/:childComboId", protect, getComboEligibility);
+router.get("/combo/:childComboId", getByCombo);
 
 router.get("/eligibility/:productId", protect, getEligibility);
 router.post("/", protect, create);

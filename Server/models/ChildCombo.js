@@ -20,6 +20,16 @@ const ChildCombo = sequelize.define("ChildCombo", {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  shortDescription: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: "short_description",
+  },
+  fullDescription: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: "full_description",
+  },
   image: {
     type: DataTypes.STRING,
     allowNull: true,

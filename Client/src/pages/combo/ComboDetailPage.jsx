@@ -11,6 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
+import ProductDescriptionTab from "../../wrappers/product/ProductDescriptionTab";
 import { getImgUrl } from "../../helpers/imageUrl";
 import { fetchComboById, addComboToCart } from "../../store/services/comboService";
 import {
@@ -470,6 +471,8 @@ const ComboDetailPage = () => {
   const savings       = originalPrice && originalPrice > comboPrice
     ? Math.round(((originalPrice - comboPrice) / originalPrice) * 100)
     : 0;
+  const comboShortDescription = child.shortDescription || child.description || "";
+  const comboFullDescription  = child.fullDescription || child.description || child.shortDescription || "";
 
   // Mix & Match state for this child
   const mmState    = mixMatchSelections?.[child.id] || { selections: [] };
@@ -667,7 +670,7 @@ const ComboDetailPage = () => {
     <Fragment>
       <SEO
         titleTemplate={`${child.name} — ${currentCombo.name}`}
-        description={child.description || `${child.name} combo — ₹${comboPrice}`}
+        description={comboShortDescription || `${child.name} combo — ₹${comboPrice}`}
       />
       <LayoutOne headerTop="visible">
         <Breadcrumb pages={[
@@ -706,8 +709,8 @@ const ComboDetailPage = () => {
                   </div>
 
                   {/* Description */}
-                  {child.description && (
-                    <p style={{ color: "#6B7280", lineHeight: 1.7, marginBottom: 16 }}>{child.description}</p>
+                  {comboShortDescription && (
+                    <p style={{ color: "#6B7280", lineHeight: 1.7, marginBottom: 16 }}>{comboShortDescription}</p>
                   )}
 
                   {/* Price block — same classes as PDP */}
@@ -953,6 +956,12 @@ const ComboDetailPage = () => {
             </div>
           </div>
         </div>
+        <ProductDescriptionTab
+          spaceBottomClass="pb-90"
+          productFullDesc={comboFullDescription}
+          childComboId={child.id}
+          reviewTargetType="combo"
+        />
       </LayoutOne>
       <style>{`
         /* ── Responsive details layout ── */

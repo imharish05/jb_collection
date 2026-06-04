@@ -3656,7 +3656,7 @@ updated
   .cart-action-overlay button,
   .cart-action-overlay a.cart-action-btn {
     padding: 6px 4px;
-    font-size: 9px;
+    /* font-size: 9px; */
     letter-spacing: 0.3px;
     border-radius: 7px;
   }
@@ -4160,7 +4160,7 @@ updated
 
 /* Product details area */
 .product-details-premium {
-  padding: 20px 15px;
+  /* padding: 20px 15px; */
   text-align: left;
 }
 

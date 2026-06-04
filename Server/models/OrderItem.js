@@ -88,6 +88,32 @@ const OrderItem = sequelize.define(
       allowNull: true,
       field: "selected_product_size",
     },
+    isCombo: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: "is_combo",
+    },
+    rootComboId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "root_combo_id",
+    },
+    childComboId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "child_combo_id",
+    },
+    comboName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "combo_name",
+    },
+    comboType: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "combo_type",
+    },
   },
   {
     tableName: "order_items",

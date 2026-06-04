@@ -124,6 +124,7 @@ const createOrder = async (req, res, next) => {
     for (const item of items) {
       let itemPrice = 0;
       let itemData = { ...item };
+      const isComboItem = item.isCombo === true || item.isCombo === "true";
 
       if (item.selectedVariantId) {
         const variant = await Variant.findByPk(item.selectedVariantId, { transaction });
@@ -160,13 +161,19 @@ const createOrder = async (req, res, next) => {
           return res.status(400).json({ message: `Insufficient stock for product ${product.name}` });
         }
         itemPrice = parseFloat(item.price || product.price || 0);
-        itemData.productName = product.name;
+        itemData.productName = isComboItem ? (item.comboName || item.name || product.name) : product.name;
         itemData.selectedVariantId = null;
         itemData.selectedVariantName = null;
         itemData.variantAttributes = [];
-        itemData.image = product.image || [];
+        itemData.image = item.image || product.image || [];
         await product.decrement('stock', { by: item.quantity, transaction });
       }
+
+      itemData.isCombo = isComboItem;
+      itemData.rootComboId = item.rootComboId || null;
+      itemData.childComboId = item.childComboId || null;
+      itemData.comboName = item.comboName || item.name || null;
+      itemData.comboType = item.comboType || null;
 
       const itemTotal = itemPrice * item.quantity;
       serverComputedTotal += itemTotal;
@@ -262,6 +269,11 @@ const createOrder = async (req, res, next) => {
         image: itemData.image || null,
         selectedProductColor: itemData.selectedProductColor || null,
         selectedProductSize: itemData.selectedProductSize || null,
+        isCombo: itemData.isCombo || false,
+        rootComboId: itemData.rootComboId || null,
+        childComboId: itemData.childComboId || null,
+        comboName: itemData.comboName || null,
+        comboType: itemData.comboType || null,
         status: order.status || "pending",
       }, { transaction });
     }
