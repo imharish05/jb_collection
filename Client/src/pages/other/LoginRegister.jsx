@@ -109,14 +109,14 @@ const LoginRegister = () => {
               <div className="custom-tab-row">
                 <button 
                   className={isLogin ? "active" : ""} 
-                  onClick={() => { setIsLogin(true); setErrors({}); }}
+                  onClick={() => { setIsLogin(true); setErrors({}); setEmail(''); setPassword(''); setFullName(''); setPhone(''); }}
                   disabled={loading}
                 >
                   Login
                 </button>
                 <button 
                   className={!isLogin ? "active" : ""} 
-                  onClick={() => { setIsLogin(false); setErrors({}); }}
+                  onClick={() => { setIsLogin(false); setErrors({}); setEmail(''); setPassword(''); setFullName(''); setPhone(''); }}
                   disabled={loading}
                 >
                   Register
