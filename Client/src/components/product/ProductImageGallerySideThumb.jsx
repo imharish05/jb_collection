@@ -177,6 +177,7 @@ const ProductImageGallerySideThumb = ({ product, thumbPosition }) => {
   if (!images.length) return null;
 
   const activeImg   = images[activeImageIndex] || images[0];
+  const singleImage = images.length === 1;
   const badgeDiscount = product.discount;
   const badgeNew      = product.new;
 
@@ -185,10 +186,10 @@ const ProductImageGallerySideThumb = ({ product, thumbPosition }) => {
       {/* ── DESKTOP layout (≥992px) ── */}
       <div
         className="product-img-gallery-custom"
-        style={styles.gridRow}
+        style={singleImage ? { ...styles.gridRow, gridTemplateColumns: '1fr' } : styles.gridRow}
       >
-        {/* Thumbnail column */}
-        <div style={styles.thumbCol}>
+        {/* Thumbnail column — hidden when only 1 image */}
+        {!singleImage && <div style={styles.thumbCol}>
           {visibleImages.map((img, visibleIdx) => {
             const absIdx   = thumbnailStartIndex + visibleIdx;
             const isActive = absIdx === activeImageIndex;
@@ -210,7 +211,7 @@ const ProductImageGallerySideThumb = ({ product, thumbPosition }) => {
               </div>
             );
           })}
-        </div>
+        </div>}
 
         {/* Main image column */}
         <div style={styles.mainCol}>
@@ -277,8 +278,8 @@ const ProductImageGallerySideThumb = ({ product, thumbPosition }) => {
           <img src={getImgUrl(activeImg)} alt="Product" style={styles.mainImg} />
         </div>
 
-        {/* Horizontal thumb scroll — all images, no window limit on mobile */}
-        <div style={styles.mobileThumbRow}>
+        {/* Horizontal thumb scroll — hidden when only 1 image */}
+        {!singleImage && <div style={styles.mobileThumbRow}>
           {images.map((img, idx) => (
             <div
               key={idx}
@@ -295,7 +296,7 @@ const ProductImageGallerySideThumb = ({ product, thumbPosition }) => {
               />
             </div>
           ))}
-        </div>
+        </div>}
       </div>
 
       {/* Lightbox */}
