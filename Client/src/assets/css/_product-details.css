@@ -107,6 +107,7 @@
 .description-review-topbar {
   display: flex;
   justify-content: center;
+  gap: 20px;
   border-bottom: 1px solid #d7d7d7;
 }
 .description-review-topbar .nav-item a {

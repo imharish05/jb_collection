@@ -147,7 +147,7 @@ const ProductDescriptionTab = ({
   };
 
   return (
-    <div className={clsx("description-review-area", spaceBottomClass)}>
+    <div className={clsx("description-review-area pb-30")}>
       <div className="container">
         <div className="description-review-wrapper">
           <Tab.Container defaultActiveKey="productDescription">

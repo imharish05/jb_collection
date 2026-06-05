@@ -40,7 +40,7 @@ const RelatedProductSlider = ({ spaceBottomClass, category }) => {
   if (!relatedProducts.length) return null;
 
   return (
-    <div className={clsx("related-product-area", spaceBottomClass)}>
+    <div className={clsx("related-product-area pb-30")}>
       <div className="container">
         <SectionTitle
           titleText="Related Products"
