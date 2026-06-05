@@ -26,28 +26,33 @@ const ProductGridSingle = ({
   const currencyRate = currency?.currencyRate || 1;
 
   // ── Image resolution ──────────────────────────────────────────────────────
-  // Priority: product.image[0] → product.image[1] → Variants[0].image → fallback
+  // Priority: Variants[0].image → product.image[0] → fallback
   const hasVariants = Array.isArray(product.Variants) && product.Variants.length > 0;
 
   const productImages = Array.isArray(product.image)
     ? product.image.filter(Boolean)
     : [];
 
-  // If product has no main images, fall back to first variant's image
-  const variantFallbackImg =
-    productImages.length === 0 && hasVariants
-      ? (product.Variants.find(v => v.image)?.image || null)
-      : null;
+  // First variant image takes priority as the primary display image
+  const firstVariantImg = hasVariants
+    ? (product.Variants.find(v => v.image)?.image || null)
+    : null;
 
-  const mainImage = productImages[0]
-    ? getImgUrl(productImages[0])
-    : variantFallbackImg
-      ? getImgUrl(variantFallbackImg)
+  const mainImage = firstVariantImg
+    ? getImgUrl(firstVariantImg)
+    : productImages[0]
+      ? getImgUrl(productImages[0])
       : process.env.PUBLIC_URL + "/assets/img/products/products-1.jpeg";
 
-  const hoverImage = productImages.length > 1
-    ? getImgUrl(productImages[1])
+  // Hover image: second variant image (if exists), else second product image, else null
+  const secondVariantImg = hasVariants
+    ? (product.Variants.filter(v => v.image).slice(1).find(v => v.image)?.image || null)
     : null;
+  const hoverImage = secondVariantImg
+    ? getImgUrl(secondVariantImg)
+    : productImages.length > 1
+      ? getImgUrl(productImages[1])
+      : null;
 
   // ── Pricing ───────────────────────────────────────────────────────────────
   const firstVariant = hasVariants ? product.Variants[0] : null;
@@ -202,17 +207,7 @@ const ProductGridSingle = ({
         </div>
 
         <div className="product-details-premium">
-          {/* Category / first variant label */}
-          {(() => {
-            if (firstVariant) {
-              const attrs = Array.isArray(firstVariant.attributes) ? firstVariant.attributes : [];
-              const label = attrs.length
-                ? attrs.map(a => a.value).filter(Boolean).join(' / ')
-                : firstVariant.variantName || 'Default';
-              return <span className="product-cat-tag">{label}</span>;
-            }
-            return <span className="product-cat-tag">{product.Category?.name || product.Category?.label || 'Collection'}</span>;
-          })()}
+          <span className="product-cat-tag">Collection</span>
           <h4>
             <Link to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}>
               {product.name}
