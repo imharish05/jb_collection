@@ -26,10 +26,10 @@ const OfferBanner = () => {
   const useSlider = count > 4;
 
   return (
-    <section className="tt-section pb-30 pt-30">
+    <section className="tt-section">
       <style>{`
         .tt-section {
-          padding: 52px 0 60px;
+          // padding: 52px 0 60px;
           position: relative;
           overflow: hidden;
         }
@@ -234,7 +234,7 @@ const OfferBanner = () => {
         .tt-nav-count strong { color: #222; font-weight: 600; }
 
         @media (max-width: 991px) {
-          .tt-section { padding: 44px 0 52px; }
+          // .tt-section { padding: 44px 0 52px; }
           .tt-header h2 { font-size: 24px; }
           .tt-grid.count-3,
           .tt-grid.count-4 { grid-template-columns: repeat(2, 1fr); }
@@ -242,7 +242,7 @@ const OfferBanner = () => {
         }
 
         @media (max-width: 600px) {
-          .tt-section { padding: 36px 0 44px; }
+          // .tt-section { padding: 36px 0 44px; }
           .tt-header { margin-bottom: 24px; }
           .tt-header h2 { font-size: 22px; }
           .tt-grid.count-1,

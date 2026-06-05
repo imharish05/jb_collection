@@ -22,7 +22,7 @@ const TabProduct = ({ spaceTopClass, spaceBottomClass, bgColorClass, category })
   if (sectionData.length === 0) return null;
 
   return (
-    <div className={clsx("deals-area pb-40 pt-40", bgColorClass)}>
+    <div className={clsx("deals-area pb-30 pt-30", bgColorClass)}>
       <div className="container">
         <div className="section-title text-center mb-50">
           <h2 className="event-title pb-2">Daily Deals</h2>
