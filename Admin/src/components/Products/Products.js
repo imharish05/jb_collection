@@ -338,13 +338,9 @@ export default function Products({ showToast }) {
   };
 
   const removeImage = (index) => {
-    const isBlob = previews[index]?.startsWith('blob:');
-    if (isBlob) URL.revokeObjectURL(previews[index]);
-    // imageFiles only contains NEW (blob) files; existing server images are not in imageFiles.
-    // Compute the index within imageFiles by counting how many blob previews precede this index.
-    const blobOffset = previews.slice(0, index).filter(u => u?.startsWith('blob:')).length;
+    if (previews[index]?.startsWith('blob:')) URL.revokeObjectURL(previews[index]);
     setPreviews(prev => prev.filter((_, i) => i !== index));
-    if (isBlob) setImageFiles(prev => prev.filter((_, i) => i !== blobOffset));
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
     
     // Rebuild imageDimensionsMap with updated indices
     setImageDimensionsMap(prev => {
@@ -861,29 +857,7 @@ export default function Products({ showToast }) {
                 ))}
               </div>
 
-              {/* Product Gallery */}
-              <div style={{ gridColumn: 'span 2' }}>
-                <label style={labelStyle}>Product Gallery Images</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
-                  {previews.map((url, idx) => (
-                    <div key={idx} style={{ position: 'relative', width: 90, height: 90 }}>
-                      <img src={url} alt={'img-' + idx} style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 8, border: '1px solid ' + KM.border }} />
-                      <button type="button" onClick={() => removeImage(idx)} style={{
-                        position: 'absolute', top: -6, right: -6, width: 20, height: 20,
-                        background: '#dc2626', color: '#fff', border: 'none', borderRadius: '50%',
-                        fontSize: 12, cursor: 'pointer', lineHeight: '20px', textAlign: 'center', padding: 0,
-                      }}>×</button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => fileInputRef.current?.click()} style={{
-                    width: 90, height: 90, border: '2px dashed ' + KM.border, borderRadius: 8,
-                    background: KM.bg, cursor: 'pointer', fontSize: 28, color: KM.muted,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>+</button>
-                </div>
-                <ErrorMsg field="images" />
-              </div>
-
+              {/* Hidden file input - product images handled per-variant */}
               <input ref={fileInputRef} type="file" multiple accept="image/*"
                 style={{ display: 'none' }} onChange={handleFileChange} />
 
