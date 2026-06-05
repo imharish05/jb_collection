@@ -1,35 +1,13 @@
 import PropTypes from "prop-types";
+import { useRef } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import clsx from "clsx";
-import Swiper, { SwiperSlide } from "../../components/swiper";
 import SectionTitle from "../../components/section-title/SectionTitle";
 import ProductGridSingle from "../../components/product/ProductGridSingle";
-import { getProducts } from "../../helpers/product";
-
-const settings = {
-  loop: false,
-  slidesPerView: 4,
-  grabCursor: true,
-  spaceBetween: 30,
-  breakpoints: {
-    320: {
-      slidesPerView: 1
-    },
-    576: {
-      slidesPerView: 2
-    },
-    768: {
-      slidesPerView: 3
-    },
-    1024: {
-      slidesPerView: 4
-    }
-  }
-};
-
 
 const RelatedProductSlider = ({ spaceBottomClass, category }) => {
+  const scrollRef = useRef(null);
   const { slug: currentProductSlug, id: currentProductId } = useParams();
   const { products } = useSelector((state) => state.product);
   const currency = useSelector((state) => state.currency || { currencyName: "INR", currencyRate: 1, currencySymbol: "₹" });
@@ -37,25 +15,18 @@ const RelatedProductSlider = ({ spaceBottomClass, category }) => {
   const { wishlistItems } = useSelector((state) => state.wishlist);
   const { compareItems } = useSelector((state) => state.compare);
 
-  // currentParam is either a slug or a UUID (backward compat)
   const currentParam = currentProductSlug || currentProductId;
 
-  // First, try to get products in the same category
   let relatedProducts = products.filter(product => {
-    // Skip the current product — match by slug or id
     if (product.slug && product.slug === currentParam) return false;
     if (String(product.id) === String(currentParam)) return false;
-
-    // Match by category — check multiple sources
-    const hasCategory = 
+    const hasCategory =
       (Array.isArray(product.category) && product.category.includes(category)) ||
       product.categoryId === category ||
       product.Category?.value === category;
-
     return hasCategory;
-  }).slice(0, 6);
+  }).slice(0, 10);
 
-  // FALLBACK: If no category-specific products found, show any other products
   if (relatedProducts.length === 0) {
     relatedProducts = products
       .filter(p => {
@@ -63,9 +34,11 @@ const RelatedProductSlider = ({ spaceBottomClass, category }) => {
         if (String(p.id) === String(currentParam)) return false;
         return true;
       })
-      .slice(0, 6);
+      .slice(0, 10);
   }
-  
+
+  if (!relatedProducts.length) return null;
+
   return (
     <div className={clsx("related-product-area", spaceBottomClass)}>
       <div className="container">
@@ -74,31 +47,23 @@ const RelatedProductSlider = ({ spaceBottomClass, category }) => {
           positionClass="text-center"
           spaceClass="mb-50"
         />
-        {relatedProducts?.length > 0 ? (
-          <Swiper options={settings}>
-              {relatedProducts.map(product => (
-                <SwiperSlide key={product.id}>
-                  <ProductGridSingle
-                    product={product}
-                    currency={currency}
-                    cartItem={
-                      cartItems.find((cartItem) => cartItem.id === product.id)
-                    }
-                    wishlistItem={
-                      wishlistItems.find(
-                        (wishlistItem) => wishlistItem.id === product.id
-                      )
-                    }
-                    compareItem={
-                      compareItems.find(
-                        (compareItem) => compareItem.id === product.id
-                      )
-                    }
-                  />
-                </SwiperSlide>
-              ))}
-          </Swiper>
-        ) : null}
+
+        {/* Scrollable track — same pattern as DealSection, no arrows */}
+        <div className="deal-scroll-track" ref={scrollRef}>
+          <div className="deal-scroll-inner">
+            {relatedProducts.map(product => (
+              <div className="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12" key={product.id}>
+                <ProductGridSingle
+                  product={product}
+                  currency={currency}
+                  cartItem={cartItems.find(c => c.id === product.id)}
+                  wishlistItem={wishlistItems.find(w => String(w.id) === String(product.id))}
+                  compareItem={compareItems.find(c => c.id === product.id)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -106,7 +71,7 @@ const RelatedProductSlider = ({ spaceBottomClass, category }) => {
 
 RelatedProductSlider.propTypes = {
   category: PropTypes.string,
-  spaceBottomClass: PropTypes.string
+  spaceBottomClass: PropTypes.string,
 };
 
 export default RelatedProductSlider;

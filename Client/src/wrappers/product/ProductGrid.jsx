@@ -34,7 +34,7 @@ const ProductGrid = ({
               }
               wishlistItem={
                 wishlistItems.find(
-                  (wishlistItem) => wishlistItem.id === product.id
+                  (wishlistItem) => String(wishlistItem.id) === String(product.id)
                 )
               }
               compareItem={

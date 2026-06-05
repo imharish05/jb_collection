@@ -93,13 +93,17 @@ const ProductGridSingle = ({
     addToCartService(dispatch, product);
   };
 
-  // Wishlist icon active only when this specific variant is wishlisted
-  // (Using the 'firstVariant' declaration from line 42)
-  const isWishlisted = wishlistItem !== undefined && (
-    firstVariant
-      ? String(wishlistItem.selectedVariantId) === String(firstVariant.id)
-      : true
-  );
+  // Wishlist icon: product must be in wishlist AND variant must match (type-safe Number compare).
+  // Uses Number() coercion so string "42" === number 42 — prevents mismatch after reload/rehydration.
+  const isWishlisted = (() => {
+    if (!wishlistItem) return false;
+    if (!firstVariant) return true;  // no variants — any match counts
+    const wvid = wishlistItem.selectedVariantId;
+    const fvid = firstVariant.id;
+    if (wvid == null && fvid == null) return true;
+    if (wvid == null || fvid == null) return false;
+    return Number(wvid) === Number(fvid);
+  })();
 
   const handleWishlist = () => {
     if (!isAuthenticated) {
