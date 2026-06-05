@@ -1,5 +1,5 @@
 import React, { Fragment, useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom"; // Add useNavigate
+import { useLocation, useNavigate, Link } from "react-router-dom"; // Add useNavigate
 import { useDispatch, useSelector } from "react-redux"; // Add Redux hooks
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
@@ -186,7 +186,7 @@ const LoginRegister = () => {
 
                   {isLogin && (
                     <div className="auth-utility">
-                      <a href="#/">Forgot password?</a>
+                      <Link to="/forgot-password" style={{ color: "#db1a5d", fontSize: "13px", fontWeight: "600", textDecoration: "none" }}>Forgot password?</Link>
                     </div>
                   )}
 

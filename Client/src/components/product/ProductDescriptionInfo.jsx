@@ -1270,7 +1270,7 @@ const ProductDescriptionInfo = ({
           margin-bottom: 16px;
         }
         .pdp-info__price {
-          font-size: 28px;
+          font-size: 22px;
           font-weight: 800;
           color: #de1a67;
           letter-spacing: -0.02em;

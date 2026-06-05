@@ -21,6 +21,11 @@ const Contact     = require("./Contact");
 const OrderItem   = require("./OrderItem");
 const Testimonial = require("./Testimonial");
 
+// ── Password Reset OTP ────────────────────────────────────────────────────────
+const PasswordResetOtp = require("./PasswordResetOtp");
+User.hasMany(PasswordResetOtp, { foreignKey: "user_id", as: "passwordResetOtps", onDelete: "CASCADE" });
+PasswordResetOtp.belongsTo(User, { foreignKey: "user_id", as: "user" });
+
 // ── New Root/Child Combo models ───────────────────────────────────────────────
 const RootCombo         = require("./RootCombo");
 const ChildCombo        = require("./ChildCombo");
@@ -119,4 +124,6 @@ module.exports = {
   RootCombo,
   ChildCombo,
   ChildComboProduct,
+  // Password reset
+  PasswordResetOtp,
 };

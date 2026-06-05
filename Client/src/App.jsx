@@ -43,6 +43,9 @@ const Catalogue = lazy(() => import("./pages/other/Catalogue"));
 const Contact = lazy(() => import("./pages/other/Contact"));
 const MyAccount = lazy(() => import("./pages/other/MyAccount"));
 const LoginRegister = lazy(() => import("./pages/other/LoginRegister"));
+const ForgotPassword = lazy(() => import("./pages/other/ForgotPassword"));
+const VerifyOtp = lazy(() => import("./pages/other/VerifyOtp"));
+const ResetPassword = lazy(() => import("./pages/other/ResetPassword"));
 const Cart = lazy(() => import("./pages/other/Cart"));
 const Wishlist = lazy(() => import("./pages/other/Wishlist"));
 const Compare = lazy(() => import("./pages/other/Compare"));
@@ -153,6 +156,9 @@ const App = () => {
             {/* Auth */}
             <Route path="/login" element={<LoginRegister />} />
             <Route path="/register" element={<LoginRegister />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/verify-otp" element={<VerifyOtp />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Protected */}
             <Route path={process.env.PUBLIC_URL + "/my-account"} element={<ProtectedRoute><MyAccount /></ProtectedRoute>} />

@@ -71,7 +71,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
 
         /* ── Column headings ── */
         .km-col-title {
-          font-size: 12px;
+          font-size: 17px;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 2px;
@@ -87,7 +87,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         }
         .km-links li { margin-bottom: 10px; }
         .km-links a {
-          font-size: 13.5px;
+          font-size: 15px;
           color: #666;
           text-decoration: none;
           transition: color 0.2s ease, padding-left 0.2s ease;
@@ -117,7 +117,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           display: block;
         }
         .km-contact-text {
-          font-size: 13px;
+          font-size: 15px;
           color: #666;
           line-height: 1.6;
         }
@@ -302,11 +302,6 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
             <span className="km-copyright">
               © {new Date().getFullYear()} Kamali Gifts & Crafts. All rights reserved.
             </span>
-            <div className="km-payment-logos">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" height="8" alt="Visa" />
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" height="14" alt="Mastercard" />
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1200px-PayPal.svg.png" height="11" alt="PayPal" />
-            </div>
           </div>
         </div>
       </div>

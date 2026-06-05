@@ -116,7 +116,7 @@ const ProductGridListSingle = ({
                     className={clsx("list-icon-btn", isWishlisted && "active")}
                     onClick={handleWishlistClick}
                   >
-                    <i className="pe-7s-like" />
+                    <i className="pe-7s-like " />
                   </button>
                 </div>
               </div>

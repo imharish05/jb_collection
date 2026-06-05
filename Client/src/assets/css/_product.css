@@ -4649,7 +4649,7 @@ updated
     padding: 12px 10px 14px;
   }
   .deal-scroll-inner .product-details-premium h4 {
-    font-size: 13px;
+    /* font-size: 13px; */
     margin: 5px 0 7px;
     -webkit-line-clamp: 2;
   }
@@ -4691,7 +4691,7 @@ updated
   .deal-scroll-inner .product-details-premium { padding: 8px 7px 10px; }
   .deal-scroll-inner .product-cat-tag { display: none; }
   .deal-scroll-inner .product-details-premium h4 {
-    font-size: 11px;
+    /* font-size: 11px; */
     margin: 3px 0 5px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -4710,7 +4710,7 @@ updated
   }
   .deal-scroll-inner .product-badge-single { top: 7px; left: 7px; }
   .deal-scroll-inner .premium-action-list { right: 6px; top: 6px; opacity: 1; }
-  .deal-scroll-inner .premium-action-list button { width: 28px; height: 28px; font-size: 12px; }
+  .deal-scroll-inner .premium-action-list button { width: 35px; height: 35px; font-size: 12px; }
 }
 
 @media (max-width: 575px) {
