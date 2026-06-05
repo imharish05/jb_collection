@@ -3506,7 +3506,8 @@ updated
     transition: all 0.3s;
 }
 
-.premium-action-list button:hover {
+.premium-action-list button:hover,
+.premium-action-list button.active {
     background: var(--p-pink);
     color: #fff;
 }

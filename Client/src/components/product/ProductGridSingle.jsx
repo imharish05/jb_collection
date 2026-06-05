@@ -26,33 +26,28 @@ const ProductGridSingle = ({
   const currencyRate = currency?.currencyRate || 1;
 
   // ── Image resolution ──────────────────────────────────────────────────────
-  // Priority: Variants[0].image → product.image[0] → fallback
+  // Priority: product.image[0] → product.image[1] → Variants[0].image → fallback
   const hasVariants = Array.isArray(product.Variants) && product.Variants.length > 0;
 
   const productImages = Array.isArray(product.image)
     ? product.image.filter(Boolean)
     : [];
 
-  // First variant image takes priority as the primary display image
-  const firstVariantImg = hasVariants
-    ? (product.Variants.find(v => v.image)?.image || null)
-    : null;
+  // If product has no main images, fall back to first variant's image
+  const variantFallbackImg =
+    productImages.length === 0 && hasVariants
+      ? (product.Variants.find(v => v.image)?.image || null)
+      : null;
 
-  const mainImage = firstVariantImg
-    ? getImgUrl(firstVariantImg)
-    : productImages[0]
-      ? getImgUrl(productImages[0])
+  const mainImage = productImages[0]
+    ? getImgUrl(productImages[0])
+    : variantFallbackImg
+      ? getImgUrl(variantFallbackImg)
       : process.env.PUBLIC_URL + "/assets/img/products/products-1.jpeg";
 
-  // Hover image: second variant image (if exists), else second product image, else null
-  const secondVariantImg = hasVariants
-    ? (product.Variants.filter(v => v.image).slice(1).find(v => v.image)?.image || null)
+  const hoverImage = productImages.length > 1
+    ? getImgUrl(productImages[1])
     : null;
-  const hoverImage = secondVariantImg
-    ? getImgUrl(secondVariantImg)
-    : productImages.length > 1
-      ? getImgUrl(productImages[1])
-      : null;
 
   // ── Pricing ───────────────────────────────────────────────────────────────
   const firstVariant = hasVariants ? product.Variants[0] : null;
@@ -93,17 +88,9 @@ const ProductGridSingle = ({
     addToCartService(dispatch, product);
   };
 
-  // Wishlist icon: product must be in wishlist AND variant must match (type-safe Number compare).
-  // Uses Number() coercion so string "42" === number 42 — prevents mismatch after reload/rehydration.
-  const isWishlisted = (() => {
-    if (!wishlistItem) return false;
-    if (!firstVariant) return true;  // no variants — any match counts
-    const wvid = wishlistItem.selectedVariantId;
-    const fvid = firstVariant.id;
-    if (wvid == null && fvid == null) return true;
-    if (wvid == null || fvid == null) return false;
-    return Number(wvid) === Number(fvid);
-  })();
+  // Wishlist icon active when this product is in wishlist (any variant).
+  // Cards don't have a variant selector so we treat any wishlisted variant as active.
+  const isWishlisted = wishlistItem !== undefined;
 
   const handleWishlist = () => {
     if (!isAuthenticated) {
@@ -211,7 +198,17 @@ const ProductGridSingle = ({
         </div>
 
         <div className="product-details-premium">
-          <span className="product-cat-tag">Collection</span>
+          {/* Category / first variant label */}
+          {(() => {
+            if (firstVariant) {
+              const attrs = Array.isArray(firstVariant.attributes) ? firstVariant.attributes : [];
+              const label = attrs.length
+                ? attrs.map(a => a.value).filter(Boolean).join(' / ')
+                : firstVariant.variantName || 'Default';
+              return <span className="product-cat-tag">{label}</span>;
+            }
+            return <span className="product-cat-tag">{product.Category?.name || product.Category?.label || 'Collection'}</span>;
+          })()}
           <h4>
             <Link to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}>
               {product.name}

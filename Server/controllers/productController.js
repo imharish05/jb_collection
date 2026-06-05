@@ -290,7 +290,8 @@ const updateProduct = async (req, res, next) => {
       shortDescription, fullDescription, variants,
     } = req.body;
 
-    const newImages      = req.files?.length ? req.files.map(f => `uploads/products/${f.filename}`) : null;
+    const productImgFiles = (req.files || []).filter(f => f.fieldname === 'images');
+    const newImages      = productImgFiles.length ? productImgFiles.map(f => `uploads/products/${f.filename}`) : null;
     const existingImages = req.body.existingImages ? safeParse(req.body.existingImages, []) : [];
     const image          = newImages ? [...existingImages, ...newImages] : (existingImages.length ? existingImages : safeParse(product.image, []));
     const parsedVariants = variants ? safeParse(variants, null) : null;
