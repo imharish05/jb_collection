@@ -68,7 +68,7 @@ exports.getRootCombos = async (req, res) => {
       include: [{
         model: ChildCombo,
         as: "children",
-        attributes: ["id", "name", "is_active"],
+        attributes: ["id", "name", "image", "type", "comboPrice", "originalPrice", "isActive"],
         required: false,
       }],
     });

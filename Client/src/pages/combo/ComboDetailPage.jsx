@@ -38,6 +38,12 @@ function parseProductImages(image) {
 }
 
 function getProductImg(p) {
+  // Prefer first variant image (if variants exist and variant has image)
+  if (Array.isArray(p?.Variants) && p.Variants.length > 0) {
+    const firstVariantImg = p.Variants[0]?.image;
+    if (firstVariantImg) return getImgUrl(firstVariantImg);
+  }
+  // Fall back to product image array[0]
   const imgs = parseProductImages(p?.image);
   const img = imgs[0];
   return img ? getImgUrl(img) : null;
@@ -465,7 +471,24 @@ const ComboDetailPage = () => {
     );
   }
 
-  const comboImgs     = child.image ? [child.image] : (currentCombo.image ? [currentCombo.image] : []);
+  const comboImgs = (() => {
+    if (child.image) return [child.image];
+    if (currentCombo.image) return [currentCombo.image];
+    // Fall back to first included product's first variant image
+    const firstCp = child.comboProducts?.[0];
+    if (firstCp?.product) {
+      const variants = firstCp.product.Variants;
+      if (Array.isArray(variants) && variants.length > 0 && variants[0].image) {
+        return [variants[0].image];
+      }
+      const prodImgs = firstCp.product.image;
+      const imgArr = Array.isArray(prodImgs) ? prodImgs
+        : typeof prodImgs === "string" ? (() => { try { return JSON.parse(prodImgs); } catch { return [prodImgs]; } })()
+        : [];
+      if (imgArr[0]) return [imgArr[0]];
+    }
+    return [];
+  })();
   const originalPrice = child.originalPrice ? parseFloat(child.originalPrice) : null;
   const comboPrice    = parseFloat(child.comboPrice);
   const savings       = originalPrice && originalPrice > comboPrice

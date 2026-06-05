@@ -3,6 +3,25 @@ import { Link } from "react-router-dom";
 import clsx from "clsx";
 import { getImgUrl } from "../../helpers/imageUrl";
 
+// Resolve image: prefer variant[0].image → product.image[0] → null
+function getFirstProductImg(comboProducts) {
+  if (!Array.isArray(comboProducts) || comboProducts.length === 0) return null;
+  for (const cp of comboProducts) {
+    const prod = cp.product;
+    if (!prod) continue;
+    // Prefer first variant image
+    if (Array.isArray(prod.Variants) && prod.Variants.length > 0) {
+      const vImg = prod.Variants[0]?.image;
+      if (vImg) return getImgUrl(vImg);
+    }
+    // Fall back to product image array
+    let imgs = prod.image;
+    if (typeof imgs === "string") { try { imgs = JSON.parse(imgs); } catch { imgs = [imgs]; } }
+    if (Array.isArray(imgs) && imgs[0]) return getImgUrl(imgs[0]);
+  }
+  return null;
+}
+
 const ComboCard = ({ combo, spaceBottomClass }) => {
   const comboPrice = parseFloat(combo.comboPrice || 0);
   const originalPrice = parseFloat(combo.originalPrice || 0);
@@ -11,7 +30,10 @@ const ComboCard = ({ combo, spaceBottomClass }) => {
     ? Math.round(((originalPrice - comboPrice) / originalPrice) * 100)
     : 0;
 
-  const comboImg = combo.image ? getImgUrl(combo.image) : null;
+  // Own image → first included product's variant image → null
+  const comboImg = combo.image
+    ? getImgUrl(combo.image)
+    : getFirstProductImg(combo.comboProducts);
   const detailUrl = process.env.PUBLIC_URL + "/combo/root/" + (combo.slug || combo.rootComboId) + "?type=" + combo.type;
 
   const typeBadgeStyle = combo.type === "fixed"

@@ -982,8 +982,15 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
                     <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
                       {child.comboProducts.slice(0, 5).map(cp => {
                         const prod = cp.product || (allProducts || []).find(p => p.id === cp.productId);
-                          <div key={cp.id} title={prod?.name || "Product"}
-                            style={{ width: 24, height: 24, borderRadius: 4, background: "var(--neutral-100)", border: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>🎁</div>
+                        const img = resolveImage(prod?.image);
+                        return img
+                          ? <img key={cp.id} src={getImg(img)} alt={prod?.name || "Product"}
+                              title={prod?.name || "Product"}
+                              width={24} height={24}
+                              style={{ borderRadius: 4, objectFit: "cover", border: "1px solid var(--border-color)", flexShrink: 0 }}
+                              onError={e => { e.target.style.display = "none"; }} />
+                          : <div key={cp.id} title={prod?.name || "Product"}
+                              style={{ width: 24, height: 24, borderRadius: 4, background: "var(--neutral-100)", border: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>🎁</div>;
                       })}
                       {child.comboProducts.length > 5 && (
                         <div style={{ width: 24, height: 24, borderRadius: 4, background: "var(--neutral-200)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "var(--neutral-600)", fontWeight: 700 }}>
