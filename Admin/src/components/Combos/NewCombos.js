@@ -363,7 +363,13 @@ function ProductPickerRow({ allProducts, onAdd, label = "Included Products" }) {
               boxShadow: "0 8px 24px rgba(0,0,0,0.12)", maxHeight: 220, overflowY: "auto", marginTop: 2,
             }}>
               {filtered.map(p => {
-                const img = Array.isArray(p.image) ? p.image[0] : p.image;
+               const img =
+  resolveImage(p.image) ||
+  p.Variants?.[0]?.image;
+
+const imgSrc = img ? getImg(img) : null;
+                console.log(p);
+                
                 return (
                   <div key={p.id}
                     onClick={() => { setSelProd(p); setSelVar(""); setOpen(false); setSearch(""); }}
@@ -371,8 +377,16 @@ function ProductPickerRow({ allProducts, onAdd, label = "Included Products" }) {
                     onMouseEnter={e => e.currentTarget.style.background = "var(--neutral-50)"}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                   >
-                    {img
-                      ? <img src={getImg(img)} alt="" width={28} height={28} style={{ borderRadius: 4, objectFit: "cover", flexShrink: 0 }} />
+                    {imgSrc
+                      ? <img src={imgSrc} alt="" width={28} height={28}
+                          style={{ borderRadius: 4, objectFit: "cover", flexShrink: 0 }}
+                          onError={e => {
+                            e.target.style.display = "none";
+                            const fallback = document.createElement("div");
+                            fallback.textContent = "🎁";
+                            fallback.style.cssText = "width:28px;height:28px;border-radius:4px;background:var(--neutral-100);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;";
+                            e.target.parentNode.insertBefore(fallback, e.target);
+                          }} />
                       : <div style={{ width: 28, height: 28, borderRadius: 4, background: "var(--neutral-100)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>🎁</div>
                     }
                     <div>
@@ -426,6 +440,25 @@ function ProductPickerRow({ allProducts, onAdd, label = "Included Products" }) {
   );
 }
 
+// ── Product Image with Fallback ────────────────────────────────────────────────
+function ProductImg({ src, size = 36, style = {} }) {
+  const [errored, setErrored] = useState(false);
+  if (!src || errored) {
+    return (
+      <div style={{
+        width: size, height: size, borderRadius: 6, background: "var(--neutral-100)",
+        border: "1px solid var(--border-color)", display: "flex", alignItems: "center",
+        justifyContent: "center", fontSize: Math.round(size * 0.4), flexShrink: 0, ...style,
+      }}>🎁</div>
+    );
+  }
+  return (
+    <img src={src} alt="" width={size} height={size}
+      style={{ borderRadius: 6, objectFit: "cover", border: "1px solid var(--border-color)", flexShrink: 0, ...style }}
+      onError={() => setErrored(true)} />
+  );
+}
+
 // ── Product List ───────────────────────────────────────────────────────────────
 function ProductList({ products, allProducts, onRemove }) {
   if (!products || products.length === 0) return null;
@@ -437,7 +470,9 @@ function ProductList({ products, allProducts, onRemove }) {
         // Variant: prefer cp.variant (API), else look up in prod.Variants
         const variant = cp.variant || prod?.Variants?.find(v => String(v.id) === String(cp.variantId));
         // Image: resolve from product — handles JSON string, array, or plain path
-        const img = resolveImage(prod?.image);
+        const img =
+  resolveImage(prod?.image) ||
+  prod?.Variants?.[0]?.image;
         const stock = variant ? Number(variant.stock) : Number(prod?.stock ?? 0);
         const price = variant ? parseFloat(variant.salesPrice) : parseFloat(prod?.price || 0);
         const variantLabel = buildVariantLabel(variant);
@@ -446,12 +481,7 @@ function ProductList({ products, allProducts, onRemove }) {
             display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
             background: "#fff", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)",
           }}>
-            {img
-              ? <img src={getImg(img)} alt="" width={36} height={36}
-                  style={{ borderRadius: 6, objectFit: "cover", border: "1px solid var(--border-color)", flexShrink: 0 }}
-                  onError={e => { e.target.style.display = "none"; }} />
-              : <div style={{ width: 36, height: 36, borderRadius: 6, background: "var(--neutral-100)", border: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🎁</div>
-            }
+            <ProductImg src={img ? getImg(img) : null} size={36} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--neutral-800)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {prod?.name || `Product #${cp.productId}`}
@@ -965,12 +995,7 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
               <td className="td-id">{i + 1}</td>
               <td>
                 <div className="img-thumb">
-                  {child.image
-                    ? <img src={getImg(child.image)} alt={child.name} width={40} height={40}
-                        style={{ borderRadius: 8, objectFit: "cover" }}
-                        onError={e => { e.target.style.display = "none"; }} />
-                    : "🎁"
-                  }
+                  <ProductImg src={child.image ? getImg(child.image) : null} size={40} style={{ borderRadius: 8, border: "none" }} />
                 </div>
               </td>
               <td>
@@ -982,15 +1007,17 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
                     <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
                       {child.comboProducts.slice(0, 5).map(cp => {
                         const prod = cp.product || (allProducts || []).find(p => p.id === cp.productId);
-                        const img = resolveImage(prod?.image);
-                        return img
-                          ? <img key={cp.id} src={getImg(img)} alt={prod?.name || "Product"}
-                              title={prod?.name || "Product"}
-                              width={24} height={24}
-                              style={{ borderRadius: 4, objectFit: "cover", border: "1px solid var(--border-color)", flexShrink: 0 }}
-                              onError={e => { e.target.style.display = "none"; }} />
-                          : <div key={cp.id} title={prod?.name || "Product"}
-                              style={{ width: 24, height: 24, borderRadius: 4, background: "var(--neutral-100)", border: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>🎁</div>;
+                        const img =
+  resolveImage(prod?.image) ||
+  prod?.Variants?.[0]?.image;
+                        return (
+                          <ProductImg
+                            key={cp.id}
+                            src={img ? getImg(img) : null}
+                            size={24}
+                            style={{ borderRadius: 4, border: "1px solid var(--border-color)" }}
+                          />
+                        );
                       })}
                       {child.comboProducts.length > 5 && (
                         <div style={{ width: 24, height: 24, borderRadius: 4, background: "var(--neutral-200)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "var(--neutral-600)", fontWeight: 700 }}>
