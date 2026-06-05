@@ -41,8 +41,13 @@ const ProductGridListSingle = ({
   const images = Array.isArray(product.image)
     ? product.image.filter(Boolean)
     : product.image ? [product.image] : [];
-  const mainImage  = images[0] ? getImgUrl(images[0]) : "/assets/img/products/products-1.jpeg";
-  const hoverImage = images.length > 1 ? getImgUrl(images[1]) : null;
+
+  // Fall back to variant images when product has no gallery images
+  const variantImages = (product.Variants || []).map(v => v.image).filter(Boolean);
+  const allImages = images.length ? images : variantImages;
+
+  const mainImage  = allImages[0] ? getImgUrl(allImages[0]) : "/assets/img/products/products-1.jpeg";
+  const hoverImage = allImages.length > 1 ? getImgUrl(allImages[1]) : null;
   const hasVariants = variants.length > 0;
 
   const rate = currency?.currencyRate || 1;

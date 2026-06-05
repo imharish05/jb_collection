@@ -161,19 +161,9 @@ const Cart = () => {
           <div className="kg-cart-page">
             <div className="kg-cart-container">
               <div className="kg-empty-wrap">
-                <svg width="90" height="90" viewBox="0 0 90 90" fill="none">
-                  <circle cx="45" cy="45" r="45" fill="#FFF0F5" />
-                  <path
-                    d="M24 30h5l6 26h22l6-19H36"
-                    stroke="#db1a5d"
-                    strokeWidth="2.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                  <circle cx="40" cy="61" r="3" fill="#db1a5d" />
-                  <circle cx="54" cy="61" r="3" fill="#db1a5d" />
-                </svg>
+                <div style={{ width:90, height:90, borderRadius:"50%", background:"#fff5f8", border:"2px solid #fce7f3", display:"flex", alignItems:"center", justifyContent:"center", fontSize:38 }}>
+              <img src="/assets/img/icon-img/cartimg-1.png" className="img-fluid p-2" alt="" />
+            </div>
                 <h3 className="kg-empty-title">Your cart is empty</h3>
                 <p className="kg-empty-text">
                   Looks like you haven't added anything yet.

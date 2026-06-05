@@ -31,7 +31,9 @@ const ProductGridSingle = ({
 
   const productImages = Array.isArray(product.image)
     ? product.image.filter(Boolean)
-    : [];
+    : typeof product.image === 'string'
+      ? (() => { try { const p = JSON.parse(product.image); return Array.isArray(p) ? p.filter(Boolean) : []; } catch { return []; } })()
+      : [];
 
   // If product has no main images, fall back to first variant's image
   const variantFallbackImg =

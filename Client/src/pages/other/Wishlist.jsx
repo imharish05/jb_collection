@@ -11,6 +11,7 @@ import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
 
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 const parseJson = (val) => {
   if (!val || typeof val !== "string") return val;
@@ -283,7 +284,7 @@ const Wishlist = () => {
           /* ── Empty State ── */
           <div style={{ textAlign:"center", padding:"100px 20px", display:"flex", flexDirection:"column", alignItems:"center", gap:18 }}>
             <div style={{ width:90, height:90, borderRadius:"50%", background:"#fff5f8", border:"2px solid #fce7f3", display:"flex", alignItems:"center", justifyContent:"center", fontSize:38 }}>
-              🤍
+              <img src="/assets/img/icon-img/wishlist.png" className="img-fluid p-2" alt="" />
             </div>
             <h3 style={{ fontSize:22, fontWeight:800, color:"#111", margin:0 }}>Your wishlist is empty</h3>
             <p style={{ fontSize:14, color:"#888", margin:0 }}>Save items you love and come back to them anytime.</p>
