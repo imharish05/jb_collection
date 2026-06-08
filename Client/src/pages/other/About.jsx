@@ -17,8 +17,8 @@ const About = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="About us"
-        description="About page of flone react minimalist eCommerce template."
+        titleTemplate="About us - Kamali Gifts"
+        description="Learn about Kamali Gifts - a complete gift solution hub for personalized and handcrafted gifts established in 2025. Creativity, quality, affordability."
       /> 
       <LayoutOne headerTop="visible">
         {/* breadcrumb */}

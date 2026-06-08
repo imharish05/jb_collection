@@ -17,8 +17,8 @@ const ProductTabLeft = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="Product Page"
-        description="Product page of flone react minimalist eCommerce template."
+        titleTemplate="Shop - Kamali Gifts"
+        description="Shop premium personalized gifts and unique handcrafted items at Kamali Gifts. Curated gift solutions for every occasion."
       />
 
       <LayoutOne headerTop="visible">
