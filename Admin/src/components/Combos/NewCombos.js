@@ -20,7 +20,7 @@ const COMBO_IMAGE_DIMENSIONS = {
   aspectRatio: 5 / 6,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024,
-  formats: ["image/jpeg", "image/webp"],
+  formats: ["image/jpeg", "image/webp",'image/png'],
 };
 
 const COMBO_IMAGE_REQUIREMENTS = "Recommended: 800×960px (5:6) • Min: 400×480px • Max: 3MB (JPG/WebP)";
