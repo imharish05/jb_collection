@@ -722,7 +722,7 @@ const ComboDetailPage = () => {
                       {currentCombo.name}
                     </span>
                   </div>
-                  <h2 style={{ marginBottom: 12 }}>{child.name}</h2>
+                  <h1 className = "pdp-info__name">{child.name}</h1>
 
                   {/* Type badge */}
                   <div style={{ marginBottom: 12 }}>

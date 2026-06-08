@@ -1069,7 +1069,7 @@ const Checkout = () => {
                               className={`kco-input ${addrErrors.fullName ? "error" : ""}`}
                               value={addrForm.fullName}
                               onChange={(e) => setAddrForm((f) => ({ ...f, fullName: e.target.value }))}
-                              placeholder="As on ID / package"
+                              placeholder="Enter your full name"
                             />
                           </FormField>
                           <FormField label="Mobile Number *" error={addrErrors.phone}>
@@ -1171,7 +1171,7 @@ const Checkout = () => {
                     )}
 
                     {/* Gift Message */}
-                    <div className="kco-gift-section">
+                    {/* <div className="kco-gift-section">
                       <button
                         className="kco-gift-toggle"
                         onClick={() => setGiftNoteOpen((o) => !o)}
@@ -1189,7 +1189,7 @@ const Checkout = () => {
                           maxLength={200}
                         />
                       )}
-                    </div>
+                    </div> */}
 
                     {/* Continue button */}
                     <button

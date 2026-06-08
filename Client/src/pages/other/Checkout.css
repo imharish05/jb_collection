@@ -995,9 +995,11 @@
 .kco-coupon-input-row {
   display: flex;
   gap: 8px;
+  padding: 5px;
 }
 
 .kco-coupon-input {
+  padding: 10px !important;
   min-width: 0;
   flex: 1;
   height: 40px;
@@ -1387,6 +1389,17 @@
   .kco-coupon-apply-btn {
     width: 100%;
   }
+  .kco-card-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #111;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+.kco-add-new-btn{
+  padding: 3px;
+   font-size: 10px;
+}
 }
 
 @media (max-width: 380px) {

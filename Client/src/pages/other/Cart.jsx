@@ -773,7 +773,7 @@ const Cart = () => {
                     <span className="kg-info-icon">💵</span>
                     <div>
                       <div className="kg-info-label">Cash on Delivery</div>
-                      <div className="kg-info-value">Available (+₹{COD_FEE} handling)</div>
+                      <div className="kg-info-value">Partial COD Available</div>
                     </div>
                   </div>
                   <div className="kg-info-divider" />

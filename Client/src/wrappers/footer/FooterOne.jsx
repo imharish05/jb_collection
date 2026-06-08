@@ -141,7 +141,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         }
         .km-copyright {
           font-size: 12.5px;
-          color: #aaa;
+          // color: #aaa;
         }
         .km-payment-logos {
           display: flex;
