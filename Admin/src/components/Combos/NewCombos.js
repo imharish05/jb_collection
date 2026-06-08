@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import DataTable from "../DataTable/DataTable";
+import ImageUploadField from "../ImageUploadField";
 import {
   fetchRootCombos, fetchRootComboById,
   createRootCombo, updateRootComboAction, deleteRootCombo,
@@ -248,48 +249,6 @@ function buildVariantLabel(variant) {
     Object.entries(variant.options).forEach(([k, v]) => { if (v) flat.push(`${k}: ${v}`); });
   }
   return flat.length > 0 ? flat.join(" · ") : (variant.variantName || "");
-}
-
-// ── Categories-style Image Upload ─────────────────────────────────────────────
-function ImageUploadField({ label = "Image", imageFile, preview, fileInputRef, onFileChange, onClear, validation }) {
-  return (
-    <div className="km-field km-field-full">
-      <label className="km-label">{label} • {COMBO_IMAGE_REQUIREMENTS}</label>
-      <div className="upload-grid-wrapper">
-        <div
-          className={`drop-zone-area ${imageFile ? "active-file" : ""}`}
-          onClick={() => fileInputRef.current.click()}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/webp"
-            style={{ display: "none" }}
-            onChange={onFileChange}
-          />
-          <div className="drop-zone-info">
-            <div className="upload-icon text-center">{imageFile ? "✅" : "📸"}</div>
-            <p className="upload-text">
-              {imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b> or drag image</>}
-            </p>
-          </div>
-        </div>
-
-        {preview && (
-          <div className="preview-tile fade-in">
-            <img src={preview} alt="Preview" />
-            <button type="button" className="preview-remove" onClick={onClear}>✕</button>
-          </div>
-        )}
-      </div>
-
-      {validation && !validation.valid && (
-        <div style={{ color: "#ef4444", fontSize: 12, marginTop: 8 }}>
-          ⚠ {validation.error}
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ── Toggle Button (Fixed / Mix & Match) ───────────────────────────────────────
@@ -737,6 +696,8 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
             onFileChange={handleImageChange}
             onClear={handleClearImage}
             validation={imageValidation}
+            requirements={COMBO_IMAGE_REQUIREMENTS}
+            accept="image/jpeg,image/webp"
           />
 
           {/* Product picker — overflow visible so dropdown doesn't clip */}
@@ -869,6 +830,8 @@ function RootComboForm({ initial, onSave, onCancel, showToast }) {
             onFileChange={handleImageChange}
             onClear={handleClearImage}
             validation={imageValidation}
+            requirements={COMBO_IMAGE_REQUIREMENTS}
+            accept="image/jpeg,image/webp"
           />
 
           <div className="km-form-actions">

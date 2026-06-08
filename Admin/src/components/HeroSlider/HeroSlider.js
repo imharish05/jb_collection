@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
+import ImageUploadField from '../ImageUploadField';
 import {
   fetchHeroSlides,
   createHeroSlide,
@@ -250,67 +251,34 @@ export default function HeroSlider({ showToast }) {
             <form className="km-form-grid" onSubmit={handleSubmit}>
 
               {/* Image upload — full width */}
-              <div className="km-field km-field-full">
-                <label className="km-label">
-                  Slide Image {!editingId && <span style={{ color: '#ef4444' }}>*</span>}
-                  <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 8 }}>
-                    {BANNER_DIMENSIONS.recommended.width}×{BANNER_DIMENSIONS.recommended.height}px (16:9) • Min: {BANNER_DIMENSIONS.minimum.width}×{BANNER_DIMENSIONS.minimum.height}px
-                  </span>
-                </label>
-                <div className="upload-grid-wrapper">
-                  <div
-                    className={`drop-zone-area ${imageFile ? 'active-file' : ''}`}
-                    onClick={() => fileInputRef.current.click()}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setImageFile(file);
-                          // Validate dimensions asynchronously
-                          validateImageDimensions(file).then((result) => {
-                            setImageDimensions(result);
-                            if (!result.valid) {
-                              setErrors(prev => ({ ...prev, image: result.error }));
-                            } else {
-                              setErrors(prev => {
-                                const newErrors = { ...prev };
-                                delete newErrors.image;
-                                return newErrors;
-                              });
-                            }
-                          });
-                        }
-                      }}
-                    />
-                    <div className="drop-zone-info">
-                      <div className="upload-icon">{imageFile ? '✅' : '📸'}</div>
-                      <p className="upload-text">
-                        {imageFile
-                          ? <b>{imageFile.name}</b>
-                          : <>Click to <b>browse</b> or drag image</>}
-                      </p>
-                    </div>
-                  </div>
-                  {preview && (
-                    <div className="preview-tile fade-in">
-                      <img src={preview} alt="Preview" />
-                      <button type="button" className="preview-remove" onClick={handleClearImage}>✕</button>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Image Error Message */}
-                {errors.image && (
-                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>
-                    ⚠ {errors.image}
-                  </div>
-                )}
-              </div>
+              <ImageUploadField
+                label="Slide Image"
+                imageFile={imageFile}
+                preview={preview}
+                fileInputRef={fileInputRef}
+                onFileChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setImageFile(file);
+                    // Validate dimensions asynchronously
+                    validateImageDimensions(file).then((result) => {
+                      setImageDimensions(result);
+                      if (!result.valid) {
+                        setErrors(prev => ({ ...prev, image: result.error }));
+                      } else {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.image;
+                          return newErrors;
+                        });
+                      }
+                    });
+                  }
+                }}
+                onClear={handleClearImage}
+                validation={imageDimensions}
+                requirements={`${BANNER_DIMENSIONS.recommended.width}×${BANNER_DIMENSIONS.recommended.height}px (16:9) • Min: ${BANNER_DIMENSIONS.minimum.width}×${BANNER_DIMENSIONS.minimum.height}px • Max: 3MB`}
+              />
 
               {/* Title */}
               <div className="km-field km-field-half">

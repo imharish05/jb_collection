@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
+import ImageUploadField from '../ImageUploadField';
 import {
   fetchCategories, createCategory, editCategory, removeCategory
 } from '../../redux/services/categoriesService';
@@ -239,61 +240,34 @@ const handleDelete = async (catId) => {
                 />
               </div>
 
-              <div className="km-field km-field-full">
-                <label className="km-label">Category Image • Recommended: 400×400px (1:1) • Min: 200×200px • Max: 3MB (JPG/WebP)</label>
-                <div className="upload-grid-wrapper">
-                  <div 
-                    className={`drop-zone-area ${imageFile ? 'active-file' : ''}`}
-                    onClick={() => fileInputRef.current.click()}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setImageFile(file);
-                          // Validate dimensions asynchronously
-                          validateCategoryImageDimensions(file).then((result) => {
-                            setImageDimensions(result);
-                            if (!result.valid) {
-                              setErrors(prev => ({ ...prev, image: result.error }));
-                            } else {
-                              setErrors(prev => {
-                                const newErrors = { ...prev };
-                                delete newErrors.image;
-                                return newErrors;
-                              });
-                            }
-                          });
-                        }
-                      }}
-                    />
-                    <div className="drop-zone-info">
-                      <div className="upload-icon text-center">{imageFile ? '✅' : '📸'}</div>
-                      <p className="upload-text">
-                        {imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b> or drag image</>}
-                      </p>
-                    </div>
-                  </div>
-
-                  {preview && (
-                    <div className="preview-tile fade-in">
-                      <img src={preview} alt="Preview" />
-                      <button type="button" className="preview-remove" onClick={handleClearImage}>✕</button>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Image Error Message */}
-                {errors.image && (
-                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>
-                    ⚠ {errors.image}
-                  </div>
-                )}
-              </div>
+              <ImageUploadField
+                label="Category Image"
+                imageFile={imageFile}
+                preview={preview}
+                fileInputRef={fileInputRef}
+                onFileChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setImageFile(file);
+                    // Validate dimensions asynchronously
+                    validateCategoryImageDimensions(file).then((result) => {
+                      setImageDimensions(result);
+                      if (!result.valid) {
+                        setErrors(prev => ({ ...prev, image: result.error }));
+                      } else {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.image;
+                          return newErrors;
+                        });
+                      }
+                    });
+                  }
+                }}
+                onClear={handleClearImage}
+                validation={imageDimensions}
+                requirements="Recommended: 400×400px (1:1) • Min: 200×200px • Max: 3MB (JPG/WebP)"
+              />
 
               {/* Properly Aligned Form Actions */}
               <div className="km-form-actions" style={{display : "flex"}}>

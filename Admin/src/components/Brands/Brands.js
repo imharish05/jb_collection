@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
+import ImageUploadField from '../ImageUploadField';
 import { fetchBrands, createBrand, editBrand, removeBrand } from '../../redux/services/brandsService';
 import { confirmDelete } from '../../utils/sweetalert';
 
@@ -222,75 +223,34 @@ export default function Brands({ showToast }) {
               </div>
 
               {/* Brand Logo */}
-              <div className="km-field km-field-full">
-                <label className="km-label">
-                  Brand Logo&nbsp;
-                  <span className="km-label-hint">
-                    Recommended: 300×120px • Min: 80×40px • Max: 2MB (JPG / PNG / WebP)
-                  </span>
-                </label>
-                <div className="upload-grid-wrapper">
-                  <div
-                    className={`drop-zone-area ${logoFile ? (logoDimensions?.valid === false ? 'error-file' : 'active-file') : ''}`}
-                    onClick={() => fileInputRef.current.click()}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setLogoFile(file);
-                          validateBrandLogo(file).then((result) => {
-                            setLogoDimensions(result);
-                            if (!result.valid) {
-                              setErrors(prev => ({ ...prev, logo: result.error }));
-                            } else {
-                              setErrors(prev => {
-                                const n = { ...prev };
-                                delete n.logo;
-                                return n;
-                              });
-                            }
-                          });
-                        }
-                      }}
-                    />
-                    <div className="drop-zone-info">
-                      <div className="upload-icon text-center">
-                        {logoFile
-                          ? (logoDimensions?.valid === false ? '❌' : '✅')
-                          : '📸'}
-                      </div>
-                      <p className="upload-text">
-                        {logoFile
-                          ? <b>{logoFile.name}</b>
-                          : <>Click to <b>browse</b> or drag logo</>}
-                      </p>
-                      {logoFile && logoDimensions?.valid && logoDimensions.dimensions && (
-                        <p className="upload-dims">
-                          {logoDimensions.dimensions.width}×{logoDimensions.dimensions.height}px
-                          {logoDimensions.isRecommended && <span className="dims-ok"> ✓ Recommended size</span>}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {preview && (
-                    <div className={`preview-tile fade-in${logoDimensions?.valid === false ? ' preview-tile-error' : ''}`}>
-                      <img src={preview} alt="Preview" />
-                      <button type="button" className="preview-remove" onClick={handleClearImage}>✕</button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Logo error message */}
-                {errors.logo && (
-                  <div className="km-error-msg">⚠ {errors.logo}</div>
-                )}
-              </div>
+              <ImageUploadField
+                label="Brand Logo"
+                imageFile={logoFile}
+                preview={preview}
+                fileInputRef={fileInputRef}
+                onFileChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setLogoFile(file);
+                    validateBrandLogo(file).then((result) => {
+                      setLogoDimensions(result);
+                      if (!result.valid) {
+                        setErrors(prev => ({ ...prev, logo: result.error }));
+                      } else {
+                        setErrors(prev => {
+                          const n = { ...prev };
+                          delete n.logo;
+                          return n;
+                        });
+                      }
+                    });
+                  }
+                }}
+                onClear={handleClearImage}
+                validation={logoDimensions}
+                requirements="Recommended: 300×120px • Min: 80×40px • Max: 2MB (JPG / PNG / WebP)"
+                accept="image/jpeg,image/png,image/webp"
+              />
 
               {/* Status */}
               <div className="km-field km-field-full">

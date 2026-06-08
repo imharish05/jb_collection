@@ -25,7 +25,7 @@ function ImageUploadField({ label = 'Image', imageFile, preview, fileInputRef, o
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 20, textAlign: 'center' }}>{imageFile ? '✅' : '📸'}</div>
             <p style={{ fontSize: 13, color: '#666', margin: '4px 0 0' }}>
-              {imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b> or drag image</>}
+              {imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b>image</>}
             </p>
           </div>
         </div>

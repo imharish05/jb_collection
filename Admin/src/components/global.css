@@ -275,6 +275,79 @@ body {
   background: var(--neutral-100);
   color: var(--neutral-600);
 }
+
+/* ── Drag and Drop Styles ── */
+.drop-zone-area {
+  border: 2px dashed var(--neutral-300);
+  border-radius: var(--radius-sm);
+  padding: 32px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--neutral-50);
+  text-align: center;
+}
+
+.drop-zone-area:hover {
+  border-color: var(--neutral-400);
+  background: var(--neutral-100);
+}
+
+.drop-zone-area.drag-active {
+  border-color: #1A3A6B;
+  background: rgba(24, 26, 46, 0.08);
+  border-width: 2px;
+}
+
+.drop-zone-area.active-file {
+  border-color: var(--success-main);
+  background: rgba(69, 179, 105, 0.05);
+}
+
+.upload-grid-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.upload-grid-wrapper > *:first-child {
+  grid-column: 1 / 2;
+}
+
+.upload-grid-wrapper .preview-tile {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.preview-tile img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.preview-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.preview-remove:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
 .status-pill.pill-approved {
   background: var(--success-surface);
   color: var(--success-600);

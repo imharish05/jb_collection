@@ -261,7 +261,7 @@ export default function EventCategories({ showToast }) {
                     <div className="drop-zone-info">
                       <div className="upload-icon text-center">{imageFile ? '✅' : '📸'}</div>
                       <p className="upload-text">
-                        {imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b> or drag image</>}
+                        {imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b>image</>}
                       </p>
                     </div>
                   </div>

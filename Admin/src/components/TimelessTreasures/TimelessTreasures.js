@@ -323,7 +323,7 @@ export default function TimelessTreasures({ showToast }) {
                       <p className="upload-text">
                         {imageFile
                           ? <b>{imageFile.name}</b>
-                          : <>Click to <b>browse</b> or drag image</>}
+                          : <>Click to <b>browse</b>image</>}
                       </p>
                     </div>
                   </div>

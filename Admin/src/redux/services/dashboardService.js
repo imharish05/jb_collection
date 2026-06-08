@@ -74,8 +74,6 @@ export const loadDashboard = (dispatch) => {
             dispatch(fetchQuarterlySales(year)),
         ]),
         {
-            loading: 'Loading dashboard…',
-            success: 'Dashboard loaded successfully',
             error: 'Failed to load dashboard',
         },
         { id: 1 }

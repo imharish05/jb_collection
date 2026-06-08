@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
+import ImageUploadField from '../ImageUploadField';
 import {
   fetchTestimonials,
   createTestimonial,
@@ -215,61 +216,30 @@ export default function Testimonials({ showToast }) {
             <form className="km-form-grid" onSubmit={handleSubmit}>
 
               {/* Author Image */}
-              <div className="km-field km-field-full">
-                <label className="km-label">
-                  Author Image
-                  <span className="km-label-hint">Recommended: 300×300px (1:1) • Min: 120×120px • Max: 2MB (JPG / PNG / WebP)</span>
-                  {!editingId && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
-                </label>
-                <div className="upload-grid-wrapper">
-                  <div
-                    className={`drop-zone-area ${imageFile ? (imageDimensions?.valid === false ? 'error-file' : 'active-file') : ''}`}
-                    onClick={() => fileInputRef.current.click()}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setImageFile(file);
-                          validateImageDimensions(file).then((result) => {
-                            setImageDimensions(result);
-                            if (!result.valid) {
-                              setErrors(prev => ({ ...prev, image: result.error }));
-                            } else {
-                              setErrors(prev => { const n = { ...prev }; delete n.image; return n; });
-                            }
-                          });
-                        }
-                      }}
-                    />
-                    <div className="drop-zone-info">
-                      <div className="upload-icon">
-                        {imageFile ? (imageDimensions?.valid === false ? '❌' : '✅') : '📸'}
-                      </div>
-                      <p className="upload-text">
-                        {imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b> or drag image</>}
-                      </p>
-                      {imageFile && imageDimensions?.valid && imageDimensions.dimensions && (
-                        <p className="upload-dims">
-                          {imageDimensions.dimensions.width}×{imageDimensions.dimensions.height}px
-                          {imageDimensions.isRecommended && <span className="dims-ok"> ✓ Recommended size</span>}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {preview && (
-                    <div className={`preview-tile fade-in${imageDimensions?.valid === false ? ' preview-tile-error' : ''}`}>
-                      <img src={preview} alt="Preview" />
-                      <button type="button" className="preview-remove" onClick={handleClearImage}>✕</button>
-                    </div>
-                  )}
-                </div>
-                {errors.image && <div className="km-error-msg">⚠ {errors.image}</div>}
-              </div>
+              <ImageUploadField
+                label="Author Image"
+                imageFile={imageFile}
+                preview={preview}
+                fileInputRef={fileInputRef}
+                onFileChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setImageFile(file);
+                    validateImageDimensions(file).then((result) => {
+                      setImageDimensions(result);
+                      if (!result.valid) {
+                        setErrors(prev => ({ ...prev, image: result.error }));
+                      } else {
+                        setErrors(prev => { const n = { ...prev }; delete n.image; return n; });
+                      }
+                    });
+                  }
+                }}
+                onClear={handleClearImage}
+                validation={imageDimensions}
+                requirements="Recommended: 300×300px (1:1) • Min: 120×120px • Max: 2MB (JPG / PNG / WebP)"
+                accept="image/jpeg,image/png,image/webp"
+              />
 
               {/* Author Name */}
               <div className="km-field">

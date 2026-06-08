@@ -934,19 +934,47 @@ export default function Products({ showToast }) {
                   </div>
                 </td>
                 <td>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, maxWidth: 160 }}>
-                    {row.Variants?.slice(0, 4).map((v, j) => {
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 250, maxHeight: 60, overflowY: 'auto', overflowX: 'hidden', paddingRight: 4 }}>
+                    {row.Variants?.slice(0, 5).map((v, j) => {
                       const attrs = Array.isArray(v.attributes) ? v.attributes : [];
                       const label = attrs.length
                         ? attrs.map(a => a.value).filter(Boolean).join(' / ')
                         : [v.subCategory, v.colour, v.size, v.material].filter(Boolean).join(' / ')
                         || v.variantName || '—';
                       return (
-                        <span key={j} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: '#f0f4ff', color: KM.blue, border: `1px solid #c7d4f0`, fontWeight: 500 }}>
+                        <span key={j} title={label} style={{ 
+                          fontSize: 10, 
+                          padding: '3px 7px', 
+                          borderRadius: 4, 
+                          background: '#f0f4ff', 
+                          color: KM.blue, 
+                          border: `1px solid #c7d4f0`, 
+                          fontWeight: 500,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '100%',
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }}>
                           {label}
                         </span>
                       );
                     })}
+                    {row.Variants?.length > 5 && (
+                      <span style={{ 
+                        fontSize: 10, 
+                        padding: '3px 7px', 
+                        borderRadius: 4, 
+                        background: '#f3f4f6', 
+                        color: KM.muted, 
+                        border: `1px solid #e5e7eb`, 
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap'
+                      }}>
+                        +{row.Variants.length - 5} more
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td>

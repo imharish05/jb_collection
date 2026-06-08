@@ -108,38 +108,40 @@ export default function DataTable({
       </div>
 
       <div className={tableStyles.tableCard}>
-        <table className={tableStyles.table}>
-          <thead>
-            <tr>
-              {columns.map((col) => (
-                <th key={col}>{col}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              [1, 2, 3, 4, 5].map((i) => (
-                <tr key={i}>
-                  {columns.map((_, j) => (
-                    <td key={j}>
-                      <div className={tableStyles.skeleton} />
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : filtered.length === 0 ? (
+        <div style={{ overflowX: 'auto', overflowY: 'visible', WebkitOverflowScrolling: 'touch', borderRadius: '14px', border: '1.5px solid #d1d5db' }}>
+          <table className={tableStyles.table}>
+            <thead>
               <tr>
-                <td colSpan={columns.length} className={tableStyles.emptyRow}>
-                  No items found.
-                </td>
+                {columns.map((col) => (
+                  <th key={col}>{col}</th>
+                ))}
               </tr>
-            ) : (
-              paginated.map((row, i) =>
-                renderRow(row, startIndex + i, deleteRow)
-              )
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loading ? (
+                [1, 2, 3, 4, 5].map((i) => (
+                  <tr key={i}>
+                    {columns.map((_, j) => (
+                      <td key={j}>
+                        <div className={tableStyles.skeleton} />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length} className={tableStyles.emptyRow}>
+                    No items found.
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((row, i) =>
+                  renderRow(row, startIndex + i, deleteRow)
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {showPagination && (
           <div className={styles.pagination}>
