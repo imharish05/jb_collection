@@ -82,6 +82,11 @@ const validateComboImageDimensions = (file) => new Promise((resolve) => {
   reader.readAsDataURL(file);
 });
 
+// ── Helper: Get all selected product-variant combinations ──────────────────────
+const getSelectedProductVariants = (products) => {
+  return products.map(p => ({ productId: p.productId, variantId: p.variantId }));
+};
+
 // ── Shared CSS injected by every sub-component that renders forms ─────────────
 const COMBO_STYLES = `
   .km-form-card {
@@ -270,8 +275,16 @@ function TypeToggle({ value, onChange }) {
   );
 }
 
+// ── Validation: Check if product variant already exists in combo ──────────────
+const validateProductDuplicate = (productId, variantId, existingProducts) => {
+  return existingProducts.some(p => 
+    String(p.productId) === String(productId) && 
+    String(p.variantId || null) === String(variantId || null)
+  );
+};
+
 // ── Product + Variant Picker Row ───────────────────────────────────────────────
-function ProductPickerRow({ allProducts, onAdd, label = "Included Products" }) {
+function ProductPickerRow({ allProducts, onAdd, label = "Included Products", currentProducts = [] }) {
   const [search, setSearch]   = useState("");
   const [selProd, setSelProd] = useState(null);
   const [selVar,  setSelVar]  = useState("");
@@ -374,11 +387,15 @@ const imgSrc = img ? getImg(img) : null;
             <label className="km-label" style={{ display: "block", marginBottom: 5 }}>Variant</label>
             <select className="km-input" value={selVar} onChange={e => setSelVar(e.target.value)}>
               <option value="">Any / No variant</option>
-              {variants.map(v => (
-                <option key={v.id} value={v.id}>
-                  {buildVariantLabel(v) || v.variantName} — ₹{v.salesPrice}
-                </option>
-              ))}
+              {variants.map(v => {
+                const isDuplicate = validateProductDuplicate(selProd.id, v.id, currentProducts);
+                return (
+                  <option key={v.id} value={v.id} disabled={isDuplicate}>
+                    {buildVariantLabel(v) || v.variantName} — ₹{v.salesPrice}
+                    {isDuplicate ? " (Already added)" : ""}
+                  </option>
+                );
+              })}
             </select>
           </div>
         )}
@@ -566,6 +583,12 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
   };
 
   const handleAddProduct = async (data) => {
+    // Validate no duplicate product-variant combination
+    if (validateProductDuplicate(data.productId, data.variantId, currentProducts)) {
+      showToast.error("This product variant has already been added to the combo.");
+      return;
+    }
+
     if (isEdit) {
       const tid = showToast.loading("Adding product…");
       try {
@@ -704,6 +727,7 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
           <div className="km-field km-field-full" style={{ overflow: "visible" }}>
             <ProductPickerRow
               allProducts={allProducts}
+              currentProducts={currentProducts}
               label={form.type === "mix_match" ? "Eligible Pool" : "Included Products"}
               onAdd={handleAddProduct}
             />
