@@ -84,7 +84,7 @@ const OrderConfirmation = () => {
     <Fragment>
       <SEO titleTemplate="Order Confirmed — Kamali Gifts" description="Your order has been placed successfully." />
       <LayoutOne headerTop="visible">
-        <div className="container" style={{ padding: "80px 15px 100px" }}>
+        <div className="container" style={{ padding: "30px 15px" }}>
 
           {/* Thank you banner */}
           <div
@@ -112,7 +112,6 @@ const OrderConfirmation = () => {
                 borderRadius: 30,
                 padding: "10px 32px",
                 fontWeight: 700,
-                fontSize: 18,
                 letterSpacing: 1,
               }}
             >

@@ -1002,30 +1002,6 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
                 <div>
                   <strong>{child.name}</strong>
                   {(child.shortDescription || child.description) && <div style={{ fontSize: 11, color: "var(--neutral-400)", marginTop: 2 }}>{child.shortDescription || child.description}</div>}
-                  {/* Small product thumbnails below name */}
-                  {child.comboProducts && child.comboProducts.length > 0 && (
-                    <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
-                      {child.comboProducts.slice(0, 5).map(cp => {
-                        const prod = cp.product || (allProducts || []).find(p => p.id === cp.productId);
-                        const img =
-  resolveImage(prod?.image) ||
-  prod?.Variants?.[0]?.image;
-                        return (
-                          <ProductImg
-                            key={cp.id}
-                            src={img ? getImg(img) : null}
-                            size={24}
-                            style={{ borderRadius: 4, border: "1px solid var(--border-color)" }}
-                          />
-                        );
-                      })}
-                      {child.comboProducts.length > 5 && (
-                        <div style={{ width: 24, height: 24, borderRadius: 4, background: "var(--neutral-200)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "var(--neutral-600)", fontWeight: 700 }}>
-                          +{child.comboProducts.length - 5}
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </td>
               <td>
@@ -1144,16 +1120,20 @@ export default function NewCombos({ showToast }) {
         <DataTable
           columns={["No.", "Image", "Name", "Child Combos", "Status", "Actions"]}
           initialRows={rootCombos}
-          renderRow={(root, i) => (
+          
+          renderRow={(root, i) => {
+            // Use first child's image if root has no image
+            const displayImage = root.image || root.children?.[0]?.image;
+            return (
             <tr key={root.id}>
               <td className="td-id">{i + 1}</td>
               <td>
                 <div className="img-thumb">
-                  {root.image
-                    ? <img src={getImg(root.image)} alt={root.name} width={40} height={40}
+                  {displayImage
+                    ? <img src={getImg(displayImage)} alt={root.name} width={40} height={40}
                         style={{ borderRadius: 8, objectFit: "cover" }}
-                        onError={e => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23eee'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='8' fill='%23999'%3ENo Img%3C/text%3E%3C/svg%3E"; }} />
-                    : <span style={{ fontSize: 24 }}>🎁</span>
+                        onError={e => { e.target.style.display = "none"; }} />
+                    : <div style={{ width: 40, height: 40, borderRadius: 8, background: "var(--neutral-100)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, border: "1px solid var(--border-color)" }}>🎁</div>
                   }
                 </div>
               </td>
@@ -1175,7 +1155,8 @@ export default function NewCombos({ showToast }) {
                 </div>
               </td>
             </tr>
-          )}
+            );
+          }}
         />
       )}
 

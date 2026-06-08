@@ -336,6 +336,7 @@ export default function Combos({ showToast }) {
             <tr key={row.id}>
               <td style={{ color: KM.muted, fontSize: 11 }}>{i + 1}</td>
               <td>
+                
                 {row.image ? (
                   <img src={getImg(row.image)} alt={row.name} width={40} height={40}
                     style={{ borderRadius: 8, objectFit: 'cover', border: `1px solid ${KM.border}` }} />

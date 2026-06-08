@@ -44,7 +44,7 @@ const COLOR_MAP = {
   "steel blue": "#4682B4", "powder blue": "#B0E0E6", "baby blue": "#89CFF0",
   "midnight blue": "#191970", periwinkle: "#CCCCFF",
   indigo: "#3949ab", purple: "#7b1fa2", violet: "#6a1b9a", lavender: "#b39ddb",
-  magenta: "#8e24aa", lilac: "#C8A2C8", plum: "#DDA0DD", amethyst: "#9966CC",
+  magenta: "#8e24aa", lilac: "#C8A2C8", atio: "#DDA0DD", amethyst: "#9966CC",
   orchid: "#DA70D6", byzantium: "#702963", pink: "#e91e63", rose: "#f48fb1",
   blush: "#DE5D83", "hot pink": "#FF69B4", fuchsia: "#FF00FF", flamingo: "#FC8EAC",
   "rose gold": "#b76e79", bubblegum: "#FFC1CC", carnation: "#FF7BA9",

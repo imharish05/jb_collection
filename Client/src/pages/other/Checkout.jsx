@@ -1403,7 +1403,22 @@ if (attrsArray.length) {
 </div>
 
                     {/* Place Order */}
+                    {paymentMethod === "partial_cod" && (
+                      <div style={{
+                        background: "#fff3cd",
+                        border: "1px solid #ffc107",
+                        borderRadius: 6,
+                        padding: "12px 14px",
+                        marginBottom: 16,
+                        fontSize: 13,
+                        color: "#856404",
+                        textAlign: "center",
+                      }}>
+                        ℹ️ ₹{(shippingPricing.grandTotal - (shippingInfo?.shippingCharge || 0)).toFixed(2)} will be collected on delivery
+                      </div>
+                    )}
                     <div className="kco-btn-row">
+                      
                       <button className="kco-back-btn" onClick={() => setStep(2)}>← Back</button>
                       <button
                         className="kco-place-order-btn"
@@ -1421,7 +1436,10 @@ if (attrsArray.length) {
                             : ""
                         }
                       >
-                        {placing ? "Placing Order..." : `Place Order · ₹${grandTotalWithCOD.toFixed(2)}`}
+                        {placing ? "Placing Order..." : paymentMethod === "partial_cod" 
+                          ? `Place Order · Pay ₹${(shippingInfo?.shippingCharge || 0).toFixed(2)} now`
+                          : `Place Order · ₹${grandTotalWithCOD.toFixed(2)}`
+                        }
                       </button>
                     </div>
                   </div>

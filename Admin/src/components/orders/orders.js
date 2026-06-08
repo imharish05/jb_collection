@@ -216,10 +216,20 @@ export default function Orders({ status = null }) {
                           <div>
                             <div className="km-form-header-title">Order #{order.id} — {order.customer_name}</div>
                             <div className="km-form-header-sub">
-                              Payment: {order.paymentMethod === 'partial_cod' ? '🔀 Partial COD' : (order.paymentMethod || '—')} ({order.paymentStatus || '—'})
-                              {order.paymentMethod === 'partial_cod' && order.partialCodAmount && (
+                              Payment: {order.paymentMethod === 'partial_cod' ? '🔀 Partial COD' : (order.paymentMethod === 'cod' ? '💵 COD' : (order.paymentMethod || '—'))} ({order.paymentStatus || '—'})
+                              {order.paymentMethod === 'partial_cod' && order.paymentStatus !== 'paid' && order.partialCodAmount && (
                                 <span style={{ marginLeft: 8, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '1px 6px', fontSize: 11, fontWeight: 700 }}>
                                   ₹{parseFloat(order.partialCodAmount).toFixed(2)} due on delivery
+                                </span>
+                              )}
+                              {order.paymentMethod === 'cod' && order.paymentStatus !== 'paid' && (
+                                <span style={{ marginLeft: 8, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '1px 6px', fontSize: 11, fontWeight: 700 }}>
+                                  ₹{parseFloat(order.totalAmount).toFixed(2)} due on delivery
+                                </span>
+                              )}
+                              {order.paymentMethod !== 'partial_cod' && order.paymentMethod !== 'cod' && order.paymentStatus !== 'paid' && (
+                                <span style={{ marginLeft: 8, background: '#fef2f2', color: '#dc2626', borderRadius: 4, padding: '1px 6px', fontSize: 11, fontWeight: 700 }}>
+                                  ₹{parseFloat(order.totalAmount).toFixed(2)} unpaid
                                 </span>
                               )}
                             </div>
@@ -240,19 +250,6 @@ export default function Orders({ status = null }) {
                                     )}
                                     <span className="td-muted"> × {item.quantity}</span>
                                   </span>
-                                  {item.id && (
-                                    <select
-                                      className={`km-status-select km-status-${item.status || order.status || 'pending'}`}
-                                      value={item.status || order.status || 'pending'}
-                                      onChange={e => updateItemStatus(order.id, item.id, e.target.value)}
-                                      style={{ maxWidth: 145, height: 30, fontSize: 11, padding: '0 24px 0 8px' }}
-                                      title="Item delivery status"
-                                    >
-                                      {STATUS_OPTIONS.map(st => (
-                                        <option key={st} value={st}>{labelFor(st)}</option>
-                                      ))}
-                                    </select>
-                                  )}
                                   <span className="td-price-sm">₹{(safeNumber(item.price) * safeNumber(item.quantity, 1)).toFixed(2)}</span>
                                 </div>
                               ))
@@ -287,7 +284,123 @@ export default function Orders({ status = null }) {
                                 <span className="td-green">−₹{safeNumber(order.discountAmount).toFixed(2)}</span>
                               </div>
                             )}
-                            <div className="km-payment-total"><span>Total Paid</span><span className="td-price">₹{safeNumber(order.totalAmount).toFixed(2)}</span></div>
+                            {(() => {
+                              const total = safeNumber(order.totalAmount);
+                              const isPaid = order.paymentStatus === 'paid';
+                              
+                              if (order.paymentMethod === 'partial_cod') {
+                                const codAmount = safeNumber(order.partialCodAmount);
+                                const paidOnline = Math.max(0, total - codAmount);
+                                if (isPaid) {
+                                  return (
+                                    <>
+                                      <div className="km-payment-row">
+                                        <span className="td-muted">Paid Online (Advance)</span>
+                                        <span style={{ fontWeight: 600, color: '#2e7d32' }}>₹{paidOnline.toFixed(2)}</span>
+                                      </div>
+                                      <div className="km-payment-row">
+                                        <span className="td-muted">Paid on Delivery</span>
+                                        <span style={{ fontWeight: 600, color: '#2e7d32' }}>₹{codAmount.toFixed(2)}</span>
+                                      </div>
+                                      <div className="km-payment-total" style={{ borderTop: '1px solid var(--neutral-200)', marginTop: 10, paddingTop: 12 }}>
+                                        <span>Total Paid</span>
+                                        <span className="td-price" style={{ color: '#2e7d32' }}>₹{total.toFixed(2)}</span>
+                                      </div>
+                                      <div className="km-payment-row" style={{ borderTop: 'none', paddingTop: 0 }}>
+                                        <span className="td-muted" style={{ fontSize: 11 }}>Due Amount</span>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>₹0.00</span>
+                                      </div>
+                                    </>
+                                  );
+                                } else {
+                                  return (
+                                    <>
+                                      <div className="km-payment-row">
+                                        <span className="td-muted">Paid Amount (Online)</span>
+                                        <span style={{ fontWeight: 600, color: '#2e7d32' }}>₹{paidOnline.toFixed(2)}</span>
+                                      </div>
+                                      <div className="km-payment-row" style={{ background: '#fff8e1', borderRadius: 6, padding: '6px 8px', marginTop: 4 }}>
+                                        <span style={{ color: '#e65100', fontWeight: 600 }}>Due Amount (COD)</span>
+                                        <span style={{ color: '#e65100', fontWeight: 800 }}>₹{codAmount.toFixed(2)}</span>
+                                      </div>
+                                      <div className="km-payment-total" style={{ borderTop: '1px solid var(--neutral-200)', marginTop: 10, paddingTop: 12 }}>
+                                        <span>Total Order</span>
+                                        <span className="td-price">₹{total.toFixed(2)}</span>
+                                      </div>
+                                    </>
+                                  );
+                                }
+                              } else if (order.paymentMethod === 'cod') {
+                                if (isPaid) {
+                                  return (
+                                    <>
+                                      <div className="km-payment-row">
+                                        <span className="td-muted">Paid Online</span>
+                                        <span>₹0.00</span>
+                                      </div>
+                                      <div className="km-payment-row">
+                                        <span className="td-muted">Paid on Delivery</span>
+                                        <span style={{ fontWeight: 600, color: '#2e7d32' }}>₹{total.toFixed(2)}</span>
+                                      </div>
+                                      <div className="km-payment-total" style={{ borderTop: '1px solid var(--neutral-200)', marginTop: 10, paddingTop: 12 }}>
+                                        <span>Total Paid</span>
+                                        <span className="td-price" style={{ color: '#2e7d32' }}>₹{total.toFixed(2)}</span>
+                                      </div>
+                                      <div className="km-payment-row" style={{ borderTop: 'none', paddingTop: 0 }}>
+                                        <span className="td-muted" style={{ fontSize: 11 }}>Due Amount</span>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>₹0.00</span>
+                                      </div>
+                                    </>
+                                  );
+                                } else {
+                                  return (
+                                    <>
+                                      <div className="km-payment-row">
+                                        <span className="td-muted">Paid Amount</span>
+                                        <span>₹0.00</span>
+                                      </div>
+                                      <div className="km-payment-row" style={{ background: '#fff8e1', borderRadius: 6, padding: '6px 8px', marginTop: 4 }}>
+                                        <span style={{ color: '#e65100', fontWeight: 600 }}>Due on Delivery</span>
+                                        <span style={{ color: '#e65100', fontWeight: 800 }}>₹{total.toFixed(2)}</span>
+                                      </div>
+                                      <div className="km-payment-total" style={{ borderTop: '1px solid var(--neutral-200)', marginTop: 10, paddingTop: 12 }}>
+                                        <span>Total Order</span>
+                                        <span className="td-price">₹{total.toFixed(2)}</span>
+                                      </div>
+                                    </>
+                                  );
+                                }
+                              } else {
+                                // Full Online Payment
+                                if (isPaid) {
+                                  return (
+                                    <>
+                                      <div className="km-payment-total" style={{ borderTop: '1px solid var(--neutral-200)', marginTop: 10, paddingTop: 12 }}>
+                                        <span>Paid Amount</span>
+                                        <span className="td-price" style={{ color: '#2e7d32' }}>₹{total.toFixed(2)}</span>
+                                      </div>
+                                      <div className="km-payment-row" style={{ borderTop: 'none', paddingTop: 0 }}>
+                                        <span className="td-muted" style={{ fontSize: 11 }}>Due Amount</span>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>₹0.00</span>
+                                      </div>
+                                    </>
+                                  );
+                                } else {
+                                  return (
+                                    <>
+                                      <div className="km-payment-row" style={{ background: '#fef2f2', borderRadius: 6, padding: '6px 8px', marginTop: 4 }}>
+                                        <span style={{ color: '#dc2626', fontWeight: 600 }}>Due Amount (Unpaid)</span>
+                                        <span style={{ color: '#dc2626', fontWeight: 800 }}>₹{total.toFixed(2)}</span>
+                                      </div>
+                                      <div className="km-payment-total" style={{ borderTop: '1px solid var(--neutral-200)', marginTop: 10, paddingTop: 12 }}>
+                                        <span>Total Order</span>
+                                        <span className="td-price">₹{total.toFixed(2)}</span>
+                                      </div>
+                                    </>
+                                  );
+                                }
+                              }
+                            })()}
                             {order.notes && <div className="km-order-notes">{order.notes}</div>}
                           </div>
                         </div>

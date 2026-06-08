@@ -53,7 +53,7 @@ const validateVariantImage = (file) => {
 
 // ── Predefined option types ────────────────────────────────────────────────────
 export const OPTION_PRESETS = {
-  'Colour':    ['Red','Pink','Yellow','Green','Blue','Purple','Gold','Silver','White','Black','Rose Gold','Bronze','Copper','Multicolour'],
+  'Colour':    [],
   'Size':      ['XS','S','M','L','XL','XXL','Free Size','Small','Medium','Large'],
   'Material':  ['Synthetic','Nylon','Korai Silk','Kalamkari','Transparent window bags ','Jute','Brass','Acrylic','Wood','Leather','Steel','Copper','Clay','Glass','Ceramic'],
   'Finish':    ['Matte','Glossy','Antique','Polished','Hand-painted','Mirror','Oxidised'],
@@ -69,6 +69,8 @@ const OPTION_KEYS = Object.keys(OPTION_PRESETS);
 
 // ── Normalize value for duplicate detection ───────────────────────────────────
 const norm = (v) => v.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+const isColourKey = (key) => /colou?r/i.test(key || '');
+const isHexColor = (value) => /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(value || '').trim());
 
 // ── Cartesian product ─────────────────────────────────────────────────────────
 function cartesian(arrays) {
@@ -110,9 +112,11 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
   const [keyOpen, setKeyOpen] = useState(false);
   const [keySearch, setKeySearch] = useState('');
   const inputRef = useRef();
+  const isColour = isColourKey(option.key);
 
   const addValue = (raw) => {
     const v = raw.trim();
+    if (isColour && !isHexColor(v)) return;
     if (!v) return;
     // Duplicate detection (case/space insensitive)
     if (option.values.some(existing => norm(existing) === norm(v))) return;
@@ -187,7 +191,7 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
           <label style={lbl}>Values</label>
 
           {/* Preset suggestions */}
-          {option.key && OPTION_PRESETS[option.key] && (
+          {option.key && OPTION_PRESETS[option.key]?.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
               {OPTION_PRESETS[option.key].map(preset => {
                 const already = option.values.some(v => norm(v) === norm(preset));
@@ -215,19 +219,30 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
 
           {/* Custom value input */}
           <div style={{ display: 'flex', gap: 6 }}>
-            <input
-              ref={inputRef}
-              style={{ ...inp, flex: 1 }}
-              placeholder={option.key ? `Add ${option.key.toLowerCase()} value…` : 'Select option type first'}
-              value={valueInput}
-              disabled={!option.key}
-              onChange={e => setValueInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addValue(valueInput); } }}
-            />
-            <button type="button" onClick={() => addValue(valueInput)}
-              disabled={!option.key || !valueInput.trim()}
-              style={{ padding: '8px 14px', background: KM.teal, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: (!option.key || !valueInput.trim()) ? 0.4 : 1 }}>
-              Add
+            {isColour ? (
+              <input
+                ref={inputRef}
+                type="color"
+                style={{ width: 52, height: 36, padding: 2, border: `1px solid ${KM.border}`, borderRadius: 7, background: '#fff', cursor: option.key ? 'pointer' : 'not-allowed' }}
+                value={isHexColor(valueInput) ? valueInput : '#000000'}
+                disabled={!option.key}
+                onChange={e => setValueInput(e.target.value)}
+              />
+            ) : (
+              <input
+                ref={inputRef}
+                style={{ ...inp, flex: 1 }}
+                placeholder={option.key ? `Add ${option.key.toLowerCase()} value…` : 'Select option type first'}
+                value={valueInput}
+                disabled={!option.key}
+                onChange={e => setValueInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addValue(valueInput); } }}
+              />
+            )}
+            <button type="button" onClick={() => addValue(isColour && !valueInput ? '#000000' : valueInput)}
+              disabled={!option.key || (!isColour && !valueInput.trim())}
+              style={{ padding: '8px 14px', background: KM.teal, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: (!option.key || (!isColour && !valueInput.trim())) ? 0.4 : 1 }}>
+              {isColour ? 'Add Colour' : 'Add'}
             </button>
           </div>
         </div>

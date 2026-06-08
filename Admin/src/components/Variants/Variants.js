@@ -148,6 +148,7 @@ export default function Variants({ showToast }) {
   const [productId,     setProductId]     = useState('');
   const [filterProduct, setFilterProduct] = useState('');
   const [errors,        setErrors]        = useState({});
+  const [variantTab,    setVariantTab]    = useState('options');
 
   // For ADD — use VariantBuilder (option matrix → cartesian SKUs)
   const [skus,            setSkus]            = useState([]);
@@ -206,6 +207,7 @@ export default function Variants({ showToast }) {
     setSkus([]);
     setExistingOptions(null);
     setErrors({});
+    setVariantTab('options');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -218,6 +220,7 @@ export default function Variants({ showToast }) {
     setEditSku(sku);
     setEditSkus([sku]);
     setErrors({});
+    setVariantTab('skus');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -231,19 +234,41 @@ export default function Variants({ showToast }) {
     setErrors({});
   };
 
-  // ── Validate ──────────────────────────────────────────────────────────────
+  // ── Validate (identical logic to Products.js validateProduct) ────────────
+  const validateSkuRows = (skuList) => {
+    return skuList.map((v) => {
+      const messages = [];
+      const mrp = Number(v.mrp);
+      const salesPrice = Number(v.salesPrice);
+      const stock = Number(v.stock);
+      const hasAttribute =
+        v.attributes?.some(a => a.key && (a.value || a.customValue)) ||
+        v.combo?.some(a => a.key && a.value);
+
+      if (!hasAttribute) messages.push('Add at least one attribute');
+      if (!v.mrp) messages.push('Enter MRP');
+      else if (Number.isNaN(mrp) || mrp <= 0) messages.push('MRP must be greater than 0');
+      if (!v.salesPrice) messages.push('Enter sales price');
+      else if (Number.isNaN(salesPrice) || salesPrice <= 0) messages.push('Sales price must be greater than 0');
+      else if (!Number.isNaN(mrp) && mrp > 0 && salesPrice > mrp) messages.push('Sales price cannot be greater than MRP');
+      if (v.stock === '' || v.stock === undefined || v.stock === null) messages.push('Enter stock');
+      else if (Number.isNaN(stock) || stock < 0) messages.push('Stock cannot be negative');
+      if (!v.imagePreview && !v.imageFile) messages.push('Upload a variant image');
+
+      return messages;
+    });
+  };
+
   const validateAdd = () => {
     const next = {};
     if (!productId) next.productId = 'Please select a product';
     if (!skus.length) next.skus = 'Add at least one variant using the options above';
     else {
-      skus.forEach((s, i) => {
-        const msgs = [];
-        if (!s.mrp || Number(s.mrp) <= 0)         msgs.push('MRP required');
-        if (!s.salesPrice || Number(s.salesPrice) <= 0) msgs.push('Sale price required');
-        if (s.stock === '' || s.stock === undefined)    msgs.push('Stock required');
-        if (msgs.length) next[`sku_${i}`] = msgs.join(', ');
-      });
+      const variantErrors = validateSkuRows(skus);
+      if (variantErrors.some(list => list.length)) {
+        next.variantErrors = variantErrors;
+        setVariantTab('skus');
+      }
     }
     setErrors(next);
     return !Object.keys(next).length;
@@ -251,11 +276,16 @@ export default function Variants({ showToast }) {
 
   const validateEdit = () => {
     const next = {};
-    const s = editSkus[0];
     if (!productId) next.productId = 'Please select a product';
-    if (!s || !s.mrp || Number(s.mrp) <= 0)               next.mrp = 'MRP required';
-    if (!s || !s.salesPrice || Number(s.salesPrice) <= 0)  next.salesPrice = 'Sale price required';
-    if (!s || s.stock === '' || s.stock === undefined)      next.stock = 'Stock required';
+    if (!editSkus.length) {
+      next.variantErrors = [['Add at least one attribute']];
+    } else {
+      const variantErrors = validateSkuRows(editSkus);
+      if (variantErrors.some(list => list.length)) {
+        next.variantErrors = variantErrors;
+        setVariantTab('skus');
+      }
+    }
     setErrors(next);
     return !Object.keys(next).length;
   };
@@ -502,15 +532,22 @@ export default function Variants({ showToast }) {
               {/* VariantBuilder — same component used in Products */}
               {/* existingOptions seeds the option matrix with current product dimensions */}
               <VariantBuilder
-                key={productId || 'no-product'} // remount when product changes so options reset
+                key={productId || 'no-product'}
                 variants={skus}
-                errors={Object.fromEntries(
-                  skus.map((_, i) => [i, errors[`sku_${i}`] ? [errors[`sku_${i}`]] : []])
-                )}
+                errors={errors.variantErrors ||
+                  skus.map(() => [])
+                }
+                tab={variantTab}
+                onTabChange={setVariantTab}
                 onChange={setSkus}
                 existingOptions={existingOptions || undefined}
               />
               <ErrorMsg field="skus" />
+              {errors.variantErrors && (
+                <div style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8 }}>
+                  ⚠ One or more variants are incomplete — switch to the <strong>📦 SKUs</strong> tab to fix them.
+                </div>
+              )}
 
               <button type="submit" style={submitBtn}>
                 Save {skus.length > 0 ? `${skus.length} Variant${skus.length > 1 ? 's' : ''}` : 'Variants'}
@@ -550,19 +587,21 @@ export default function Variants({ showToast }) {
               <VariantBuilder
                 key={`edit-${editingId}`}
                 variants={editSkus}
-                errors={Object.fromEntries(
-                  editSkus.map((_, i) => [i, [
-                    ...(errors.mrp       ? [errors.mrp]       : []),
-                    ...(errors.salesPrice ? [errors.salesPrice] : []),
-                    ...(errors.stock     ? [errors.stock]     : []),
-                  ]])
-                )}
+                errors={errors.variantErrors ||
+                  editSkus.map(() => [])
+                }
+                tab={variantTab}
+                onTabChange={setVariantTab}
                 onChange={(updated) => {
                   setEditSkus(updated);
-                  // keep legacy editSku in sync (used nowhere but keeps shape consistent)
                   if (updated[0]) setEditSku(updated[0]);
                 }}
               />
+              {errors.variantErrors && (
+                <div style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8 }}>
+                  ⚠ One or more variants are incomplete — switch to the <strong>📦 SKUs</strong> tab to fix them.
+                </div>
+              )}
 
               <button type="submit" style={submitBtn}>Update Variant</button>
             </form>

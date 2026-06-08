@@ -105,14 +105,14 @@ const Contact = () => {
                       <div className="glass-link-item d-flex gap-3 mt-4">
                         <div className="icon-circle"><i className="fa fa-envelope"></i></div>
                         <div>
-                          <strong>Email Us</strong><br/>
+                          <strong>Email Us</strong>
                           <span>support@yourstore.com</span>
                         </div>
                       </div>
                       <div className="glass-link-item d-flex gap-3 mt-4">
                         <div className="icon-circle"><i className="fa fa-map-marker"></i></div>
                         <div>
-                          <strong>Visit Our HQ</strong><br/>
+                          <strong>Visit Our HQ</strong>
                           <span>123 Design St, Creative City, NY</span>
                         </div>
                       </div>
