@@ -419,6 +419,30 @@ const ComboDetailPage = () => {
     return Math.min(...stocks);
   }, [child]);
 
+  const mixMatchMaxQty = useMemo(() => {
+    if (!child || child.type !== "mix_match") return Infinity;
+    const mmState = mixMatchSelections?.[child.id] || { selections: [] };
+    const selections = mmState.selections || [];
+    if (!selections.length) return Infinity;
+
+    const maxPerSelection = selections.map(sel => {
+      const cp = (child.comboProducts || []).find(c => String(c.productId) === String(sel.productId));
+      if (!cp) return 0;
+      const v = cp.variant 
+        || (cp.product?.Variants?.find(x => String(x.id) === String(sel.variantId)))
+        || null;
+      
+      const stock = Number(v ? v.stock : cp.product?.stock ?? 0);
+      const reqQty = Number(sel.quantity) || 1;
+      
+      return Math.floor(stock / reqQty);
+    });
+
+    return Math.min(...maxPerSelection);
+  }, [child, mixMatchSelections]);
+
+  const comboMaxQty = child?.type === "fixed" ? fixedMaxQty : mixMatchMaxQty;
+
   // Rule 4: List of OOS products for partial-OOS UI
   const oosProducts = useMemo(() => {
     if (!child || child.type !== "fixed" || !child.comboProducts?.length) return [];
@@ -452,6 +476,19 @@ const ComboDetailPage = () => {
       setActiveChild(selected);
     }
   }, [currentCombo, search]);
+
+  useEffect(() => {
+    if (qty > comboMaxQty && comboMaxQty > 0) {
+      setQty(comboMaxQty);
+    }
+  }, [comboMaxQty]);
+
+  // When mix_match selections change, clamp qty to new stock limit
+  useEffect(() => {
+    if (child?.type === "mix_match" && mixMatchMaxQty < Infinity && qty > mixMatchMaxQty) {
+      setQty(mixMatchMaxQty > 0 ? mixMatchMaxQty : 1);
+    }
+  }, [mixMatchMaxQty]);
 
   // ── Loading / error states ──────────────────────────────────────────────────
   if (loading) {
@@ -677,7 +714,8 @@ const ComboDetailPage = () => {
 
       navigate("/cart");
     } catch (err) {
-      cogoToast.error("Could not add combo to cart", { position: "top-center" });
+      const serverMsg = err?.response?.data?.errors?.[0] || err?.response?.data?.message || null;
+      cogoToast.error(serverMsg || "Could not add combo to cart", { position: "top-center" });
       console.error(err);
     }
     setAddingCart(false);
@@ -749,7 +787,7 @@ const ComboDetailPage = () => {
 
                   {/* Description */}
                   {comboShortDescription && (
-                    <p style={{ color: "#6B7280", lineHeight: 1.7, marginBottom: 16 }}>{comboShortDescription}</p>
+                    <p style={{ color: "#6B7280", lineHeight: 1.7, marginBottom: 16, wordWrap: "break-word", overflowWrap: "anywhere" }}>{comboShortDescription}</p>
                   )}
 
                   {/* Price block — same classes as PDP */}
@@ -785,9 +823,9 @@ const ComboDetailPage = () => {
 
 
                       {/* Rule 2 — Low stock warning: remaining qty limited */}
-                      {!fixedOos && fixedMaxQty < Infinity && fixedMaxQty <= 5 && lowStockProducts.length > 0 && (
+                      {!fixedOos && comboMaxQty < Infinity && comboMaxQty <= 5 && lowStockProducts.length > 0 && (
                         <div style={{ marginTop: 10, padding: "8px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, fontSize: 12, color: "#92400e", fontWeight: 600 }}>
-                          ⚡ Only {fixedMaxQty} combo{fixedMaxQty === 1 ? "" : "s"} left — limited by{" "}
+                          ⚡ Only {comboMaxQty} combo{comboMaxQty === 1 ? "" : "s"} left — limited by{" "}
                           {lowStockProducts.map(cp => cp.product?.name || "item").join(", ")}
                         </div>
                       )}
@@ -866,11 +904,10 @@ const ComboDetailPage = () => {
                           <button
                             className="pdp-qty__btn"
                             onClick={() => setQty(q => {
-                              // Cap at fixedMaxQty for fixed combos (lowest stock rule)
-                              const cap = child.type === "fixed" ? fixedMaxQty : Infinity;
-                              return q < cap ? q + 1 : q;
+                              // Cap at comboMaxQty for both fixed and mix_match combos (lowest stock rule)
+                              return q < comboMaxQty ? q + 1 : q;
                             })}
-                            disabled={child.type === "fixed" && qty >= fixedMaxQty}
+                            disabled={qty >= comboMaxQty}
                           >
                             <svg width="14" height="14" viewBox="0 0 14 14">
                               <line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" strokeWidth="2"/>
@@ -879,9 +916,9 @@ const ComboDetailPage = () => {
                           </button>
                         </div>
                         {/* Show lowest-stock warning for fixed combo */}
-                        {child.type === "fixed" && fixedMaxQty < Infinity && fixedMaxQty <= 5 && (
-                          <span className="pdp-combo-stock-note" style={{ fontSize: 11, color: fixedMaxQty <= 2 ? "#dc2626" : "#f59e0b", fontWeight: 600, alignSelf: "center" }}>
-                            Only {fixedMaxQty} available
+                        {comboMaxQty < Infinity && comboMaxQty <= 5 && (
+                          <span className="pdp-combo-stock-note" style={{ fontSize: 11, color: comboMaxQty <= 2 ? "#dc2626" : "#f59e0b", fontWeight: 600, alignSelf: "center" }}>
+                            Only {comboMaxQty} available
                           </span>
                         )}
                       </div>

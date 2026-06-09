@@ -169,7 +169,7 @@ const ProductDescriptionTab = ({
 
               {/* ── Description ── */}
               <Tab.Pane eventKey="productDescription">
-                <div style={{ lineHeight: 1.8, color: "#444", fontSize: 14 }}>
+                <div style={{ lineHeight: 1.8, color: "#444", fontSize: 14, wordWrap: "break-word", overflowWrap: "anywhere" }}>
                   {productFullDesc || <span style={{ color: "#aaa" }}>No description available.</span>}
                 </div>
               </Tab.Pane>

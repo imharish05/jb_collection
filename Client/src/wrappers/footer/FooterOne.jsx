@@ -235,7 +235,6 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
               <p className="km-col-title">Quick Links</p>
               <ul className="km-links">
                 <li><Link to="/contact">Contact Us</Link></li>
-                <li><Link to="/faq">FAQs</Link></li>
                 <li><Link to="/my-account">My Account</Link></li>
                 <li><Link to="#">Shipping Policy</Link></li>
                 <li><Link to="#">Refund Policy</Link></li>

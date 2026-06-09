@@ -463,9 +463,30 @@ exports.addComboToCart = async (req, res) => {
       if (child.minQty && totalQty < child.minQty) validationErrors.push(`Minimum ${child.minQty} items required`);
       if (child.maxQty && totalQty > child.maxQty) validationErrors.push(`Maximum ${child.maxQty} items allowed`);
 
+      // ── Stock × quantity validation ────────────────────────────────────────
       for (const sel of selections) {
         if (!eligibleIds.has(String(sel.productId))) {
           validationErrors.push(`Product ${sel.productId} not eligible`);
+          continue;
+        }
+        const cp = child.comboProducts.find(c => String(c.productId) === String(sel.productId));
+        if (!cp) continue;
+
+        // Resolve variant stock
+        const v = sel.variantId
+          ? cp.product?.Variants?.find(x => String(x.id) === String(sel.variantId)) || null
+          : null;
+        const stock = Number(v ? v.stock : cp.product?.stock ?? 0);
+        const selQty = parseInt(sel.quantity) || 1;
+        const needed = selQty * parseInt(quantity);
+
+        if (stock <= 0) {
+          validationErrors.push(`${cp.product?.name || "Product"} is out of stock`);
+        } else if (needed > stock) {
+          const maxPossible = Math.floor(stock / selQty);
+          validationErrors.push(
+            `Only ${maxPossible} combo${maxPossible === 1 ? "" : "s"} available for "${cp.product?.name || "Product"}" (${stock} in stock, ${selQty} per combo)`
+          );
         }
       }
     }
