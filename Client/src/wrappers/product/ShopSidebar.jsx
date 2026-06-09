@@ -308,7 +308,7 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
         <div style={{ ...styles.section, borderBottom: "none", paddingBottom: 0 }}>
           <div className="mobile-accordion-header" onClick={() => toggleMobileSection("combos")}>
             <p style={{...styles.sectionTitle, margin: 0}}>
-              🎁 Combos {isMobile && <span style={styles.mobileChevron}>{mobileSections.combos ? "▲" : "▼"}</span>}
+              Combos {isMobile && <span style={styles.mobileChevron}>{mobileSections.combos ? "▲" : "▼"}</span>}
             </p>
           </div>
           

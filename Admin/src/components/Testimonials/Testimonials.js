@@ -127,8 +127,7 @@ export default function Testimonials({ showToast }) {
 
   const handleClearImage = () => {
     setImageFile(null); setImageDimensions(null);
-    const original = editingId ? rows.find((r) => r.id === editingId) : null;
-    setPreview(original?.image ? getImageUrl(original.image) : null);
+    setPreview(null);
     setErrors(prev => { const n = { ...prev }; delete n.image; return n; });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };

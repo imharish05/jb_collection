@@ -263,8 +263,7 @@ export default function Combos({ showToast }) {
                 onFileChange={handleImgChange}
                 onClear={() => {
                   setImgFile(null);
-                  const original = editingId ? combos.find(c => c.id === editingId) : null;
-                  setImgPreview(original?.image ? getImg(original.image) : null);
+                  setImgPreview(null);
                   if (fileRef.current) fileRef.current.value = '';
                 }}
               />

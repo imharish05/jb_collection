@@ -25,6 +25,15 @@ const COMBO_IMAGE_DIMENSIONS = {
 
 const COMBO_IMAGE_REQUIREMENTS = "Recommended: 800×960px (5:6) • Min: 400×480px • Max: 3MB (JPG/WebP)";
 
+const countWords = (text) => {
+  return text ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+};
+
+const DESC_LIMITS = {
+  short: { maxWords: 30, maxChars: 200 },
+  long:  { minWords: 100, maxChars: 4000 },
+};
+
 const validateComboImageDimensions = (file) => new Promise((resolve) => {
   if (file.size > COMBO_IMAGE_DIMENSIONS.maxFileSize) {
     resolve({
@@ -507,6 +516,7 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
     allowDuplicates: initial?.allowDuplicates || false,
     isActive:       initial?.isActive !== false,
   });
+  const [errors, setErrors] = useState({});
   const [imgFile,    setImgFile]    = useState(null);
   const [imgPreview, setImgPreview] = useState(initial?.image ? getImg(initial.image) : null);
   const [imageValidation, setImageValidation] = useState(null);
@@ -539,13 +549,32 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
   const handleClearImage = () => {
     if (imgPreview?.startsWith("blob:")) URL.revokeObjectURL(imgPreview);
     setImgFile(null);
-    setImgPreview(initial?.image ? getImg(initial.image) : null);
+    setImgPreview(null);
     setImageValidation(null);
     if (imgRef.current) imgRef.current.value = "";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const nextErrors = {};
+    const shortWordCount = countWords(form.shortDescription);
+    if (form.shortDescription && shortWordCount > DESC_LIMITS.short.maxWords) {
+      nextErrors.shortDescription = `Short description must be maximum ${DESC_LIMITS.short.maxWords} words (currently ${shortWordCount}).`;
+    }
+
+    const longWordCount = countWords(form.fullDescription);
+    if (form.fullDescription && longWordCount < DESC_LIMITS.long.minWords) {
+      nextErrors.fullDescription = `Full description must be at least ${DESC_LIMITS.long.minWords} words (currently ${longWordCount}).`;
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      showToast.error(Object.values(nextErrors)[0]);
+      return;
+    }
+    setErrors({});
+
     if (imgFile) {
       const imageCheck = imageValidation || await validateComboImageDimensions(imgFile);
       setImageValidation(imageCheck);
@@ -651,17 +680,71 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
           </div>
 
           <div className="km-field km-field-full">
-            <label className="km-label">Short Description</label>
-            <textarea className="km-input" style={{ minHeight: 60, resize: "vertical" }}
-              value={form.shortDescription} onChange={e => f("shortDescription")(e.target.value)}
-              placeholder="Brief combo summary..." />
+            <label className="km-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>Short Description <span style={{ color: "var(--neutral-400)", textTransform: "none", fontWeight: 400, fontSize: 10 }}>(max {DESC_LIMITS.short.maxWords} words)</span></span>
+              <span style={{ fontSize: 11, color: (() => { const w = countWords(form.shortDescription); return (w > DESC_LIMITS.short.maxWords) ? "#ef4444" : "var(--neutral-400)"; })(), fontWeight: 500, textTransform: "none" }}>
+                {form.shortDescription.length}/{DESC_LIMITS.short.maxChars} chars · {countWords(form.shortDescription)}/{DESC_LIMITS.short.maxWords} words
+              </span>
+            </label>
+            <textarea
+              className="km-input"
+              style={{
+                minHeight: 60,
+                resize: "vertical",
+                borderColor: errors.shortDescription ? "#ef4444" : undefined,
+                boxShadow: errors.shortDescription ? "0 0 0 2px rgba(239, 68, 68, 0.1)" : undefined
+              }}
+              value={form.shortDescription}
+              onChange={e => {
+                const val = e.target.value;
+                f("shortDescription")(val);
+                const wc = countWords(val);
+                if (val && wc > DESC_LIMITS.short.maxWords) {
+                  setErrors(prev => ({ ...prev, shortDescription: `Short description must be maximum ${DESC_LIMITS.short.maxWords} words (currently ${wc})` }));
+                } else {
+                  setErrors(prev => { const n = { ...prev }; delete n.shortDescription; return n; });
+                }
+              }}
+              placeholder="Brief combo summary..."
+              maxLength={DESC_LIMITS.short.maxChars}
+            />
+            {errors.shortDescription && (
+              <span style={{ color: "#ef4444", fontSize: 12, marginTop: 4, fontWeight: 600 }}>⚠ {errors.shortDescription}</span>
+            )}
           </div>
 
           <div className="km-field km-field-full">
-            <label className="km-label">Full Description</label>
-            <textarea className="km-input" style={{ minHeight: 100, resize: "vertical" }}
-              value={form.fullDescription} onChange={e => f("fullDescription")(e.target.value)}
-              placeholder="Detailed combo description, inclusions, customisation notes..." />
+            <label className="km-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>Full Description <span style={{ color: "var(--neutral-400)", textTransform: "none", fontWeight: 400, fontSize: 10 }}>(min {DESC_LIMITS.long.minWords} words)</span></span>
+              <span style={{ fontSize: 11, color: (() => { const w = countWords(form.fullDescription); return (w > 0 && w < DESC_LIMITS.long.minWords) ? "#ef4444" : "var(--neutral-400)"; })(), fontWeight: 500, textTransform: "none" }}>
+                {form.fullDescription.length}/{DESC_LIMITS.long.maxChars} chars · {countWords(form.fullDescription)}/{DESC_LIMITS.long.minWords}+ words
+              </span>
+            </label>
+            <textarea
+              className="km-input"
+              style={{
+                minHeight: 100,
+                resize: "vertical",
+                borderColor: errors.fullDescription ? "#ef4444" : undefined,
+                boxShadow: errors.fullDescription ? "0 0 0 2px rgba(239, 68, 68, 0.1)" : undefined
+              }}
+              value={form.fullDescription}
+              onChange={e => {
+                const val = e.target.value;
+                f("fullDescription")(val);
+                const wc = countWords(val);
+                if (val && wc < DESC_LIMITS.long.minWords) {
+                  setErrors(prev => ({ ...prev, fullDescription: `Full description must be at least ${DESC_LIMITS.long.minWords} words (currently ${wc})` }));
+                } else {
+                  setErrors(prev => { const n = { ...prev }; delete n.fullDescription; return n; });
+                }
+              }}
+              placeholder="Detailed combo description, inclusions, customisation notes..."
+              maxLength={DESC_LIMITS.long.maxChars}
+            />
+            {errors.fullDescription && (
+              <span style={{ color: "#ef4444", fontSize: 12, marginTop: 4, fontWeight: 600 }}>⚠ {errors.fullDescription}</span>
+            )}
           </div>
 
           <div className="km-field">
@@ -781,7 +864,7 @@ function RootComboForm({ initial, onSave, onCancel, showToast }) {
   const handleClearImage = () => {
     if (imgPreview?.startsWith("blob:")) URL.revokeObjectURL(imgPreview);
     setImgFile(null);
-    setImgPreview(initial?.image ? getImg(initial.image) : null);
+    setImgPreview(null);
     setImageValidation(null);
     if (imgRef.current) imgRef.current.value = "";
   };
@@ -985,10 +1068,14 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
                   <ProductImg src={child.image ? getImg(child.image) : null} size={40} style={{ borderRadius: 8, border: "none" }} />
                 </div>
               </td>
-              <td>
+               <td>
                 <div>
                   <strong>{child.name}</strong>
-                  {(child.shortDescription || child.description) && <div style={{ fontSize: 11, color: "var(--neutral-400)", marginTop: 2 }}>{child.shortDescription || child.description}</div>}
+                  {(child.shortDescription || child.description) && (
+                    <div style={{ fontSize: 11, color: "var(--neutral-400)", marginTop: 2, maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {child.shortDescription || child.description}
+                    </div>
+                  )}
                 </div>
               </td>
               <td>

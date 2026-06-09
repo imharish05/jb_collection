@@ -146,8 +146,7 @@ export default function HeroSlider({ showToast }) {
 
   const handleClearImage = () => {
     setImageFile(null);
-    const original = editingId ? rows.find((r) => r.id === editingId) : null;
-    setPreview(original?.image ? getImageUrl(original.image) : null);
+    setPreview(null);
     setImageDimensions(null);
     setErrors(prev => {
       const newErrors = { ...prev };

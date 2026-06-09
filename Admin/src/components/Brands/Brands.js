@@ -121,10 +121,9 @@ export default function Brands({ showToast }) {
 
   const handleClearImage = () => {
     setLogoFile(null);
+    setPreview(null);
     setLogoDimensions(null);
     setErrors(prev => { const e = { ...prev }; delete e.logo; return e; });
-    const original = editingId ? rows.find(r => r.id === editingId) : null;
-    setPreview(original?.logo ? getImageUrl(original.logo) : null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 

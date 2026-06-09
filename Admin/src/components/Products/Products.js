@@ -489,6 +489,15 @@ export default function Products({ showToast }) {
     return message ? <span style={errorStyle}>{field === 'images' ? `⚠ ${message}` : message}</span> : null;
   };
 
+  const countWords = (text) => {
+    return text ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+  };
+
+  const DESC_LIMITS = {
+    short: { maxWords: 30, maxChars: 200 },
+    long:  { minWords: 100, maxChars: 4000 },
+  };
+
   const validateProduct = () => {
     const next = {};
     const discount = Number(formData.discount || 0);
@@ -498,6 +507,17 @@ export default function Products({ showToast }) {
     if (!formData.categoryId) next.categoryId = 'Please select a category';
     if (Number.isNaN(discount) || discount < 0 || discount > 100) next.discount = 'Discount must be between 0 and 100';
     if (!variants.length) next.variants = 'Please add at least one variant';
+
+    // Description word count validation
+    const shortWordCount = countWords(formData.shortDescription);
+    if (formData.shortDescription && shortWordCount > DESC_LIMITS.short.maxWords) {
+      next.shortDescription = `Short description must be maximum ${DESC_LIMITS.short.maxWords} words (currently ${shortWordCount}).`;
+    }
+
+    const longWordCount = countWords(formData.fullDescription);
+    if (formData.fullDescription && longWordCount < DESC_LIMITS.long.minWords) {
+      next.fullDescription = `Long description must be at least ${DESC_LIMITS.long.minWords} words (currently ${longWordCount}).`;
+    }
 
     variants.forEach((v, index) => {
       const messages = [];
@@ -609,7 +629,7 @@ export default function Products({ showToast }) {
       .filter(url => url && !url.startsWith('blob:'))
       .map(url => toRelativePath(url))
       .filter(Boolean);
-    if (savedImages.length) fd.append('existingImages', JSON.stringify(savedImages));
+    fd.append('existingImages', JSON.stringify(savedImages));
 
     const tid = showToast.loading(editingId ? 'Updating…' : 'Adding…');
     try {
@@ -764,19 +784,72 @@ export default function Products({ showToast }) {
                 </span>
               </div>
 
+              {/* ── Short Description ── */}
               <div style={{ ...fieldStyle, gridColumn: 'span 2' }}>
-                <label style={labelStyle}>Short Description</label>
-                <input style={inputStyle} value={formData.shortDescription}
-                  onChange={e => setFormData({ ...formData, shortDescription: e.target.value })}
-                  placeholder="e.g. Handcrafted crochet gift box with personalised name tag" />
+                <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Short Description <span style={{ color: KM.muted, textTransform: 'none', fontWeight: 400, fontSize: 10 }}>(max {DESC_LIMITS.short.maxWords} words)</span></span>
+                  <span style={{ fontSize: 11, color: (() => { const w = countWords(formData.shortDescription); return (w > DESC_LIMITS.short.maxWords) ? '#ef4444' : '#9ca3af'; })(), fontWeight: 500, textTransform: 'none' }}>
+                    {formData.shortDescription.length}/{DESC_LIMITS.short.maxChars} chars · {countWords(formData.shortDescription)}/{DESC_LIMITS.short.maxWords} words
+                  </span>
+                </label>
+                <input
+                  style={{
+                    ...inputStyle,
+                    borderColor: errors.shortDescription ? '#ef4444' : undefined,
+                    boxShadow: errors.shortDescription ? '0 0 0 2px rgba(239,68,68,0.1)' : undefined,
+                  }}
+                  value={formData.shortDescription}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setFormData({ ...formData, shortDescription: val });
+                    const wc = countWords(val);
+                    if (val && wc > DESC_LIMITS.short.maxWords) {
+                      setErrors(prev => ({ ...prev, shortDescription: `Short description must be maximum ${DESC_LIMITS.short.maxWords} words (currently ${wc})` }));
+                    } else {
+                      setErrors(prev => { const n = { ...prev }; delete n.shortDescription; return n; });
+                    }
+                  }}
+                  placeholder="e.g. Handcrafted crochet gift box with personalised name tag"
+                  maxLength={DESC_LIMITS.short.maxChars}
+                />
+                {errors.shortDescription && (
+                  <span style={{ color: '#ef4444', fontSize: 12, marginTop: 4, fontWeight: 600 }}>⚠ {errors.shortDescription}</span>
+                )}
               </div>
 
+              {/* ── Full Description ── */}
               <div style={{ ...fieldStyle, gridColumn: 'span 2' }}>
-                <label style={labelStyle}>Full Description</label>
-                <textarea style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
+                <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Full Description <span style={{ color: KM.muted, textTransform: 'none', fontWeight: 400, fontSize: 10 }}>(min {DESC_LIMITS.long.minWords} words)</span></span>
+                  <span style={{ fontSize: 11, color: (() => { const w = countWords(formData.fullDescription); return (w > 0 && w < DESC_LIMITS.long.minWords) ? '#ef4444' : '#9ca3af'; })(), fontWeight: 500, textTransform: 'none' }}>
+                    {formData.fullDescription.length}/{DESC_LIMITS.long.maxChars} chars · {countWords(formData.fullDescription)}/{DESC_LIMITS.long.minWords}+ words
+                  </span>
+                </label>
+                <textarea
+                  style={{
+                    ...inputStyle,
+                    minHeight: 80,
+                    resize: 'vertical',
+                    borderColor: errors.fullDescription ? '#ef4444' : undefined,
+                    boxShadow: errors.fullDescription ? '0 0 0 2px rgba(239,68,68,0.1)' : undefined,
+                  }}
                   value={formData.fullDescription}
-                  onChange={e => setFormData({ ...formData, fullDescription: e.target.value })}
-                  placeholder="Materials, dimensions, customisation details, delivery time…" />
+                  onChange={e => {
+                    const val = e.target.value;
+                    setFormData({ ...formData, fullDescription: val });
+                    const wc = countWords(val);
+                    if (val && wc < DESC_LIMITS.long.minWords) {
+                      setErrors(prev => ({ ...prev, fullDescription: `Long description must be at least ${DESC_LIMITS.long.minWords} words (currently ${wc})` }));
+                    } else {
+                      setErrors(prev => { const n = { ...prev }; delete n.fullDescription; return n; });
+                    }
+                  }}
+                  placeholder="Materials, dimensions, customisation details, delivery time…"
+                  maxLength={DESC_LIMITS.long.maxChars}
+                />
+                {errors.fullDescription && (
+                  <span style={{ color: '#ef4444', fontSize: 12, marginTop: 4, fontWeight: 600 }}>⚠ {errors.fullDescription}</span>
+                )}
               </div>
 
               <div ref={variantBuilderRef} style={{ gridColumn: 'span 2' }}>
