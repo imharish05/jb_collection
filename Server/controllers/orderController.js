@@ -4,6 +4,72 @@ const sequelize = require("../config/database");
 const { Op } = require("sequelize");
 const { sendOrderConfirmationEmail } = require("../utils/mailer");
 const { shiprocketPost } = require("../utils/shiprocket");
+const inventoryService = require("../services/inventoryService");
+
+const pushOrderToShiprocket = async (orderId, userEmail = "") => {
+  try {
+    const order = await Order.findByPk(orderId, {
+      include: [
+        { model: OrderItem, as: "items" },
+        { model: Address, as: "shippingAddress" },
+      ],
+    });
+
+    if (!order || !order.shippingAddress) {
+      console.warn(`[Shiprocket] Order or shipping address not found for order ${orderId}`);
+      return;
+    }
+
+    const addr = order.shippingAddress;
+    const srItems = order.items.map((item) => ({
+      name: item.productName,
+      sku: item.selectedVariantId || item.productId,
+      units: item.quantity,
+      selling_price: parseFloat(item.salesPrice || item.price),
+      discount: parseFloat(item.discount || 0),
+      tax: 0,
+      hsn: 0,
+    }));
+
+    const srPayload = {
+      order_id: order.id,
+      order_date: new Date(order.createdAt).toISOString().slice(0, 19).replace("T", " "),
+      pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
+      billing_customer_name: addr.fullName,
+      billing_last_name: "",
+      billing_address: `${addr.street}${addr.apartment ? ", " + addr.apartment : ""}`,
+      billing_city: addr.city,
+      billing_pincode: addr.pincode,
+      billing_state: addr.state,
+      billing_country: addr.country || "India",
+      billing_email: userEmail || "",
+      billing_phone: addr.phone,
+      shipping_is_billing: true,
+      order_items: srItems,
+      payment_method: (order.paymentMethod || "cod").toUpperCase() === "COD" ? "COD" : "Prepaid",
+      sub_total: parseFloat(order.totalAmount) - parseFloat(order.shippingCharge || 0),
+      length: 10,
+      breadth: 10,
+      height: 10,
+      weight: 0.5,
+    };
+
+    const srResponse = await shiprocketPost("/orders/create/adhoc", srPayload);
+    console.log("[Shiprocket] Order created:", srResponse?.order_id, "| Shipment:", srResponse?.shipment_id);
+
+    if (srResponse?.order_id) {
+      await Order.update(
+        {
+          shiprocketOrderId: String(srResponse.order_id),
+          shiprocketShipmentId: srResponse.shipment_id ? String(srResponse.shipment_id) : null,
+        },
+        { where: { id: order.id } }
+      );
+    }
+  } catch (srErr) {
+    console.error("[Shiprocket] Failed to create order:", srErr?.response?.data || srErr.message);
+  }
+};
 
 // Dashboard sends these status values in the URL:
 //   new | confirmed | shipped | delivery | delivered | cancelled
@@ -88,6 +154,7 @@ const createOrder = async (req, res, next) => {
     const billingId = billingAddressId || req.body.billingAddress?.id || null;
 
     if (!items || !items.length || !totalAmount || !shippingId) {
+      await transaction.rollback();
       return res.status(400).json({
         message: "items, totalAmount and shippingAddressId are required",
       });
@@ -117,6 +184,14 @@ const createOrder = async (req, res, next) => {
       billingAddressRef = shippingAddress.id;
     }
 
+    // 1. Validate Stock (Centralized Inventory Service)
+    try {
+      await inventoryService.validateOrderStock(items, transaction);
+    } catch (stockErr) {
+      await transaction.rollback();
+      return res.status(400).json({ message: stockErr.message });
+    }
+
     // Server-side validation: compute total from items and verify against client-submitted amount
     let serverComputedTotal = 0;
     const itemsWithDetails = [];
@@ -137,10 +212,6 @@ const createOrder = async (req, res, next) => {
           await transaction.rollback();
           return res.status(404).json({ message: `Product ${item.productId} not found` });
         }
-        if (variant.stock < item.quantity) {
-          await transaction.rollback();
-          return res.status(400).json({ message: `Insufficient stock for variant ${variant.variantName}` });
-        }
         itemPrice = parseFloat(variant.salesPrice || variant.mrp || 0);
         itemData.productName = `${product.name}${variant.variantName ? ` (${variant.variantName})` : ''}`;
         itemData.selectedVariantId = variant.id;
@@ -149,16 +220,11 @@ const createOrder = async (req, res, next) => {
         itemData.image = variant.image || product.image || [];
         itemData.mrp = variant.mrp || null;
         itemData.salesPrice = variant.salesPrice || null;
-        await variant.decrement('stock', { by: item.quantity, transaction });
       } else {
         const product = await Product.findByPk(item.productId, { transaction });
         if (!product) {
           await transaction.rollback();
           return res.status(404).json({ message: `Product ${item.productId} not found` });
-        }
-        if (product.stock < item.quantity) {
-          await transaction.rollback();
-          return res.status(400).json({ message: `Insufficient stock for product ${product.name}` });
         }
         itemPrice = parseFloat(item.price || product.price || 0);
         itemData.productName = isComboItem ? (item.comboName || item.name || product.name) : product.name;
@@ -166,7 +232,6 @@ const createOrder = async (req, res, next) => {
         itemData.selectedVariantName = null;
         itemData.variantAttributes = [];
         itemData.image = item.image || product.image || [];
-        await product.decrement('stock', { by: item.quantity, transaction });
       }
 
       itemData.isCombo = isComboItem;
@@ -174,6 +239,16 @@ const createOrder = async (req, res, next) => {
       itemData.childComboId = item.childComboId || null;
       itemData.comboName = item.comboName || item.name || null;
       itemData.comboType = item.comboType || null;
+      itemData.selectedProducts = item.selectedProducts || null;
+
+      itemData.comboSnapshot = isComboItem ? {
+        comboId: item.childComboId,
+        comboName: item.comboName || item.name || null,
+        comboType: item.comboType || null,
+        selectedProducts: item.selectedProducts || null,
+        quantities: item.quantity,
+        pricing: itemPrice
+      } : null;
 
       const itemTotal = itemPrice * item.quantity;
       serverComputedTotal += itemTotal;
@@ -220,8 +295,6 @@ const createOrder = async (req, res, next) => {
       return res.status(400).json({ message: "Coupon code is required for a discount" });
     }
 
-    // Validate that client total is not below the server subtotal after any valid coupon.
-    // Shipping can vary by courier, so it is not used as a minimum here.
     const clientTotal = parseFloat(totalAmount);
     const minimumAllowedTotal = Math.max(0, serverComputedTotal - serverCouponDiscount);
     if (clientTotal < minimumAllowedTotal - 1) {
@@ -234,6 +307,7 @@ const createOrder = async (req, res, next) => {
     }
 
     const isPartialCod = (paymentMethod || "cod") === "partial_cod";
+    const isCod = (paymentMethod || "cod") === "cod";
 
     const order = await Order.create({
       userId: req.user.id,
@@ -246,10 +320,12 @@ const createOrder = async (req, res, next) => {
       notes,
       shippingCharge: parseFloat(shippingCharge || 0),
       estimatedDeliveryDays: estimatedDeliveryDays || null,
-      // For partial COD: product cost is paid on delivery
       partialCodAmount: isPartialCod
         ? parseFloat(totalAmount) - parseFloat(shippingCharge || 0)
         : null,
+      status: isCod ? "confirmed" : "pending",
+      inventoryProcessed: false,
+      inventoryRestored: false,
     }, { transaction });
 
     // Create OrderItem records for each item
@@ -275,11 +351,20 @@ const createOrder = async (req, res, next) => {
         comboName: itemData.comboName || null,
         comboType: itemData.comboType || null,
         status: order.status || "pending",
+        selectedProducts: itemData.selectedProducts || null,
+        comboSnapshot: itemData.comboSnapshot || null,
       }, { transaction });
     }
 
-    // Clear cart after successful order
-    await CartItem.destroy({ where: { userId: req.user.id }, transaction });
+    // COD stock decrement & cart cleanup inside transaction
+    if (isCod) {
+      await inventoryService.decrementOrderStock(order.id, transaction, "Order Placement - COD", "cod");
+      order.inventoryProcessed = true;
+      await order.save({ transaction });
+
+      // Clear cart immediately for COD
+      await CartItem.destroy({ where: { userId: req.user.id }, transaction });
+    }
 
     await transaction.commit();
 
@@ -292,67 +377,22 @@ const createOrder = async (req, res, next) => {
       ],
     });
 
-    // Send order confirmation email (non-blocking — don't fail order if email fails)
-    try {
-      const userRecord = await User.findByPk(req.user.id, { attributes: ["name", "email"] });
-      if (userRecord?.email) {
-        await sendOrderConfirmationEmail(createdOrder, { name: userRecord.name, email: userRecord.email });
+    // Post-commit operations for COD
+    if (isCod) {
+      try {
+        const userRecord = await User.findByPk(req.user.id, { attributes: ["name", "email"] });
+        if (userRecord?.email) {
+          await sendOrderConfirmationEmail(createdOrder, { name: userRecord.name, email: userRecord.email });
+        }
+      } catch (emailErr) {
+        console.error("[Mailer] Failed to send order confirmation:", emailErr.message);
       }
-    } catch (emailErr) {
-      console.error("[Mailer] Failed to send order confirmation:", emailErr.message);
-    }
 
-    // Push order to Shiprocket (non-blocking — don't fail order if Shiprocket fails)
-    try {
-      const addr = createdOrder.shippingAddress;
-      const srItems = createdOrder.items.map((item) => ({
-        name: item.productName,
-        sku: item.selectedVariantId || item.productId,
-        units: item.quantity,
-        selling_price: parseFloat(item.salesPrice || item.price),
-        discount: parseFloat(item.discount || 0),
-        tax: 0,
-        hsn: 0,
-      }));
-
-      const srPayload = {
-        order_id: createdOrder.id,
-        order_date: new Date(createdOrder.createdAt).toISOString().slice(0, 19).replace("T", " "),
-        pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
-        billing_customer_name: addr.fullName,
-        billing_last_name: "",
-        billing_address: `${addr.street}${addr.apartment ? ", " + addr.apartment : ""}`,
-        billing_city: addr.city,
-        billing_pincode: addr.pincode,
-        billing_state: addr.state,
-        billing_country: addr.country || "India",
-        billing_email: req.user.email || "",
-        billing_phone: addr.phone,
-        shipping_is_billing: true,
-        order_items: srItems,
-        payment_method: (createdOrder.paymentMethod || "cod").toUpperCase() === "COD" ? "COD" : "Prepaid",
-        sub_total: parseFloat(createdOrder.totalAmount) - parseFloat(createdOrder.shippingCharge || 0),
-        length: 10,
-        breadth: 10,
-        height: 10,
-        weight: 0.5,
-      };
-
-      const srResponse = await shiprocketPost("/orders/create/adhoc", srPayload);
-      console.log("[Shiprocket] Order created:", srResponse?.order_id, "| Shipment:", srResponse?.shipment_id);
-
-      // Save Shiprocket IDs back to the order
-      if (srResponse?.order_id) {
-        await Order.update(
-          {
-            shiprocketOrderId: String(srResponse.order_id),
-            shiprocketShipmentId: srResponse.shipment_id ? String(srResponse.shipment_id) : null,
-          },
-          { where: { id: createdOrder.id } }
-        );
+      try {
+        await pushOrderToShiprocket(createdOrder.id, req.user.email);
+      } catch (srErr) {
+        console.error("[Shiprocket] Failed to push order:", srErr.message);
       }
-    } catch (srErr) {
-      console.error("[Shiprocket] Failed to create order:", srErr?.response?.data || srErr.message);
     }
 
     return res.status(201).json(createdOrder);
@@ -412,19 +452,36 @@ const getOrdersByStatus = async (req, res, next) => {
 
 // ─── PATCH /api/orders/:id/status  (admin — update status) ───────────────────
 const updateOrderStatus = async (req, res, next) => {
+  const transaction = await sequelize.transaction();
   try {
     const { status, paymentStatus } = req.body;
-    const order = await Order.findByPk(req.params.id);
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    const order = await Order.findByPk(req.params.id, { transaction, lock: true });
+    if (!order) {
+      await transaction.rollback();
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const oldStatus = order.status;
+    const statusChanged = status && status !== oldStatus;
 
     if (status) {
       if (!ORDER_ITEM_STATUS_OPTIONS.includes(status)) {
+        await transaction.rollback();
         return res.status(400).json({ message: "Invalid order status" });
       }
       order.status = status;
     }
     if (paymentStatus) order.paymentStatus = paymentStatus;
-    await order.save();
+
+    // Restoration rules: Cancel before shipment, return approved, RTO restore stock
+    const targetStatuses = ["cancelled", "returned", "rto"];
+    if (statusChanged && targetStatuses.includes(status.toLowerCase())) {
+      if (order.inventoryProcessed && !order.inventoryRestored) {
+        await inventoryService.restoreOrderStock(order.id, transaction, `Order Status Update - ${status}`);
+      }
+    }
+
+    await order.save({ transaction });
 
     if (status) {
       await OrderItem.update(
@@ -437,9 +494,12 @@ const updateOrderStatus = async (req, res, next) => {
               { status: { [Op.is]: null } },
             ],
           },
+          transaction,
         }
       );
     }
+
+    await transaction.commit();
 
     // Fetch the order with items to return
     const updatedOrder = await Order.findByPk(order.id, {
@@ -452,6 +512,7 @@ const updateOrderStatus = async (req, res, next) => {
 
     return res.json(updatedOrder);
   } catch (err) {
+    await transaction.rollback();
     next(err);
   }
 };
@@ -489,4 +550,5 @@ module.exports = {
   getOrdersByStatus,
   updateOrderStatus,
   updateOrderItemStatus,
+  pushOrderToShiprocket,
 };

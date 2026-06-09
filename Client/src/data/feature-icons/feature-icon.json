@@ -3,24 +3,28 @@
     "id": 1,
     "image": "/assets/img/icon-img/support-1.png",
     "title": "Free Shipping",
-    "subtitle": "On orders above ₹999"
+    "subtitle": "On orders above ₹999",
+    "link" : "shipping-policy"
   },
   {
     "id": 2,
     "image": "/assets/img/icon-img/support-2.png",
     "title": "Easy Returns",
-    "subtitle": "7-day return policy"
+    "subtitle": "7-day return policy",
+     "link" : "exchange-policy"
   },
   {
     "id": 3,
     "image": "/assets/img/icon-img/support-3.png",
     "title": "Customisation",
-    "subtitle": "Personalised gifts available"
+    "subtitle": "Personalised gifts available",
+    "link" :"terms-conditions"
   },
   {
     "id": 4,
     "image": "/assets/img/icon-img/support-4.png",
     "title": "Secure Payment",
-    "subtitle": "UPI, Card, COD accepted"
+    "subtitle": "UPI, Card, COD accepted",
+    "link" : "payment-policy"
   }
 ]

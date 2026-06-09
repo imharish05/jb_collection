@@ -883,7 +883,21 @@ export default function Products({ showToast }) {
                       type="number" min="0" max="100"
                       value={formData.discount}
                       placeholder="0"
-                      onChange={e => setFormData({ ...formData, discount: e.target.value })}
+                      onChange={e => {
+                        const newDiscount = e.target.value;
+                        setFormData({ ...formData, discount: newDiscount });
+                        const discVal = Number(newDiscount);
+                        if (!Number.isNaN(discVal) && discVal >= 0 && discVal <= 100) {
+                          setVariants(prev => prev.map(v => {
+                            const mrpVal = Number(v.mrp);
+                            if (mrpVal > 0) {
+                              const newSalesPrice = (mrpVal * (1 - discVal / 100)).toFixed(2);
+                              return { ...v, salesPrice: String(newSalesPrice) };
+                            }
+                            return v;
+                          }));
+                        }
+                      }}
                     />
                     <ErrorMsg field="discount" />
                     {formData.discount > 0 && (
@@ -898,9 +912,9 @@ export default function Products({ showToast }) {
                 <div style={{ ...fieldStyle, justifyContent: 'flex-end' }}>
                   {(() => {
                     const mrp = Number(variants[0]?.mrp);
+                    const salesPrice = Number(variants[0]?.salesPrice);
+                    if (!mrp || !salesPrice) return null;
                     const disc = Number(formData.discount);
-                    if (!mrp || !disc) return null;
-                    const effective = (mrp * (1 - disc / 100)).toFixed(2);
                     return (
                       <div style={{
                         padding: '9px 12px', background: KM.bg,
@@ -908,7 +922,7 @@ export default function Products({ showToast }) {
                         fontSize: 13, color: KM.text, display: 'flex', gap: 10, alignItems: 'center',
                       }}>
                         <span style={{ color: KM.muted, fontSize: 11, textDecoration: 'line-through' }}>₹{mrp}</span>
-                        <span style={{ fontWeight: 700, color: KM.green }}>₹{effective}</span>
+                        <span style={{ fontWeight: 700, color: KM.green }}>₹{salesPrice.toFixed(2)}</span>
                         <span style={{ fontSize: 11, color: KM.orange, fontWeight: 600 }}>Save {disc}%</span>
                       </div>
                     );

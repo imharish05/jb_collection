@@ -107,6 +107,16 @@ const Order = sequelize.define(
       field: "partial_cod_amount",
       comment: "Amount to be collected on delivery (product cost)",
     },
+    inventoryProcessed: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: "inventory_processed"
+    },
+    inventoryRestored: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: "inventory_restored"
+    },
   },
   {
     tableName: "orders",

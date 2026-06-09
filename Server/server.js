@@ -36,6 +36,11 @@ const seed = require("./seeders/seed");
 const app = express();
 
 app.use(cors());
+
+// ── Webhook raw-body parser (MUST be before express.json())
+// Razorpay webhook signature verification requires the raw, unparsed request body.
+app.use("/api/payment/webhook", express.raw({ type: "*/*" }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -50,7 +55,8 @@ app.use("/api/wishlist", protect, wishlistRoutes);
 app.use("/api/compare", protect, compareRoutes);
 app.use("/api/blogs", protect, blogRoutes);
 app.use("/api/orders", protect, orderRoutes);
-app.use("/api/payment", protect, paymentRoutes);
+// Payment routes: webhook is public; create-order & verify are protected per-route inside payment.js
+app.use("/api/payment", paymentRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/variants", variantRoutes);

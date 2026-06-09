@@ -571,6 +571,8 @@ const Checkout = () => {
           childComboId: item.childComboId || null,
           comboName: item.isCombo ? item.name : null,
           comboType: item.comboType || null,
+          // ← Mix & Match selections: required for inventory deduction
+          selectedProducts: item.selectedProducts || null,
         })),
         totalAmount: shippingPricing.grandTotal,
         shippingAddressId: selectedShippingAddrId,
@@ -646,6 +648,7 @@ const Checkout = () => {
       const paymentRes = await api.post("/payment/create-delivery-charge-order", {
         deliveryCharge,
         currency: "INR",
+        dbOrderId,  // ← embed in Razorpay notes so webhook can resolve the DB order
       });
 
       const rzpOrderId = paymentRes.data.orderId;
@@ -735,6 +738,7 @@ const Checkout = () => {
       const paymentRes = await api.post("/payment/create-order", {
         amount: shippingPricing.grandTotal,
         currency: "INR",
+        dbOrderId,  // ← embed in Razorpay notes so webhook can resolve the DB order
       });
 
       const rzpOrderId = paymentRes.data.orderId;

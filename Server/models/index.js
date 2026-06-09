@@ -20,6 +20,7 @@ const Coupon      = require("./Coupon");
 const Contact     = require("./Contact");
 const OrderItem   = require("./OrderItem");
 const Testimonial = require("./Testimonial");
+const InventoryLog = require("./InventoryLog");
 
 // ── Password Reset OTP ────────────────────────────────────────────────────────
 const PasswordResetOtp = require("./PasswordResetOtp");
@@ -30,6 +31,12 @@ PasswordResetOtp.belongsTo(User, { foreignKey: "user_id", as: "user" });
 const RootCombo         = require("./RootCombo");
 const ChildCombo        = require("./ChildCombo");
 const ChildComboProduct = require("./ChildComboProduct");
+
+// ── Inventory Log Associations ───────────────────────────────────────────────
+InventoryLog.belongsTo(Order, { foreignKey: "order_id", as: "order", constraints: false });
+Order.hasMany(InventoryLog, { foreignKey: "order_id", as: "inventoryLogs", constraints: false });
+InventoryLog.belongsTo(Product, { foreignKey: "product_id", as: "product", constraints: false });
+InventoryLog.belongsTo(Variant, { foreignKey: "variant_id", as: "variant", constraints: false });
 
 // ── User ↔ Cart / Wishlist / Order ───────────────────────────────────────────────
 User.hasMany(CartItem,     { foreignKey: "user_id", as: "cartItems",     onDelete: "CASCADE" });
@@ -126,4 +133,6 @@ module.exports = {
   ChildComboProduct,
   // Password reset
   PasswordResetOtp,
+  // Inventory log
+  InventoryLog,
 };

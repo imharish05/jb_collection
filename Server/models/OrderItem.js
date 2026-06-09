@@ -114,6 +114,16 @@ const OrderItem = sequelize.define(
       allowNull: true,
       field: "combo_type",
     },
+    selectedProducts: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: "selected_products",
+    },
+    comboSnapshot: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: "combo_snapshot",
+    },
   },
   {
     tableName: "order_items",

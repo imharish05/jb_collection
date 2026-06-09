@@ -37,8 +37,9 @@ const getStats = async (req, res) => {
       delete row.variants;
       
       // Map base product price and discount as fallbacks for MRP and Sale Price
-      row.mrp = parseFloat(row.price) || 0;
-      row.salesPrice = row.price ? parseFloat((row.price * (1 - (row.discount || 0) / 100)).toFixed(2)) : 0;
+      const firstVar = row.Variants?.[0];
+      row.mrp = firstVar ? parseFloat(firstVar.mrp) : (parseFloat(row.price) || 0);
+      row.salesPrice = firstVar ? parseFloat(firstVar.salesPrice) : (row.price ? parseFloat((row.price * (1 - (row.discount || 0) / 100)).toFixed(2)) : 0);
       
       return row;
     });

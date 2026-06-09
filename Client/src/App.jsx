@@ -11,6 +11,7 @@ import { getHeroSlides } from "./store/services/heroSliderService";
 import { loadWishlistService } from "./store/services/wishlistService";
 import api from "./api/axios";
 import { replaceCart } from "./store/slices/cart-slice";
+import PaymentPolicy from "./pages/other/PaymentPolicy";
 
 // Main home
 const HomeFashion = lazy(() => import("./pages/home/HomeFashion"));
@@ -180,6 +181,7 @@ const App = () => {
             <Route path={process.env.PUBLIC_URL + "/terms-conditions"} element={<TermsConditions />} />
             <Route path={process.env.PUBLIC_URL + "/shipping-policy"} element={<ShippingPolicy />} />
             <Route path={process.env.PUBLIC_URL + "/exchange-policy"} element={<ExchangePolicy />} />
+            <Route path={process.env.PUBLIC_URL + "/payment-policy"} element={<PaymentPolicy/>} />
             <Route path={process.env.PUBLIC_URL + "/compare"} element={<Compare />} />
             <Route path={process.env.PUBLIC_URL + "/blog-standard"} element={<BlogStandard />} />
             <Route path={process.env.PUBLIC_URL + "/blog-no-sidebar"} element={<BlogNoSidebar />} />

@@ -1,8 +1,12 @@
 import PropTypes from "prop-types";
+import { Link } from "react-router-dom";
 
 const FeatureIconSingle = ({ singleFeature }) => {
+
+  
+
   return (
-    <div className="support-wrap-28">
+   <Link to={`/${singleFeature.link}`} className="support-wrap-28">
       
       <div className="support-icon-28">
         <img
@@ -14,7 +18,7 @@ const FeatureIconSingle = ({ singleFeature }) => {
         <h5>{singleFeature.title}</h5>
         <p>{singleFeature.subtitle}</p>
       </div>
-    </div>
+    </Link>
   );
 };
 
