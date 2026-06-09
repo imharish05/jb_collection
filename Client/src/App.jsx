@@ -53,6 +53,10 @@ const Checkout = lazy(() => import("./pages/other/Checkout"));
 const OrderConfirmation = lazy(() => import("./pages/other/OrderConfirmation"));
 const OrderDetails = lazy(() => import("./pages/other/OrderDetails"));
 const NotFound = lazy(() => import("./pages/other/NotFound"));
+const PrivacyPolicy = lazy(() => import("./pages/other/policies/PrivacyPolicy"));
+const TermsConditions = lazy(() => import("./pages/other/policies/TermsConditions"));
+const ShippingPolicy = lazy(() => import("./pages/other/policies/ShippingPolicy"));
+const ExchangePolicy = lazy(() => import("./pages/other/policies/ExchangePolicy"));
 
 const App = () => {
   const dispatch = useDispatch();
@@ -172,6 +176,10 @@ const App = () => {
             <Route path={process.env.PUBLIC_URL + "/about"} element={<About />} />
             <Route path={process.env.PUBLIC_URL + "/catalogue"} element={<Catalogue />} />
             <Route path={process.env.PUBLIC_URL + "/contact"} element={<Contact />} />
+            <Route path={process.env.PUBLIC_URL + "/privacy-policy"} element={<PrivacyPolicy />} />
+            <Route path={process.env.PUBLIC_URL + "/terms-conditions"} element={<TermsConditions />} />
+            <Route path={process.env.PUBLIC_URL + "/shipping-policy"} element={<ShippingPolicy />} />
+            <Route path={process.env.PUBLIC_URL + "/exchange-policy"} element={<ExchangePolicy />} />
             <Route path={process.env.PUBLIC_URL + "/compare"} element={<Compare />} />
             <Route path={process.env.PUBLIC_URL + "/blog-standard"} element={<BlogStandard />} />
             <Route path={process.env.PUBLIC_URL + "/blog-no-sidebar"} element={<BlogNoSidebar />} />

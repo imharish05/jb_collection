@@ -219,26 +219,27 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
 
             {/* ── Shop ── */}
             <div>
-              <p className="km-col-title">Shop</p>
+              <p className="km-col-title">Quick Links</p>
               <ul className="km-links">
-                <li><Link to={S}>All Products</Link></li>
-                <li><Link to={`${S}?category=gifts`}>Gift Hampers</Link></li>
-                <li><Link to={`${S}?category=divine`}>Divine Decor</Link></li>
-                <li><Link to={`${S}?category=jewellery`}>Jewellery</Link></li>
-                <li><Link to={`${S}?category=crochet`}>Crochet</Link></li>
-                <li><Link to={`${S}?category=bracelets`}>Bracelets</Link></li>
+                 <li><Link to="/my-account">My Account</Link></li>
+                <li><Link to="/">Home</Link></li>
+                <li><Link to="/about">About</Link></li>
+                <li><Link to="/catalogue">Catalogue</Link></li>
+                <li><Link to="/shop">Shop</Link></li>
+                <li><Link to="/contact">Contact</Link></li>
               </ul>
             </div>
 
             {/* ── Quick Links (Policies + Support merged) ── */}
-            <div>
+                      <div>
               <p className="km-col-title">Quick Links</p>
               <ul className="km-links">
-                <li><Link to="/contact">Contact Us</Link></li>
-                <li><Link to="/my-account">My Account</Link></li>
-                <li><Link to="#">Shipping Policy</Link></li>
-                <li><Link to="#">Refund Policy</Link></li>
-                <li><Link to="#">Privacy Policy</Link></li>
+               
+               
+                <li><Link to="/shipping-policy">Shipping Policy</Link></li>
+                <li><Link to="/exchange-policy">Exchange & Returns</Link></li>
+                <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+                <li><Link to="/terms-conditions">Terms & Conditions</Link></li>
               </ul>
             </div>
 
