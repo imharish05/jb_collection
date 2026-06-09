@@ -244,7 +244,10 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
                       </li>
 
                       {subcategories.map((sub) => {
-                        const subCount  = products.filter(p => p.subcategory?.includes(sub.value)).length;
+                        const subCount  = products.filter(p => 
+                          (p.subCategoryId && String(p.subCategoryId) === String(sub.id)) ||
+                          p.SubCategory?.value === sub.value
+                        ).length;
                         const subActive = activeSubCat === sub.value;
                         return (
                           <li key={sub.value}>

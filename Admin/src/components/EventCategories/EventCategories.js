@@ -147,7 +147,7 @@ export default function EventCategories({ showToast }) {
     
     const newErrors = {};
     if (!label) newErrors.label = 'Please enter an event name';
-    if (!editingId && !imageFile) newErrors.image = 'Image is required';
+    if (!imageFile && !preview) newErrors.image = 'Image is required';
     
     // Validate image dimensions if new image is selected
     if (imageFile && imageDimensions && !imageDimensions.valid) {

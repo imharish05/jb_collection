@@ -183,7 +183,7 @@ export default function HeroSlider({ showToast }) {
     
     if (subtitleError) newErrors.subtitle = subtitleError;
     
-    if (!editingId && !imageFile) newErrors.image = 'Slide image is required';
+    if (!imageFile && !preview) newErrors.image = 'Slide image is required';
     
     // Validate image dimensions if new image is selected
     if (imageFile && imageDimensions && !imageDimensions.valid) {

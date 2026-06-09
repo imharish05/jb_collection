@@ -31,7 +31,7 @@ const countWords = (text) => {
 
 const DESC_LIMITS = {
   short: { maxWords: 30, maxChars: 200 },
-  long:  { minWords: 100, maxChars: 4000 },
+  long:  { minWords: 60, maxChars: 4000 },
 };
 
 const validateComboImageDimensions = (file) => new Promise((resolve) => {
@@ -575,6 +575,11 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
     }
     setErrors({});
 
+    if (!imgFile && !imgPreview) {
+      showToast.error('Image is required');
+      return;
+    }
+
     if (imgFile) {
       const imageCheck = imageValidation || await validateComboImageDimensions(imgFile);
       setImageValidation(imageCheck);
@@ -871,6 +876,11 @@ function RootComboForm({ initial, onSave, onCancel, showToast }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!imgFile && !imgPreview) {
+      showToast.error('Image is required');
+      return;
+    }
+
     if (imgFile) {
       const imageCheck = imageValidation || await validateComboImageDimensions(imgFile);
       setImageValidation(imageCheck);

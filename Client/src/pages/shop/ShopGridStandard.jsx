@@ -56,11 +56,20 @@ const ShopGridStandard = () => {
   const eventParam  = params.get("event");
   const comboParam  = params.get("combo");
   const searchParam = params.get("search");
+  const subCatParam = params.get("subcategory");
 
   // ── Dynamic label map built from Redux state ──────────────────────────────
   const labelMap = useMemo(() => {
     const map = {};
-    categories.forEach(c => { if (c.value && c.label) map[c.value] = c.label; });
+    categories.forEach(c => { 
+      if (c.value && c.label) map[c.value] = c.label; 
+      if (c.subcategories) {
+        c.subcategories.forEach(s => {
+          if (s.value && s.label) map[s.value] = s.label;
+          if (s.id && s.label) map[String(s.id)] = s.label;
+        });
+      }
+    });
     events.forEach(e => { if (e.value && e.label) map[e.value] = e.label; });
     navCombos.forEach(c => { if (c.value && (c.label || c.name)) map[c.value] = c.label || c.name; });
     // also index by id string for combo lookups
@@ -75,6 +84,7 @@ const ShopGridStandard = () => {
 
   const activeLabel = searchParam
     ? `Search: "${searchParam}"`
+    : subCatParam ? (labelMap[subCatParam] || subCatParam)
     : catParam  ? (labelMap[catParam]  || catParam)
     : eventParam ? (labelMap[eventParam] || eventParam)
     : comboParam === "all" ? "All Combos"
@@ -135,11 +145,22 @@ const ShopGridStandard = () => {
       }
     }
     let sorted = comboHandled ? source : getSortedProducts(source, sortType, sortValue);
+
+    // Apply subcategory filter if present
+    if (subCatParam) {
+      sorted = sorted.filter(p => 
+        (p.subCategoryId && String(p.subCategoryId) === String(subCatParam)) ||
+        p.SubCategory?.value === subCatParam ||
+        (p.SubCategory?.id && String(p.SubCategory.id) === String(subCatParam)) ||
+        (p.SubCategory && String(p.SubCategory) === String(subCatParam))
+      );
+    }
+
     sorted = getSortedProducts(sorted, filterSortType, filterSortValue);
     if (priceRange) sorted = sorted.filter(p => p.price >= priceRange.min && p.price <= priceRange.max);
     setSortedProducts(sorted);
     setCurrentData(showAll ? sorted : sorted.slice(offset, offset + pageLimit));
-  }, [offset, products, sortType, sortValue, filterSortType, filterSortValue, pageLimit, showAll, priceRange]);
+  }, [offset, products, sortType, sortValue, subCatParam, filterSortType, filterSortValue, pageLimit, showAll, priceRange]);
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) setDrawerOpen(false);
@@ -167,7 +188,7 @@ const ShopGridStandard = () => {
     setDrawerOpen(false);
   };
 
-  const activeFilterCount = (priceRange ? 1 : 0) + (catParam || eventParam || comboParam ? 1 : 0);
+  const activeFilterCount = (priceRange ? 1 : 0) + (catParam || eventParam || comboParam || subCatParam ? 1 : 0);
   const sliderVal = (draftPrice || priceRange) ? [(draftPrice || priceRange).min, (draftPrice || priceRange).max] : [priceMin, priceMax];
 
   return (
@@ -249,10 +270,16 @@ const ShopGridStandard = () => {
                   <button onClick={() => { setPriceRange(null); setDraftPrice(null); }}>×</button>
                 </span>
               )}
-              {catParam && (
+              {catParam && !subCatParam && (
                 <span className="filter-chip">
                   {labelMap[catParam] || catParam}
                   <button onClick={() => navigate(S)}>×</button>
+                </span>
+              )}
+              {subCatParam && (
+                <span className="filter-chip">
+                  {labelMap[subCatParam] || subCatParam}
+                  <button onClick={() => navigate(catParam ? `${S}?category=${catParam}` : S)}>×</button>
                 </span>
               )}
               {eventParam && (

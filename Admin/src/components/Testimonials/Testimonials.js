@@ -141,7 +141,7 @@ export default function Testimonials({ showToast }) {
     else { const err = validateField('designation', designation); if (err) newErrors.designation = err; }
     if (!text.trim())        newErrors.text        = 'Testimonial text is required';
     else { const err = validateField('text', text); if (err) newErrors.text = err; }
-    if (!editingId && !imageFile) newErrors.image = 'Image is required';
+    if (!imageFile && !preview) newErrors.image = 'Image is required';
     if (imageFile && imageDimensions && !imageDimensions.valid) newErrors.image = imageDimensions.error;
 
     if (Object.keys(newErrors).length > 0) {

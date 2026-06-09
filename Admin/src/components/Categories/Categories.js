@@ -157,7 +157,7 @@ export default function Categories({ showToast }) {
     
     const newErrors = {};
     if (!categoryName) newErrors.categoryName = 'Please enter a category name';
-    if (!editingId && !imageFile) newErrors.image = 'Image is required';
+    if (!imageFile && !preview) newErrors.image = 'Image is required';
     
     // Validate image dimensions if new image is selected
     if (imageFile && imageDimensions && !imageDimensions.valid) {

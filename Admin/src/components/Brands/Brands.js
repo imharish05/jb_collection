@@ -132,7 +132,7 @@ export default function Brands({ showToast }) {
     const newErrors = {};
 
     if (!brandName.trim()) newErrors.brandName = 'Brand name is required';
-    if (!editingId && !logoFile) newErrors.logo = 'Brand logo is required';
+    if (!logoFile && !preview) newErrors.logo = 'Brand logo is required';
     if (logoFile && logoDimensions && !logoDimensions.valid) {
       newErrors.logo = logoDimensions.error;
     }

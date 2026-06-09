@@ -206,7 +206,7 @@ export default function TimelessTreasures({ showToast }) {
       if (titleErr) newErrors.title = titleErr;
     }
     
-    if (!editingId && !imageFile) newErrors.image = 'Banner image is required';
+    if (!imageFile && !preview) newErrors.image = 'Banner image is required';
     
     // Validate image dimensions if new image is selected
     if (imageFile && imageDimensions && !imageDimensions.valid) {

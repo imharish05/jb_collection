@@ -181,9 +181,11 @@ function FixedProductCard({ cp }) {
 function ProductSlider({ items, renderCard }) {
   const trackRef = React.useRef(null);
   const [offset, setOffset] = useState(0);
-  const [dragging, setDragging] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  // Use refs so drag state never triggers a re-render that blocks click events
   const dragStart = React.useRef(null);
   const offsetAtDragStart = React.useRef(0);
+  const hasMoved = React.useRef(false); // true only after threshold movement
 
   // Determine visible count via CSS media query match
   const [visibleCount, setVisibleCount] = useState(
@@ -198,58 +200,71 @@ function ProductSlider({ items, renderCard }) {
   }, []);
 
   const gap = 8;
-  const itemWidthPct = (100 - gap * (visibleCount - 1) / (visibleCount)) / visibleCount;
+  const itemWidthPct = (100 - gap * (visibleCount - 1) / visibleCount) / visibleCount;
   const maxOffset = Math.max(0, items.length - visibleCount);
 
   const clampOffset = (val) => Math.max(0, Math.min(maxOffset, val));
 
-  // Get pixel width of one item step from the track element
   const getStepPx = () => {
     if (!trackRef.current) return 0;
-    const trackW = trackRef.current.offsetWidth;
-    return (trackW + gap) / visibleCount;
+    return (trackRef.current.offsetWidth + gap) / visibleCount;
   };
 
   // ── Mouse drag ──
   const onMouseDown = (e) => {
-    setDragging(true);
     dragStart.current = e.clientX;
     offsetAtDragStart.current = offset;
+    hasMoved.current = false;       // reset on every press
   };
   const onMouseMove = (e) => {
-    if (!dragging) return;
+    if (dragStart.current === null) return;
     const dx = e.clientX - dragStart.current;
+    // Only start a real drag after 5 px of movement so simple clicks pass through
+    if (!hasMoved.current && Math.abs(dx) < 5) return;
+    if (!hasMoved.current) {
+      hasMoved.current = true;
+      setIsDragging(true);
+    }
     const step = getStepPx();
     if (step === 0) return;
-    const rawOffset = offsetAtDragStart.current - dx / step;
-    setOffset(clampOffset(rawOffset));
+    setOffset(clampOffset(offsetAtDragStart.current - dx / step));
   };
   const onMouseUp = (e) => {
-    if (!dragging) return;
-    setDragging(false);
+    if (!hasMoved.current) {
+      // It was a plain click — don't interfere
+      dragStart.current = null;
+      return;
+    }
+    setIsDragging(false);
+    hasMoved.current = false;
     const dx = e.clientX - dragStart.current;
     const step = getStepPx();
-    const snapped = Math.round(offsetAtDragStart.current - dx / step);
-    setOffset(clampOffset(snapped));
+    setOffset(clampOffset(Math.round(offsetAtDragStart.current - dx / step)));
+    dragStart.current = null;
   };
 
   // ── Touch drag ──
   const onTouchStart = (e) => {
     dragStart.current = e.touches[0].clientX;
     offsetAtDragStart.current = offset;
+    hasMoved.current = false;
   };
   const onTouchMove = (e) => {
+    if (dragStart.current === null) return;
     const dx = e.touches[0].clientX - dragStart.current;
+    if (!hasMoved.current && Math.abs(dx) < 5) return;
+    hasMoved.current = true;
     const step = getStepPx();
     if (step === 0) return;
-    const rawOffset = offsetAtDragStart.current - dx / step;
-    setOffset(clampOffset(rawOffset));
+    setOffset(clampOffset(offsetAtDragStart.current - dx / step));
   };
   const onTouchEnd = (e) => {
+    if (!hasMoved.current) { dragStart.current = null; return; }
     const dx = e.changedTouches[0].clientX - dragStart.current;
     const step = getStepPx();
-    const snapped = Math.round(offsetAtDragStart.current - dx / step);
-    setOffset(clampOffset(snapped));
+    setOffset(clampOffset(Math.round(offsetAtDragStart.current - dx / step)));
+    hasMoved.current = false;
+    dragStart.current = null;
   };
 
   const translatePct = offset * (itemWidthPct + gap / visibleCount);
@@ -260,7 +275,7 @@ function ProductSlider({ items, renderCard }) {
     <div style={{ paddingBottom: dotCount > 1 ? 28 : 0 }}>
       {/* track */}
       <div
-        style={{ overflow: "hidden", cursor: dragging ? "grabbing" : "grab", userSelect: "none" }}
+        style={{ overflow: "hidden", cursor: isDragging ? "grabbing" : "grab", userSelect: "none" }}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
@@ -275,7 +290,7 @@ function ProductSlider({ items, renderCard }) {
             display: "flex",
             gap: `${gap}px`,
             transform: `translateX(calc(-${translatePct}% - ${offset * gap}px))`,
-            transition: dragging ? "none" : "transform 0.3s ease",
+            transition: isDragging ? "none" : "transform 0.3s ease",
           }}
         >
           {items.map((item, i) => (
@@ -284,7 +299,8 @@ function ProductSlider({ items, renderCard }) {
               style={{
                 flex: `0 0 calc(${100 / visibleCount}% - ${gap * (visibleCount - 1) / visibleCount}px)`,
                 minWidth: 0,
-                pointerEvents: dragging ? "none" : "auto",
+                // Only block pointer events during an actual drag (not on every mousedown)
+                pointerEvents: isDragging ? "none" : "auto",
               }}
             >
               {renderCard(item)}
@@ -801,36 +817,32 @@ const ComboDetailPage = () => {
                         )}
                       </div>
 
-                      {/* Eligible products slider */}
-                      {child.comboProducts && (
+                      {/* Eligible products — horizontal scroll, no slider */}
+                      {child.comboProducts && child.comboProducts.some(cp => cp.isEligible) && (
                         <div style={{ marginBottom: 8 }}>
-                          {(() => {
-                            const eligible = child.comboProducts.filter(cp => cp.isEligible);
-                            const useSlider = eligible.length > 2;
-                            const cards = eligible.map(cp => {
+                          <div className="mm-scroll" style={{
+                            display: "flex",
+                            gap: 8,
+                            overflowX: "auto",
+                            WebkitOverflowScrolling: "touch",
+                            scrollbarWidth: "none",
+                            paddingBottom: 6,
+                            paddingTop: 2,
+                          }}>
+                            <style>{`.mm-scroll::-webkit-scrollbar{display:none}`}</style>
+                            {child.comboProducts.filter(cp => cp.isEligible).map(cp => {
                               const isSel = selections.some(s =>
                                 String(s.productId) === String(cp.productId) &&
                                 String(s.variantId || "") === String(cp.variantId || "")
                               );
-                              return { cp, isSel };
-                            });
-                            return useSlider ? (
-                              <ProductSlider
-                                items={cards}
-                                renderCard={({ cp, isSel }) => (
+                              return (
+                                <div key={cp.id} style={{ flex: "0 0 calc(25% - 6px)", minWidth: 120, maxWidth: 160 }}>
                                   <MixMatchCard cp={cp} selected={isSel}
                                     onToggle={(cp, vId) => handleToggle(cp, vId)} />
-                                )}
-                              />
-                            ) : (
-                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
-                                {cards.map(({ cp, isSel }) => (
-                                  <MixMatchCard key={cp.id} cp={cp} selected={isSel}
-                                    onToggle={(cp, vId) => handleToggle(cp, vId)} />
-                                ))}
-                              </div>
-                            );
-                          })()}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </>
