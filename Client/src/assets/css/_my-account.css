@@ -495,6 +495,7 @@
   background: transparent;
   border: 1.5px solid #db1a5d;
   color: #db1a5d;
+  padding: 10px;
 }
 
 .km-account-btn--secondary:hover,

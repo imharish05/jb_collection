@@ -294,7 +294,7 @@ const handleDelete = (id) => {
       <div style={{ display: "flex", gap: 8, marginTop: 6, justifyContent: "center" }}>
         <button
           onClick={() => hide()} // Correctly closes the toast on cancel
-          className="km-account-btn km-account-btn--secondary km-account-btn--compact"
+          className="km-account-btn km-account-btn--secondary km-account-btn--compact p-3"
         >
           Cancel
         </button>
@@ -650,41 +650,8 @@ const toggleVisibility = (field) => {
                               />
                               <ErrorMsg field="phone" errObj={addrErrors} />
                             </div>
-                            <div className="col-md-4">
-                              <label style={labelStyle}>Pincode *</label>
-                              <input
-                                name="pincode"
-                                style={{ ...inp, ...(addrErrors.pincode ? { borderColor: "#d9534f", marginBottom: 4 } : {}) }}
-                                placeholder="6-digit pincode"
-                                value={form.pincode}
-                                maxLength={6}
-                                onChange={(e) => { if (/^\d*$/.test(e.target.value)) handleFormChange(e); }}
-                              />
-                              <ErrorMsg field="pincode" errObj={addrErrors} />
-                            </div>
-                            <div className="col-md-4">
-                              <label style={labelStyle}>City / Town *</label>
-                              <input
-                                name="city"
-                                style={{ ...inp, ...(addrErrors.city ? { borderColor: "#d9534f", marginBottom: 4 } : {}) }}
-                                placeholder="City"
-                                value={form.city}
-                                onChange={handleFormChange}
-                              />
-                              <ErrorMsg field="city" errObj={addrErrors} />
-                            </div>
-                            <div className="col-md-4">
-                              <label style={labelStyle}>State *</label>
-                              <input
-                                name="state"
-                                style={{ ...inp, ...(addrErrors.state ? { borderColor: "#d9534f", marginBottom: 4 } : {}) }}
-                                placeholder="State"
-                                value={form.state}
-                                onChange={handleFormChange}
-                              />
-                              <ErrorMsg field="state" errObj={addrErrors} />
-                            </div>
-                            <div className="col-12">
+
+                                                        <div className="col-12">
                               <label style={labelStyle}>Street Address *</label>
                               <input
                                 name="street"
@@ -699,6 +666,41 @@ const toggleVisibility = (field) => {
                               <label style={labelStyle}>Apartment / Floor / Landmark (Optional)</label>
                               <input name="apartment" style={inp} placeholder="Apartment, suite, unit, landmark etc." value={form.apartment} onChange={handleFormChange} />
                             </div>
+                                                        <div className="col-md-4">
+                              <label style={labelStyle}>City / Town *</label>
+                              <input
+                                name="city"
+                                style={{ ...inp, ...(addrErrors.city ? { borderColor: "#d9534f", marginBottom: 4 } : {}) }}
+                                placeholder="City"
+                                value={form.city}
+                                onChange={handleFormChange}
+                              />
+                              <ErrorMsg field="city" errObj={addrErrors} />
+                            </div>
+                            <div className="col-md-4">
+                              <label style={labelStyle}>Pincode *</label>
+                              <input
+                                name="pincode"
+                                style={{ ...inp, ...(addrErrors.pincode ? { borderColor: "#d9534f", marginBottom: 4 } : {}) }}
+                                placeholder="6-digit pincode"
+                                value={form.pincode}
+                                maxLength={6}
+                                onChange={(e) => { if (/^\d*$/.test(e.target.value)) handleFormChange(e); }}
+                              />
+                              <ErrorMsg field="pincode" errObj={addrErrors} />
+                            </div>
+                            <div className="col-md-4">
+                              <label style={labelStyle}>State *</label>
+                              <input
+                                name="state"
+                                style={{ ...inp, ...(addrErrors.state ? { borderColor: "#d9534f", marginBottom: 4 } : {}) }}
+                                placeholder="State"
+                                value={form.state}
+                                onChange={handleFormChange}
+                              />
+                              <ErrorMsg field="state" errObj={addrErrors} />
+                            </div>
+
                             <div className="col-md-6">
                               <label style={labelStyle}>Country</label>
                               <input name="country" style={inp} placeholder="Country" value={form.country} onChange={handleFormChange} />
@@ -716,7 +718,7 @@ const toggleVisibility = (field) => {
                               </label>
                             </div>
                           </div>
-                          <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "flex-end" }}>
+                          <div style={{ display: "flex", gap: 15, marginTop: 24, justifyContent: "center" }}>
                             <button
                               onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); setAddrErrors({}); }}
                               className="km-account-btn km-account-btn--secondary"
