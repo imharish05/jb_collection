@@ -71,12 +71,6 @@ const NAV_ITEMS = [
   {
     section: 'Orders',
     items: [
-      { id: 'orders_new', label: 'New Orders', icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4l3 3"/>
-        </svg>
-      )},
       { id: 'orders_confirmed', label: 'Confirmed Orders', icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
