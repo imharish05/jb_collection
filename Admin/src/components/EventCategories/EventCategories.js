@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchEvents, createEvent, editEvent, removeEvent } from '../../redux/services/eventService';
@@ -96,11 +96,47 @@ export default function EventCategories({ showToast }) {
   const [preview, setPreview]     = useState(null);
   const [errors, setErrors]       = useState({});
   const [imageDimensions, setImageDimensions] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef();
 
   const generateSlug = (name) => {
     return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   };
+
+  const handleDrag = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const f = files[0];
+      if (f.type.startsWith('image/')) {
+        setImageFile(f);
+        validateEventImageDimensions(f).then((result) => {
+          setImageDimensions(result);
+          if (!result.valid) {
+            setErrors(prev => ({ ...prev, image: result.error }));
+          } else {
+            setErrors(prev => {
+              const newErrors = { ...prev };
+              delete newErrors.image;
+              return newErrors;
+            });
+          }
+        });
+      }
+    }
+  }, []);
 
   useEffect(() => { dispatch(fetchEvents()); }, [dispatch]);
 
@@ -230,8 +266,17 @@ export default function EventCategories({ showToast }) {
                 <label className="km-label">Event Image • Recommended: 400×400px (1:1) • Min: 200×200px • Max: 3MB (JPG/WebP)</label>
                 <div className="upload-grid-wrapper">
                   <div
-                    className={`drop-zone-area ${imageFile ? 'active-file' : ''}`}
+                    className={`drop-zone-area ${imageFile ? 'active-file' : ''} ${dragActive ? 'drag-active' : ''}`}
                     onClick={() => fileInputRef.current.click()}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                    style={{
+                      transition: 'all 0.2s ease',
+                      backgroundColor: dragActive ? 'rgba(24, 26, 46, 0.08)' : undefined,
+                      borderColor: dragActive ? '#1A3A6B' : undefined,
+                    }}
                   >
                     <input
                       ref={fileInputRef}
@@ -258,9 +303,9 @@ export default function EventCategories({ showToast }) {
                       }}
                     />
                     <div className="drop-zone-info">
-                      <div className="upload-icon text-center">{imageFile ? '✅' : '📸'}</div>
+                      <div className="upload-icon text-center">{dragActive ? '📥' : imageFile ? '✅' : '📸'}</div>
                       <p className="upload-text">
-                        {imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b>image</>}
+                        {dragActive ? <>Drop image here</> : imageFile ? <b>{imageFile.name}</b> : <>Click to <b>browse</b> or <b>drag &amp; drop</b></>}
                       </p>
                     </div>
                   </div>
