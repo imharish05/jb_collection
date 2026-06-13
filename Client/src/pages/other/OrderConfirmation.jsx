@@ -15,11 +15,8 @@ const getOrderItemImage = (img) => {
   return raw ? getImgUrl(raw) : "/assets/img/products/products-1.jpeg";
 };
 
-// Parse variant attributes from a cart item into [{key, val}] array
 const resolveVariantTags = (item) => {
   const tags = [];
-
-  // 1. Backend variant: selectedVariantName like "Color: Red · Size: M"
   if (item.selectedVariantName) {
     const parts = item.selectedVariantName.split(/·|,/).map(s => s.trim()).filter(Boolean);
     parts.forEach(part => {
@@ -32,8 +29,6 @@ const resolveVariantTags = (item) => {
     });
     return tags;
   }
-
-  // 2. variation array with attributes
   const v = Array.isArray(item.variation) ? item.variation[0] : null;
   if (v) {
     const raw = v.attributes;
@@ -46,38 +41,174 @@ const resolveVariantTags = (item) => {
       attrs.forEach(a => tags.push({ key: a.key, val: a.value }));
       return tags;
     }
-    if (v.variantName) {
-      tags.push({ key: "Variant", val: v.variantName });
-      return tags;
-    }
+    if (v.variantName) { tags.push({ key: "Variant", val: v.variantName }); return tags; }
   }
-
-  // 3. Old-style color/size
   if (item.selectedProductColor) tags.push({ key: "Color", val: item.selectedProductColor });
-  if (item.selectedProductSize) tags.push({ key: "Size", val: item.selectedProductSize });
-
+  if (item.selectedProductSize)  tags.push({ key: "Size",  val: item.selectedProductSize  });
   return tags;
 };
 
+// ── Status Tracker ────────────────────────────────────────────────────────────
+const STATUSES = ["confirmed", "processing", "shipped", "processing", "delivered"];
+const STATUS_LABELS = {
+  pending:    "Order Confirmed",
+  confirmed:  "Order Confirmed",
+  processing: "Out for Delivery",
+  shipped:    "Shipped",
+  delivered:  "Delivered",
+};
+const STATUS_STEPS = [
+  { key: "confirmed",  label: "Order Confirmed" },
+  { key: "processing-pre", label: "Processing" },
+  { key: "shipped",    label: "Shipped" },
+  { key: "processing", label: "Out for Delivery" },
+  { key: "delivered",  label: "Delivered" },
+];
+
+const OrderTracker = ({ currentStatus }) => {
+  const normalized = (currentStatus || "confirmed").toLowerCase();
+  const stepOrder = ["confirmed", "processing-pre", "shipped", "processing", "delivered"];
+  // map DB status to step index
+  const statusToStep = {
+    pending:    0,
+    confirmed:  0,
+    "processing-pre": 1,
+    shipped:    2,
+    processing: 3,
+    delivered:  4,
+  };
+  const currentIdx = statusToStep[normalized] ?? 0;
+
+  return (
+    <div style={{ ...cardStyle, marginBottom: 24 }}>
+      <h4 style={cardTitle}>🚀 Order Status</h4>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0 4px", overflowX: "auto" }}>
+        {STATUS_STEPS.map((step, i) => {
+          const done    = i < currentIdx;
+          const active  = i === currentIdx;
+          const pending = i > currentIdx;
+          return (
+            <div key={step.key} style={{ display: "flex", alignItems: "center", flex: i < STATUS_STEPS.length - 1 ? 1 : "none" }}>
+              {/* Step node */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 60 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, fontWeight: 700,
+                  background: done || active ? "#db1a5d" : "#f0f0f0",
+                  color: done || active ? "#fff" : "#bbb",
+                  border: active ? "3px solid #f4a0bb" : "3px solid transparent",
+                  boxShadow: active ? "0 0 0 3px rgba(219,26,93,0.15)" : "none",
+                  transition: "all 0.2s",
+                  flexShrink: 0,
+                }}>
+                  {done ? "✓" : i + 1}
+                </div>
+                <span style={{
+                  fontSize: 10, marginTop: 5, fontWeight: active ? 700 : 500,
+                  color: active ? "#db1a5d" : done ? "#333" : "#bbb",
+                  textAlign: "center", lineHeight: 1.3, whiteSpace: "nowrap",
+                }}>
+                  {step.label}
+                </span>
+              </div>
+              {/* Connector line */}
+              {i < STATUS_STEPS.length - 1 && (
+                <div style={{
+                  flex: 1, height: 3, borderRadius: 2, margin: "0 4px", marginBottom: 18,
+                  background: i < currentIdx ? "#db1a5d" : "#f0f0f0",
+                }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ── Invoice helpers ───────────────────────────────────────────────────────────
+const generateReceiptText = (state) => {
+  const { orderId, cartItems = [], selectedAddr = {}, paymentMethod, partialCod, couponCode, couponDiscount, shippingCharge, tax } = state;
+  const subtotal  = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
+  const discount  = parseFloat(couponDiscount || 0);
+  const shipping  = parseFloat(shippingCharge || partialCod?.shippingCharge || 0);
+  const taxAmt    = parseFloat(tax || 0);
+  const grandTotal = subtotal - discount + shipping + taxAmt;
+
+  const lines = [
+    "=== KAMALI GIFTS — ORDER RECEIPT ===",
+    `Order ID   : ${orderId}`,
+    `Date       : ${new Date().toLocaleDateString("en-IN")}`,
+    "",
+    "--- ITEMS ---",
+    ...cartItems.map(i => `${i.name} x${i.quantity}  ₹${(i.price * i.quantity).toFixed(2)}`),
+    "",
+    "--- PAYMENT BREAKDOWN ---",
+    `Subtotal   : ₹${subtotal.toFixed(2)}`,
+    discount > 0 ? `Coupon (${couponCode})  : -₹${discount.toFixed(2)}` : null,
+    `Shipping   : ₹${shipping.toFixed(2)}`,
+    taxAmt > 0 ? `Tax/GST    : ₹${taxAmt.toFixed(2)}` : null,
+    `Grand Total: ₹${grandTotal.toFixed(2)}`,
+    "",
+    "--- DELIVERY ADDRESS ---",
+    selectedAddr.fullName,
+    selectedAddr.street,
+    `${selectedAddr.city}, ${selectedAddr.state} — ${selectedAddr.pincode}`,
+    selectedAddr.phone,
+    "",
+    "Thank you for shopping with Kamali Gifts! 💝",
+  ].filter(l => l !== null).join("\n");
+
+  return lines;
+};
+
+const downloadReceipt = (state) => {
+  const text = generateReceiptText(state);
+  const blob = new Blob([text], { type: "text/plain" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `KamaliGifts_Receipt_${state.orderId}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+// ── Main Component ────────────────────────────────────────────────────────────
 const OrderConfirmation = () => {
   const { state } = useLocation();
-  const orderId = state?.orderId || "KG000000";
-  const selectedAddr = state?.selectedShippingAddr || state?.selectedAddr || {};
+  const orderId       = state?.orderId       || "KG000000";
+  const selectedAddr  = state?.selectedShippingAddr || state?.selectedAddr || {};
   const paymentMethod = state?.paymentMethod || "partial_cod";
-  const cartItems = state?.cartItems || [];
+  const cartItems     = state?.cartItems     || [];
   const estimatedDays = state?.estimatedDays || null;
-  const partialCod = state?.partialCod || null;
+  const partialCod    = state?.partialCod    || null;
+
+  // NEW: additional state fields (backward-compatible — all optional)
+  const orderStatus    = state?.orderStatus    || state?.status || "confirmed";
+  const couponCode     = state?.couponCode     || null;
+  const couponDiscount = parseFloat(state?.couponDiscount || 0);
+  const shippingCharge = parseFloat(state?.shippingCharge || partialCod?.shippingCharge || 0);
+  const tax            = parseFloat(state?.tax || 0);
+
+  const subtotal   = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const grandTotal = subtotal - couponDiscount + shippingCharge + tax;
 
   const cartTotalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const PAYMENT_LABELS = {
-    card: "Credit / Debit Card",
-    upi: "UPI",
-    netbanking: "Net Banking",
-    wallet: "Wallet",
-    cod: "Cash on Delivery (COD)",
-    razorpay: "Online Payment (Razorpay)",
+    card:        "Credit / Debit Card",
+    upi:         "UPI",
+    netbanking:  "Net Banking",
+    wallet:      "Wallet",
+    cod:         "Cash on Delivery (COD)",
+    razorpay:    "Online Payment (Razorpay)",
     partial_cod: "Partial COD (Delivery paid online)",
+  };
+
+  const stateForDownload = {
+    orderId, cartItems, selectedAddr, paymentMethod,
+    partialCod, couponCode, couponDiscount, shippingCharge, tax,
   };
 
   return (
@@ -86,7 +217,7 @@ const OrderConfirmation = () => {
       <LayoutOne headerTop="visible">
         <div className="container" style={{ padding: "30px 15px" }}>
 
-          {/* Thank you banner */}
+          {/* ── Thank you banner (UNCHANGED) ─────────────────────────────── */}
           <div
             style={{
               background: "linear-gradient(135deg, rgba(223, 77, 129, 0.4) 0%, rgb(255, 232, 214) 100%)",
@@ -119,10 +250,13 @@ const OrderConfirmation = () => {
             </div>
           </div>
 
-          {/* Order details grid */}
+          {/* ── NEW: Order Tracker ────────────────────────────────────────── */}
+          <OrderTracker currentStatus={orderStatus} />
+
+          {/* ── Order details grid ───────────────────────────────────────── */}
           <div className="row" style={{ marginBottom: 32 }}>
 
-            {/* Items */}
+            {/* ── Items (UNCHANGED) ──────────────────────────────────────── */}
             <div className="col-lg-7">
               <div style={cardStyle}>
                 <h4 style={cardTitle}>📦 Items Ordered</h4>
@@ -138,63 +272,128 @@ const OrderConfirmation = () => {
                     {cartItems.map((item, i) => {
                       const variantTags = resolveVariantTags(item);
                       return (
-                      <tr key={i} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                        <td style={tdStyle}>
-                          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                            <img
-                              src={getOrderItemImage(item.image)}
-                              alt=""
-                              style={{ width: 52, height: 52, objectFit: "cover", borderRadius: 10, flexShrink: 0 }}
-                            />
-                            <div>
-                              <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: variantTags.length ? 6 : 0 }}>
-                                {item.name}
-                              </div>
-                              {variantTags.length > 0 && (
-                                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                                  {variantTags.map((tag, ti) => (
-                                    <span key={ti} style={{
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 3,
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      color: "#555",
-                                      background: "#f4f4f6",
-                                      border: "1px solid #e4e4e8",
-                                      borderRadius: 20,
-                                      padding: "2px 9px",
-                                      lineHeight: 1.6,
-                                    }}>
-                                      <span style={{ color: "#999", fontWeight: 400 }}>{tag.key}:</span>
-                                      {" "}{tag.val}
-                                    </span>
-                                  ))}
+                        <tr key={i} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                          <td style={tdStyle}>
+                            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                              <img
+                                src={getOrderItemImage(item.image)}
+                                alt=""
+                                style={{ width: 52, height: 52, objectFit: "cover", borderRadius: 10, flexShrink: 0 }}
+                              />
+                              <div>
+                                <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: variantTags.length ? 6 : 0 }}>
+                                  {item.name}
                                 </div>
-                              )}
+                                {variantTags.length > 0 && (
+                                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                                    {variantTags.map((tag, ti) => (
+                                      <span key={ti} style={{
+                                        display: "inline-flex", alignItems: "center", gap: 3,
+                                        fontSize: 11, fontWeight: 500, color: "#555",
+                                        background: "#f4f4f6", border: "1px solid #e4e4e8",
+                                        borderRadius: 20, padding: "2px 9px", lineHeight: 1.6,
+                                      }}>
+                                        <span style={{ color: "#999", fontWeight: 400 }}>{tag.key}:</span>
+                                        {" "}{tag.val}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td style={{ ...tdStyle, textAlign: "center" }}>{item.quantity}</td>
-                        <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>
-                          ₹{(item.price * item.quantity).toFixed(2)}
-                        </td>
-                      </tr>
+                          </td>
+                          <td style={{ ...tdStyle, textAlign: "center" }}>{item.quantity}</td>
+                          <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>
+                            ₹{(item.price * item.quantity).toFixed(2)}
+                          </td>
+                        </tr>
                       );
                     })}
                   </tbody>
                 </table>
+
+                {/* ── NEW: Payment Breakdown (replaces simple Grand Total) ── */}
                 <div style={{ borderTop: "2px solid #f0f0f0", marginTop: 12, paddingTop: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 16 }}>
+                  {/* Subtotal */}
+                  <div style={breakdownRow}>
+                    <span style={breakdownLabel}>Subtotal</span>
+                    <span style={breakdownValue}>₹{subtotal.toFixed(2)}</span>
+                  </div>
+                  {/* Coupon Discount */}
+                  {couponDiscount > 0 && (
+                    <div style={breakdownRow}>
+                      <span style={breakdownLabel}>
+                        Coupon Discount
+                        {couponCode && <span style={{ fontSize: 11, color: "#27ae60", marginLeft: 6, fontWeight: 500 }}>({couponCode})</span>}
+                      </span>
+                      <span style={{ ...breakdownValue, color: "#27ae60", fontWeight: 700 }}>
+                        −₹{couponDiscount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {/* Shipping */}
+                  <div style={breakdownRow}>
+                    <span style={breakdownLabel}>Shipping Charges</span>
+                    <span style={breakdownValue}>
+                      {shippingCharge > 0 ? `₹${shippingCharge.toFixed(2)}` : <span style={{ color: "#27ae60" }}>Free</span>}
+                    </span>
+                  </div>
+                  {/* Tax */}
+                  {tax > 0 && (
+                    <div style={breakdownRow}>
+                      <span style={breakdownLabel}>Tax / GST</span>
+                      <span style={breakdownValue}>₹{tax.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {/* Grand Total */}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 16, marginTop: 8, paddingTop: 8, borderTop: "1px dashed #eee" }}>
                     <span>Grand Total</span>
-                    <span style={{ color: "rgba(223, 77, 129)" }}>₹{parseFloat(cartTotalPrice).toFixed(2)}</span>
+                    <span style={{ color: "rgba(223, 77, 129)" }}>₹{grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
+
+                {/* ── NEW: Coupon savings callout ───────────────────────── */}
+                {couponDiscount > 0 && couponCode && (
+                  <div style={{
+                    marginTop: 12, background: "linear-gradient(90deg,#f0fff4,#e6ffed)",
+                    border: "1px solid #b2dfdb", borderRadius: 10,
+                    padding: "10px 14px", fontSize: 13, color: "#27ae60", fontWeight: 600,
+                    display: "flex", alignItems: "center", gap: 8,
+                  }}>
+                    <span style={{ fontSize: 16 }}>🎉</span>
+                    You saved <strong>₹{couponDiscount.toFixed(2)}</strong> using coupon <strong>{couponCode}</strong>!
+                  </div>
+                )}
               </div>
+
+              {/* ── NEW: Coupon Information card ──────────────────────────── */}
+              {couponDiscount > 0 && couponCode && (
+                <div style={{ ...cardStyle, marginTop: 16, background: "#f9fff9", border: "1px solid #c8e6c9" }}>
+                  <h4 style={{ ...cardTitle, color: "#27ae60", borderBottomColor: "#c8e6c9" }}>🏷️ Coupon Applied</h4>
+                  <div style={infoRow}>
+                    <span style={infoLabel}>Code</span>
+                    <span style={{
+                      ...infoValue, background: "#e8f5e9", color: "#1b5e20",
+                      padding: "3px 12px", borderRadius: 20, fontWeight: 700, fontSize: 13,
+                      letterSpacing: 1, border: "1px solid #a5d6a7",
+                    }}>
+                      {couponCode}
+                    </span>
+                  </div>
+                  <div style={infoRow}>
+                    <span style={infoLabel}>Discount</span>
+                    <span style={{ ...infoValue, color: "#27ae60", fontWeight: 700, fontSize: 15 }}>
+                      −₹{couponDiscount.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Delivery & Payment */}
+            {/* ── Right column ─────────────────────────────────────────────── */}
             <div className="col-lg-5">
+
+              {/* ── Delivery Details (UNCHANGED) ─────────────────────────── */}
               <div style={{ ...cardStyle, marginBottom: 16 }}>
                 <h4 style={cardTitle}>🏠 Delivery Details</h4>
                 <div style={infoRow}>
@@ -223,7 +422,8 @@ const OrderConfirmation = () => {
                 </div>
               </div>
 
-              <div style={cardStyle}>
+              {/* ── Payment (UNCHANGED base, new Partial COD callout added) ─ */}
+              <div style={{ ...cardStyle, marginBottom: 16 }}>
                 <h4 style={cardTitle}>💳 Payment</h4>
                 <div style={infoRow}>
                   <span style={infoLabel}>Method</span>
@@ -231,17 +431,12 @@ const OrderConfirmation = () => {
                 </div>
                 <div style={infoRow}>
                   <span style={infoLabel}>Status</span>
-                  <span
-                    style={{
-                      ...infoValue,
-                      background: paymentMethod === "cod" ? "#fff3e0" : paymentMethod === "partial_cod" ? "#fff8e1" : "#e8f5e9",
-                      color: paymentMethod === "cod" ? "rgba(223, 77, 129)" : paymentMethod === "partial_cod" ? "#e65100" : "#2e7d32",
-                      padding: "2px 10px",
-                      borderRadius: 20,
-                      fontWeight: 600,
-                      fontSize: 12,
-                    }}
-                  >
+                  <span style={{
+                    ...infoValue,
+                    background: paymentMethod === "cod" ? "#fff3e0" : paymentMethod === "partial_cod" ? "#fff8e1" : "#e8f5e9",
+                    color: paymentMethod === "cod" ? "rgba(223, 77, 129)" : paymentMethod === "partial_cod" ? "#e65100" : "#2e7d32",
+                    padding: "2px 10px", borderRadius: 20, fontWeight: 600, fontSize: 12,
+                  }}>
                     {paymentMethod === "cod" ? "Pay on Delivery" : paymentMethod === "partial_cod" ? "Delivery Charge Paid" : "Payment Received"}
                   </span>
                 </div>
@@ -255,13 +450,54 @@ const OrderConfirmation = () => {
                       <span style={{ ...infoLabel, color: "#e65100" }}>Due on delivery</span>
                       <span style={{ ...infoValue, color: "#e65100", fontWeight: 800, fontSize: 15 }}>₹{partialCod.amountDueOnDelivery?.toFixed(2)}</span>
                     </div>
+
+                    {/* ── NEW: Partial COD highlighted callout ─────────── */}
+                    <div style={{
+                      marginTop: 12,
+                      background: "linear-gradient(135deg, #fff3e0, #ffe0b2)",
+                      border: "1.5px solid #ffcc80",
+                      borderRadius: 10,
+                      padding: "12px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                    }}>
+                      <span style={{ fontSize: 22 }}>💰</span>
+                      <div>
+                        <div style={{ fontSize: 11, color: "#bf360c", fontWeight: 600, marginBottom: 2 }}>
+                          AMOUNT TO BE COLLECTED AT DELIVERY
+                        </div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: "#e65100" }}>
+                          ₹{partialCod.amountDueOnDelivery?.toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#e65100", marginTop: 2 }}>
+                          Please keep exact change ready
+                        </div>
+                      </div>
+                    </div>
                   </>
                 )}
+              </div>
+
+              {/* ── NEW: Invoice / Receipt Download ──────────────────────── */}
+              <div style={{ ...cardStyle, marginBottom: 0 }}>
+                <h4 style={cardTitle}>📄 Documents</h4>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => downloadReceipt(stateForDownload)}
+                    style={docBtnStyle}
+                  >
+                    ⬇ Download Receipt
+                  </button>
+                </div>
+                <p style={{ fontSize: 11, color: "#aaa", marginTop: 10, marginBottom: 0 }}>
+                  Full invoice will be sent to your email.
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Notification note */}
+          {/* ── Notification note (UNCHANGED) ─────────────────────────────── */}
           <div
             style={{
               background: "#f0f8ff",
@@ -283,36 +519,25 @@ const OrderConfirmation = () => {
             </span>
           </div>
 
-          {/* CTA Buttons */}
-          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          {/* ── NEW: Action Buttons (extended from existing CTA section) ──── */}
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link
               to={process.env.PUBLIC_URL + "/my-account?tab=orders"}
-              style={{
-                background: "#db1a5d",
-                color: "#fff",
-                padding: "12px 32px",
-                borderRadius: 30,
-                fontWeight: 600,
-                textDecoration: "none",
-                fontSize: 15,
-              }}
+              style={ctaBtnPrimary}
             >
-              View My Orders
+              📋 View My Orders
+            </Link>
+            <Link
+              to={process.env.PUBLIC_URL + "/my-account?tab=orders&track=" + orderId}
+              style={ctaBtnOutline}
+            >
+              🔍 Track Order
             </Link>
             <Link
               to={process.env.PUBLIC_URL + "/shop"}
-              style={{
-                background: "#fff",
-                color: "#db1a5d",
-                padding: "12px 32px",
-                borderRadius: 30,
-                fontWeight: 600,
-                textDecoration: "none",
-                fontSize: 15,
-                border: "2px solid #db1a5d",
-              }}
+              style={{ ...ctaBtnOutline }}
             >
-              Continue Shopping
+              🛍️ Continue Shopping
             </Link>
           </div>
 
@@ -322,6 +547,7 @@ const OrderConfirmation = () => {
   );
 };
 
+// ── Styles ────────────────────────────────────────────────────────────────────
 const cardStyle = {
   background: "#fff",
   border: "1px solid #eee",
@@ -331,23 +557,41 @@ const cardStyle = {
   boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
 };
 const cardTitle = {
-  fontWeight: 700,
-  fontSize: 15,
-  marginBottom: 16,
-  color: "#333",
-  paddingBottom: 10,
-  borderBottom: "1px solid #f0f0f0",
+  fontWeight: 700, fontSize: 15, marginBottom: 16, color: "#333",
+  paddingBottom: 10, borderBottom: "1px solid #f0f0f0",
 };
-const thStyle = {
-  padding: "8px 12px",
-  fontSize: 12,
-  fontWeight: 600,
-  color: "#888",
-  textAlign: "left",
-};
-const tdStyle = { padding: "10px 12px", fontSize: 14 };
-const infoRow = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10, gap: 16 };
+const thStyle = { padding: "8px 12px", fontSize: 12, fontWeight: 600, color: "#888", textAlign: "left" };
+const tdStyle  = { padding: "10px 12px", fontSize: 14 };
+const infoRow  = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10, gap: 16 };
 const infoLabel = { fontSize: 13, color: "#888", flexShrink: 0 };
 const infoValue = { fontSize: 13, color: "#333", fontWeight: 500, textAlign: "right" };
+
+// NEW shared styles
+const breakdownRow = {
+  display: "flex", justifyContent: "space-between", alignItems: "center",
+  marginBottom: 8, fontSize: 13,
+};
+const breakdownLabel = { color: "#666" };
+const breakdownValue = { fontWeight: 600, color: "#333" };
+
+const docBtnStyle = {
+  background: "#f5f5f5", color: "#333", border: "1px solid #ddd",
+  borderRadius: 20, padding: "8px 18px", fontSize: 13, fontWeight: 600,
+  cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+};
+
+const ctaBtnPrimary = {
+  background: "#db1a5d", color: "#fff",
+  padding: "12px 28px", borderRadius: 30,
+  fontWeight: 600, textDecoration: "none", fontSize: 14,
+  display: "inline-flex", alignItems: "center", gap: 6,
+};
+const ctaBtnOutline = {
+  background: "#fff", color: "#db1a5d",
+  padding: "12px 28px", borderRadius: 30,
+  fontWeight: 600, textDecoration: "none", fontSize: 14,
+  border: "2px solid #db1a5d",
+  display: "inline-flex", alignItems: "center", gap: 6,
+};
 
 export default OrderConfirmation;

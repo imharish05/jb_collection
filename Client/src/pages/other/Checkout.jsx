@@ -49,17 +49,24 @@ const resolveCartImg = (img) => {
 
 const toAmount = (value) => Number.parseFloat(value || 0) || 0;
 
+const GST_RATE = 0.18;
+
 const withGrandTotal = (pricing) => {
   const subtotal = toAmount(pricing.subtotal);
   const shipping = toAmount(pricing.shipping);
   const couponDiscount = toAmount(pricing.couponDiscount);
+  // Use passed gstAmount if available, otherwise compute from subtotal
+  const gstAmount = pricing.gstAmount !== undefined
+    ? toAmount(pricing.gstAmount)
+    : subtotal * GST_RATE;
 
   return {
     ...pricing,
     subtotal,
+    gstAmount,
     shipping,
     couponDiscount,
-    grandTotal: Math.max(0, subtotal + shipping - couponDiscount),
+    grandTotal: Math.max(0, subtotal + gstAmount + shipping - couponDiscount),
   };
 };
 
@@ -151,10 +158,13 @@ const Checkout = () => {
     });
 
     if (navState) {
+      const base = sub || navState.subtotal || 0;
+      const gst = navState.gstAmount !== undefined ? navState.gstAmount : base * GST_RATE;
       setShippingPricing((prev) => withGrandTotal({
         ...prev,
         ...navState,
-        subtotal: sub || navState.subtotal,
+        subtotal: base,
+        gstAmount: gst,
         couponDiscount: navState.couponCode ? navState.couponDiscount : prev.couponDiscount,
         couponCode: navState.couponCode || prev.couponCode || null,
         couponType: navState.couponType || prev.couponType || null,
@@ -165,6 +175,7 @@ const Checkout = () => {
       setShippingPricing((prev) => withGrandTotal({
         ...prev,
         subtotal: sub,
+        gstAmount: sub * GST_RATE,
       }));
     }
   }, [checkoutItems, currency.currencyRate, navState]);
@@ -189,6 +200,8 @@ const Checkout = () => {
   const [checkingServiceability, setCheckingServiceability] = useState(false);
   const [shippingPricing, setShippingPricing] = useState({
     subtotal: 0,
+    gstAmount: 0,
+    gstRate: GST_RATE,
     shipping: 0,
     couponDiscount: 0,
     couponCode: null,
@@ -1612,8 +1625,15 @@ if (attrsArray.length) {
                   {/* ── Price Breakdown ── */}
                   <div className="kco-sum-rows">
                     <div className="kco-sum-row">
-                      <span>Subtotal</span>
+                      <span>Subtotal (before GST)</span>
                       <span>₹{shippingPricing.subtotal.toFixed(2)}</span>
+                    </div>
+
+                    <div className="kco-sum-row">
+                      <span style={{ color: "#555" }}>
+                        GST (18%)
+                      </span>
+                      <span style={{ color: "#555" }}>+ ₹{(shippingPricing.gstAmount || shippingPricing.subtotal * GST_RATE).toFixed(2)}</span>
                     </div>
 
                     {checkingServiceability && (
@@ -1655,7 +1675,7 @@ if (attrsArray.length) {
                   </div>
 
                   <div className="kco-total-line">
-                    <span>Total</span>
+                    <span>Total (incl. GST)</span>
                     <span style={{ color: "#db1a5d" }}>₹{grandTotalWithCOD.toFixed(2)}</span>
                   </div>
 

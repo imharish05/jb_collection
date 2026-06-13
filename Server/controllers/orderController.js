@@ -3,9 +3,22 @@ const { Order, CartItem, User, Product, Variant, OrderItem, Address, Coupon } = 
 const sequelize = require("../config/database");
 const { Op } = require("sequelize");
 const { sendOrderConfirmationEmail } = require("../utils/mailer");
-const { shiprocketPost } = require("../utils/shiprocket");
+const { shiprocketPost, resolveShiprocketPaymentMethod } = require("../utils/shiprocket");
 const inventoryService = require("../services/inventoryService");
 
+// ─────────────────────────────────────────────────────────────────────────────
+// pushOrderToShiprocket
+//
+// Called AFTER payment is verified (or immediately for pure COD).
+// Determines payment_method and cod_amount based on order.paymentType:
+//
+//   PARTIAL_COD → payment_method="COD", cod_amount = order.codAmount
+//                 (customer pays remaining balance at door)
+//   FULL_COD    → payment_method="COD", cod_amount = order.totalAmount
+//   PREPAID     → payment_method="Prepaid", cod_amount = 0
+//
+// sub_total is ALWAYS the full order value (Shiprocket uses it for declared value).
+// ─────────────────────────────────────────────────────────────────────────────
 const pushOrderToShiprocket = async (orderId, userEmail = "") => {
   try {
     const order = await Order.findByPk(orderId, {
@@ -21,33 +34,65 @@ const pushOrderToShiprocket = async (orderId, userEmail = "") => {
     }
 
     const addr = order.shippingAddress;
+
+    // Build line items for Shiprocket
     const srItems = order.items.map((item) => ({
       name: item.productName,
-      sku: item.selectedVariantId || item.productId,
+      sku: String(item.selectedVariantId || item.productId),
       units: item.quantity,
-      selling_price: parseFloat(item.salesPrice || item.price),
+      selling_price: parseFloat(item.salesPrice || item.price || 0),
       discount: parseFloat(item.discount || 0),
       tax: 0,
       hsn: 0,
     }));
 
+    // ── KEY FIX: resolve payment method + COD amount ──────────────────────────
+    const { payment_method, cod_amount } = resolveShiprocketPaymentMethod(order);
+
+    console.log(
+      `[Shiprocket] Order ${orderId} | paymentType=${order.paymentType} | ` +
+      `payment_method=${payment_method} | cod_amount=${cod_amount} | ` +
+      `sub_total=${order.totalAmount}`
+    );
+
+    // sub_total = full order value (NOT just what was paid online).
+    // Shiprocket uses this for insurance / declared value.
+    // For COD/Partial COD, this is the full product cost.
+    const subTotal = parseFloat(order.totalAmount) - parseFloat(order.shippingCharge || 0);
+
     const srPayload = {
-      order_id: order.id,
+      order_id: String(order.id),
       order_date: new Date(order.createdAt).toISOString().slice(0, 19).replace("T", " "),
       pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
-      billing_customer_name: addr.fullName,
-      billing_last_name: "",
+
+      // Billing details
+      billing_customer_name: addr.firstName || addr.fullName || "",
+      billing_last_name: addr.lastName || "",
       billing_address: `${addr.street}${addr.apartment ? ", " + addr.apartment : ""}`,
       billing_city: addr.city,
-      billing_pincode: addr.pincode,
+      billing_pincode: String(addr.pincode),
       billing_state: addr.state,
       billing_country: addr.country || "India",
       billing_email: userEmail || "",
-      billing_phone: addr.phone,
+      billing_phone: String(addr.phone),
+
+      // Shipping = billing (same address)
       shipping_is_billing: true,
+
+      // Order items
       order_items: srItems,
-      payment_method: (order.paymentMethod || "cod").toUpperCase() === "COD" ? "COD" : "Prepaid",
-      sub_total: parseFloat(order.totalAmount) - parseFloat(order.shippingCharge || 0),
+
+      // ── CRITICAL: COD fields ──────────────────────────────────────────────
+      payment_method,          // "COD" or "Prepaid"
+      sub_total: subTotal,     // Full declared value of goods
+
+      // cod_amount: amount courier will collect at delivery.
+      //   PARTIAL_COD → remaining balance (totalAmount - advancePaid)
+      //   FULL_COD    → full totalAmount
+      //   PREPAID     → 0 (omitted / not collected)
+      ...(payment_method === "COD" && { cod_amount: cod_amount }),
+
+      // Package dimensions (defaults — update per product category if needed)
       length: 10,
       breadth: 10,
       height: 10,
@@ -55,7 +100,11 @@ const pushOrderToShiprocket = async (orderId, userEmail = "") => {
     };
 
     const srResponse = await shiprocketPost("/orders/create/adhoc", srPayload);
-    console.log("[Shiprocket] Order created:", srResponse?.order_id, "| Shipment:", srResponse?.shipment_id);
+    console.log(
+      "[Shiprocket] Order created | SR order_id:", srResponse?.order_id,
+      "| shipment_id:", srResponse?.shipment_id,
+      "| channel_order_id:", srResponse?.channel_order_id
+    );
 
     if (srResponse?.order_id) {
       await Order.update(
@@ -67,34 +116,28 @@ const pushOrderToShiprocket = async (orderId, userEmail = "") => {
       );
     }
   } catch (srErr) {
-    console.error("[Shiprocket] Failed to create order:", srErr?.response?.data || srErr.message);
+    // Log full Shiprocket error response for debugging
+    console.error(
+      "[Shiprocket] Failed to create order:",
+      srErr?.response?.data || srErr.message
+    );
   }
 };
 
-// Dashboard sends these status values in the URL:
-//   new | confirmed | shipped | delivery | delivered | cancelled
-// But the DB ENUM stores:
-//   pending | confirmed | processing | shipped | delivered | cancelled
-//
-// This map translates dashboard → DB
+// Dashboard status map: dashboard param → DB ENUM
 const STATUS_MAP = {
   new:       "pending",
   confirmed: "confirmed",
   shipped:   "shipped",
-  delivery:  "processing",   // "Out for Delivery" in dashboard = "processing" in DB
+  delivery:  "processing",
   delivered: "delivered",
   cancelled: "cancelled",
   returned:  "returned",
 };
 
 const ORDER_ITEM_STATUS_OPTIONS = [
-  "pending",
-  "confirmed",
-  "processing",
-  "shipped",
-  "delivered",
-  "cancelled",
-  "returned",
+  "pending", "confirmed", "processing", "shipped",
+  "delivered", "cancelled", "returned",
 ];
 
 // ─── GET /api/orders  (customer — own orders) ─────────────────────────────────
@@ -134,6 +177,16 @@ const getOrderById = async (req, res, next) => {
 };
 
 // ─── POST /api/orders  (customer — create order) ──────────────────────────────
+//
+// Partial COD flow:
+//   1. Frontend sends paymentMethod="partial_cod", advancePaid=<delivery charge>
+//   2. We compute codAmount = totalAmount - advancePaid (validated >= 0)
+//   3. Order saved with paymentType="PARTIAL_COD", status="pending"
+//   4. Frontend then calls /api/payment/create-order with amount=advancePaid
+//   5. After Razorpay callback, /api/payment/verify is called
+//   6. paymentController.processSuccessfulPayment() updates order + calls pushOrderToShiprocket
+//   7. Shiprocket receives payment_method="COD", cod_amount=codAmount ← THE FIX
+//
 const createOrder = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -148,10 +201,11 @@ const createOrder = async (req, res, next) => {
       notes,
       shippingCharge,
       estimatedDeliveryDays,
+      advancePaid: clientAdvancePaid, // amount customer pays online (for PARTIAL_COD)
     } = req.body;
 
     const shippingId = shippingAddressId || req.body.shippingAddress?.id;
-    const billingId = billingAddressId || req.body.billingAddress?.id || null;
+    const billingId  = billingAddressId  || req.body.billingAddress?.id || null;
 
     if (!items || !items.length || !totalAmount || !shippingId) {
       await transaction.rollback();
@@ -169,10 +223,9 @@ const createOrder = async (req, res, next) => {
       return res.status(404).json({ message: "Shipping address not found" });
     }
 
-    let billingAddress = null;
     let billingAddressRef = billingId;
     if (billingAddressRef) {
-      billingAddress = await Address.findOne({
+      const billingAddress = await Address.findOne({
         where: { id: billingAddressRef, userId: req.user.id },
         transaction,
       });
@@ -184,7 +237,7 @@ const createOrder = async (req, res, next) => {
       billingAddressRef = shippingAddress.id;
     }
 
-    // 1. Validate Stock (Centralized Inventory Service)
+    // Validate stock
     try {
       await inventoryService.validateOrderStock(items, transaction);
     } catch (stockErr) {
@@ -192,7 +245,7 @@ const createOrder = async (req, res, next) => {
       return res.status(400).json({ message: stockErr.message });
     }
 
-    // Server-side validation: compute total from items and verify against client-submitted amount
+    // Compute server-side total and enrich items
     let serverComputedTotal = 0;
     const itemsWithDetails = [];
 
@@ -213,12 +266,12 @@ const createOrder = async (req, res, next) => {
           return res.status(404).json({ message: `Product ${item.productId} not found` });
         }
         itemPrice = parseFloat(variant.salesPrice || variant.mrp || 0);
-        itemData.productName = `${product.name}${variant.variantName ? ` (${variant.variantName})` : ''}`;
-        itemData.selectedVariantId = variant.id;
+        itemData.productName = `${product.name}${variant.variantName ? ` (${variant.variantName})` : ""}`;
+        itemData.selectedVariantId   = variant.id;
         itemData.selectedVariantName = variant.variantName || null;
-        itemData.variantAttributes = variant.attributes || [];
-        itemData.image = variant.image || product.image || [];
-        itemData.mrp = variant.mrp || null;
+        itemData.variantAttributes   = variant.attributes || [];
+        itemData.image    = variant.image || product.image || [];
+        itemData.mrp      = variant.mrp || null;
         itemData.salesPrice = variant.salesPrice || null;
       } else {
         const product = await Product.findByPk(item.productId, { transaction });
@@ -227,34 +280,33 @@ const createOrder = async (req, res, next) => {
           return res.status(404).json({ message: `Product ${item.productId} not found` });
         }
         itemPrice = parseFloat(item.price || product.price || 0);
-        itemData.productName = isComboItem ? (item.comboName || item.name || product.name) : product.name;
-        itemData.selectedVariantId = null;
+        itemData.productName        = isComboItem ? (item.comboName || item.name || product.name) : product.name;
+        itemData.selectedVariantId   = null;
         itemData.selectedVariantName = null;
-        itemData.variantAttributes = [];
+        itemData.variantAttributes   = [];
         itemData.image = item.image || product.image || [];
       }
 
-      itemData.isCombo = isComboItem;
-      itemData.rootComboId = item.rootComboId || null;
+      itemData.isCombo      = isComboItem;
+      itemData.rootComboId  = item.rootComboId  || null;
       itemData.childComboId = item.childComboId || null;
-      itemData.comboName = item.comboName || item.name || null;
-      itemData.comboType = item.comboType || null;
+      itemData.comboName    = item.comboName || item.name || null;
+      itemData.comboType    = item.comboType || null;
       itemData.selectedProducts = item.selectedProducts || null;
-
       itemData.comboSnapshot = isComboItem ? {
         comboId: item.childComboId,
         comboName: item.comboName || item.name || null,
         comboType: item.comboType || null,
         selectedProducts: item.selectedProducts || null,
         quantities: item.quantity,
-        pricing: itemPrice
+        pricing: itemPrice,
       } : null;
 
-      const itemTotal = itemPrice * item.quantity;
-      serverComputedTotal += itemTotal;
+      serverComputedTotal += itemPrice * item.quantity;
       itemsWithDetails.push(itemData);
     }
 
+    // Coupon validation
     let serverCouponDiscount = 0;
     let normalizedCouponCode = couponCode || null;
 
@@ -263,28 +315,21 @@ const createOrder = async (req, res, next) => {
         where: { code: normalizedCouponCode, is_active: true },
         transaction,
       });
-
       if (!coupon) {
         await transaction.rollback();
         return res.status(400).json({ message: "Invalid coupon code" });
       }
-
       if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
         await transaction.rollback();
         return res.status(400).json({ message: "Coupon has expired" });
       }
-
       if (serverComputedTotal < parseFloat(coupon.min_order || 0)) {
         await transaction.rollback();
-        return res.status(400).json({
-          message: `Minimum order of ₹${coupon.min_order} required`,
-        });
+        return res.status(400).json({ message: `Minimum order of ₹${coupon.min_order} required` });
       }
-
       serverCouponDiscount = coupon.type === "percent"
         ? (serverComputedTotal * parseFloat(coupon.value || 0)) / 100
         : parseFloat(coupon.value || 0);
-
       if (coupon.max_discount) {
         serverCouponDiscount = Math.min(serverCouponDiscount, parseFloat(coupon.max_discount));
       }
@@ -295,80 +340,117 @@ const createOrder = async (req, res, next) => {
       return res.status(400).json({ message: "Coupon code is required for a discount" });
     }
 
-    const clientTotal = parseFloat(totalAmount);
+    const clientTotal      = parseFloat(totalAmount);
     const minimumAllowedTotal = Math.max(0, serverComputedTotal - serverCouponDiscount);
     if (clientTotal < minimumAllowedTotal - 1) {
       await transaction.rollback();
       return res.status(400).json({
-        message: `Order total too low. Expected at least ₹${minimumAllowedTotal.toFixed(2)}, received ₹${clientTotal.toFixed(2)}`,
+        message: `Order total too low. Expected ₹${minimumAllowedTotal.toFixed(2)}, got ₹${clientTotal.toFixed(2)}`,
         expectedMinimum: minimumAllowedTotal,
         receivedTotal: clientTotal,
       });
     }
 
-    const isPartialCod = (paymentMethod || "cod") === "partial_cod";
-    const isCod = (paymentMethod || "cod") === "cod";
+    // ── Resolve payment type and COD amounts ─────────────────────────────────
+    const pm = (paymentMethod || "cod").toLowerCase();
+    const isPartialCod = pm === "partial_cod";
+    const isCod        = pm === "cod";
+    const isPrepaid    = !isPartialCod && !isCod; // razorpay etc.
 
-    const order = await Order.create({
-      userId: req.user.id,
-      totalAmount: parseFloat(totalAmount),
-      shippingAddressId: shippingAddress.id,
-      billingAddressId: billingAddressRef,
-      paymentMethod: isPartialCod ? "partial_cod" : (paymentMethod || "cod"),
-      paymentStatus: isPartialCod ? "partial" : "pending",
-      couponCode: normalizedCouponCode,
-      notes,
-      shippingCharge: parseFloat(shippingCharge || 0),
-      estimatedDeliveryDays: estimatedDeliveryDays || null,
-      partialCodAmount: isPartialCod
-        ? parseFloat(totalAmount) - parseFloat(shippingCharge || 0)
-        : null,
-      status: isCod ? "confirmed" : "pending",
-      inventoryProcessed: false,
-      inventoryRestored: false,
-    }, { transaction });
+    let resolvedPaymentType = "FULL_COD";
+    let resolvedAdvancePaid = null;
+    let resolvedCodAmount   = null;
 
-    // Create OrderItem records for each item
-    for (const itemData of itemsWithDetails) {
-      await OrderItem.create({
-        orderId: order.id,
-        productId: itemData.productId,
-        productName: itemData.productName,
-        selectedVariantId: itemData.selectedVariantId || null,
-        selectedVariantName: itemData.selectedVariantName || null,
-        variantAttributes: itemData.variantAttributes || null,
-        quantity: itemData.quantity,
-        price: itemData.price,
-        mrp: itemData.mrp || null,
-        salesPrice: itemData.salesPrice || null,
-        discount: itemData.discount || 0,
-        image: itemData.image || null,
-        selectedProductColor: itemData.selectedProductColor || null,
-        selectedProductSize: itemData.selectedProductSize || null,
-        isCombo: itemData.isCombo || false,
-        rootComboId: itemData.rootComboId || null,
-        childComboId: itemData.childComboId || null,
-        comboName: itemData.comboName || null,
-        comboType: itemData.comboType || null,
-        status: order.status || "pending",
-        selectedProducts: itemData.selectedProducts || null,
-        comboSnapshot: itemData.comboSnapshot || null,
-      }, { transaction });
+    if (isPartialCod) {
+      resolvedPaymentType = "PARTIAL_COD";
+      resolvedAdvancePaid = parseFloat(clientAdvancePaid || shippingCharge || 0);
+      resolvedCodAmount   = parseFloat(totalAmount) - resolvedAdvancePaid;
+
+      // VALIDATION: cod_amount must never be negative
+      if (resolvedCodAmount < 0) {
+        await transaction.rollback();
+        return res.status(400).json({
+          message: `Invalid Partial COD: advance paid (₹${resolvedAdvancePaid}) exceeds total (₹${totalAmount}). COD amount cannot be negative.`,
+          advancePaid: resolvedAdvancePaid,
+          totalAmount: parseFloat(totalAmount),
+          codAmount: resolvedCodAmount,
+        });
+      }
+    } else if (isCod) {
+      resolvedPaymentType = "FULL_COD";
+      resolvedCodAmount   = parseFloat(totalAmount);
+    } else {
+      resolvedPaymentType = "PREPAID";
+      resolvedAdvancePaid = parseFloat(totalAmount);
+      resolvedCodAmount   = 0;
     }
 
-    // COD stock decrement & cart cleanup inside transaction
+    // Create the order
+    const order = await Order.create(
+      {
+        userId:            req.user.id,
+        totalAmount:       parseFloat(totalAmount),
+        shippingAddressId: shippingAddress.id,
+        billingAddressId:  billingAddressRef,
+        paymentMethod:     pm,
+        paymentStatus:     isPartialCod ? "partial" : (isCod ? "pending" : "pending"),
+        paymentType:       resolvedPaymentType,
+        advancePaid:       resolvedAdvancePaid,
+        codAmount:         resolvedCodAmount,
+        couponCode:        normalizedCouponCode,
+        notes,
+        shippingCharge:    parseFloat(shippingCharge || 0),
+        estimatedDeliveryDays: estimatedDeliveryDays || null,
+        // Legacy field — keep populated for backward compat
+        partialCodAmount:  isPartialCod ? resolvedCodAmount : null,
+        status:            isCod ? "confirmed" : "pending",
+        inventoryProcessed: false,
+        inventoryRestored:  false,
+      },
+      { transaction }
+    );
+
+    // Create OrderItem records
+    for (const itemData of itemsWithDetails) {
+      await OrderItem.create(
+        {
+          orderId:             order.id,
+          productId:           itemData.productId,
+          productName:         itemData.productName,
+          selectedVariantId:   itemData.selectedVariantId   || null,
+          selectedVariantName: itemData.selectedVariantName || null,
+          variantAttributes:   itemData.variantAttributes   || null,
+          quantity:            itemData.quantity,
+          price:               itemData.price,
+          mrp:                 itemData.mrp        || null,
+          salesPrice:          itemData.salesPrice || null,
+          discount:            itemData.discount   || 0,
+          image:               itemData.image      || null,
+          selectedProductColor: itemData.selectedProductColor || null,
+          selectedProductSize:  itemData.selectedProductSize  || null,
+          isCombo:     itemData.isCombo     || false,
+          rootComboId: itemData.rootComboId || null,
+          childComboId: itemData.childComboId || null,
+          comboName:   itemData.comboName  || null,
+          comboType:   itemData.comboType  || null,
+          status:      order.status        || "pending",
+          selectedProducts: itemData.selectedProducts || null,
+          comboSnapshot:    itemData.comboSnapshot    || null,
+        },
+        { transaction }
+      );
+    }
+
+    // For pure COD: decrement stock + clear cart immediately inside transaction
     if (isCod) {
       await inventoryService.decrementOrderStock(order.id, transaction, "Order Placement - COD", "cod");
       order.inventoryProcessed = true;
       await order.save({ transaction });
-
-      // Clear cart immediately for COD
       await CartItem.destroy({ where: { userId: req.user.id }, transaction });
     }
 
     await transaction.commit();
 
-    // Fetch the order with items to return
     const createdOrder = await Order.findByPk(order.id, {
       include: [
         { model: OrderItem, as: "items" },
@@ -377,7 +459,7 @@ const createOrder = async (req, res, next) => {
       ],
     });
 
-    // Post-commit operations for COD
+    // Post-commit for pure COD only (Partial COD / Prepaid handled by paymentController after verify)
     if (isCod) {
       try {
         const userRecord = await User.findByPk(req.user.id, { attributes: ["name", "email"] });
@@ -385,13 +467,12 @@ const createOrder = async (req, res, next) => {
           await sendOrderConfirmationEmail(createdOrder, { name: userRecord.name, email: userRecord.email });
         }
       } catch (emailErr) {
-        console.error("[Mailer] Failed to send order confirmation:", emailErr.message);
+        console.error("[Mailer] Failed to send confirmation:", emailErr.message);
       }
-
       try {
         await pushOrderToShiprocket(createdOrder.id, req.user.email);
       } catch (srErr) {
-        console.error("[Shiprocket] Failed to push order:", srErr.message);
+        console.error("[Shiprocket] Failed to push COD order:", srErr.message);
       }
     }
 
@@ -421,19 +502,15 @@ const getAllOrders = async (req, res, next) => {
 };
 
 // ─── GET /api/orders/:status  (admin — dashboard order counts) ────────────────
-// Dashboard.jsx calls this 6 times: /new /confirmed /shipped /delivery /delivered /cancelled
-// Returns an array; dashboard counts .length client-side
 const getOrdersByStatus = async (req, res, next) => {
   try {
     const { status } = req.params;
     const dbStatus = STATUS_MAP[status];
-
     if (!dbStatus) {
       return res.status(400).json({
         message: `Invalid status "${status}". Valid: ${Object.keys(STATUS_MAP).join(", ")}`,
       });
     }
-
     const orders = await Order.findAll({
       where: { status: dbStatus },
       order: [["createdAt", "DESC"]],
@@ -443,8 +520,7 @@ const getOrdersByStatus = async (req, res, next) => {
         { model: Address, as: "billingAddress" },
       ],
     });
-
-    return res.json(orders); // array — frontend reads .length
+    return res.json(orders);
   } catch (err) {
     next(err);
   }
@@ -473,7 +549,6 @@ const updateOrderStatus = async (req, res, next) => {
     }
     if (paymentStatus) order.paymentStatus = paymentStatus;
 
-    // Restoration rules: Cancel before shipment, return approved, RTO restore stock
     const targetStatuses = ["cancelled", "returned", "rto"];
     if (statusChanged && targetStatuses.includes(status.toLowerCase())) {
       if (order.inventoryProcessed && !order.inventoryRestored) {
@@ -501,7 +576,6 @@ const updateOrderStatus = async (req, res, next) => {
 
     await transaction.commit();
 
-    // Fetch the order with items to return
     const updatedOrder = await Order.findByPk(order.id, {
       include: [
         { model: OrderItem, as: "items" },
@@ -509,7 +583,6 @@ const updateOrderStatus = async (req, res, next) => {
         { model: Address, as: "billingAddress" },
       ],
     });
-
     return res.json(updatedOrder);
   } catch (err) {
     await transaction.rollback();
@@ -517,25 +590,20 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
-// PATCH /api/orders/:orderId/items/:itemId/status (admin - product-wise item status)
+// PATCH /api/orders/:orderId/items/:itemId/status
 const updateOrderItemStatus = async (req, res, next) => {
   try {
     const { orderId, itemId } = req.params;
     const { status } = req.body;
-
     if (!ORDER_ITEM_STATUS_OPTIONS.includes(status)) {
       return res.status(400).json({ message: "Invalid order item status" });
     }
-
     const order = await Order.findByPk(orderId);
     if (!order) return res.status(404).json({ message: "Order not found" });
-
     const item = await OrderItem.findOne({ where: { id: itemId, orderId } });
     if (!item) return res.status(404).json({ message: "Order item not found" });
-
     item.status = status;
     await item.save();
-
     return res.json(item);
   } catch (err) {
     next(err);
