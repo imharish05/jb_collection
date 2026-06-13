@@ -117,7 +117,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           display: block;
         }
         .km-contact-text {
-          font-size: 15px;
+          font-size: 13px;
           color: #666;
           line-height: 1.6;
         }

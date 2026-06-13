@@ -324,11 +324,6 @@ const ShippingPolicy = () => {
                 </div>
               </div>
             </div>
-
-            <div className="policy-last-updated">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              This policy was last reviewed and updated in June 2026.
-            </div>
           </div>
         </div>
       </LayoutOne>
