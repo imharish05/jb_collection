@@ -432,22 +432,6 @@ useEffect(() => {
                   </>
                 )}
               </div>
-
-              {/* ── NEW: Invoice / Receipt Download ──────────────────────── */}
-              <div style={{ ...cardStyle, marginBottom: 0 }}>
-                <h4 style={cardTitle}>📄 Documents</h4>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button
-                    onClick={() => downloadReceipt(stateForDownload)}
-                    style={docBtnStyle}
-                  >
-                    ⬇ Download Receipt
-                  </button>
-                </div>
-                <p style={{ fontSize: 11, color: "#aaa", marginTop: 10, marginBottom: 0 }}>
-                  Full invoice will be sent to your email.
-                </p>
-              </div>
             </div>
           </div>
 
@@ -480,12 +464,6 @@ useEffect(() => {
               style={ctaBtnPrimary}
             >
               📋 View My Orders
-            </Link>
-            <Link
-              to={process.env.PUBLIC_URL + "/my-account?tab=orders&track=" + orderId}
-              style={ctaBtnOutline}
-            >
-              🔍 Track Order
             </Link>
             <Link
               to={process.env.PUBLIC_URL + "/shop"}

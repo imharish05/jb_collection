@@ -87,7 +87,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         }
         .km-links li { margin-bottom: 10px; }
         .km-links a {
-          font-size: 15px;
+          font-size: 13px;
           color: #666;
           text-decoration: none;
           transition: color 0.2s ease, padding-left 0.2s ease;
