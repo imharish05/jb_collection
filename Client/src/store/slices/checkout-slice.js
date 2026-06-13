@@ -18,14 +18,14 @@ const checkoutSlice = createSlice({
       state.items = action.payload; // array of cart items
       state.sessionId = uuidv4();
       state.createdAt = Date.now();
-      state.expiresAt = Date.now() + 15 * 60 * 1000; // 15 mins expiry
+       state.expiresAt = Date.now() + 30 * 60 * 1000;// 30mins expiry
     },
     createBuyNowCheckout(state, action) {
       state.source = "buy_now";
       state.items = [action.payload]; // single item (matching cart item structure)
       state.sessionId = uuidv4();
       state.createdAt = Date.now();
-      state.expiresAt = Date.now() + 15 * 60 * 1000;
+     state.expiresAt = Date.now() + 30 * 60 * 1000; 
     },
     replaceCheckoutItems(state, action) {
       state.items = action.payload;

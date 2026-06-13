@@ -186,14 +186,18 @@ const OrderDetails = () => {
     order.totalTax,
     splitGst
   ) ?? 0;
-  const gstRate = firstAmount(order.gstRate, order.taxRate);
-  const couponCode = order.couponCode;
-  const explicitCouponDiscount = firstAmount(order.couponDiscount, order.coupon_discount);
-  const couponDiscount = explicitCouponDiscount ?? (
-    couponCode
-      ? Math.max(0, subtotal + gstAmount + shippingCharge - totalAmount)
-      : 0
-  );
+const gstRate = firstAmount(order.gstRate, order.taxRate);
+
+const couponCode =
+  order.couponCode ||
+  order.coupon_code ||
+  null;
+
+const couponDiscount =
+  firstAmount(
+    order.couponDiscount,
+    order.coupon_discount
+  ) ?? 0;
   const priceRows = [
     discount > 0 && {
       key: "items-total",
@@ -210,7 +214,7 @@ const OrderDetails = () => {
     {
       key: "subtotal",
       label: "Subtotal",
-      value: formatCurrency(subtotal),
+      value: formatCurrency(itemsSubtotal),
     },
     gstAmount > 0 && {
       key: "gst",

@@ -129,6 +129,26 @@ const Order = sequelize.define(
       allowNull: true,
       field: "coupon_code",
     },
+    /**
+     * couponDiscount: rupee amount saved by coupon.
+     * Example: WELCOME10 on ₹300 order = ₹30.00 saved.
+     */
+    couponDiscount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: "coupon_discount",
+      defaultValue: 0,
+    },
+    /**
+     * taxAmount: GST / tax collected (18% of subtotal).
+     * Stored for audit trail.
+     */
+    taxAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: "tax_amount",
+      defaultValue: 0,
+    },
     notes: {
       type: DataTypes.TEXT,
       allowNull: true,

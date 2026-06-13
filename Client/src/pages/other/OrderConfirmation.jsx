@@ -4,6 +4,13 @@ import { getImgUrl } from "../../helpers/imageUrl";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
 
+import { useEffect } from "react";        // add if not already there
+import { useDispatch } from "react-redux"; // add if not already there
+import { refreshProductsSilently } from "../../store/services/productService";
+import { clearCheckout } from "../../store/slices/checkout-slice";
+import { replaceCart } from "../../store/slices/cart-slice";
+import api from "../../api/axios";
+
 const parseJson = (val) => {
   if (!val || typeof val !== "string") return val;
   try { return JSON.parse(val); } catch { return val; }
@@ -65,67 +72,6 @@ const STATUS_STEPS = [
   { key: "delivered",  label: "Delivered" },
 ];
 
-const OrderTracker = ({ currentStatus }) => {
-  const normalized = (currentStatus || "confirmed").toLowerCase();
-  const stepOrder = ["confirmed", "processing-pre", "shipped", "processing", "delivered"];
-  // map DB status to step index
-  const statusToStep = {
-    pending:    0,
-    confirmed:  0,
-    "processing-pre": 1,
-    shipped:    2,
-    processing: 3,
-    delivered:  4,
-  };
-  const currentIdx = statusToStep[normalized] ?? 0;
-
-  return (
-    <div style={{ ...cardStyle, marginBottom: 24 }}>
-      <h4 style={cardTitle}>🚀 Order Status</h4>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0 4px", overflowX: "auto" }}>
-        {STATUS_STEPS.map((step, i) => {
-          const done    = i < currentIdx;
-          const active  = i === currentIdx;
-          const pending = i > currentIdx;
-          return (
-            <div key={step.key} style={{ display: "flex", alignItems: "center", flex: i < STATUS_STEPS.length - 1 ? 1 : "none" }}>
-              {/* Step node */}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 60 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: "50%",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14, fontWeight: 700,
-                  background: done || active ? "#db1a5d" : "#f0f0f0",
-                  color: done || active ? "#fff" : "#bbb",
-                  border: active ? "3px solid #f4a0bb" : "3px solid transparent",
-                  boxShadow: active ? "0 0 0 3px rgba(219,26,93,0.15)" : "none",
-                  transition: "all 0.2s",
-                  flexShrink: 0,
-                }}>
-                  {done ? "✓" : i + 1}
-                </div>
-                <span style={{
-                  fontSize: 10, marginTop: 5, fontWeight: active ? 700 : 500,
-                  color: active ? "#db1a5d" : done ? "#333" : "#bbb",
-                  textAlign: "center", lineHeight: 1.3, whiteSpace: "nowrap",
-                }}>
-                  {step.label}
-                </span>
-              </div>
-              {/* Connector line */}
-              {i < STATUS_STEPS.length - 1 && (
-                <div style={{
-                  flex: 1, height: 3, borderRadius: 2, margin: "0 4px", marginBottom: 18,
-                  background: i < currentIdx ? "#db1a5d" : "#f0f0f0",
-                }} />
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
 
 // ── Invoice helpers ───────────────────────────────────────────────────────────
 const generateReceiptText = (state) => {
@@ -206,6 +152,39 @@ const OrderConfirmation = () => {
     partial_cod: "Partial COD (Delivery paid online)",
   };
 
+  const dispatch = useDispatch();
+
+useEffect(() => {
+  // ── After successful order: refresh products + cart silently ──────────────
+  // This ensures:
+  //   1. Product stock in Redux reflects the newly depleted inventory
+  //   2. Cart is cleared on server (in case it wasn't by checkout flow)
+  //   3. Buy Now / Add to Cart buttons become disabled for OOS products
+  //   4. Next Buy Now attempt uses fresh stock data → no empty checkout toast
+
+  const syncAfterOrder = async () => {
+    // 1. Refresh all product stock data silently in background
+    refreshProductsSilently();
+
+    // 2. Ensure checkout slice is cleared (guard for browser back-button case)
+    dispatch(clearCheckout());
+
+    // 3. Refresh cart from server (handles any edge-case where cart wasn't cleared)
+    try {
+      const res = await api.get("/cart");
+      if (res.data && Array.isArray(res.data) && res.data.length === 0) {
+        dispatch(replaceCart([]));
+      }
+    } catch (err) {
+      // Non-fatal — cart sync failure should not break the confirmation page
+      console.warn("[OrderConfirmation] Cart sync failed:", err.message);
+    }
+  };
+
+  syncAfterOrder();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []); // run once on mount
+
   const stateForDownload = {
     orderId, cartItems, selectedAddr, paymentMethod,
     partialCod, couponCode, couponDiscount, shippingCharge, tax,
@@ -229,7 +208,7 @@ const OrderConfirmation = () => {
             }}
           >
             <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-            <h2 style={{ fontSize: 28, fontWeight: 700, color: "#000", marginBottom: 8 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#000", marginBottom: 8 }}>
               Thank you, {selectedAddr?.fullName?.split(" ")[0] || "Customer"}!
             </h2>
             <p style={{ color: "#666", fontSize: 16, marginBottom: 20 }}>
@@ -251,7 +230,7 @@ const OrderConfirmation = () => {
           </div>
 
           {/* ── NEW: Order Tracker ────────────────────────────────────────── */}
-          <OrderTracker currentStatus={orderStatus} />
+          {/* <OrderTracker currentStatus={orderStatus} /> */}
 
           {/* ── Order details grid ───────────────────────────────────────── */}
           <div className="row" style={{ marginBottom: 32 }}>
@@ -313,7 +292,7 @@ const OrderConfirmation = () => {
                 </table>
 
                 {/* ── NEW: Payment Breakdown (replaces simple Grand Total) ── */}
-                <div style={{ borderTop: "2px solid #f0f0f0", marginTop: 12, paddingTop: 12 }}>
+                <div style={{ marginTop: 12, paddingTop: 12 }}>
                   {/* Subtotal */}
                   <div style={breakdownRow}>
                     <span style={breakdownLabel}>Subtotal</span>
@@ -353,7 +332,7 @@ const OrderConfirmation = () => {
                 </div>
 
                 {/* ── NEW: Coupon savings callout ───────────────────────── */}
-                {couponDiscount > 0 && couponCode && (
+                {/* {couponDiscount > 0 && couponCode && (
                   <div style={{
                     marginTop: 12, background: "linear-gradient(90deg,#f0fff4,#e6ffed)",
                     border: "1px solid #b2dfdb", borderRadius: 10,
@@ -363,12 +342,12 @@ const OrderConfirmation = () => {
                     <span style={{ fontSize: 16 }}>🎉</span>
                     You saved <strong>₹{couponDiscount.toFixed(2)}</strong> using coupon <strong>{couponCode}</strong>!
                   </div>
-                )}
+                )} */}
               </div>
 
               {/* ── NEW: Coupon Information card ──────────────────────────── */}
               {couponDiscount > 0 && couponCode && (
-                <div style={{ ...cardStyle, marginTop: 16, background: "#f9fff9", border: "1px solid #c8e6c9" }}>
+                <div style={{ ...cardStyle, marginTop: 16,marginBottom: 16, background: "#f9fff9", border: "1px solid #c8e6c9" }}>
                   <h4 style={{ ...cardTitle, color: "#27ae60", borderBottomColor: "#c8e6c9" }}>🏷️ Coupon Applied</h4>
                   <div style={infoRow}>
                     <span style={infoLabel}>Code</span>
@@ -449,31 +428,6 @@ const OrderConfirmation = () => {
                     <div style={{ ...infoRow, background: "#fff8e1", borderRadius: 8, padding: "8px 12px", marginTop: 8 }}>
                       <span style={{ ...infoLabel, color: "#e65100" }}>Due on delivery</span>
                       <span style={{ ...infoValue, color: "#e65100", fontWeight: 800, fontSize: 15 }}>₹{partialCod.amountDueOnDelivery?.toFixed(2)}</span>
-                    </div>
-
-                    {/* ── NEW: Partial COD highlighted callout ─────────── */}
-                    <div style={{
-                      marginTop: 12,
-                      background: "linear-gradient(135deg, #fff3e0, #ffe0b2)",
-                      border: "1.5px solid #ffcc80",
-                      borderRadius: 10,
-                      padding: "12px 14px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                    }}>
-                      <span style={{ fontSize: 22 }}>💰</span>
-                      <div>
-                        <div style={{ fontSize: 11, color: "#bf360c", fontWeight: 600, marginBottom: 2 }}>
-                          AMOUNT TO BE COLLECTED AT DELIVERY
-                        </div>
-                        <div style={{ fontSize: 20, fontWeight: 800, color: "#e65100" }}>
-                          ₹{partialCod.amountDueOnDelivery?.toFixed(2)}
-                        </div>
-                        <div style={{ fontSize: 11, color: "#e65100", marginTop: 2 }}>
-                          Please keep exact change ready
-                        </div>
-                      </div>
                     </div>
                   </>
                 )}

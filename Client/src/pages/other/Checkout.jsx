@@ -587,18 +587,20 @@ const Checkout = () => {
           // ← Mix & Match selections: required for inventory deduction
           selectedProducts: item.selectedProducts || null,
         })),
-        totalAmount: shippingPricing.grandTotal,
-        shippingAddressId: selectedShippingAddrId,
-        billingAddressId: selectedBillingAddrId,
-        paymentMethod,
-        couponCode: shippingPricing.couponCode || null,
-        couponDiscount: shippingPricing.couponDiscount || 0,
-        couponType: shippingPricing.couponType || null,
-        couponValue: shippingPricing.couponValue || null,
-        notes: giftNote.trim() || null,
-        shippingCharge: shippingInfo?.shippingCharge || 0,
-        courier: shippingInfo?.courier || null,
-        estimatedDeliveryDays: shippingInfo?.estimatedDays || null,
+  totalAmount: shippingPricing.grandTotal,
+  shippingAddressId: selectedShippingAddrId,
+  billingAddressId: selectedBillingAddrId,
+  paymentMethod,
+  couponCode: shippingPricing.couponCode || null,
+  couponDiscount: shippingPricing.couponDiscount || 0,
+  couponType: shippingPricing.couponType || null,
+  couponValue: shippingPricing.couponValue || null,
+  notes: giftNote.trim() || null,
+  shippingCharge: shippingInfo?.shippingCharge || 0,
+  taxAmount: shippingPricing.gstAmount || 0,           // ← NEW: send tax to backend
+  gstAmount: shippingPricing.gstAmount || 0,           // ← NEW: alias for safety
+  courier: shippingInfo?.courier || null,
+  estimatedDeliveryDays: shippingInfo?.estimatedDays || null,
       };
 
       const res = await api.post("/orders", payload);
@@ -616,24 +618,46 @@ const Checkout = () => {
         navigatingRef.current = true;
         dispatch(clearCheckout());
         setTimeout(() => {
-          navigate(`/order-confirmation`, {
-            replace: true,
-            state: {
-  orderId: id,
-  selectedShippingAddr,
-  billingAddress: selectedBillingAddr,
-  paymentMethod,
-  cartItems: checkoutItems,
-  estimatedDays: shippingInfo?.estimatedDays || null,  // ← add this
-},
-
-          });
+ navigate(`/order-confirmation`, {
+  replace: true,
+  state: {
+    orderId: id,
+    selectedShippingAddr,
+    billingAddress: selectedBillingAddr,
+    paymentMethod,
+    cartItems: checkoutItems,
+    estimatedDays: shippingInfo?.estimatedDays || null,
+    // ── FIXES: shipping, coupon, tax ──────────────────────
+    shippingCharge: shippingInfo?.shippingCharge || 0,
+    couponCode: shippingPricing.couponCode || null,
+    couponDiscount: shippingPricing.couponDiscount || 0,
+    tax: shippingPricing.gstAmount || 0,
+    orderStatus: "confirmed",
+  },
+});
         }, 1000);
       }
     } catch (err) {
-      cogoToast.error(err.response?.data?.message || "Could not place order. Please try again.", {
-        position: "top-center",
-      });
+  const errorData = err.response?.data;
+  const message = errorData?.message || "Could not place order. Please try again.";
+
+  cogoToast.error(message, { position: "top-center" });
+
+  // ── OOS-specific handling ─────────────────────────────────────────────────
+  if (errorData?.outOfStock) {
+    // Refresh products in background so Buy Now button reflects OOS state
+    import("../../store/services/productService").then(({ refreshProductsSilently }) => {
+      refreshProductsSilently();
+    });
+
+    // Clear stale checkout session to prevent the empty checkout toast next time
+    dispatch(clearCheckout());
+
+    // Redirect to cart so user can remove the OOS item
+    setTimeout(() => {
+      navigate(`${process.env.PUBLIC_URL}/cart`);
+    }, 1500);
+}
     } finally {
       setPlacing(false);
     }
@@ -647,10 +671,23 @@ const Checkout = () => {
       navigatingRef.current = true;
       dispatch(clearCheckout());
       setTimeout(() => {
-        navigate(`/order-confirmation`, {
-          replace: true,
-          state: { orderId: dbOrderId, selectedShippingAddr, billingAddress: selectedBillingAddr, paymentMethod, cartItems: checkoutItems, estimatedDays: shippingInfo?.estimatedDays || null },
-        });
+navigate(`/order-confirmation`, {
+  replace: true,
+  state: {
+    orderId: dbOrderId,
+    selectedShippingAddr,
+    billingAddress: selectedBillingAddr,
+    paymentMethod,
+    cartItems: checkoutItems,
+    estimatedDays: shippingInfo?.estimatedDays || null,
+    // ── FIXES ──────────────────────────────────────────────
+    shippingCharge: 0,
+    couponCode: shippingPricing.couponCode || null,
+    couponDiscount: shippingPricing.couponDiscount || 0,
+    tax: shippingPricing.gstAmount || 0,
+    orderStatus: "confirmed",
+  },
+});
       }, 1000);
       return;
     }
@@ -706,18 +743,28 @@ const Checkout = () => {
               navigatingRef.current = true;
               dispatch(clearCheckout());
               setTimeout(() => {
-                navigate(`/order-confirmation`, {
-                  replace: true,
-                  state: {
-                    orderId: dbOrderId,
-                    selectedShippingAddr,
-                    billingAddress: selectedBillingAddr,
-                    paymentMethod: "partial_cod",
-                    cartItems: checkoutItems,
-                    estimatedDays: shippingInfo?.estimatedDays || null,
-                    partialCod: { deliveryChargePaid: deliveryCharge, amountDueOnDelivery: productCost },
-                  },
-                });
+navigate(`/order-confirmation`, {
+  replace: true,
+  state: {
+    orderId: dbOrderId,
+    selectedShippingAddr,
+    billingAddress: selectedBillingAddr,
+    paymentMethod: "partial_cod",
+    cartItems: checkoutItems,
+    estimatedDays: shippingInfo?.estimatedDays || null,
+    partialCod: {
+      deliveryChargePaid: deliveryCharge,
+      amountDueOnDelivery: productCost,
+      shippingCharge: deliveryCharge,      // ← add for OrderConfirmation compat
+    },
+    // ── FIXES ──────────────────────────────────────────────
+    shippingCharge: deliveryCharge,        // ← the actual shipping amount collected
+    couponCode: shippingPricing.couponCode || null,
+    couponDiscount: shippingPricing.couponDiscount || 0,
+    tax: shippingPricing.gstAmount || 0,
+    orderStatus: "confirmed",
+  },
+});
               }, 1500);
             }
           } catch (verifyErr) {
@@ -793,17 +840,23 @@ const Checkout = () => {
               navigatingRef.current = true;
               dispatch(clearCheckout());
               setTimeout(() => {
-                navigate(`/order-confirmation`, {
-                  replace: true,
-                  state: {
-                    orderId: dbOrderId,
-                    selectedShippingAddr,
-                    billingAddress: selectedBillingAddr,
-                    paymentMethod,
-                    cartItems: checkoutItems,
-                    estimatedDays: shippingInfo?.estimatedDays || null,
-                  },
-                });
+navigate(`/order-confirmation`, {
+  replace: true,
+  state: {
+    orderId: dbOrderId,
+    selectedShippingAddr,
+    billingAddress: selectedBillingAddr,
+    paymentMethod,
+    cartItems: checkoutItems,
+    estimatedDays: shippingInfo?.estimatedDays || null,
+    // ── FIXES ──────────────────────────────────────────────
+    shippingCharge: shippingInfo?.shippingCharge || 0,
+    couponCode: shippingPricing.couponCode || null,
+    couponDiscount: shippingPricing.couponDiscount || 0,
+    tax: shippingPricing.gstAmount || 0,
+    orderStatus: "confirmed",
+  },
+});
               }, 1500);
             }
           } catch (verifyErr) {

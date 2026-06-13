@@ -3,9 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchOrders, changeOrderStatus, changeOrderItemStatus } from '../../redux/services/ordersService';
 
-const STATUS_OPTIONS = ['pending', 'confirmed','shipped','processing', 'delivered', 'cancelled', 'returned'];
+const STATUS_OPTIONS = ['confirmed','shipped','processing', 'delivered', 'cancelled', 'returned'];
 const labelFor = s => ({
-  pending: 'New / Pending',
   confirmed: 'Confirmed',
   shipped: 'Shipped',
   processing: 'Out for Delivery',
@@ -99,7 +98,14 @@ export default function Orders({ status = null }) {
         : 0;
 
       const discount = safeNumber(o.discount ?? 0, 0);
-      const tax = safeNumber(o.tax ?? 0, 0);
+      const tax = safeNumber(
+        o.taxAmount ?? o.tax_amount ?? o.tax ?? 0,
+        0
+      );
+      const couponDiscountAmount = safeNumber(
+        o.couponDiscount ?? o.coupon_discount ?? o.discount ?? 0,
+        0
+      );
       const resolvedTotal = safeNumber(total, computedSubtotal - discount + tax);
 
       return {
@@ -110,8 +116,12 @@ export default function Orders({ status = null }) {
         totalAmount: resolvedTotal,
         subtotalAmount: safeNumber(o.subtotal ?? computedSubtotal, computedSubtotal),
         taxAmount: tax,
-        discountAmount: discount,
+        discountAmount: couponDiscountAmount,
+        couponDiscountAmount,
         shippingCharge: safeNumber(o.shippingCharge ?? o.shipping_charge ?? 0),
+        // Normalize partial COD fields from all possible DB column names
+        advancePaid: safeNumber(o.advancePaid ?? o.advance_paid ?? 0),
+        codAmount: safeNumber(o.codAmount ?? o.cod_amount ?? 0),
         customer_name: customerName,
         customer_email: customerEmail,
         customer_phone: customerPhone,
@@ -270,37 +280,67 @@ export default function Orders({ status = null }) {
                           </div>
                           <div>
                             <div className="km-detail-section-title">Payment Summary</div>
-                            <div className="km-payment-row"><span className="td-muted">Subtotal</span><span>₹{safeNumber(order.subtotalAmount).toFixed(2)}</span></div>
-                            <div className="km-payment-row"><span className="td-muted">Tax</span><span>₹{safeNumber(order.taxAmount).toFixed(2)}</span></div>
+
+                            {/* ── Order breakdown ── */}
                             <div className="km-payment-row">
-                              <span className="td-muted">Delivery</span>
+                              <span className="td-muted">Subtotal</span>
+                              <span>₹{safeNumber(order.subtotalAmount).toFixed(2)}</span>
+                            </div>
+
+                            <div className="km-payment-row">
+                              <span className="td-muted">Tax / GST</span>
+                              <span>₹{safeNumber(order.taxAmount).toFixed(2)}</span>
+                            </div>
+
+                            <div className="km-payment-row">
+                              <span className="td-muted">Shipping</span>
                               {safeNumber(order.shippingCharge) > 0
                                 ? <span>₹{safeNumber(order.shippingCharge).toFixed(2)}</span>
-                                : <span className="td-green">FREE</span>}
+                                : <span style={{ color: '#27ae60' }}>Free</span>}
                             </div>
-                            {safeNumber(order.discountAmount) > 0 && (
+
+                            {safeNumber(order.couponDiscountAmount) > 0 && (
                               <div className="km-payment-row">
-                                <span className="td-muted">Discount {order.couponCode ? `(${order.couponCode})` : ''}</span>
-                                <span className="td-green">−₹{safeNumber(order.discountAmount).toFixed(2)}</span>
+                                <span className="td-muted">
+                                  Discount {order.couponCode ? `(${order.couponCode})` : ''}
+                                </span>
+                                <span style={{ color: '#27ae60' }}>
+                                  −₹{safeNumber(order.couponDiscountAmount).toFixed(2)}
+                                </span>
                               </div>
                             )}
+
+                            {/* ── Payment method block ── */}
                             {(() => {
-                              const total = safeNumber(order.totalAmount);
-                              const isPaid = order.paymentStatus === 'paid';
-                              
-                              if (order.paymentMethod === 'partial_cod') {
-                                const codAmount = safeNumber(order.partialCodAmount);
-                                const paidOnline = Math.max(0, total - codAmount);
+                              const total           = safeNumber(order.totalAmount);
+                              const shippingAmt     = safeNumber(order.shippingCharge);
+                              const isPaid          = order.paymentStatus === 'paid';
+
+                              // Detect partial COD via either paymentType (DB enum) or paymentMethod string
+                              const isPartialCod    = order.paymentType === 'PARTIAL_COD' ||
+                                                      order.paymentMethod === 'partial_cod';
+
+                              // advancePaid: prefer explicit DB field, fall back to shippingCharge
+                              const advancePaidAmt  = isPartialCod
+                                ? safeNumber(order.advancePaid ?? shippingAmt)
+                                : 0;
+
+                              // codAmount: prefer explicit DB field, derive as remainder if missing
+                              const codDueAmt       = isPartialCod
+                                ? safeNumber(order.codAmount > 0 ? order.codAmount : (total - advancePaidAmt))
+                                : total;
+
+                              if (isPartialCod) {
                                 if (isPaid) {
                                   return (
                                     <>
-                                      <div className="km-payment-row">
-                                        <span className="td-muted">Paid Online (Advance)</span>
-                                        <span style={{ fontWeight: 600, color: '#2e7d32' }}>₹{paidOnline.toFixed(2)}</span>
+                                      <div className="km-payment-row" style={{ marginTop: 10, paddingTop: 10 }}>
+                                        <span className="td-muted">Delivery paid online</span>
+                                        <span style={{ color: '#2e7d32', fontWeight: 600 }}>₹{advancePaidAmt.toFixed(2)}</span>
                                       </div>
                                       <div className="km-payment-row">
-                                        <span className="td-muted">Paid on Delivery</span>
-                                        <span style={{ fontWeight: 600, color: '#2e7d32' }}>₹{codAmount.toFixed(2)}</span>
+                                        <span className="td-muted">Paid on delivery (COD)</span>
+                                        <span style={{ color: '#2e7d32', fontWeight: 600 }}>₹{codDueAmt.toFixed(2)}</span>
                                       </div>
                                       <div className="km-payment-total" style={{ borderTop: '1px solid var(--neutral-200)', marginTop: 10, paddingTop: 12 }}>
                                         <span>Total Paid</span>
@@ -315,17 +355,17 @@ export default function Orders({ status = null }) {
                                 } else {
                                   return (
                                     <>
-                                      <div className="km-payment-row">
-                                        <span className="td-muted">Paid Amount (Online)</span>
-                                        <span style={{ fontWeight: 600, color: '#2e7d32' }}>₹{paidOnline.toFixed(2)}</span>
+                                      <div className="km-payment-row" style={{ borderTop: '1px solid var(--neutral-200)', marginTop: 10, paddingTop: 10 }}>
+                                        <span className="td-muted">Delivery paid online</span>
+                                        <span style={{ color: '#2e7d32', fontWeight: 600 }}>₹{advancePaidAmt.toFixed(2)}</span>
                                       </div>
                                       <div className="km-payment-row" style={{ background: '#fff8e1', borderRadius: 6, padding: '6px 8px', marginTop: 4 }}>
-                                        <span style={{ color: '#e65100', fontWeight: 600 }}>Due Amount (COD)</span>
-                                        <span style={{ color: '#e65100', fontWeight: 800 }}>₹{codAmount.toFixed(2)}</span>
+                                        <span style={{ color: '#e65100', fontWeight: 600 }}>Due on delivery (COD)</span>
+                                        <span style={{ color: '#e65100', fontWeight: 800, fontSize: 15 }}>₹{codDueAmt.toFixed(2)}</span>
                                       </div>
-                                      <div className="km-payment-total" style={{ borderTop: '1px solid var(--neutral-200)', marginTop: 10, paddingTop: 12 }}>
-                                        <span>Total Order</span>
-                                        <span className="td-price">₹{total.toFixed(2)}</span>
+                                      <div className="km-payment-total" style={{ borderTop: '1px dashed #eee', marginTop: 8, paddingTop: 8 }}>
+                                        <strong>Grand Total</strong>
+                                        <strong>₹{total.toFixed(2)}</strong>
                                       </div>
                                     </>
                                   );
@@ -334,7 +374,7 @@ export default function Orders({ status = null }) {
                                 if (isPaid) {
                                   return (
                                     <>
-                                      <div className="km-payment-row">
+                                      <div className="km-payment-row" style={{ borderTop: '1px solid var(--neutral-200)', marginTop: 10, paddingTop: 10 }}>
                                         <span className="td-muted">Paid Online</span>
                                         <span>₹0.00</span>
                                       </div>
@@ -355,7 +395,7 @@ export default function Orders({ status = null }) {
                                 } else {
                                   return (
                                     <>
-                                      <div className="km-payment-row">
+                                      <div className="km-payment-row" style={{ borderTop: '1px solid var(--neutral-200)', marginTop: 10, paddingTop: 10 }}>
                                         <span className="td-muted">Paid Amount</span>
                                         <span>₹0.00</span>
                                       </div>
@@ -401,6 +441,7 @@ export default function Orders({ status = null }) {
                                 }
                               }
                             })()}
+
                             {order.notes && <div className="km-order-notes">{order.notes}</div>}
                           </div>
                         </div>

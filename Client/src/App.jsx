@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect } from "react";
 import ScrollToTop from "./helpers/scroll-top";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { getNavCategories } from "./store/services/navMenuService";
 import { getAllProducts } from "./store/services/productService";
 import { getMarqueeMessages } from "./store/services/marqueeService";
@@ -12,6 +12,8 @@ import { loadWishlistService } from "./store/services/wishlistService";
 import api from "./api/axios";
 import { replaceCart } from "./store/slices/cart-slice";
 import PaymentPolicy from "./pages/other/PaymentPolicy";
+import { useSelector } from "react-redux";
+import { clearCheckout } from "./store/slices/checkout-slice";
 
 // Main home
 const HomeFashion = lazy(() => import("./pages/home/HomeFashion"));
@@ -62,6 +64,20 @@ const ExchangePolicy = lazy(() => import("./pages/other/policies/ExchangePolicy"
 const App = () => {
   const dispatch = useDispatch();
   const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
+
+  const checkoutSession = useSelector((s) => s.checkout);
+
+useEffect(() => {
+  // Clear any expired checkout sessions on app boot
+  // This handles the browser back-button case where a user returns to /checkout
+  // after a completed order with a cleared (empty) session
+  if (
+    checkoutSession?.expiresAt &&
+    Date.now() > checkoutSession.expiresAt
+  ) {
+    dispatch(clearCheckout());
+  }
+}, []);
 
   useEffect(() => {
     Promise.all([

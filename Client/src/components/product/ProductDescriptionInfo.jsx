@@ -720,14 +720,27 @@ const ProductDescriptionInfo = ({
     }
   };
 
-  const handleBuyNow = async () => {
-    if (isAddingToCart || isBuyingNow) return; // double-click protection
-    if (!isAuthenticated) {
-      cogoToast.warn("Please login to buy items", { position: "top-center" });
-      redirectToLogin();
-      return;
-    }
-    if (!validateCart()) return;
+const handleBuyNow = async () => {
+  if (isAddingToCart || isBuyingNow) return; // double-click protection
+
+  const currentStock = selectedVariant
+    ? Number(selectedVariant.stock ?? 0)
+    : Number(localProduct.stock ?? 0);
+
+  if (currentStock <= 0) {
+    cogoToast.error(
+      "This product is currently out of stock. Please check back later.",
+      { position: "top-center" }
+    );
+    return;
+  }
+
+  if (!isAuthenticated) {
+    cogoToast.warn("Please login to buy items", { position: "top-center" });
+    redirectToLogin();
+    return;
+  }
+  if (!validateCart()) return;
 
     setIsBuyingNow(true);
     try {
@@ -742,7 +755,36 @@ const ProductDescriptionInfo = ({
         });
       }
 
-      const resolvedStock = selectedVariant ? Number(selectedVariant.stock ?? 0) : Number(localProduct.stock ?? 0);
+      // ── LIVE STOCK CHECK: always fetch fresh stock before Buy Now ────────
+      // This prevents the stale-Redux-stock bug where:
+      //   1. User orders product (stock: 1 → 0)
+      //   2. Order confirmation runs but product slice still has stock: 1
+      //   3. User clicks Buy Now again — resolvedStock = 1 (stale) → passes
+      //   4. Checkout opens with an item that's already out of stock
+      // We call the API directly here to get authoritative current stock.
+      let liveStock = 0;
+      try {
+        const variantIdParam = selectedVariant?.id ? `?variantId=${selectedVariant.id}` : "";
+        const stockRes = await api.get(`/products/${localProduct.id}/stock${variantIdParam}`);
+        liveStock = Number(stockRes.data?.stock ?? 0);
+      } catch (stockErr) {
+        // Fallback to Redux cached stock if API is unreachable
+        console.warn("[BuyNow] Live stock check failed, using cached value:", stockErr.message);
+        liveStock = selectedVariant ? Number(selectedVariant.stock ?? 0) : Number(localProduct.stock ?? 0);
+      }
+
+      if (liveStock <= 0) {
+        cogoToast.error("This product is out of stock.", { position: "top-center" });
+        setIsBuyingNow(false);
+        // Also update Redux so the UI immediately reflects OOS
+        try {
+          const { refreshProductStock } = await import("../../store/services/productService");
+          await refreshProductStock(localProduct.id);
+        } catch (_) { /* no-op */ }
+        return;
+      }
+
+      const resolvedStock = liveStock;
       const resolvedPrice = selectedVariant ? parseFloat(selectedVariant.salesPrice) : (localProduct.price || 0);
       const selectedVariantId = selectedVariant?.id || null;
 
@@ -764,7 +806,6 @@ const ProductDescriptionInfo = ({
           : Number(existing.selectedVariantId) === Number(selectedVariantId);
 
         if (sameProduct && sameVariant) {
-          // Same item — accumulate quantity, capped at available stock
           const newQty = Math.min(existing.quantity + quantityCount, resolvedStock);
           const merged = { ...existing, quantity: newQty };
           dispatch(replaceCheckoutItems([merged]));
@@ -775,7 +816,7 @@ const ProductDescriptionInfo = ({
         }
       }
 
-      // ── Fresh Buy Now session (different item or no active session) ──
+      // ── Fresh Buy Now session ────────────────────────────────────────────
       const buyNowItem = {
         id: localProduct.id,
         cartItemId: "buynow-" + uuidv4(),
@@ -1024,11 +1065,14 @@ const ProductDescriptionInfo = ({
 
       {/* ── Add to cart / Affiliate ── */}
       {localProduct.affiliateLink ? (
-        <div className="pdp-info__actions">
-          <a href={localProduct.affiliateLink} rel="noopener noreferrer" target="_blank" className="pdp-btn pdp-btn--primary pdp-info__affiliate-btn">
-            Buy Now
-          </a>
-        </div>
+<button
+  onClick={handleBuyNow}
+  disabled={!stockState.isPurchasable || isBuyingNow}
+  className={`btn-buy-now ${!stockState.isPurchasable ? "disabled" : ""}`}
+  title={!stockState.isPurchasable ? "Out of Stock" : ""}
+>
+  {!stockState.isPurchasable ? "Out of Stock" : (isBuyingNow ? "Processing..." : "Buy Now")}
+</button>
       ) : (
         <div className={`pdp-info__actions pdp-info__actions--product${stockState.state === STOCK_STATES.DISCONTINUED ? " is-discontinued" : ""}`}>
           {/* Quantity & Wishlist Row */}

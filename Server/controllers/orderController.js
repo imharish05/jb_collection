@@ -187,6 +187,7 @@ const getOrderById = async (req, res, next) => {
 //   6. paymentController.processSuccessfulPayment() updates order + calls pushOrderToShiprocket
 //   7. Shiprocket receives payment_method="COD", cod_amount=codAmount ← THE FIX
 //
+// ─── POST /api/orders  (customer — create order) ──────────────────────────────
 const createOrder = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -197,12 +198,17 @@ const createOrder = async (req, res, next) => {
       billingAddressId,
       paymentMethod,
       couponCode,
-      couponDiscount,
+      couponDiscount,    // ← receive from frontend
+      taxAmount,         // ← NEW: receive tax from frontend (also accept gstAmount)
+      gstAmount,         // ← NEW: alias
       notes,
       shippingCharge,
       estimatedDeliveryDays,
-      advancePaid: clientAdvancePaid, // amount customer pays online (for PARTIAL_COD)
+      advancePaid: clientAdvancePaid,
     } = req.body;
+
+    // Accept either taxAmount or gstAmount (frontend uses gstAmount)
+    const receivedTax = parseFloat(taxAmount ?? gstAmount ?? 0) || 0;
 
     const shippingId = shippingAddressId || req.body.shippingAddress?.id;
     const billingId  = billingAddressId  || req.body.billingAddress?.id || null;
@@ -237,16 +243,25 @@ const createOrder = async (req, res, next) => {
       billingAddressRef = shippingAddress.id;
     }
 
-    // Validate stock
+    // ── STOCK VALIDATION: check BEFORE creating order ────────────────────────
+    // This prevents checkout session creation for out-of-stock products.
+    // Returns 400 with "Product is out of stock" so frontend can show correct message.
     try {
       await inventoryService.validateOrderStock(items, transaction);
     } catch (stockErr) {
       await transaction.rollback();
-      return res.status(400).json({ message: stockErr.message });
+      // Normalize message for out-of-stock vs other validation errors
+      const msg = stockErr.message;
+      const isOOS = /insufficient stock|out of stock|stock.*0|available.*0/i.test(msg);
+      return res.status(400).json({
+        success: false,
+        message: isOOS ? "Product is out of stock" : msg,
+        outOfStock: isOOS,
+      });
     }
 
     // Compute server-side total and enrich items
-    let serverComputedTotal = 0;
+    let serverComputedSubtotal = 0;
     const itemsWithDetails = [];
 
     for (const item of items) {
@@ -302,7 +317,7 @@ const createOrder = async (req, res, next) => {
         pricing: itemPrice,
       } : null;
 
-      serverComputedTotal += itemPrice * item.quantity;
+      serverComputedSubtotal += itemPrice * item.quantity;
       itemsWithDetails.push(itemData);
     }
 
@@ -323,12 +338,12 @@ const createOrder = async (req, res, next) => {
         await transaction.rollback();
         return res.status(400).json({ message: "Coupon has expired" });
       }
-      if (serverComputedTotal < parseFloat(coupon.min_order || 0)) {
+      if (serverComputedSubtotal < parseFloat(coupon.min_order || 0)) {
         await transaction.rollback();
         return res.status(400).json({ message: `Minimum order of ₹${coupon.min_order} required` });
       }
       serverCouponDiscount = coupon.type === "percent"
-        ? (serverComputedTotal * parseFloat(coupon.value || 0)) / 100
+        ? (serverComputedSubtotal * parseFloat(coupon.value || 0)) / 100
         : parseFloat(coupon.value || 0);
       if (coupon.max_discount) {
         serverCouponDiscount = Math.min(serverCouponDiscount, parseFloat(coupon.max_discount));
@@ -340,8 +355,9 @@ const createOrder = async (req, res, next) => {
       return res.status(400).json({ message: "Coupon code is required for a discount" });
     }
 
+    // ── Server-side total validation ─────────────────────────────────────────
     const clientTotal      = parseFloat(totalAmount);
-    const minimumAllowedTotal = Math.max(0, serverComputedTotal - serverCouponDiscount);
+    const minimumAllowedTotal = Math.max(0, serverComputedSubtotal - serverCouponDiscount);
     if (clientTotal < minimumAllowedTotal - 1) {
       await transaction.rollback();
       return res.status(400).json({
@@ -355,7 +371,6 @@ const createOrder = async (req, res, next) => {
     const pm = (paymentMethod || "cod").toLowerCase();
     const isPartialCod = pm === "partial_cod";
     const isCod        = pm === "cod";
-    const isPrepaid    = !isPartialCod && !isCod; // razorpay etc.
 
     let resolvedPaymentType = "FULL_COD";
     let resolvedAdvancePaid = null;
@@ -366,11 +381,10 @@ const createOrder = async (req, res, next) => {
       resolvedAdvancePaid = parseFloat(clientAdvancePaid || shippingCharge || 0);
       resolvedCodAmount   = parseFloat(totalAmount) - resolvedAdvancePaid;
 
-      // VALIDATION: cod_amount must never be negative
       if (resolvedCodAmount < 0) {
         await transaction.rollback();
         return res.status(400).json({
-          message: `Invalid Partial COD: advance paid (₹${resolvedAdvancePaid}) exceeds total (₹${totalAmount}). COD amount cannot be negative.`,
+          message: `Invalid Partial COD: advance paid (₹${resolvedAdvancePaid}) exceeds total (₹${totalAmount}).`,
           advancePaid: resolvedAdvancePaid,
           totalAmount: parseFloat(totalAmount),
           codAmount: resolvedCodAmount,
@@ -385,7 +399,7 @@ const createOrder = async (req, res, next) => {
       resolvedCodAmount   = 0;
     }
 
-    // Create the order
+    // ── Create the order ─────────────────────────────────────────────────────
     const order = await Order.create(
       {
         userId:            req.user.id,
@@ -398,11 +412,12 @@ const createOrder = async (req, res, next) => {
         advancePaid:       resolvedAdvancePaid,
         codAmount:         resolvedCodAmount,
         couponCode:        normalizedCouponCode,
+        couponDiscount:    serverCouponDiscount,     // ← NEW: save coupon rupee amount
+        taxAmount:         receivedTax,              // ← NEW: save tax amount
         notes,
         shippingCharge:    parseFloat(shippingCharge || 0),
         estimatedDeliveryDays: estimatedDeliveryDays || null,
-        // Legacy field — keep populated for backward compat
-        partialCodAmount:  isPartialCod ? resolvedCodAmount : null,
+        partialCodAmount:  isPartialCod ? resolvedCodAmount : null, // legacy
         status:            isCod ? "confirmed" : "pending",
         inventoryProcessed: false,
         inventoryRestored:  false,
@@ -441,7 +456,7 @@ const createOrder = async (req, res, next) => {
       );
     }
 
-    // For pure COD: decrement stock + clear cart immediately inside transaction
+    // For pure COD: decrement stock + clear cart immediately
     if (isCod) {
       await inventoryService.decrementOrderStock(order.id, transaction, "Order Placement - COD", "cod");
       order.inventoryProcessed = true;
@@ -459,7 +474,7 @@ const createOrder = async (req, res, next) => {
       ],
     });
 
-    // Post-commit for pure COD only (Partial COD / Prepaid handled by paymentController after verify)
+    // Post-commit for pure COD only
     if (isCod) {
       try {
         const userRecord = await User.findByPk(req.user.id, { attributes: ["name", "email"] });
@@ -482,7 +497,6 @@ const createOrder = async (req, res, next) => {
     next(err);
   }
 };
-
 // ─── GET /api/orders/all  (admin — all orders) ────────────────────────────────
 const getAllOrders = async (req, res, next) => {
   try {

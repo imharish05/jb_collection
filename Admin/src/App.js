@@ -17,7 +17,7 @@ import Stock from './components/Stock/Stock';
 import Customers from './components/Customers/Customers';
 import Reviews from './components/Reviews/Reviews';
 import Coupons from './components/Coupons/AddCoupon';
-import Orders from './components/orders/orders';
+import Orders from './components/orders/Orders';
 import AdminContactManager from './components/Admincontactmanager';
 // ── Marketing pages ──────────────────────────────────────────
 import HeroSlider from './components/HeroSlider/HeroSlider';
