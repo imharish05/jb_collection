@@ -248,7 +248,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
             <div className="km-contact-col">
               <p className="km-col-title">Find Us</p>
 
-              <div className="km-contact-item">
+              {/* <div className="km-contact-item">
                 <span className="km-contact-icon">
                   <svg viewBox="0 0 24 24">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
@@ -260,7 +260,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
                   Madurai – 625 020,<br />
                   Tamil Nadu, India
                 </span>
-              </div>
+              </div> */}
 
               <div className="km-contact-item">
                 <span className="km-contact-icon">

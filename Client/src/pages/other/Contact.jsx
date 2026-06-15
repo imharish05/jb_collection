@@ -1,5 +1,6 @@
 import { Fragment, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import cogoToast from "cogo-toast";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
 import { submitContactForm } from "../../store/services/contactService";
@@ -23,15 +24,23 @@ const Contact = () => {
 
   const [formErrors, setFormErrors] = useState({});
 
-  // Clear success message after 5 seconds
+  // Show success toast and clear form after 5 seconds
   useEffect(() => {
     if (success) {
+      cogoToast.success(message || "Message sent successfully!", { position: "top-center" });
       const timer = setTimeout(() => {
         dispatch(resetContactForm());
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [success, dispatch]);
+  }, [success, dispatch, message]);
+
+  // Show error toast
+  useEffect(() => {
+    if (error) {
+      cogoToast.error(error, { position: "top-center" });
+    }
+  }, [error]);
 
   const validateForm = () => {
     const errors = {};
@@ -110,11 +119,11 @@ const Contact = () => {
                         </div>
                       </div>
                       <div className="glass-link-item d-flex gap-3 mt-4">
-                        <div className="icon-circle"><i className="fa fa-map-marker"></i></div>
-                        <div>
-                          <strong>Visit Our HQ</strong>
-                          <span>123 Design St, Creative City, NY</span>
-                        </div>
+                        <div className="icon-circle"><i className="fa fa-phone"></i></div>
+                      <div>
+                          <strong>Call Us</strong>
+                          <span>+91 73388 14319</span>
+                      </div>
                       </div>
                     </div>
                   </div>
@@ -123,38 +132,6 @@ const Contact = () => {
                 {/* Form Section */}
                 <div className="col-lg-7">
                   <div className="glass-form-side">
-                    {/* Success Message */}
-                    {success && (
-                      <div style={{
-                        background: 'rgba(34, 197, 94, 0.1)',
-                        border: '1px solid rgba(34, 197, 94, 0.3)',
-                        color: '#22c55e',
-                        padding: '12px 16px',
-                        borderRadius: '8px',
-                        marginBottom: '16px',
-                        fontSize: '14px',
-                        animation: 'slideIn 0.3s ease-out'
-                      }}>
-                        ✓ {message}
-                      </div>
-                    )}
-
-                    {/* Error Message */}
-                    {error && (
-                      <div style={{
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                        color: '#ef4444',
-                        padding: '12px 16px',
-                        borderRadius: '8px',
-                        marginBottom: '16px',
-                        fontSize: '14px',
-                        animation: 'slideIn 0.3s ease-out'
-                      }}>
-                        ✕ {error}
-                      </div>
-                    )}
-
                     <form className="glass-form" onSubmit={handleSubmit}>
                       <div className="input-row">
                         <div className="glass-input-group">
@@ -230,34 +207,13 @@ const Contact = () => {
             </div>
 
             {/* --- NEW MAP SECTION --- */}
-            <div className="glass-card-container mt-5">
-              <div className="glass-map-wrapper">
-                <iframe
-                  title="Store Location"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.215152809347!2d-73.9878431!3d40.7579787!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25855c6480299%3A0x55194ec5a1ae072e!2sTimes%20Square!5e0!3m2!1sen!2sus!4v1680000000000!5m2!1sen!2sus"
-                  width="100%"
-                  height="450"
-                  style={{ border: 0 }}
-                  allowFullScreen=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
-                {/* Overlay to blend the map into the glass aesthetic */}
-                <div className="map-glass-overlay"></div>
-              </div>
-            </div>
+  
           </div>
 
           <style>{`
-            @keyframes slideIn {
-              from {
-                opacity: 0;
-                transform: translateY(-10px);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0);
-              }
+            .glass-contact-wrapper {
+              position: relative;
+              overflow: hidden;
             }
           `}</style>
         </div>
