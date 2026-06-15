@@ -52,23 +52,31 @@ const sendOrderConfirmationEmail = async (order, user) => {
     return s + parseFloat(it.salesPrice || it.price || 0) * (it.quantity || 1);
   }, 0);
   const shippingCharge = parseFloat(order.shippingCharge || 0);
-  const couponDiscount = Math.max(0, itemsSubtotal + shippingCharge - parseFloat(order.totalAmount || 0));
-  const grandTotal     = parseFloat(order.totalAmount || 0);
+  const couponDiscount = parseFloat(order.couponDiscount || 0);
+  const taxAmount = parseFloat(order.taxAmount || 0);
+  const grandTotal = parseFloat(order.totalAmount || 0);
 
   const shippingRow = shippingCharge > 0
     ? `<tr>
-        <td style="padding:8px 0;font-size:13px;color:#666;">Shipping</td>
+        <td style="padding:8px 0;font-size:13px;color:#666;">Shipping Charges</td>
         <td style="padding:8px 0;font-size:13px;text-align:right;color:#333;">₹${shippingCharge.toFixed(2)}</td>
        </tr>`
     : `<tr>
-        <td style="padding:8px 0;font-size:13px;color:#666;">Shipping</td>
+        <td style="padding:8px 0;font-size:13px;color:#666;">Shipping Charges</td>
         <td style="padding:8px 0;font-size:13px;text-align:right;color:#16a34a;font-weight:600;">FREE</td>
        </tr>`;
 
   const couponRow = couponDiscount > 0
     ? `<tr>
-        <td style="padding:8px 0;font-size:13px;color:#666;">Coupon ${order.couponCode ? `(${order.couponCode})` : ""}</td>
+        <td style="padding:8px 0;font-size:13px;color:#666;">Coupon Discount ${order.couponCode ? `<span style="color:#16a34a;font-size:11px;font-weight:600;">(${order.couponCode})</span>` : ""}</td>
         <td style="padding:8px 0;font-size:13px;text-align:right;color:#16a34a;font-weight:600;">−₹${couponDiscount.toFixed(2)}</td>
+       </tr>`
+    : "";
+
+  const taxRow = taxAmount > 0
+    ? `<tr>
+        <td style="padding:8px 0;font-size:13px;color:#666;">Tax / GST</td>
+        <td style="padding:8px 0;font-size:13px;text-align:right;color:#333;">₹${taxAmount.toFixed(2)}</td>
        </tr>`
     : "";
 
@@ -149,6 +157,7 @@ const sendOrderConfirmationEmail = async (order, user) => {
         </tr>
         ${shippingRow}
         ${couponRow}
+        ${taxRow}
         <tr>
           <td colspan="2" style="padding:4px 0;border-top:1px dashed #e5e5e5;"></td>
         </tr>
@@ -159,6 +168,35 @@ const sendOrderConfirmationEmail = async (order, user) => {
       </table>
     </td>
   </tr>
+
+  <!-- Coupon Information (if applied) -->
+  ${couponDiscount > 0 && order.couponCode ? `
+  <tr>
+    <td style="padding:0 40px 28px;">
+      <div style="background:#f9fff9;border:1px solid #c8e6c9;border-radius:10px;padding:16px;overflow:hidden;">
+        <h3 style="margin:0 0 14px;font-size:15px;color:#27ae60;font-weight:700;padding-bottom:10px;border-bottom:2px solid #c8e6c9;">
+          🏷️ Coupon Applied
+        </h3>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:8px 0;font-size:13px;color:#666;">Code</td>
+            <td style="padding:8px 0;font-size:13px;text-align:right;">
+              <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;padding:4px 14px;border-radius:20px;font-weight:700;font-size:13px;letter-spacing:0.5px;border:1px solid #a5d6a7;">
+                ${order.couponCode}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;font-size:13px;color:#666;">Discount</td>
+            <td style="padding:8px 0;font-size:13px;text-align:right;color:#27ae60;font-weight:700;font-size:15px;">
+              −₹${couponDiscount.toFixed(2)}
+            </td>
+          </tr>
+        </table>
+      </div>
+    </td>
+  </tr>
+  ` : ""}
 
   <!-- Delivery details (column) -->
   <tr>
