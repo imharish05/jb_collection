@@ -48,10 +48,7 @@ export default function Dashboard() {
 
   const REPORT_NAMES = {
     'sales': 'Sales Report',
-    'product-sales': 'Product Sales Report',
-    'best-sellers': 'Best Selling Products',
-    'monthly-sales': 'Monthly Sales Report',
-    'inventory': 'Inventory Report'
+    'product-sales': 'Product-wise Sales Report',
   };
 
   useEffect(() => {
@@ -189,16 +186,7 @@ export default function Dashboard() {
                 Sales Report
               </button>
               <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('product-sales'); setShowExportModal(true); setDropdownOpen(false); }}>
-                Product Sales Report
-              </button>
-              <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('best-sellers'); setShowExportModal(true); setDropdownOpen(false); }}>
-                Best Selling Products
-              </button>
-              <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('monthly-sales'); setShowExportModal(true); setDropdownOpen(false); }}>
-                Monthly Sales Report
-              </button>
-              <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('inventory'); setShowExportModal(true); setDropdownOpen(false); }}>
-                Inventory Report
+                Product-wise Sales Report
               </button>
             </div>
           )}
@@ -528,8 +516,8 @@ export default function Dashboard() {
                   </select>
                 </div>
 
-                {/* Date Range Filter (Not needed for Inventory Report) */}
-                {selectedReport !== 'inventory' && (
+                {/* Date Range Filter */}
+                {(
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>Date Range</label>
                     <select 
@@ -573,40 +561,7 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* Product Filter (For Sales, Product Sales, and Inventory Reports) */}
-                {(selectedReport === 'sales' || selectedReport === 'product-sales' || selectedReport === 'inventory') && (
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Filter by Product</label>
-                    <select 
-                      className={styles.formControl} 
-                      value={productFilter} 
-                      onChange={e => setProductFilter(e.target.value)}
-                    >
-                      <option value="all">All Products</option>
-                      {productsList.map(p => (
-                        <option key={p.id} value={p.id}>{p.productName}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
 
-                {/* Order Status Filter (Specific to Sales Report) */}
-                {selectedReport === 'sales' && (
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Order Status</label>
-                    <select 
-                      className={styles.formControl} 
-                      value={statusFilter} 
-                      onChange={e => setStatusFilter(e.target.value)}
-                    >
-                      <option value="all">All Statuses</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="shipped">Shipped</option>
-                      <option value="out_for_delivery">Out for Delivery</option>
-                      <option value="delivered">Delivered</option>
-                    </select>
-                  </div>
-                )}
               </div>
               
               <div className={styles.modalFooter}>
