@@ -207,6 +207,18 @@
   transition: color 0.2s;
 }
 
+.kg-return-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  flex-shrink: 0;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
 .kg-item-name:hover {
   color: #db1a5d;
 }

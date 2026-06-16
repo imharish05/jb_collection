@@ -539,15 +539,13 @@ const toggleVisibility = (field) => {
 
                                       {/* ── Existing return status ── */}
                                       {activeReturn && (
-                                        <div style={{ marginTop: "6px" }}>
+                                        <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
                                           <span className={`return-status-badge ${activeReturn.status}`}>
                                             {statusLabels[activeReturn.status] || activeReturn.status}
                                           </span>
-                                          <div style={{ marginTop: "4px" }}>
-                                            <Link to={`/return-tracking/${activeReturn.id}`} style={{ color: "#db1a5d", fontWeight: 600, fontSize: "12px" }}>
-                                              Track Return
-                                            </Link>
-                                          </div>
+                                          <Link to={`/return-tracking/${activeReturn.id}`} className="btn-track-return">
+                                            Track Return
+                                          </Link>
                                         </div>
                                       )}
 

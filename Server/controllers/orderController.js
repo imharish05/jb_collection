@@ -16,6 +16,22 @@ const { sendOrderConfirmationEmail, sendOrderStatusEmail } = require("../utils/m
 const { shiprocketPost, resolveShiprocketPaymentMethod } = require("../utils/shiprocket");
 const inventoryService = require("../services/inventoryService");
 
+// ─── KGF Order Number Generator ──────────────────────────────────────────────
+// Generates a unique, sequential order number like KGF-000001.
+// Uses MAX() on existing order_number values so it is race-safe for low-to-medium
+// traffic sites; no separate counter table needed.
+const generateKgfOrderNumber = async (transaction) => {
+  const [rows] = await sequelize.query(
+    `SELECT MAX(CAST(SUBSTRING(order_number, 5) AS UNSIGNED)) AS maxNum
+     FROM orders
+     WHERE order_number LIKE 'KGF-%'`,
+    { transaction }
+  );
+  const current = parseInt(rows[0]?.maxNum || 0, 10);
+  const next = current + 1;
+  return `KGF-${String(next).padStart(6, '0')}`;
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // pushOrderToShiprocket
 //
@@ -445,9 +461,13 @@ const createOrder = async (req, res, next) => {
       resolvedCodAmount   = 0;
     }
 
+    // ── Generate KGF order number ─────────────────────────────────────────────
+    const orderNumber = await generateKgfOrderNumber(transaction);
+
     // ── Create the order ─────────────────────────────────────────────────────
     const order = await Order.create(
       {
+        orderNumber,
         userId:            req.user.id,
         totalAmount:       parseFloat(totalAmount),
         shippingAddressId: shippingAddress.id,
@@ -458,8 +478,8 @@ const createOrder = async (req, res, next) => {
         advancePaid:       resolvedAdvancePaid,
         codAmount:         resolvedCodAmount,
         couponCode:        normalizedCouponCode,
-        couponDiscount:    serverCouponDiscount,     // ← NEW: save coupon rupee amount
-        taxAmount:         receivedTax,              // ← NEW: save tax amount
+        couponDiscount:    serverCouponDiscount,     // ← save coupon rupee amount
+        taxAmount:         receivedTax,              // ← save tax amount
         notes,
         shippingCharge:    parseFloat(shippingCharge || 0),
         estimatedDeliveryDays: estimatedDeliveryDays || null,

@@ -396,7 +396,7 @@ const couponDiscount =
                       </div>
                       <div className="info-group">
                         <label>Order ID</label>
-                        <p className="text-dark font-weight-bold">#{order.id}</p>
+                        <p className="text-dark font-weight-bold">#{order.orderNumber || order.id}</p>
                       </div>
                     </div>
 

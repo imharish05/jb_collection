@@ -350,6 +350,7 @@ const Cart = () => {
                             to={item.isCombo ? process.env.PUBLIC_URL + "/combo/root/" + (item.comboSlug || item.rootComboId) : process.env.PUBLIC_URL + "/product/" + (item.slug || item.id)}
                             className="kg-item-name"
                           >
+                            <span className="kg-return-dot"></span>
                             {item.name}
                           </Link>
 
