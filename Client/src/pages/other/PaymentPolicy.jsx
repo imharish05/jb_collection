@@ -187,7 +187,7 @@ const PaymentPolicy = () => {
                 <li><strong>Zero Knowledge Architecture:</strong> Kamali Gifts has zero access to your CVV, UPI PIN, net banking password, or card number at any point</li>
               </ul>
               <div className="policy-highlight">
-                <p>Kamali Gifts will <strong>never</strong> ask you for your card number, CVV, OTP, UPI PIN, or net banking credentials via email, phone, or WhatsApp. If you receive such a request claiming to be from Kamali Gifts, it is a phishing attempt — report it to <strong>security@kamaligifts.com</strong> immediately.</p>
+                <p>Kamali Gifts will <strong>never</strong> ask you for your card number, CVV, OTP, UPI PIN, or net banking credentials via email, phone, or WhatsApp. If you receive such a request claiming to be from Kamali Gifts, it is a phishing attempt — report it to <strong>Kamalireturngifts@gmail.com</strong> immediately.</p>
               </div>
             </div>
 
@@ -210,7 +210,7 @@ const PaymentPolicy = () => {
               <ul className="policy-ul">
                 <li>This occurs with net banking, UPI collect requests, or wallet transactions where authorization is delayed</li>
                 <li>Your order is held in a pending state; do not attempt to repay until the first transaction is confirmed failed or refunded</li>
-                <li>If pending for more than <strong>24 hours</strong>, contact us at <strong>payments@kamaligifts.com</strong> with your Order ID and we will investigate via Razorpay's dashboard</li>
+                <li>If pending for more than <strong>24 hours</strong>, contact us at <strong>Kamalireturngifts@gmail.com</strong> with your Order ID and we will investigate via Razorpay's dashboard</li>
               </ul>
 
               <h3>Double Charge</h3>
@@ -314,7 +314,7 @@ const PaymentPolicy = () => {
               </div>
 
               <div className="policy-highlight" style={{ marginTop: 16 }}>
-                <p>Kamali Gifts initiates refunds promptly upon approval. However, bank-side processing delays are beyond our control. If a refund has not reflected after <strong>10 business days</strong>, contact your bank first; if unresolved, escalate to us at <strong>payments@kamaligifts.com</strong> with your Razorpay payment ID.</p>
+                <p>Kamali Gifts initiates refunds promptly upon approval. However, bank-side processing delays are beyond our control. If a refund has not reflected after <strong>10 business days</strong>, contact your bank first; if unresolved, escalate to us at <strong>Kamalireturngifts@gmail.com</strong> with your Razorpay payment ID.</p>
               </div>
             </div>
 
@@ -328,7 +328,7 @@ const PaymentPolicy = () => {
                 A chargeback occurs when a customer disputes a transaction directly with their bank or card issuer, asking the bank to reverse the charge. While chargebacks exist to protect consumers, misuse of this mechanism on legitimate transactions is considered fraud.
               </p>
               <ul className="policy-ul">
-                <li>If you have an issue with an order, we strongly request that you <strong>contact us first</strong> at <strong>payments@kamaligifts.com</strong> before raising a chargeback; most issues are resolved within 24–48 hours</li>
+                <li>If you have an issue with an order, we strongly request that you <strong>contact us first</strong> at <strong>Kamalireturngifts@gmail.com</strong> before raising a chargeback; most issues are resolved within 24–48 hours</li>
                 <li>For unresolved disputes, Kamali Gifts will respond to all Razorpay-mediated chargeback requests with order evidence including dispatch records, tracking details, and customer communication logs</li>
                 <li>Chargeback claims filed for orders that have been validly fulfilled and delivered will be disputed and may result in account suspension on Kamali Gifts</li>
                 <li>Razorpay's dispute resolution process and timelines govern the outcome of chargeback proceedings; Kamali Gifts is bound by their decisions</li>
@@ -369,8 +369,8 @@ const PaymentPolicy = () => {
                   <p>Mon–Sat, 9 AM – 6 PM IST. We coordinate directly with Razorpay on your behalf.</p>
                 </div>
                 <div className="policy-contact-items">
-                  <div className="policy-contact-item"><span>Email</span> payments@kamaligifts.com</div>
-                  <div className="policy-contact-item"><span>WhatsApp</span> +91-XXXXX-XXXXX</div>
+                  <div className="policy-contact-item"><span>Email</span> Kamalireturngifts@gmail.com</div>
+                  <div className="policy-contact-item"><span>WhatsApp</span> +91 73388 14319</div>
                   <div className="policy-contact-item"><span>Response</span> Within 24 business hours</div>
                 </div>
               </div>

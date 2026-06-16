@@ -279,7 +279,7 @@ const ShippingPolicy = () => {
                 In the rare event that your package is marked as "Delivered" in the Shiprocket tracking system but has not been received:
               </p>
               <ul className="policy-ul">
-                <li>Contact us at <strong>shipping@kamaligifts.com</strong> within <strong>48 hours</strong> of the reported delivery timestamp</li>
+                <li>Contact us at <strong>Kamalireturngifts@gmail.com</strong> within <strong>48 hours</strong> of the reported delivery timestamp</li>
                 <li>We will initiate a formal investigation with Shiprocket and the assigned courier partner, which typically takes 5–7 business days</li>
                 <li>Claims reported after <strong>7 days</strong> of the delivery date may not be eligible for resolution due to courier investigation deadlines</li>
                 <li>We strongly recommend recording a short unboxing video for high-value or fragile orders, as it significantly aids dispute resolution</li>
@@ -318,8 +318,8 @@ const ShippingPolicy = () => {
                   <p>Mon–Sat, 9 AM – 6 PM IST. We'll coordinate with Shiprocket on your behalf.</p>
                 </div>
                 <div className="policy-contact-items">
-                  <div className="policy-contact-item"><span>Email</span> shipping@kamaligifts.com</div>
-                  <div className="policy-contact-item"><span>WhatsApp</span> +91-XXXXX-XXXXX</div>
+                  <div className="policy-contact-item"><span>Email</span>Kamalireturngifts@gmail.com</div>
+                  <div className="policy-contact-item"><span>WhatsApp</span> +91 73388 14319</div>
                   <div className="policy-contact-item"><span>Response</span> Within 24 business hours</div>
                 </div>
               </div>

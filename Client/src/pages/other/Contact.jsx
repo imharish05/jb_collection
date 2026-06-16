@@ -115,7 +115,7 @@ const Contact = () => {
                         <div className="icon-circle"><i className="fa fa-envelope"></i></div>
                         <div>
                           <strong>Email Us</strong>
-                          <span>support@yourstore.com</span>
+                          <span>Kamalireturngifts@gmail.com</span>
                         </div>
                       </div>
                       <div className="glass-link-item d-flex gap-3 mt-4">

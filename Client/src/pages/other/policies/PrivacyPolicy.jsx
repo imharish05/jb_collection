@@ -170,7 +170,7 @@ const PrivacyPolicy = () => {
                 When you submit photos, names, or personal messages for customized products, this data is used exclusively to produce your order. We do not use this content for marketing, profiling, or sharing without your explicit consent.
               </p>
               <div className="policy-highlight">
-                <p>Uploaded photos and personalization data are permanently deleted from our production systems within <strong>60 days</strong> of order fulfillment. If you require earlier deletion, contact us at <strong>privacy@kamaligifts.com</strong>.</p>
+                <p>Uploaded photos and personalization data are permanently deleted from our production systems within <strong>60 days</strong> of order fulfillment. If you require earlier deletion, contact us at <strong>Kamalireturngifts@gmail.com</strong>.</p>
               </div>
             </div>
 
@@ -198,7 +198,7 @@ const PrivacyPolicy = () => {
               <p>
                 We retain your order and account data for a minimum of <strong>3 years</strong> to comply with Indian GST and tax regulations. Personalization media (photos, custom content) is deleted within 60 days of order fulfillment. After the retention period, data is anonymized or securely destroyed.
               </p>
-              <p>You may request early deletion of non-essential data by contacting us at <strong>privacy@kamaligifts.com</strong>. Deletion requests are processed within 30 days subject to legal retention requirements.</p>
+              <p>You may request early deletion of non-essential data by contacting us at <strong>Kamalireturngifts@gmail.com</strong>. Deletion requests are processed within 30 days subject to legal retention requirements.</p>
             </div>
 
             {/* 8 */}
@@ -266,9 +266,9 @@ const PrivacyPolicy = () => {
                   <p>We aim to respond to all privacy queries within 48 business hours.</p>
                 </div>
                 <div className="policy-contact-items">
-                  <div className="policy-contact-item"><span>Email</span> privacy@kamaligifts.com</div>
-                  <div className="policy-contact-item"><span>Phone</span> +91-XXXXX-XXXXX</div>
-                  <div className="policy-contact-item"><span>Hours</span> Mon–Sat, 9 AM – 6 PM IST</div>
+                  <div className="policy-contact-item"><span>Email</span> Kamalireturngifts@gmail.com</div>
+                  <div className="policy-contact-item"><span>Phone</span> +91 73388 14319</div>
+                  
                 </div>
               </div>
             </div>

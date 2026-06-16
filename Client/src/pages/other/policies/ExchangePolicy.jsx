@@ -9,21 +9,17 @@ const ExchangePolicy = () => {
   const { pathname } = useLocation();
 
   const sections = [
-    "What Is & Isn't Eligible",
-    "Return Window",
-    "Customized Product Policy",
-    "How to Initiate a Return or Exchange",
-    "Exchange Process",
-    "Refund Policy & Timelines (Razorpay)",
-    "Cancellations",
-    "Damaged in Transit",
-    "Quality Assurance",
-    "Contact",
+    "Eligibility for Returns",
+    "Non-Returnable Items",
+    "Refund Process",
+    "Replacement Policy",
+    "Order Cancellation",
+    "Shipping Damage",
+    "Contact Us",
   ];
 
   return (
     <Fragment>
-     
       <SEO
         titleTemplate="Exchange & Return Policy – Kamali Gifts"
         description="Kamali Gifts exchange and return policy for customized gifts, toys, and stationery. Learn about eligibility, return windows, refund timelines via Razorpay, and how to initiate a return."
@@ -46,17 +42,14 @@ const ExchangePolicy = () => {
               </svg>
             </div>
             <div className="policy-hero-badge">Returns</div>
-            <h1>Exchange &amp; Return Policy</h1>
-            <p>Last Updated: June 2026 &nbsp;•&nbsp; Refunds via Razorpay</p>
+            <h1>Refund &amp; Return Policy</h1>
+           
           </div>
 
           <div className="policy-body">
             <div style={{ marginBottom: 40 }}>
               <p style={{ fontSize: 15, lineHeight: 1.85, color: "#444" }}>
-                Customer satisfaction is at the heart of everything we do at <strong style={{ color: "#0d1b40" }}>Kamali Gifts</strong>. We understand that sometimes things don't go as planned, and we've designed this policy to be fair, transparent, and easy to navigate. Please read this carefully before making a purchase — especially for customized and personalized items.
-              </p>
-              <p style={{ fontSize: 15, lineHeight: 1.85, color: "#444" }}>
-                All approved refunds are processed through <strong>Razorpay</strong> back to your original payment method. Timelines are governed by Razorpay's settlement processes and your bank's processing time.
+                Thank you for shopping with <strong style={{ color: "#0d1b40" }}>Kamali Gifts Factory</strong>. We strive to provide high-quality return gifts and excellent customer service. Please read our Refund &amp; Return Policy carefully before making a purchase.
               </p>
             </div>
 
@@ -73,26 +66,19 @@ const ExchangePolicy = () => {
             <div className="policy-section" id="ep-1">
               <div className="policy-section-header">
                 <div className="policy-section-num">1</div>
-                <h2>What Is &amp; Isn't Eligible</h2>
+                <h2>Eligibility for Returns</h2>
               </div>
-              <h3>✓ Eligible for Exchange or Return</h3>
+              <p>Returns are accepted only under the following circumstances:</p>
               <ul className="policy-ul">
-                <li>Products received in a <strong>damaged or defective condition</strong></li>
-                <li><strong>Wrong item delivered</strong> — different product or variant from what was ordered</li>
-                <li>Missing items in multi-piece orders or gift hampers</li>
-                <li>Non-customized standard products in <strong>unused, original condition</strong> with tags and packaging intact</li>
-                <li>Quality issues such as poor printing, significant color mismatch, or manufacturing defects on customized items caused by our production error</li>
+                <li>The product received is damaged, defective, or incorrect.</li>
+                <li>The product is significantly different from the item ordered.</li>
+                <li>The return request is submitted within <strong>3 days</strong> of receiving the order.</li>
               </ul>
-              <h3>✗ Not Eligible for Exchange or Return</h3>
+              <p>To initiate a return, customers must provide:</p>
               <ul className="policy-ul">
-                <li><strong>Customized / personalized products</strong> (name-printed, photo-printed, engraved, or embroidered) — unless defective or incorrectly produced on our end</li>
-                <li>Products damaged due to customer misuse, improper storage, or accidental damage after delivery</li>
-                <li>Items returned without original packaging or in used / washed condition</li>
-                <li>Products with tampered, removed, or missing labels or tags</li>
-                <li>Digital products and gift cards / vouchers</li>
-                <li>Items reported after the eligible return window has closed</li>
-                <li><strong>Change of mind</strong> returns on customized or personalized items</li>
-                <li>Minor color variations between on-screen previews and physical products (due to screen calibration differences)</li>
+                <li>Order number</li>
+                <li>Photos or videos showing the issue (box opening video)</li>
+                <li>Contact details</li>
               </ul>
             </div>
 
@@ -100,78 +86,53 @@ const ExchangePolicy = () => {
             <div className="policy-section" id="ep-2">
               <div className="policy-section-header">
                 <div className="policy-section-num">2</div>
-                <h2>Return Window</h2>
+                <h2>Non-Returnable Items</h2>
               </div>
-              <div className="policy-info-grid">
-                <div className="policy-info-card">
-                  <div className="label">Damaged / Defective / Wrong</div>
-                  <div className="value">48 hours from delivery</div>
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Photo/video evidence required</div>
-                </div>
-                <div className="policy-info-card">
-                  <div className="label">Standard Non-Customized</div>
-                  <div className="value">7 days from delivery</div>
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Unused, original packaging</div>
-                </div>
-                <div className="policy-info-card">
-                  <div className="label">Bulk / Corporate Orders</div>
-                  <div className="value">3 days from delivery</div>
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Written report required</div>
-                </div>
-              </div>
-              <p style={{ marginTop: 14 }}>
-                All return requests must be <strong>initiated by contacting our support team</strong>. We do not accept walk-in returns. Self-return shipments dispatched without prior authorization from Kamali Gifts will not be accepted and cannot be credited.
-              </p>
+              <p>The following items are not eligible for return or refund:</p>
+              <ul className="policy-ul">
+                <li>Customized or personalized gifts</li>
+                <li>Bulk orders made to customer specifications</li>
+                <li>Products damaged due to misuse or mishandling after delivery</li>
+                <li>Items returned without original packaging</li>
+              </ul>
             </div>
 
             {/* 3 */}
             <div className="policy-section" id="ep-3">
               <div className="policy-section-header">
                 <div className="policy-section-num">3</div>
-                <h2>Customized Product Policy</h2>
+                <h2>Refund Process</h2>
               </div>
-              <p>
-                Due to the bespoke nature of personalized items, we invest significant materials, time, and craftsmanship in each custom order. Customized products are <strong>non-refundable and non-exchangeable</strong> unless:
-              </p>
+              <p>Once the returned item is received and inspected:</p>
               <ul className="policy-ul">
-                <li>The product has a clear <strong>manufacturing defect</strong> (e.g., torn material, broken component, peeling print)</li>
-                <li>The print quality is unacceptably poor or inaccurate — blurred photo, incorrect name, wrong text</li>
-                <li>The <strong>wrong customization was applied</strong> due to an error on our end (not customer-submitted data)</li>
+                <li>Approved refunds will be processed within <strong>5–7 business days</strong>.</li>
+                <li>Refunds will be credited to the original payment method used during purchase.</li>
+                <li>Shipping charges are non-refundable.</li>
               </ul>
-              <div className="policy-warning">
-                <strong>Customer-submitted errors</strong> (spelling mistakes, wrong photo, incorrect date submitted by you) are <strong>not eligible for free replacement</strong>. We strongly encourage all customers to double-check every personalization detail before confirming the order. A paid re-production option may be offered at a discounted rate as a goodwill gesture.
-              </div>
             </div>
 
             {/* 4 */}
             <div className="policy-section" id="ep-4">
               <div className="policy-section-header">
                 <div className="policy-section-num">4</div>
-                <h2>How to Initiate a Return or Exchange</h2>
+                <h2>Replacement Policy</h2>
               </div>
-              <p>Follow these steps within the eligible return window:</p>
+              <p>For damaged, defective, or incorrect items, customers may choose:</p>
               <ul className="policy-ul">
-                <li><strong>Step 1:</strong> Contact us at <strong>returns@kamaligifts.com</strong> or WhatsApp <strong>+91-XXXXX-XXXXX</strong></li>
-                <li><strong>Step 2:</strong> Provide your Order ID, a clear description of the issue, and photographs or an unboxing video showing the defect or damage</li>
-                <li><strong>Step 3:</strong> Our team reviews your request within <strong>24–48 business hours</strong> and approves or declines with a reason</li>
-                <li><strong>Step 4:</strong> If approved, we arrange a <strong>reverse pickup</strong> via Shiprocket at no cost to you for eligible defective/wrong-item returns</li>
-                <li><strong>Step 5:</strong> After receiving and inspecting the returned item at our facility, we process the exchange or initiate the refund via Razorpay</li>
+                <li>A replacement product (subject to availability), or</li>
+                <li>A full refund</li>
               </ul>
-              <p>Do not send products back without receiving an approval email from Kamali Gifts. Unauthorized returns will not be processed.</p>
             </div>
 
             {/* 5 */}
             <div className="policy-section" id="ep-5">
               <div className="policy-section-header">
                 <div className="policy-section-num">5</div>
-                <h2>Exchange Process</h2>
+                <h2>Order Cancellation</h2>
               </div>
               <ul className="policy-ul">
-                <li>Approved exchanges: replacement of the same product (or closest available variant) dispatched within <strong>3–5 business days</strong> after the returned item is received and inspected</li>
-                <li>If the original product is out of stock, we offer a <strong>store credit or full refund</strong> at your preference</li>
-                <li>Size or color exchanges for non-customized items are subject to stock availability at the time of request</li>
-                <li>Only <strong>one exchange is permitted</strong> per original order line item</li>
-                <li>Replacement shipments are dispatched via Shiprocket under the same delivery terms as the original order</li>
+                <li>Orders can be canceled within <strong>24 hours</strong> of placement.</li>
+                <li>Customized orders cannot be canceled once production has started.</li>
               </ul>
             </div>
 
@@ -179,110 +140,34 @@ const ExchangePolicy = () => {
             <div className="policy-section" id="ep-6">
               <div className="policy-section-header">
                 <div className="policy-section-num">6</div>
-                <h2>Refund Policy & Timelines (Razorpay)</h2>
+                <h2>Shipping Damage</h2>
               </div>
-              <p>Kamali Gifts offers refunds in the following scenarios:</p>
+              <p>If your package arrives damaged:</p>
               <ul className="policy-ul">
-                <li>Product is defective/damaged and a suitable replacement is unavailable</li>
-                <li>Order was cancelled before production began (customized) or before dispatch (standard)</li>
-                <li>Duplicate payment or overcharge due to a Razorpay / bank technical error</li>
-                <li>Kamali Gifts cancels your order due to stock unavailability or operational constraints</li>
+                <li>Take clear photos immediately upon delivery.</li>
+                <li>Contact us within <strong>48 hours</strong> of receiving the package.</li>
+                <li>We will review the claim and arrange a replacement or refund if eligible.</li>
               </ul>
-              <h3>Refund Methods & Timelines</h3>
-              <div className="policy-info-grid">
-                <div className="policy-info-card">
-                  <div className="label">Credit / Debit Card</div>
-                  <div className="value">5–7 Business Days</div>
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Via Razorpay back to card</div>
-                </div>
-                <div className="policy-info-card">
-                  <div className="label">UPI / Net Banking</div>
-                  <div className="value">3–5 Business Days</div>
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Via Razorpay back to source</div>
-                </div>
-                <div className="policy-info-card">
-                  <div className="label">Razorpay Wallet</div>
-                  <div className="value">24–48 Hours</div>
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Or Store Credit option</div>
-                </div>
-                <div className="policy-info-card">
-                  <div className="label">COD Orders</div>
-                  <div className="value">5–7 Business Days</div>
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>NEFT/UPI to your bank account</div>
-                </div>
-              </div>
-              <div className="policy-highlight" style={{ marginTop: 14 }}>
-                <p>Refund timelines are governed by <strong>Razorpay's processing schedule</strong> and your bank's internal processing time after Razorpay initiates the transfer. Kamali Gifts has no control over bank-side delays beyond Razorpay's settlement. Shipping charges are refunded only if the return is due to our error (defective or wrong item).</p>
-              </div>
             </div>
 
             {/* 7 */}
             <div className="policy-section" id="ep-7">
               <div className="policy-section-header">
                 <div className="policy-section-num">7</div>
-                <h2>Cancellations</h2>
+                <h2>Contact Us</h2>
               </div>
-              <h3>Standard Products</h3>
-              <p>Cancellations accepted within <strong>12 hours</strong> of order placement. After 12 hours, the order may already be in dispatch preparation.</p>
-              <h3>Customized Products</h3>
-              <p>Cancellations for personalized products must be requested within <strong>2 hours</strong> of order placement. After production has begun, cancellations are <strong>not accepted</strong> and no refund will be issued. In exceptional circumstances (documented medical emergency, natural disaster), partial goodwill refunds may be considered at Kamali Gifts' sole discretion.</p>
-              <h3>Kamali Gifts–Initiated Cancellations</h3>
-              <p>If we cancel your order due to stock unavailability, production constraints, or inability to verify your address, a <strong>full refund is processed automatically</strong> via Razorpay within 5–7 business days without requiring any action from you.</p>
-            </div>
-
-            {/* 8 */}
-            <div className="policy-section" id="ep-8">
-              <div className="policy-section-header">
-                <div className="policy-section-num">8</div>
-                <h2>Damaged in Transit</h2>
-              </div>
-              <p>If your product arrives visibly damaged in transit (via Shiprocket's courier partners), follow these steps:</p>
-              <ul className="policy-ul">
-                <li>Photograph the <strong>outer packaging before opening</strong> — this is critical evidence for courier claims</li>
-                <li>Photograph the <strong>damaged product clearly</strong> showing the defect from multiple angles</li>
-                <li>Report to <strong>returns@kamaligifts.com</strong> within <strong>24 hours of delivery</strong> with the above photos and your Order ID</li>
-                <li>We will lodge a formal damage claim with Shiprocket and the responsible courier</li>
-                <li>Post investigation: we will arrange a replacement shipment or issue a full refund at your preference</li>
-              </ul>
-              <div className="policy-warning">
-                <strong>Damage claims reported after 48 hours</strong> of delivery may be declined as courier investigation windows expire. We strongly recommend recording a short unboxing video for all orders containing fragile or high-value items.
-              </div>
-            </div>
-
-            {/* 9 */}
-            <div className="policy-section" id="ep-9">
-              <div className="policy-section-header">
-                <div className="policy-section-num">9</div>
-                <h2>Quality Assurance</h2>
-              </div>
-              <p>
-                Every order from Kamali Gifts goes through a quality check before handover to Shiprocket. For customized items, our QC team reviews the print / engraving / embroidery against your submitted details including name spelling, photo placement, and color accuracy.
-              </p>
-              <p>
-                Despite these rigorous checks, if you are not satisfied with the quality of your received product, please reach out to us. We will review the case with an open mind and work towards a resolution that is fair to both parties.
-              </p>
-            </div>
-
-            {/* 10 */}
-            <div className="policy-section" id="ep-10">
-              <div className="policy-section-header">
-                <div className="policy-section-num">10</div>
-                <h2>Contact</h2>
-              </div>
-              <p>Always include your <strong>Order ID</strong> and clear photographs when submitting a return or exchange request.</p>
+              <p>For return, refund, or replacement requests, please contact:</p>
               <div className="policy-contact-box">
                 <div>
-                  <h3>Returns & Exchange Support</h3>
-                  <p>Our team responds within 24–48 business hours.</p>
+                  <h3>Kamali Gifts Factory</h3>
+                  <p>We appreciate your trust and look forward to serving you.</p>
                 </div>
                 <div className="policy-contact-items">
-                  <div className="policy-contact-item"><span>Email</span> returns@kamaligifts.com</div>
-                  <div className="policy-contact-item"><span>WhatsApp</span> +91-XXXXX-XXXXX</div>
-                  <div className="policy-contact-item"><span>Hours</span> Mon–Sat, 9 AM – 6 PM IST</div>
+                  <div className="policy-contact-item"><span>WhatsApp</span> +91 73388 14319</div>
+                  <div className="policy-contact-item"><span>Email</span> kamalireturngifts@gmail.com</div>
                 </div>
               </div>
             </div>
-
 
           </div>
         </div>
