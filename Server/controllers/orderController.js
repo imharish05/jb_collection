@@ -1,8 +1,18 @@
 // controllers/orderController.js
-const { Order, CartItem, User, Product, Variant, OrderItem, Address, Coupon } = require("../models");
+const {
+  Order,
+  CartItem,
+  User,
+  Product,
+  Variant,
+  OrderItem,
+  Address,
+  Coupon,
+  OrderStatusEmailAudit,
+} = require("../models");
 const sequelize = require("../config/database");
 const { Op } = require("sequelize");
-const { sendOrderConfirmationEmail } = require("../utils/mailer");
+const { sendOrderConfirmationEmail, sendOrderStatusEmail } = require("../utils/mailer");
 const { shiprocketPost, resolveShiprocketPaymentMethod } = require("../utils/shiprocket");
 const inventoryService = require("../services/inventoryService");
 
@@ -139,6 +149,28 @@ const ORDER_ITEM_STATUS_OPTIONS = [
   "pending", "confirmed", "processing", "shipped",
   "delivered", "cancelled", "returned",
 ];
+
+const recordOrderStatusEmailAudit = async ({
+  orderId,
+  previousStatus,
+  newStatus,
+  emailSent,
+  emailSentAt = null,
+  errorMessage = null,
+}) => {
+  try {
+    await OrderStatusEmailAudit.create({
+      orderId,
+      previousStatus,
+      newStatus,
+      emailSent,
+      emailSentAt,
+      errorMessage,
+    });
+  } catch (auditErr) {
+    console.error("[Audit] Failed to record order status email audit:", auditErr.message);
+  }
+};
 
 // ─── GET /api/orders  (customer — own orders) ─────────────────────────────────
 const getMyOrders = async (req, res, next) => {
@@ -543,38 +575,40 @@ const getOrdersByStatus = async (req, res, next) => {
 // ─── PATCH /api/orders/:id/status  (admin — update status) ───────────────────
 const updateOrderStatus = async (req, res, next) => {
   const transaction = await sequelize.transaction();
+  let transactionCommitted = false;
   try {
-    const { status, paymentStatus } = req.body;
+    const { status, paymentStatus, trackingDetails } = req.body;
     const order = await Order.findByPk(req.params.id, { transaction, lock: true });
     if (!order) {
       await transaction.rollback();
       return res.status(404).json({ message: "Order not found" });
     }
 
-    const oldStatus = order.status;
-    const statusChanged = status && status !== oldStatus;
+    const previousStatus = order.status;
+    const newStatus = status;
+    const statusChanged = Boolean(newStatus && newStatus !== previousStatus);
 
-    if (status) {
-      if (!ORDER_ITEM_STATUS_OPTIONS.includes(status)) {
+    if (newStatus) {
+      if (!ORDER_ITEM_STATUS_OPTIONS.includes(newStatus)) {
         await transaction.rollback();
         return res.status(400).json({ message: "Invalid order status" });
       }
-      order.status = status;
+      order.status = newStatus;
     }
     if (paymentStatus) order.paymentStatus = paymentStatus;
 
     const targetStatuses = ["cancelled", "returned", "rto"];
-    if (statusChanged && targetStatuses.includes(status.toLowerCase())) {
+    if (statusChanged && targetStatuses.includes(newStatus.toLowerCase())) {
       if (order.inventoryProcessed && !order.inventoryRestored) {
-        await inventoryService.restoreOrderStock(order.id, transaction, `Order Status Update - ${status}`);
+        await inventoryService.restoreOrderStock(order.id, transaction, `Order Status Update - ${newStatus}`);
       }
     }
 
     await order.save({ transaction });
 
-    if (status) {
+    if (newStatus) {
       await OrderItem.update(
-        { status },
+        { status: newStatus },
         {
           where: {
             orderId: order.id,
@@ -589,6 +623,7 @@ const updateOrderStatus = async (req, res, next) => {
     }
 
     await transaction.commit();
+    transactionCommitted = true;
 
     const updatedOrder = await Order.findByPk(order.id, {
       include: [
@@ -597,9 +632,59 @@ const updateOrderStatus = async (req, res, next) => {
         { model: Address, as: "billingAddress" },
       ],
     });
+
+    if (statusChanged) {
+      const audit = {
+        orderId: order.id,
+        previousStatus,
+        newStatus,
+        emailSent: false,
+        emailSentAt: null,
+        errorMessage: null,
+      };
+
+      try {
+        const userRecord = await User.findByPk(order.userId, {
+          attributes: ["name", "email"],
+        });
+        const incomingTrackingDetails = typeof trackingDetails === "string"
+          ? { trackingUrl: trackingDetails }
+          : (trackingDetails || {});
+        const emailResult = await sendOrderStatusEmail({
+          order: updatedOrder,
+          user: {
+            name: userRecord?.name,
+            email: userRecord?.email,
+          },
+          status: newStatus,
+          trackingDetails: {
+            ...incomingTrackingDetails,
+            trackingUrl: req.body.trackingUrl || req.body.tracking_url || incomingTrackingDetails.trackingUrl,
+            shiprocketTrackingUrl:
+              req.body.shiprocketTrackingUrl ||
+              req.body.shiprocket_tracking_url ||
+              incomingTrackingDetails.shiprocketTrackingUrl,
+            shiprocketOrderId: updatedOrder.shiprocketOrderId,
+            shiprocketShipmentId: updatedOrder.shiprocketShipmentId,
+          },
+        });
+
+        audit.emailSent = Boolean(emailResult?.sent);
+        audit.emailSentAt = emailResult?.sentAt || null;
+        audit.errorMessage = audit.emailSent ? null : (emailResult?.reason || "Email not sent");
+      } catch (emailErr) {
+        audit.errorMessage = emailErr?.message || "Failed to send status email";
+        console.error("[Mailer] Failed to send order status email:", audit.errorMessage);
+      }
+
+      await recordOrderStatusEmailAudit(audit);
+    }
+
     return res.json(updatedOrder);
   } catch (err) {
-    await transaction.rollback();
+    if (!transactionCommitted) {
+      await transaction.rollback();
+    }
     next(err);
   }
 };

@@ -495,7 +495,7 @@ export default function Products({ showToast }) {
 
   const DESC_LIMITS = {
     short: { maxWords: 30, maxChars: 200 },
-    long:  { minWords: 100, maxChars: 4000 },
+    long:  { minWords: 10, maxChars: 4000 },
   };
 
   const validateProduct = () => {

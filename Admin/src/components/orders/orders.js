@@ -79,6 +79,7 @@ export default function Orders({ status = null }) {
   const dispatch = useDispatch();
   const { items: allOrders, loading } = useSelector(state => state.orders);
   const [expanded, setExpanded] = useState(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
   const rows = useMemo(() => {
     const normalized = (Array.isArray(allOrders) ? allOrders : []).map((o) => {
@@ -140,10 +141,16 @@ export default function Orders({ status = null }) {
   }, [dispatch, status]);
 
   const updateStatus = async (orderId, newStatus) => {
+    const currentOrder = rows.find(order => order.id === orderId);
+    if (!currentOrder || currentOrder.status === newStatus || updatingOrderId === orderId) return;
+
+    setUpdatingOrderId(orderId);
     try {
       await dispatch(changeOrderStatus({ id: orderId, status: newStatus }));
     } catch (err) {
       console.error('Failed to update status:', err);
+    } finally {
+      setUpdatingOrderId(current => current === orderId ? null : current);
     }
   };
 
@@ -176,6 +183,7 @@ export default function Orders({ status = null }) {
             const isOpen = expanded === order.id;
             const shippingAddr = shipping || billing;
             const sameAddress = !shipping || JSON.stringify(shipping) === JSON.stringify(billing);
+            const isUpdatingStatus = updatingOrderId === order.id;
             return (
               <>
                 <tr key={order.id}>
@@ -193,11 +201,13 @@ export default function Orders({ status = null }) {
                       : <span className="td-muted">—</span>}
                   </td>
                   <td>
-                    <div className="km-status-wrapper">
+                    <div className={`km-status-wrapper ${isUpdatingStatus ? 'is-updating' : ''}`}>
                       <select
                         className={`km-status-select km-status-${order.status}`}
                         value={order.status}
                         onChange={e => updateStatus(order.id, e.target.value)}
+                        disabled={isUpdatingStatus}
+                        aria-busy={isUpdatingStatus}
                       >
                         {STATUS_OPTIONS.map(st => (
                           <option key={st} value={st}>{labelFor(st)}</option>

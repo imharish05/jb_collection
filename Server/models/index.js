@@ -21,6 +21,7 @@ const Contact     = require("./Contact");
 const OrderItem   = require("./OrderItem");
 const Testimonial = require("./Testimonial");
 const InventoryLog = require("./InventoryLog");
+const OrderStatusEmailAudit = require("./OrderStatusEmailAudit");
 
 // ── Password Reset OTP ────────────────────────────────────────────────────────
 const PasswordResetOtp = require("./PasswordResetOtp");
@@ -37,6 +38,8 @@ InventoryLog.belongsTo(Order, { foreignKey: "order_id", as: "order", constraints
 Order.hasMany(InventoryLog, { foreignKey: "order_id", as: "inventoryLogs", constraints: false });
 InventoryLog.belongsTo(Product, { foreignKey: "product_id", as: "product", constraints: false });
 InventoryLog.belongsTo(Variant, { foreignKey: "variant_id", as: "variant", constraints: false });
+OrderStatusEmailAudit.belongsTo(Order, { foreignKey: "order_id", as: "order", constraints: false });
+Order.hasMany(OrderStatusEmailAudit, { foreignKey: "order_id", as: "statusEmailAudits", constraints: false });
 
 // ── User ↔ Cart / Wishlist / Order ───────────────────────────────────────────────
 User.hasMany(CartItem,     { foreignKey: "user_id", as: "cartItems",     onDelete: "CASCADE" });
@@ -135,4 +138,6 @@ module.exports = {
   PasswordResetOtp,
   // Inventory log
   InventoryLog,
+  // Order status email audit
+  OrderStatusEmailAudit,
 };
