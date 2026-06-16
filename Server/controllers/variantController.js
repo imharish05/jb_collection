@@ -1,7 +1,10 @@
 const fs = require("fs");
 const path = require("path");
-const Variant = require("../models/Variant");
-const Product = require("../models/Product");
+const { Op, fn, col, literal } = require("sequelize");
+const Variant   = require("../models/Variant");
+const Product   = require("../models/Product");
+const OrderItem = require("../models/OrderItem");
+const Order     = require("../models/Order");
 const ChildComboProduct = require("../models/ChildComboProduct");
 
 const generateSku = () =>
@@ -121,14 +124,51 @@ const syncProductVariants = async (productId) => {
   }
 };
 
-// GET /variants
+// Active order statuses that count toward sold quantity
+const SOLD_STATUSES = ["confirmed", "processing", "shipped", "out_for_delivery", "delivered"];
+
+// GET /variants — returns each variant with a computed soldQuantity field
 const getAll = async (req, res) => {
   try {
+    // 1. Fetch all variants with their product name
     const data = await Variant.findAll({
       include: [{ model: Product, as: "product", attributes: ["id", "name"] }],
       order: [["createdAt", "DESC"]],
     });
-    res.json(data);
+
+    // 2. Single aggregation: SUM(quantity) per selectedVariantId for active orders only
+    const soldRows = await OrderItem.findAll({
+      attributes: [
+        ["selected_variant_id", "variantId"],
+        [fn("SUM", col("OrderItem.quantity")), "totalSold"],
+      ],
+      include: [{
+        model: Order,
+        attributes: [],
+        where: { status: { [Op.in]: SOLD_STATUSES } },
+        required: true,
+      }],
+      where: {
+        selected_variant_id: { [Op.ne]: null },
+      },
+      group: ["selected_variant_id"],
+      raw: true,
+    });
+
+    // 3. Build a lookup map: variantId → soldQuantity
+    const soldMap = {};
+    soldRows.forEach(r => {
+      if (r.variantId) soldMap[String(r.variantId)] = parseInt(r.totalSold) || 0;
+    });
+
+    // 4. Attach soldQuantity to every variant row
+    const result = data.map(v => {
+      const plain = v.toJSON();
+      plain.soldQuantity = soldMap[String(plain.id)] || 0;
+      return plain;
+    });
+
+    res.json(result);
   } catch (e) { res.status(500).json({ message: e.message }); }
 };
 

@@ -18,6 +18,14 @@ import {
 import { fetchOrders } from "../../store/services/orderService";
 import { getImgUrl } from "../../helpers/imageUrl";
 
+// Strip old variant suffix saved in productName (e.g. "Gifts (Colour: #000000)" → "Gifts")
+const cleanProductName = (name) => {
+  if (!name) return "Product";
+  // Remove anything from the first " (" onwards (the legacy variant suffix)
+  const idx = name.indexOf(" (");
+  return idx !== -1 ? name.slice(0, idx).trim() : name;
+};
+
 const FALLBACK_IMG = "/assets/img/logo.png";
 
 const parseJson = (val) => {
@@ -495,7 +503,7 @@ const toggleVisibility = (field) => {
                               </div>
                               <div className="header-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                                 <span className={`status-pill ${orderStatusLow || 'pending'}`}>{order.status || 'Pending'}</span>
-                                {canCancel && (
+                                {/* {canCancel && (
                                   <button
                                     onClick={handleCancelFromAccount}
                                     className="btn-cancel-action"
@@ -503,7 +511,7 @@ const toggleVisibility = (field) => {
                                   >
                                     Cancel
                                   </button>
-                                )}
+                                )} */}
                               </div>
                             </div>
                             <div className="order-card-body">
@@ -531,10 +539,10 @@ const toggleVisibility = (field) => {
                                 return (
                                   <div className="product-row" key={i}>
                                     <div className="product-img">
-                                      <img src={getOrderItemImage(item.image)} alt={item.productName || "Product"} onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_IMG; }} />
+                                      <img src={getOrderItemImage(item.image)} alt={cleanProductName(item.productName)} onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_IMG; }} />
                                     </div>
                                     <div className="product-details" style={{ flex: 1 }}>
-                                      <h6>{item.productName || "Product"}</h6>
+                                      <h6>{cleanProductName(item.productName)}</h6>
                                       <p>Qty: {item.quantity}</p>
 
                                       {/* ── Existing return status ── */}

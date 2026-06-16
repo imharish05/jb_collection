@@ -9,7 +9,7 @@ import { setProducts } from "../slices/product-slice";
  */
 export const getAllProducts = async () => {
   try {
-    const res = await api.get("/products");
+    const res = await api.get("/products?includeCombos=true");
     store.dispatch(setProducts(res.data));
     return res.data;
   } catch (err) {
@@ -25,7 +25,7 @@ export const getAllProducts = async () => {
  */
 export const refreshProductsSilently = async () => {
   try {
-    const res = await api.get("/products");
+    const res = await api.get("/products?includeCombos=true");
     store.dispatch(setProducts(res.data));
     return res.data;
   } catch (err) {

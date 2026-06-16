@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import styles from './Dashboard.module.css';
 import { loadDashboard, loadChart } from '../../redux/services/dashboardService';
+import api from '../../api/axiosInstance';
+import toast from 'react-hot-toast';
 
 function stockColor(s) { return s > 200 ? '#45b369' : s > 50 ? '#ff9f29' : '#ef4444'; }
 function stockLabel(s) { return s > 200 ? 'In Stock' : s > 50 ? 'Low' : 'Out'; }
@@ -29,6 +31,99 @@ export default function Dashboard() {
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
   const [salesView, setSalesView] = useState('monthly'); // 'monthly' | 'quarterly'
   const isFirstChartLoad = useRef(true);
+
+  // ── Export Reports State ──
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(''); // 'sales' | 'product-sales' | 'best-sellers' | 'monthly-sales' | 'inventory'
+  const [reportFormat, setReportFormat] = useState('xlsx'); // 'xlsx' | 'csv'
+  const [dateRange, setDateRange] = useState('thisMonth'); // 'today' | 'last7' | 'last30' | 'thisMonth' | 'thisYear' | 'custom'
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [productFilter, setProductFilter] = useState('all'); // 'all' | product_id
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | status
+  const [productsList, setProductsList] = useState([]);
+  const [generating, setGenerating] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const REPORT_NAMES = {
+    'sales': 'Sales Report',
+    'product-sales': 'Product Sales Report',
+    'best-sellers': 'Best Selling Products',
+    'monthly-sales': 'Monthly Sales Report',
+    'inventory': 'Inventory Report'
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (showExportModal && productsList.length === 0) {
+      api.get('/products')
+        .then(res => {
+          if (Array.isArray(res.data)) {
+            setProductsList(res.data);
+          }
+        })
+        .catch(err => console.error('Failed to load products list for filter', err));
+    }
+  }, [showExportModal]);
+
+  const handleExportSubmit = async (e) => {
+    e.preventDefault();
+    setGenerating(true);
+    const toastId = toast.loading(`Generating ${REPORT_NAMES[selectedReport]}...`);
+
+    try {
+      const params = {
+        format: reportFormat,
+        dateRange,
+        from: fromDate,
+        to: toDate,
+        productId: productFilter,
+        orderStatus: statusFilter
+      };
+
+      const res = await api.get(`/dashboard/reports/${selectedReport}`, {
+        params,
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([res.data], {
+        type: reportFormat === 'csv'
+          ? 'text/csv'
+          : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const filename = `${REPORT_NAMES[selectedReport].replace(/\s+/g, '_')}_${dateStr}.${reportFormat}`;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success(`${REPORT_NAMES[selectedReport]} downloaded successfully!`, { id: toastId });
+      setShowExportModal(false);
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error(`Failed to generate ${REPORT_NAMES[selectedReport]}. Please try again.`, { id: toastId });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
 
@@ -65,6 +160,48 @@ export default function Dashboard() {
         <div>
           <h1 className={styles.greetTitle}>Good to see you, Admin 👋</h1>
           <p className={styles.greetSub}>Here's what's happening with your store today.</p>
+        </div>
+        
+        {/* Export Reports Dropdown */}
+        <div className={styles.exportReportsWrap} ref={dropdownRef}>
+          <button 
+            className={styles.exportBtn} 
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            aria-expanded={dropdownOpen}
+          >
+            Export Reports 
+            <svg 
+              width="12" 
+              height="12" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="3" 
+              style={{ marginLeft: 8, transition: 'transform 0.2s', transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}
+            >
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+          
+          {dropdownOpen && (
+            <div className={styles.dropdownMenu}>
+              <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('sales'); setShowExportModal(true); setDropdownOpen(false); }}>
+                Sales Report
+              </button>
+              <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('product-sales'); setShowExportModal(true); setDropdownOpen(false); }}>
+                Product Sales Report
+              </button>
+              <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('best-sellers'); setShowExportModal(true); setDropdownOpen(false); }}>
+                Best Selling Products
+              </button>
+              <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('monthly-sales'); setShowExportModal(true); setDropdownOpen(false); }}>
+                Monthly Sales Report
+              </button>
+              <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('inventory'); setShowExportModal(true); setDropdownOpen(false); }}>
+                Inventory Report
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -361,6 +498,139 @@ export default function Dashboard() {
           </table>
         </div>
       </div>
+
+      {/* Export Options Modal */}
+      {showExportModal && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true">
+          <div className={styles.modalContainer}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Export {REPORT_NAMES[selectedReport]}</h3>
+              <button className={styles.modalCloseBtn} onClick={() => setShowExportModal(false)} aria-label="Close modal">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleExportSubmit}>
+              <div className={styles.modalBody}>
+                {/* Format Filter */}
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Export Format</label>
+                  <select 
+                    className={styles.formControl} 
+                    value={reportFormat} 
+                    onChange={e => setReportFormat(e.target.value)}
+                  >
+                    <option value="xlsx">Excel Workbook (.xlsx)</option>
+                    <option value="csv">Comma Separated Values (.csv)</option>
+                  </select>
+                </div>
+
+                {/* Date Range Filter (Not needed for Inventory Report) */}
+                {selectedReport !== 'inventory' && (
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Date Range</label>
+                    <select 
+                      className={styles.formControl} 
+                      value={dateRange} 
+                      onChange={e => setDateRange(e.target.value)}
+                    >
+                      <option value="all">All Time</option>
+                      <option value="today">Today</option>
+                      <option value="last7">Last 7 Days</option>
+                      <option value="last30">Last 30 Days</option>
+                      <option value="thisMonth">This Month</option>
+                      <option value="thisYear">This Year</option>
+                      <option value="custom">Custom Date Range</option>
+                    </select>
+                    
+                    {dateRange === 'custom' && (
+                      <div className={styles.dateRangeRow}>
+                        <div>
+                          <label className={styles.formLabel} style={{ fontSize: '11px', marginTop: '6px' }}>From</label>
+                          <input 
+                            type="date" 
+                            className={styles.formControl} 
+                            value={fromDate}
+                            onChange={e => setFromDate(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className={styles.formLabel} style={{ fontSize: '11px', marginTop: '6px' }}>To</label>
+                          <input 
+                            type="date" 
+                            className={styles.formControl} 
+                            value={toDate}
+                            onChange={e => setToDate(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Product Filter (For Sales, Product Sales, and Inventory Reports) */}
+                {(selectedReport === 'sales' || selectedReport === 'product-sales' || selectedReport === 'inventory') && (
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Filter by Product</label>
+                    <select 
+                      className={styles.formControl} 
+                      value={productFilter} 
+                      onChange={e => setProductFilter(e.target.value)}
+                    >
+                      <option value="all">All Products</option>
+                      {productsList.map(p => (
+                        <option key={p.id} value={p.id}>{p.productName}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Order Status Filter (Specific to Sales Report) */}
+                {selectedReport === 'sales' && (
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Order Status</label>
+                    <select 
+                      className={styles.formControl} 
+                      value={statusFilter} 
+                      onChange={e => setStatusFilter(e.target.value)}
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="out_for_delivery">Out for Delivery</option>
+                      <option value="delivered">Delivered</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+              
+              <div className={styles.modalFooter}>
+                <button 
+                  type="button" 
+                  className={styles.btnSecondary} 
+                  onClick={() => setShowExportModal(false)}
+                  disabled={generating}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className={styles.btnPrimary}
+                  disabled={generating}
+                >
+                  {generating && <span className={styles.spinner} />}
+                  {generating ? 'Exporting...' : 'Export & Download'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -12,6 +12,13 @@ import "./ReturnRequest.css";
 
 const FALLBACK_IMG = "/assets/img/logo.png";
 
+// Strip old variant suffix from productName (e.g. "Gifts (Colour: #000000)" → "Gifts")
+const cleanProductName = (name) => {
+  if (!name) return "Product";
+  const idx = name.indexOf(" (");
+  return idx !== -1 ? name.slice(0, idx).trim() : name;
+};
+
 const parseJson = (val) => {
   if (!val || typeof val !== "string") return val;
   try { return JSON.parse(val); } catch { return val; }
@@ -218,13 +225,13 @@ const ReturnRequest = () => {
                     <div className="rr-item-summary">
                       <img
                         src={getOrderItemImage(item.image)}
-                        alt={item.productName}
+                        alt={cleanProductName(item.productName)}
                         className="rr-item-img"
                         onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_IMG; }}
                       />
                       <div className="rr-item-body">
                         <span className="rr-item-badge">Item Summary</span>
-                        <h6 className="rr-item-name">{item.productName}</h6>
+                        <h6 className="rr-item-name">{cleanProductName(item.productName)}</h6>
                         <p className="rr-item-variant">
                           Variant: <strong>{item.selectedVariantName || "Default"}</strong>
                         </p>

@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { Product, Variant, Category, Brand, SubCategory, Combo, ChildComboProduct, CartItem, WishlistItem, Review } = require("../models");
+const { Product, Variant, Category, Brand, SubCategory, Combo, ChildComboProduct, CartItem, WishlistItem, Review, ChildCombo, RootCombo } = require("../models");
 const { Op }    = require("sequelize");
 const sequelize = require("../config/database");
 const { syncProductVariants } = require("./variantController");
@@ -125,7 +125,7 @@ const shape = (p) => {
 // Query params: category, tag, search, minPrice, maxPrice, rating, sort
 const getAllProducts = async (req, res, next) => {
   try {
-    const { category, tag, search, minPrice, maxPrice, rating, sort } = req.query;
+    const { category, tag, search, minPrice, maxPrice, rating, sort, includeCombos } = req.query;
 
     const where = { isActive: true };
 
@@ -171,7 +171,131 @@ const getAllProducts = async (req, res, next) => {
     const order = ORDER_MAP[sort] || [["createdAt", "DESC"]];
 
     const products = await Product.findAll({ where, order, include: PRODUCT_INCLUDE });
-    return res.json(products.map(shape));
+    const mappedProducts = products.map(shape);
+
+    let combosList = [];
+    if (includeCombos === 'true') {
+      const childCombos = await ChildCombo.findAll({
+        where: { isActive: true },
+        include: [
+          {
+            model: ChildComboProduct,
+            as: "comboProducts",
+            include: [
+              {
+                model: Product,
+                as: "product",
+                attributes: ["id", "name", "category", "tag", "image"],
+                include: [
+                  {
+                    model: Variant,
+                    as: "Variants",
+                    attributes: ["id", "image"]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      });
+
+      combosList = childCombos.map(cc => {
+        const catSet = new Set();
+        const tagSet = new Set();
+        let firstProdImage = null;
+
+        if (Array.isArray(cc.comboProducts)) {
+          cc.comboProducts.forEach(cp => {
+            if (cp.product) {
+              const prodCat = safeParse(cp.product.category, []);
+              prodCat.forEach(cVal => catSet.add(cVal));
+              
+              const prodTag = safeParse(cp.product.tag, []);
+              prodTag.forEach(tVal => tagSet.add(tVal));
+
+              if (!firstProdImage) {
+                if (Array.isArray(cp.product.Variants) && cp.product.Variants[0]?.image) {
+                  firstProdImage = cp.product.Variants[0].image;
+                } else {
+                  const pImgs = safeParse(cp.product.image, []);
+                  if (pImgs[0]) firstProdImage = pImgs[0];
+                }
+              }
+            }
+          });
+        }
+
+        const comboImg = cc.image || firstProdImage || null;
+        const imagesList = comboImg ? [comboImg] : [];
+        const comboPrice = parseFloat(cc.comboPrice || 0);
+        const originalPrice = parseFloat(cc.originalPrice || 0);
+        const discountPct = originalPrice > comboPrice && comboPrice > 0
+          ? Math.round(((originalPrice - comboPrice) / originalPrice) * 100)
+          : 0;
+
+        return {
+          id: cc.id,
+          name: cc.name,
+          price: comboPrice,
+          originalPrice: originalPrice,
+          discount: discountPct,
+          image: imagesList,
+          shortDescription: cc.shortDescription || "",
+          description: cc.description || cc.fullDescription || "",
+          isCombo: true,
+          type: cc.type,
+          rootComboId: cc.rootComboId,
+          comboId: cc.rootComboId,
+          isActive: cc.isActive,
+          category: Array.from(catSet),
+          tag: Array.from(tagSet),
+          rating: 5.0,
+          saleCount: 0,
+          Variants: [],
+          slug: cc.id,
+          comboProducts: cc.comboProducts
+        };
+      });
+
+      // JS level filter for combos
+      if (search) {
+        const q = search.toLowerCase();
+        combosList = combosList.filter(c =>
+          c.name.toLowerCase().includes(q) ||
+          c.shortDescription.toLowerCase().includes(q) ||
+          c.description.toLowerCase().includes(q)
+        );
+      }
+      if (minPrice) {
+        const minVal = parseFloat(minPrice);
+        combosList = combosList.filter(c => c.price >= minVal);
+      }
+      if (maxPrice) {
+        const maxVal = parseFloat(maxPrice);
+        combosList = combosList.filter(c => c.price <= maxVal);
+      }
+      if (category && !isAllCategory(category)) {
+        combosList = combosList.filter(c => c.category.includes(category));
+      }
+      if (tag) {
+        combosList = combosList.filter(c => c.tag.includes(tag));
+      }
+    }
+
+    const merged = [...mappedProducts, ...combosList];
+
+    // JS level sort for combined items
+    if (sort === "price_asc") {
+      merged.sort((a, b) => a.price - b.price);
+    } else if (sort === "price_desc") {
+      merged.sort((a, b) => b.price - a.price);
+    } else if (sort === "rating") {
+      merged.sort((a, b) => b.rating - a.rating);
+    } else if (sort === "sales") {
+      merged.sort((a, b) => b.saleCount - a.saleCount);
+    }
+
+    return res.json(merged);
   } catch (err) {
     next(err);
   }

@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import clsx from "clsx";
 import ProductgridList from "./ProductgridList";
 
-const ShopProducts = ({ products, layout, isComboMode, childCombos }) => {
+const ShopProducts = ({ products, layout }) => {
   return (
     <div className="shop-bottom-area mt-35">
       <div className={clsx("row", layout)}>
@@ -11,8 +11,6 @@ const ShopProducts = ({ products, layout, isComboMode, childCombos }) => {
           products={products}
           layout={layout}
           spaceBottomClass="mb-25"
-          isComboMode={isComboMode}
-          childCombos={childCombos}
         />
       </div>
     </div>
@@ -22,8 +20,6 @@ const ShopProducts = ({ products, layout, isComboMode, childCombos }) => {
 ShopProducts.propTypes = {
   layout: PropTypes.string,
   products: PropTypes.array,
-  isComboMode: PropTypes.bool,
-  childCombos: PropTypes.array,
 };
 
 export default ShopProducts;

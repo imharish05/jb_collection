@@ -614,7 +614,7 @@ export default function Variants({ showToast }) {
         <p style={{ color: KM.muted, fontSize: 13 }}>Loading…</p>
       ) : (
         <DataTable
-          columns={['No.', 'Image', 'Product', 'Variant', 'MRP', 'Sale Price', 'Stock', 'SKU', 'Status', 'Actions']}
+          columns={['No.', 'Image', 'Product', 'Variant', 'MRP', 'Sale Price', 'Stock', 'Sold Qty', 'SKU', 'Status', 'Actions']}
           initialRows={filtered}
           renderRow={(row, i) => (
             <tr key={row.id}>
@@ -635,8 +635,19 @@ export default function Variants({ showToast }) {
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: stockColor(row.stock) }} />
-                  {row.stock}
+                  {row.stock ?? 0}
                 </div>
+              </td>
+              <td>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  minWidth: 28, padding: '2px 8px',
+                  background: (row.soldQuantity || 0) > 0 ? '#EDE9FE' : '#F3F4F6',
+                  color:      (row.soldQuantity || 0) > 0 ? '#6D28D9'  : KM.muted,
+                  borderRadius: 20, fontSize: 12, fontWeight: 700,
+                }}>
+                  {row.soldQuantity || 0}
+                </span>
               </td>
               <td style={{ fontSize: 11, color: KM.muted, fontFamily: 'monospace' }}>{row.sku || '—'}</td>
               <td>

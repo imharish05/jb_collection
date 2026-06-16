@@ -351,7 +351,7 @@ const createOrder = async (req, res, next) => {
           return res.status(404).json({ message: `Product ${item.productId} not found` });
         }
         itemPrice = parseFloat(variant.salesPrice || variant.mrp || 0);
-        itemData.productName = `${product.name}${variant.variantName ? ` (${variant.variantName})` : ""}`;
+        itemData.productName = product.name;
         itemData.selectedVariantId   = variant.id;
         itemData.selectedVariantName = variant.variantName || null;
         itemData.variantAttributes   = variant.attributes || [];

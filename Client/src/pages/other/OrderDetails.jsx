@@ -9,6 +9,13 @@ import { renderVariantLabel } from "../../helpers/product";
 
 const FALLBACK_IMG = "/assets/img/logo.png";
 
+// Strip old variant suffix from productName (e.g. "Gifts (Colour: #000000)" → "Gifts")
+const cleanProductName = (name) => {
+  if (!name) return "Product";
+  const idx = name.indexOf(" (");
+  return idx !== -1 ? name.slice(0, idx).trim() : name;
+};
+
 const parseJson = (val) => {
   if (!val || typeof val !== "string") return val;
   try { return JSON.parse(val); } catch { return val; }
@@ -440,13 +447,13 @@ const couponDiscount =
                             <div className="prod-img">
                               <img
                                 src={getOrderItemImage(item.image)}
-                                alt={item.productName || "Product"}
+                                alt={cleanProductName(item.productName)}
                                 onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_IMG; }}
                               />
                               <span className="qty-badge">{item.quantity}</span>
                             </div>
                             <div className="prod-info">
-                              <h6>{item.productName || "Product"}</h6>
+                              <h6>{cleanProductName(item.productName)}</h6>
                               <p>{getVariantLabel(item)}</p>
                               {renderItemActions(item)}
                             </div>
