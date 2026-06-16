@@ -5,6 +5,7 @@ import LayoutOne from "../../layouts/LayoutOne";
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
 import { getImgUrl } from "../../helpers/imageUrl";
+import { renderVariantLabel } from "../../helpers/product";
 
 const FALLBACK_IMG = "/assets/img/logo.png";
 
@@ -220,9 +221,10 @@ const OrderDetails = () => {
   ];
 
   const getVariantLabel = (item) => {
-    if (item.selectedVariantName) return item.selectedVariantName;
+    if (item.selectedVariantName) return renderVariantLabel(item.selectedVariantName);
     if (item.variantAttributes && Array.isArray(item.variantAttributes) && item.variantAttributes.length) {
-      return item.variantAttributes.map((attr) => `${attr.key}: ${attr.value}`).join(" · ");
+      const label = item.variantAttributes.map((attr) => `${attr.key}: ${attr.value}`).join(" · ");
+      return renderVariantLabel(label);
     }
     return "Handcrafted Series";
   };

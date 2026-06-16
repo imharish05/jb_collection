@@ -6,7 +6,7 @@ import { fetchProducts, createProduct, editProduct, removeProduct } from '../../
 import { fetchCategories } from '../../redux/services/categoriesService';
 import { fetchBrands } from '../../redux/services/brandsService';
 import { fetchEvents } from '../../redux/services/eventService';
-import VariantBuilder from './VariantBuilder'; // ← make sure VariantBuilder.jsx is in the same folder
+import VariantBuilder, { renderVariantLabel } from './VariantBuilder'; // ← make sure VariantBuilder.jsx is in the same folder
 import { confirmDelete } from '../../utils/sweetalert';
 
 const BASE_URL = process.env.REACT_APP_API_URL;
@@ -1044,7 +1044,7 @@ export default function Products({ showToast }) {
                           display: 'inline-flex',
                           alignItems: 'center'
                         }}>
-                          {label}
+                          {renderVariantLabel(label, 10, 3)}
                         </span>
                       );
                     })}

@@ -2,7 +2,7 @@ import { Fragment, useState, useCallback, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SEO from "../../components/seo";
-import { getDiscountPrice } from "../../helpers/product";
+import { getDiscountPrice, isColourKey, isHexColor } from "../../helpers/product";
 import { getImgUrl } from "../../helpers/imageUrl";
 import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
@@ -357,21 +357,54 @@ const Cart = () => {
                           {/* Variant attributes — show all parsed key-value pairs */}
                           {attrs.length > 0 ? (
                             <div className="kg-variant-row">
-                              {attrs.map((attr, i) => (
-                                <span key={i} className="kg-variant-chip">
-                                  <span style={{ color: "#888", fontSize: 10, marginRight: 2 }}>
-                                    {attr.key}:
+                              {attrs.map((attr, i) => {
+                                const isCol = isColourKey(attr.key);
+                                const hasPreview = isCol && isHexColor(attr.value);
+                                const displayVal = hasPreview ? attr.value.toUpperCase() : attr.value;
+                                return (
+                                  <span key={i} className="kg-variant-chip" style={{ display: "inline-flex", alignItems: "center" }}>
+                                    <span style={{ color: "#888", fontSize: 10, marginRight: 2 }}>
+                                      {attr.key}:
+                                    </span>
+                                    {hasPreview && (
+                                      <span
+                                        style={{
+                                          width: 12,
+                                          height: 12,
+                                          borderRadius: '50%',
+                                          border: '1px solid #dcdcdc',
+                                          backgroundColor: displayVal,
+                                          display: 'inline-block',
+                                          marginRight: 4,
+                                          flexShrink: 0,
+                                        }}
+                                      />
+                                    )}
+                                    <span>{displayVal}</span>
                                   </span>
-                                  {attr.value}
-                                </span>
-                              ))}
+                                );
+                              })}
                             </div>
                           ) : (item.selectedProductColor || item.selectedProductSize) ? (
                             <div className="kg-variant-row">
                               {item.selectedProductColor && (
-                                <span className="kg-variant-chip">
+                                <span className="kg-variant-chip" style={{ display: "inline-flex", alignItems: "center" }}>
                                   <span style={{ color: "#888", fontSize: 10, marginRight: 2 }}>Colour:</span>
-                                  {item.selectedProductColor}
+                                  {isHexColor(item.selectedProductColor) && (
+                                    <span
+                                      style={{
+                                        width: 12,
+                                        height: 12,
+                                        borderRadius: '50%',
+                                        border: '1px solid #dcdcdc',
+                                        backgroundColor: item.selectedProductColor.toUpperCase(),
+                                        display: 'inline-block',
+                                        marginRight: 4,
+                                        flexShrink: 0,
+                                      }}
+                                    />
+                                  )}
+                                  <span>{isHexColor(item.selectedProductColor) ? item.selectedProductColor.toUpperCase() : item.selectedProductColor}</span>
                                 </span>
                               )}
                               {item.selectedProductSize && (

@@ -34,7 +34,7 @@ export default function AdminContacts() {
     <div>
       <div className="section-header">
         <div className="section-title">Contact Requests</div>
-        <span className="km-count-badge">{contacts.length}</span>
+        {/* <span className="km-count-badge">{contacts.length}</span> */}
       </div>
       {contacts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, color: KM.muted }}>

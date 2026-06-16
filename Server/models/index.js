@@ -27,6 +27,8 @@ const Return          = require("./Return");
 const ReturnMedia     = require("./ReturnMedia");
 const Refund          = require("./Refund");
 const ReverseShipment = require("./ReverseShipment");
+const ReferenceSequence = require("./ReferenceSequence");
+const { attachReferenceSlugs, backfillReferenceSlugs } = require("../utils/referenceSlugs");
 
 // ── Password Reset OTP ────────────────────────────────────────────────────────
 const PasswordResetOtp = require("./PasswordResetOtp");
@@ -127,7 +129,7 @@ Order.hasMany(Return,             { foreignKey: 'order_id',      as: 'returns', 
 OrderItem.hasMany(Return,         { foreignKey: 'order_item_id', as: 'returns',         constraints: false });
 User.hasMany(Return,              { foreignKey: 'user_id',       as: 'returns',         constraints: false });
 
-module.exports = {
+const models = {
   sequelize,
   User,
   Product,
@@ -164,4 +166,11 @@ module.exports = {
   ReturnMedia,
   Refund,
   ReverseShipment,
+  ReferenceSequence,
 };
+
+attachReferenceSlugs(models);
+
+models.backfillReferenceSlugs = () => backfillReferenceSlugs(models);
+
+module.exports = models;

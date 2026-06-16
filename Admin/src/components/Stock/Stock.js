@@ -3,6 +3,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchProducts } from '../../redux/services/productsService';
 import { editVariant } from '../../redux/services/variantsService';
+import { isHexColor } from '../Products/VariantBuilder';
+
+const isColourKey = (key) => /colou?r/i.test(key || '');
 
 const pillClass = { Active: 'pill-active', Inactive: 'pill-inactive' };
 const KM = { orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B', green: '#39B54A', teal: '#00B4D8', border: '#E5E7EB', text: '#1A1A2E', muted: '#6B7280', bg: '#F9FAFB' };
@@ -37,10 +40,22 @@ function parseVariantName(name) {
 
 function variantParts(row) {
   const attrs = safeAttrs(row.attributes)
-    .map(attr => ({ key: attr.key, value: attr.value === 'Custom' ? attr.customValue : attr.value }))
+    .map(attr => {
+      const isCol = isColourKey(attr.key);
+      const val = attr.value === 'Custom' ? attr.customValue : attr.value;
+      const resolvedVal = (isCol && isHexColor(val)) ? val.toUpperCase() : val;
+      return { key: attr.key, value: resolvedVal };
+    })
     .filter(attr => attr.key && attr.value);
 
-  return attrs.length ? attrs : parseVariantName(row.variantName);
+  if (attrs.length) return attrs;
+
+  const parsed = parseVariantName(row.variantName);
+  return parsed.map(part => {
+    const isCol = isColourKey(part.key);
+    const resolvedVal = (isCol && isHexColor(part.value)) ? part.value.toUpperCase() : part.value;
+    return { ...part, value: resolvedVal };
+  });
 }
 
 function VariantChips({ row, chipStyle = {}, labelStyle = {}, slashStyle = {} }) {
@@ -49,31 +64,49 @@ function VariantChips({ row, chipStyle = {}, labelStyle = {}, slashStyle = {} })
 
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxWidth: 720 }}>
-      {parts.map((part, index) => (
-        <span
-          key={`${part.key}-${part.value}-${index}`}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 5,
-            padding: '4px 9px',
-            borderRadius: 999,
-            background: part.key === 'Custom Note' ? '#fff7ed' : '#f8fafc',
-            border: `1px solid ${part.key === 'Custom Note' ? '#fed7aa' : KM.border}`,
-            color: KM.text,
-            fontSize: 12,
-            fontWeight: 600,
-            lineHeight: 1.2,
-            ...chipStyle,
-          }}
-        >
-          <span style={{ color: part.key === 'Custom Note' ? KM.orange : KM.blue, fontWeight: 700, ...labelStyle }}>
-            {part.key}
+      {parts.map((part, index) => {
+        const isCol = isColourKey(part.key);
+        const hasPreview = isCol && isHexColor(part.value);
+        return (
+          <span
+            key={`${part.key}-${part.value}-${index}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '4px 9px',
+              borderRadius: 999,
+              background: part.key === 'Custom Note' ? '#fff7ed' : '#f8fafc',
+              border: `1px solid ${part.key === 'Custom Note' ? '#fed7aa' : KM.border}`,
+              color: KM.text,
+              fontSize: 12,
+              fontWeight: 600,
+              lineHeight: 1.2,
+              ...chipStyle,
+            }}
+          >
+            <span style={{ color: part.key === 'Custom Note' ? KM.orange : KM.blue, fontWeight: 700, ...labelStyle }}>
+              {part.key}
+            </span>
+            <span style={{ color: KM.muted, fontWeight: 500, ...slashStyle }}>/</span>
+            {hasPreview && (
+              <span
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  border: '1px solid #dcdcdc',
+                  backgroundColor: part.value,
+                  display: 'inline-block',
+                  marginRight: 2,
+                  flexShrink: 0,
+                }}
+              />
+            )}
+            <span>{part.value}</span>
           </span>
-          <span style={{ color: KM.muted, fontWeight: 500, ...slashStyle }}>/</span>
-          <span>{part.value}</span>
-        </span>
-      ))}
+        );
+      })}
     </div>
   );
 }

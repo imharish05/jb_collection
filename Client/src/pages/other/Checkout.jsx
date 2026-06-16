@@ -11,7 +11,7 @@ import {
 import { setActiveAddress } from "../../store/slices/addressSlice";
 import { deleteAllFromCart, replaceCart } from "../../store/slices/cart-slice";
 import { clearCheckout, replaceCheckoutItems } from "../../store/slices/checkout-slice";
-import { getDiscountPrice } from "../../helpers/product";
+import { getDiscountPrice, renderVariantLabel, isColourKey, isHexColor } from "../../helpers/product";
 import { getImgUrl } from "../../helpers/imageUrl";
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
@@ -1447,17 +1447,40 @@ if (attrsArray.length) {
           </div>
           {attrs.length > 0 && (
             <div style={{ marginTop: 3, display: "flex", flexWrap: "wrap", gap: 4 }}>
-              {attrs.map((a, i) => (
-                <span key={i} style={{
-                  fontSize: 10,
-                  color: "#666",
-                  background: "#f5f5f5",
-                  borderRadius: 4,
-                  padding: "2px 6px",
-                }}>
-                  {a.key}: {a.val}
-                </span>
-              ))}
+              {attrs.map((a, i) => {
+                const isCol = isColourKey(a.key);
+                const hasPreview = isCol && isHexColor(a.val);
+                const displayVal = hasPreview ? a.val.toUpperCase() : a.val;
+                return (
+                  <span key={i} style={{
+                    fontSize: 10,
+                    color: "#666",
+                    background: "#f5f5f5",
+                    borderRadius: 4,
+                    padding: "2px 6px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}>
+                    <span>{a.key}: </span>
+                    {hasPreview && (
+                      <span
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: '50%',
+                          border: '1px solid #dcdcdc',
+                          backgroundColor: displayVal,
+                          display: 'inline-block',
+                          marginLeft: 4,
+                          marginRight: 4,
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                    <span style={{ marginLeft: hasPreview ? 0 : 4 }}>{displayVal}</span>
+                  </span>
+                );
+              })}
             </div>
           )}
           <div style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
@@ -1561,7 +1584,9 @@ if (attrsArray.length) {
                           <div className="kco-item-info">
                             <div className="kco-item-name">{item.name}</div>
                             {variantLabel && (
-                              <div className="kco-item-variant">{variantLabel}</div>
+                              <div className="kco-item-variant" style={{ display: "inline-flex", alignItems: "center" }}>
+                                {renderVariantLabel(variantLabel, 10, 3)}
+                              </div>
                             )}
                             <div className="kco-item-price-row">
                               <span className="kco-item-price">₹{(price * item.quantity).toFixed(2)}</span>

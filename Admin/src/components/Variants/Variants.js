@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import DataTable from '../DataTable/DataTable';
 import { fetchVariants, createVariant, editVariant, removeVariant } from '../../redux/services/variantsService';
 import { fetchProducts } from '../../redux/services/productsService';
-import VariantBuilder from '../Products/VariantBuilder';
+import VariantBuilder, { renderVariantLabel } from '../Products/VariantBuilder';
 import { confirmDelete } from '../../utils/sweetalert';
 
 const IMG_URL = process.env.REACT_APP_IMG_URL || '';
@@ -629,7 +629,7 @@ export default function Variants({ showToast }) {
                 )}
               </td>
               <td style={{ fontWeight: 500 }}>{row.product?.name || row.productName || '—'}</td>
-              <td style={{ fontWeight: 600 }}>{row.variantName}</td>
+              <td style={{ fontWeight: 600 }}>{renderVariantLabel(row.variantName)}</td>
               <td>₹{parseFloat(row.mrp || 0).toLocaleString('en-IN')}</td>
               <td style={{ fontWeight: 700 }}>₹{parseFloat(row.salesPrice || 0).toLocaleString('en-IN')}</td>
               <td>

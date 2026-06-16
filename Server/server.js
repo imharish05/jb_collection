@@ -3,7 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 
-const { sequelize } = require("./models");
+const models = require("./models");
+const { sequelize } = models;
 const errorHandler = require("./middleware/errorHandler");
 
 // Route imports
@@ -93,6 +94,7 @@ const startServer = async () => {
 
     await sequelize.query("SET FOREIGN_KEY_CHECKS = 0;");
     await sequelize.sync({ alter: true });
+    await models.backfillReferenceSlugs();
     console.log("✅ Models synced");
     await sequelize.query("SET FOREIGN_KEY_CHECKS = 1;");
 

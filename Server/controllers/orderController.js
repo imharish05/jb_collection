@@ -15,23 +15,12 @@ const { Op } = require("sequelize");
 const { sendOrderConfirmationEmail, sendOrderStatusEmail } = require("../utils/mailer");
 const { shiprocketPost, resolveShiprocketPaymentMethod } = require("../utils/shiprocket");
 const inventoryService = require("../services/inventoryService");
+const { referenceWhere, getDisplayReference } = require("../utils/referenceSlugs");
 
 // ─── KGF Order Number Generator ──────────────────────────────────────────────
 // Generates a unique, sequential order number like KGF-000001.
 // Uses MAX() on existing order_number values so it is race-safe for low-to-medium
 // traffic sites; no separate counter table needed.
-const generateKgfOrderNumber = async (transaction) => {
-  const [rows] = await sequelize.query(
-    `SELECT MAX(CAST(SUBSTRING(order_number, 5) AS UNSIGNED)) AS maxNum
-     FROM orders
-     WHERE order_number LIKE 'KGF-%'`,
-    { transaction }
-  );
-  const current = parseInt(rows[0]?.maxNum || 0, 10);
-  const next = current + 1;
-  return `KGF-${String(next).padStart(6, '0')}`;
-};
-
 // ─────────────────────────────────────────────────────────────────────────────
 // pushOrderToShiprocket
 //
@@ -60,6 +49,7 @@ const pushOrderToShiprocket = async (orderId, userEmail = "") => {
     }
 
     const addr = order.shippingAddress;
+    const orderRef = getDisplayReference(order, order.id);
 
     // Build line items for Shiprocket
     const srItems = order.items.map((item) => ({
@@ -76,7 +66,7 @@ const pushOrderToShiprocket = async (orderId, userEmail = "") => {
     const { payment_method, cod_amount } = resolveShiprocketPaymentMethod(order);
 
     console.log(
-      `[Shiprocket] Order ${orderId} | paymentType=${order.paymentType} | ` +
+      `[Shiprocket] Order ${orderRef} | paymentType=${order.paymentType} | ` +
       `payment_method=${payment_method} | cod_amount=${cod_amount} | ` +
       `sub_total=${order.totalAmount}`
     );
@@ -87,7 +77,7 @@ const pushOrderToShiprocket = async (orderId, userEmail = "") => {
     const subTotal = parseFloat(order.totalAmount) - parseFloat(order.shippingCharge || 0);
 
     const srPayload = {
-      order_id: String(order.id),
+      order_id: String(orderRef),
       order_date: new Date(order.createdAt).toISOString().slice(0, 19).replace("T", " "),
       pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
 
@@ -166,6 +156,25 @@ const ORDER_ITEM_STATUS_OPTIONS = [
   "delivered", "cancelled", "returned",
 ];
 
+const findOrderForUser = (identifier, userId, options = {}) =>
+  Order.findOne({
+    ...options,
+    where: {
+      userId,
+      ...referenceWhere(identifier),
+      ...(options.where || {}),
+    },
+  });
+
+const findOrderAny = (identifier, options = {}) =>
+  Order.findOne({
+    ...options,
+    where: {
+      ...referenceWhere(identifier),
+      ...(options.where || {}),
+    },
+  });
+
 const recordOrderStatusEmailAudit = async ({
   orderId,
   previousStatus,
@@ -198,7 +207,7 @@ const getMyOrders = async (req, res, next) => {
           model: OrderItem,
           as: "items",
           include: [
-            { model: require("../models").Product, as: "product", attributes: ["id", "sku", "isNonReturnable", "isCustomisable"] },
+            { model: require("../models").Product, as: "product", attributes: ["id", "referenceSlug", "sku", "isNonReturnable", "isCustomisable"] },
             { model: require("../models").Return, as: "returns" }
           ]
         },
@@ -216,14 +225,13 @@ const getMyOrders = async (req, res, next) => {
 // ─── GET /api/orders/:id  (customer — single order) ──────────────────────────
 const getOrderById = async (req, res, next) => {
   try {
-    const order = await Order.findOne({
-      where: { id: req.params.id, userId: req.user.id },
+    const order = await findOrderForUser(req.params.id, req.user.id, {
       include: [
         {
           model: OrderItem,
           as: "items",
           include: [
-            { model: require("../models").Product, as: "product", attributes: ["id", "sku", "isNonReturnable", "isCustomisable"] },
+            { model: require("../models").Product, as: "product", attributes: ["id", "referenceSlug", "sku", "isNonReturnable", "isCustomisable"] },
             { model: require("../models").Return, as: "returns" }
           ]
         },
@@ -462,12 +470,9 @@ const createOrder = async (req, res, next) => {
     }
 
     // ── Generate KGF order number ─────────────────────────────────────────────
-    const orderNumber = await generateKgfOrderNumber(transaction);
-
     // ── Create the order ─────────────────────────────────────────────────────
     const order = await Order.create(
       {
-        orderNumber,
         userId:            req.user.id,
         totalAmount:       parseFloat(totalAmount),
         shippingAddressId: shippingAddress.id,
@@ -569,7 +574,7 @@ const getAllOrders = async (req, res, next) => {
     const orders = await Order.findAll({
       order: [["createdAt", "DESC"]],
       include: [
-        { model: User, attributes: ["id", "name", "email", "phone"] },
+        { model: User, attributes: ["id", "referenceSlug", "name", "email", "phone"] },
         { model: OrderItem, as: "items" },
         { model: Address, as: "shippingAddress" },
         { model: Address, as: "billingAddress" },
@@ -612,7 +617,7 @@ const updateOrderStatus = async (req, res, next) => {
   let transactionCommitted = false;
   try {
     const { status, paymentStatus, trackingDetails } = req.body;
-    const order = await Order.findByPk(req.params.id, { transaction, lock: true });
+    const order = await findOrderAny(req.params.id, { transaction, lock: true });
     if (!order) {
       await transaction.rollback();
       return res.status(404).json({ message: "Order not found" });
@@ -731,9 +736,14 @@ const updateOrderItemStatus = async (req, res, next) => {
     if (!ORDER_ITEM_STATUS_OPTIONS.includes(status)) {
       return res.status(400).json({ message: "Invalid order item status" });
     }
-    const order = await Order.findByPk(orderId);
+    const order = await findOrderAny(orderId);
     if (!order) return res.status(404).json({ message: "Order not found" });
-    const item = await OrderItem.findOne({ where: { id: itemId, orderId } });
+    const item = await OrderItem.findOne({
+      where: {
+        orderId: order.id,
+        ...referenceWhere(itemId),
+      },
+    });
     if (!item) return res.status(404).json({ message: "Order item not found" });
     item.status = status;
     await item.save();

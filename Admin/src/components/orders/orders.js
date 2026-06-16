@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchOrders, changeOrderStatus, changeOrderItemStatus } from '../../redux/services/ordersService';
+import { renderVariantLabel } from '../Products/VariantBuilder';
 
 const STATUS_OPTIONS = ['confirmed','shipped','processing', 'delivered', 'cancelled', 'returned'];
 const labelFor = s => ({
@@ -166,7 +167,7 @@ export default function Orders({ status = null }) {
     <div>
       <div className="section-header">
         <div className="section-title">{status ? `${labelFor(status)} Orders` : 'All Orders'}</div>
-        {!loading && <span className="km-count-badge">{rows.length}</span>}
+        {/* {!loading && <span className="km-count-badge">{rows.length}</span>} */}
       </div>
 
       {loading ? (
@@ -264,8 +265,8 @@ export default function Orders({ status = null }) {
                                   <span>
                                     {item.productName}
                                     {item.selectedVariantName && (
-                                      <span style={{ marginLeft: 5, fontSize: 10, fontWeight: 700, background: '#e8f0ff', color: '#1A52A8', padding: '1px 6px', borderRadius: 10, whiteSpace: 'nowrap' }}>
-                                        {item.selectedVariantName}
+                                      <span style={{ marginLeft: 5, fontSize: 10, fontWeight: 700, background: '#e8f0ff', color: '#1A52A8', padding: '1px 6px', borderRadius: 10, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}>
+                                        {renderVariantLabel(item.selectedVariantName, 10, 3)}
                                       </span>
                                     )}
                                     <span className="td-muted"> × {item.quantity}</span>

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import DataTable from "../DataTable/DataTable";
+import { renderVariantLabel } from "../Products/VariantBuilder";
 import ImageUploadField from "../ImageUploadField";
 import {
   fetchRootCombos, fetchRootComboById,
@@ -473,8 +474,8 @@ function ProductList({ products, allProducts, onRemove }) {
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 3 }}>
                 {variantLabel && (
-                  <span style={{ fontSize: 10, background: "var(--info-50)", color: "var(--info-main)", borderRadius: 4, padding: "1px 6px", border: "1px solid var(--info-border,#bfdbfe)", fontWeight: 600 }}>
-                    {variantLabel}
+                  <span style={{ fontSize: 10, background: "var(--info-50)", color: "var(--info-main)", borderRadius: 4, padding: "1px 6px", border: "1px solid var(--info-border,#bfdbfe)", fontWeight: 600, display: "inline-flex", alignItems: "center" }}>
+                    {renderVariantLabel(variantLabel, 10, 3)}
                   </span>
                 )}
                 <span style={{ fontSize: 10, background: stock > 0 ? "var(--success-50)" : "var(--danger-50)", color: stock > 0 ? "var(--success-main)" : "var(--danger-main)", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>

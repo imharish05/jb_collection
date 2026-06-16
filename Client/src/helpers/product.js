@@ -1,3 +1,4 @@
+import React from 'react';
 // get products
 const ALL_CATEGORY_VALUES = ["all", "all-categories", "all-products"];
 
@@ -353,4 +354,68 @@ export const toggleShopTopFilter = e => {
       shopTopFilterWrapper.scrollHeight + "px";
   }
   e.currentTarget.classList.toggle("active");
+};
+
+export const isHexColor = (value) => /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(value || '').trim());
+export const isColourKey = (key) => /colou?r/i.test(key || '');
+
+export const renderVariantLabel = (str, circleSize = 12, spacing = 4) => {
+  if (!str) return '—';
+  const parts = str.split(/(\s*·\s*|\s*\/\s*)/);
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap' }}>
+      {parts.map((part, idx) => {
+        if (/^\s*[·/]\s*$/.test(part)) {
+          return <span key={idx} style={{ color: '#aaa', margin: '0 4px' }}>{part}</span>;
+        }
+        if (part.includes(':')) {
+          const colonIdx = part.indexOf(':');
+          const key = part.slice(0, colonIdx + 1);
+          const val = part.slice(colonIdx + 1).trim();
+          if (isHexColor(val)) {
+            return (
+              <span key={idx} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <span>{key}</span>
+                <span
+                  style={{
+                    width: circleSize,
+                    height: circleSize,
+                    borderRadius: '50%',
+                    border: '1px solid #dcdcdc',
+                    backgroundColor: val,
+                    display: 'inline-block',
+                    marginLeft: spacing,
+                    marginRight: spacing,
+                    flexShrink: 0,
+                  }}
+                />
+                <span>{val.toUpperCase()}</span>
+              </span>
+            );
+          }
+        }
+        const trimmed = part.trim();
+        if (isHexColor(trimmed)) {
+          return (
+            <span key={idx} style={{ display: 'inline-flex', alignItems: 'center' }}>
+              <span
+                style={{
+                  width: circleSize,
+                  height: circleSize,
+                  borderRadius: '50%',
+                  border: '1px solid #dcdcdc',
+                  backgroundColor: trimmed,
+                  display: 'inline-block',
+                  marginRight: spacing,
+                  flexShrink: 0,
+                }}
+              />
+              <span>{trimmed.toUpperCase()}</span>
+            </span>
+          );
+        }
+        return <span key={idx}>{part}</span>;
+      })}
+    </span>
+  );
 };

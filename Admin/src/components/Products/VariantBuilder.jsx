@@ -70,7 +70,68 @@ const OPTION_KEYS = Object.keys(OPTION_PRESETS);
 // ── Normalize value for duplicate detection ───────────────────────────────────
 const norm = (v) => v.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 const isColourKey = (key) => /colou?r/i.test(key || '');
-const isHexColor = (value) => /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(value || '').trim());
+export const isHexColor = (value) => /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(value || '').trim());
+
+export const renderVariantLabel = (str, circleSize = 12, spacing = 4) => {
+  if (!str) return '—';
+  const parts = str.split(/(\s*·\s*|\s*\/\s*)/);
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap' }}>
+      {parts.map((part, idx) => {
+        if (/^\s*[·/]\s*$/.test(part)) {
+          return <span key={idx} style={{ color: '#aaa', margin: '0 4px' }}>{part}</span>;
+        }
+        if (part.includes(':')) {
+          const colonIdx = part.indexOf(':');
+          const key = part.slice(0, colonIdx + 1);
+          const val = part.slice(colonIdx + 1).trim();
+          if (isHexColor(val)) {
+            return (
+              <span key={idx} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <span>{key}</span>
+                <span
+                  style={{
+                    width: circleSize,
+                    height: circleSize,
+                    borderRadius: '50%',
+                    border: '1px solid #dcdcdc',
+                    backgroundColor: val,
+                    display: 'inline-block',
+                    marginLeft: spacing,
+                    marginRight: spacing,
+                    flexShrink: 0,
+                  }}
+                />
+                <span>{val}</span>
+              </span>
+            );
+          }
+        }
+        const trimmed = part.trim();
+        if (isHexColor(trimmed)) {
+          return (
+            <span key={idx} style={{ display: 'inline-flex', alignItems: 'center' }}>
+              <span
+                style={{
+                  width: circleSize,
+                  height: circleSize,
+                  borderRadius: '50%',
+                  border: '1px solid #dcdcdc',
+                  backgroundColor: trimmed,
+                  display: 'inline-block',
+                  marginRight: spacing,
+                  flexShrink: 0,
+                }}
+              />
+              <span>{trimmed}</span>
+            </span>
+          );
+        }
+        return <span key={idx}>{part}</span>;
+      })}
+    </span>
+  );
+};
 
 // ── Cartesian product ─────────────────────────────────────────────────────────
 function cartesian(arrays) {
@@ -115,8 +176,11 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
   const isColour = isColourKey(option.key);
 
   const addValue = (raw) => {
-    const v = raw.trim();
-    if (isColour && !isHexColor(v)) return;
+    let v = raw.trim();
+    if (isColour) {
+      if (!isHexColor(v)) return;
+      v = v.toUpperCase();
+    }
     if (!v) return;
     // Duplicate detection (case/space insensitive)
     if (option.values.some(existing => norm(existing) === norm(v))) return;
@@ -209,10 +273,24 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
           {/* Selected values as pills */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8, minHeight: option.values.length ? 'auto' : 0 }}>
             {option.values.map((v, i) => (
-              <span key={i} style={pill(true)}>
-                {v}
+              <span key={i} style={{ ...pill(true), display: 'inline-flex', alignItems: 'center' }}>
+                {isColour && isHexColor(v) && (
+                  <span
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: '50%',
+                      border: '1px solid #dcdcdc',
+                      backgroundColor: v,
+                      display: 'inline-block',
+                      marginRight: 6,
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
+                <span>{v}</span>
                 <button type="button" onClick={() => removeValue(i)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.muted, fontSize: 14, padding: 0, lineHeight: 1 }}>×</button>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.muted, fontSize: 14, padding: '0 0 0 2px', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>×</button>
               </span>
             ))}
           </div>
@@ -226,7 +304,7 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
                 style={{ width: 52, height: 36, padding: 2, border: `1px solid ${KM.border}`, borderRadius: 7, background: '#fff', cursor: option.key ? 'pointer' : 'not-allowed' }}
                 value={isHexColor(valueInput) ? valueInput : '#000000'}
                 disabled={!option.key}
-                onChange={e => setValueInput(e.target.value)}
+                onChange={e => setValueInput(e.target.value.toUpperCase())}
               />
             ) : (
               <input
@@ -331,7 +409,32 @@ function SkuRow({ sku, index, onChange, errors = [] }) {
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: KM.blue }}>{sku.variantName}</div>
             <div style={{ fontSize: 11, color: KM.muted, marginTop: 2 }}>
-              {sku.combo?.map(c => `${c.key}: ${c.value}`).join('  ·  ')}
+              {sku.combo?.map((c, cIdx) => {
+                const isCol = isColourKey(c.key);
+                const hasPreview = isCol && isHexColor(c.value);
+                return (
+                  <span key={cIdx} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    <span>{c.key}: </span>
+                    {hasPreview && (
+                      <span
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: '50%',
+                          border: '1px solid #dcdcdc',
+                          backgroundColor: c.value,
+                          display: 'inline-block',
+                          marginLeft: 4,
+                          marginRight: 4,
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                    <span style={{ marginLeft: hasPreview ? 0 : 4 }}>{c.value}</span>
+                    {cIdx < sku.combo.length - 1 && <span style={{ margin: '0 10px', color: KM.border }}>·</span>}
+                  </span>
+                );
+              })}
             </div>
             {hasErr && <div style={{ fontSize: 11, color: KM.red, fontWeight: 600, marginTop: 3 }}>{errors.join(' · ')}</div>}
           </div>
