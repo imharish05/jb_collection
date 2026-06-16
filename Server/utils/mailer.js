@@ -80,6 +80,89 @@ const STATUS_EMAIL_CONFIG = {
   },
 };
 
+const RETURN_EMAIL_CONFIG = {
+  return_submitted: {
+    subject: (id) => `Return Request Submitted 📦 — Return #${id} | Kamali Gifts`,
+    heroIcon: "📦",
+    heroTitle: "Return Request Submitted",
+    heroMessage: "We have received your return request and it is currently under review by our team.",
+    badgeText: "Request Submitted",
+    badgeStyle: BADGE_STYLES.orange,
+  },
+  approved: {
+    subject: (id) => `Return Request Approved ✅ — Return #${id} | Kamali Gifts`,
+    heroIcon: "✅",
+    heroTitle: "Return Approved",
+    heroMessage: "Your return request has been approved. We will schedule a reverse pickup shortly.",
+    badgeText: "Approved",
+    badgeStyle: BADGE_STYLES.green,
+  },
+  rejected: {
+    subject: (id) => `Return Request Rejected ❌ — Return #${id} | Kamali Gifts`,
+    heroIcon: "❌",
+    heroTitle: "Return Request Rejected",
+    heroMessage: "Your return request has been rejected after review.",
+    badgeText: "Rejected",
+    badgeStyle: BADGE_STYLES.red,
+  },
+  pickup_scheduled: {
+    subject: (id) => `Reverse Pickup Scheduled 🚚 — Return #${id} | Kamali Gifts`,
+    heroIcon: "🚚",
+    heroTitle: "Reverse Pickup Scheduled",
+    heroMessage: "Our logistics partner has scheduled a reverse pickup for your returned item.",
+    badgeText: "Pickup Scheduled",
+    badgeStyle: BADGE_STYLES.blue,
+  },
+  picked_up: {
+    subject: (id) => `Item Picked Up 📬 — Return #${id} | Kamali Gifts`,
+    heroIcon: "📬",
+    heroTitle: "Item Picked Up",
+    heroMessage: "The package has been successfully picked up by our courier and is in transit to our warehouse.",
+    badgeText: "Picked Up",
+    badgeStyle: BADGE_STYLES.blue,
+  },
+  inspection_completed: {
+    subject: (id) => `Inspection Completed 🔍 — Return #${id} | Kamali Gifts`,
+    heroIcon: "🔍",
+    heroTitle: "Inspection Completed",
+    heroMessage: "We have received the returned package at our warehouse and completed the inspection.",
+    badgeText: "Inspection Done",
+    badgeStyle: BADGE_STYLES.green,
+  },
+  refund_initiated: {
+    subject: (id) => `Refund Initiated 💰 — Return #${id} | Kamali Gifts`,
+    heroIcon: "💰",
+    heroTitle: "Refund Initiated",
+    heroMessage: "Your refund has been initiated and will be processed back to your payment mode.",
+    badgeText: "Refund Initiated",
+    badgeStyle: BADGE_STYLES.purple,
+  },
+  refund_completed: {
+    subject: (id) => `Refund Completed ✅ — Return #${id} | Kamali Gifts`,
+    heroIcon: "✅",
+    heroTitle: "Refund Completed",
+    heroMessage: "Your refund is fully completed and credited.",
+    badgeText: "Refund Completed",
+    badgeStyle: BADGE_STYLES.green,
+  },
+  replacement_shipped: {
+    subject: (id) => `Replacement Shipped 📦 — Return #${id} | Kamali Gifts`,
+    heroIcon: "📦",
+    heroTitle: "Replacement Shipped",
+    heroMessage: "Your replacement item has been shipped and is on its way to you.",
+    badgeText: "Replacement Shipped",
+    badgeStyle: BADGE_STYLES.blue,
+  },
+  replacement_delivered: {
+    subject: (id) => `Replacement Delivered ✅ — Return #${id} | Kamali Gifts`,
+    heroIcon: "✅",
+    heroTitle: "Replacement Delivered",
+    heroMessage: "Your replacement item has been successfully delivered.",
+    badgeText: "Replacement Delivered",
+    badgeStyle: BADGE_STYLES.green,
+  },
+};
+
 const PAYMENT_LABELS = {
   card: "Credit / Debit Card",
   upi: "UPI",
@@ -564,4 +647,186 @@ const sendOrderStatusEmail = async ({ order, user, status, trackingDetails } = {
 const sendOrderConfirmationEmail = async (order, user) =>
   sendOrderStatusEmail({ order, user, status: "confirmed" });
 
-module.exports = { sendOrderConfirmationEmail, sendOrderStatusEmail };
+const sendReturnNotificationEmail = async ({ returnRequest, user, order, orderItem, status, extra = {} } = {}) => {
+  const retData = asPlain(returnRequest);
+  const orderData = asPlain(order || retData.order || {});
+  const itemData = asPlain(orderItem || retData.orderItem || {});
+
+  // normalize status key (pending_review -> return_submitted, else use status directly)
+  const statusKey = status === "pending_review" ? "return_submitted" : status;
+  const config = RETURN_EMAIL_CONFIG[statusKey];
+
+  if (!config) {
+    console.warn(`[Mailer] No email template configured for return status "${status}"`);
+    return { sent: false, skipped: true };
+  }
+
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn("[Mailer] EMAIL_USER or EMAIL_PASS not set — skipping return email");
+    return { sent: false, skipped: true };
+  }
+
+  const contactEmail = process.env.SUPPORT_EMAIL || SUPPORT_EMAIL;
+  const returnId = escapeHtml(retData.id);
+  const orderId = escapeHtml(orderData.id || retData.orderId);
+  const productName = escapeHtml(itemData.productName || "Product");
+  const qty = retData.returnQuantity || 1;
+  const returnTypeLabel = retData.returnType === "replacement" ? "Replacement" : "Refund";
+
+  let extraHtml = "";
+  if (statusKey === "return_rejected" || status === "rejected") {
+    const reason = escapeHtml(extra.rejectedReason || retData.rejectedReason || "Not specified");
+    extraHtml = `
+      <tr>
+        <td style="padding:0 40px 28px;">
+          <div style="background:#fffafa;border:1px solid #fecaca;border-radius:10px;padding:16px;">
+            <h4 style="margin:0 0 8px;color:#dc2626;font-size:14px;font-weight:700;">Rejection Reason</h4>
+            <p style="margin:0;font-size:13px;color:#666;line-height:1.5;">${reason}</p>
+          </div>
+        </td>
+      </tr>`;
+  } else if (statusKey === "refund_initiated") {
+    const amt = safeNumber(extra.refundAmount || (retData.refund && retData.refund.refundAmount) || 0);
+    const mode = escapeHtml(extra.refundMode || (retData.refund && retData.refund.refundMode) || "razorpay");
+    const modeLabel = mode === "razorpay" ? "Razorpay (Online)" : "Manual / Bank Transfer";
+    extraHtml = `
+      <tr>
+        <td style="padding:0 40px 28px;">
+          <div style="background:#f5efff;border:1px solid #e9d5ff;border-radius:10px;padding:16px;">
+            <h4 style="margin:0 0 8px;color:#7e22ce;font-size:14px;font-weight:700;">Refund Information</h4>
+            <p style="margin:0 0 6px;font-size:13px;color:#666;">Amount: <strong>₹${amt.toFixed(2)}</strong></p>
+            <p style="margin:0;font-size:13px;color:#666;">Mode: <strong>${modeLabel}</strong></p>
+          </div>
+        </td>
+      </tr>`;
+  } else if (statusKey === "pickup_scheduled") {
+    const awb = escapeHtml(extra.awbCode || (retData.reverseShipment && retData.reverseShipment.awbCode) || "—");
+    const courier = escapeHtml(extra.courierName || (retData.reverseShipment && retData.reverseShipment.courierName) || "Courier Partner");
+    extraHtml = `
+      <tr>
+        <td style="padding:0 40px 28px;">
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px;">
+            <h4 style="margin:0 0 8px;color:#2563eb;font-size:14px;font-weight:700;">Reverse Pickup Details</h4>
+            <p style="margin:0 0 6px;font-size:13px;color:#666;">AWB / Tracking Number: <strong>${awb}</strong></p>
+            <p style="margin:0;font-size:13px;color:#666;">Courier Partner: <strong>${courier}</strong></p>
+            <p style="margin:6px 0 0;font-size:12px;color:#888;">Please keep the product packed and ready for pickup.</p>
+          </div>
+        </td>
+      </tr>`;
+  } else if (statusKey === "replacement_shipped") {
+    const awb = escapeHtml(extra.replacementAwb || (retData.reverseShipment && retData.reverseShipment.replacementAwb) || "—");
+    const trackingUrl = escapeHtml(extra.replacementTrackingUrl || (retData.reverseShipment && retData.reverseShipment.replacementTrackingUrl) || "");
+    const buttonHtml = trackingUrl ? `
+      <div style="margin-top:14px;">
+        <a href="${trackingUrl}" target="_blank" rel="noopener noreferrer"
+           style="display:inline-block;background:#db1a5d;color:#fff;text-decoration:none;border-radius:30px;padding:10px 24px;font-weight:700;font-size:13px;letter-spacing:0.4px;">
+          Track Replacement
+        </a>
+      </div>` : "";
+    extraHtml = `
+      <tr>
+        <td style="padding:0 40px 28px;">
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px;">
+            <h4 style="margin:0 0 8px;color:#2563eb;font-size:14px;font-weight:700;">Replacement Shipment Details</h4>
+            <p style="margin:0 0 6px;font-size:13px;color:#666;">Replacement AWB: <strong>${awb}</strong></p>
+            <p style="margin:0;font-size:13px;color:#666;">Delivery Charge: <strong>Paid by Kamali Gifts (Prepaid)</strong></p>
+            ${buttonHtml}
+          </div>
+        </td>
+      </tr>`;
+  }
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/></head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+  <!-- Header -->
+  <tr>
+    <td style="background:linear-gradient(135deg,rgba(223,77,129,0.4) 0%,rgb(255,232,214) 100%);padding:36px 40px;text-align:center;">
+      <h1 style="margin:0;color:#000;font-size:26px;font-weight:700;letter-spacing:0.5px;">🎁 Kamali Gifts</h1>
+      <p style="margin:8px 0 0;color:rgba(0,0,0,0.75);font-size:14px;">Return & Refund Updates</p>
+    </td>
+  </tr>
+
+  <!-- Status Hero -->
+  <tr>
+    <td style="padding:36px 40px 28px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">${config.heroIcon}</div>
+      <h2 style="margin:0 0 8px;font-size:22px;color:#2c2c2c;font-weight:700;">
+        ${config.heroTitle}
+      </h2>
+      <p style="margin:0;color:#666;font-size:15px;line-height:1.6;">${config.heroMessage}</p>
+      <div style="display:inline-block;background:${config.badgeStyle.bg};color:${config.badgeStyle.color};border:1px solid ${config.badgeStyle.border};border-radius:30px;padding:8px 22px;font-weight:700;font-size:13px;letter-spacing:0.5px;margin-top:16px;">
+        ${config.badgeText}
+      </div>
+    </td>
+  </tr>
+
+  ${extraHtml}
+
+  <!-- Return Summary -->
+  <tr>
+    <td style="padding:0 40px 28px;">
+      <h3 style="margin:0 0 14px;font-size:15px;color:#333;font-weight:700;padding-bottom:10px;border-bottom:2px solid #f5f5f5;">
+        📦 Return Request Details
+      </h3>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:10px;overflow:hidden;">
+        <tr>
+          <td width="36%" style="padding:10px 16px;background:#fafafa;font-size:12px;color:#999;font-weight:600;border-bottom:1px solid #f0f0f0;">Return ID</td>
+          <td style="padding:10px 16px;font-size:13px;color:#333;font-weight:600;border-bottom:1px solid #f0f0f0;">${returnId}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 16px;background:#fafafa;font-size:12px;color:#999;font-weight:600;border-bottom:1px solid #f0f0f0;">Order ID</td>
+          <td style="padding:10px 16px;font-size:13px;color:#333;border-bottom:1px solid #f0f0f0;">${orderId}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 16px;background:#fafafa;font-size:12px;color:#999;font-weight:600;border-bottom:1px solid #f0f0f0;">Product Name</td>
+          <td style="padding:10px 16px;font-size:13px;color:#333;border-bottom:1px solid #f0f0f0;">${productName}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 16px;background:#fafafa;font-size:12px;color:#999;font-weight:600;border-bottom:1px solid #f0f0f0;">Quantity</td>
+          <td style="padding:10px 16px;font-size:13px;color:#333;border-bottom:1px solid #f0f0f0;">${qty}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 16px;background:#fafafa;font-size:12px;color:#999;font-weight:600;">Request Type</td>
+          <td style="padding:10px 16px;font-size:13px;color:#db1a5d;font-weight:600;">${returnTypeLabel}</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style="padding:24px 40px;background:#fafafa;text-align:center;border-top:1px solid #f0f0f0;">
+      <p style="margin:0 0 8px;font-size:13px;color:#888;">
+        Need help? Contact us at <a href="mailto:${escapeHtml(contactEmail)}" style="color:#db1a5d;">${escapeHtml(contactEmail)}</a>
+      </p>
+      <p style="margin:0;font-size:12px;color:#bbb;">© ${new Date().getFullYear()} Kamali Gifts. All rights reserved.</p>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+
+  const subjectText = config.subject(retData.id.slice(0, 8));
+
+  await transporter.sendMail({
+    from: `"Kamali Gifts" <${process.env.EMAIL_USER}>`,
+    to: user.email,
+    subject: subjectText,
+    html,
+  });
+
+  console.log(`[Mailer] Return ${statusKey} email sent to ${user.email}`);
+  return { sent: true };
+};
+
+module.exports = { sendOrderConfirmationEmail, sendOrderStatusEmail, sendReturnNotificationEmail };

@@ -46,6 +46,11 @@ const Product = sequelize.define(
       defaultValue: false,
       field: "is_customisable",
     },
+    isNonReturnable: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: 'is_non_returnable',
+    },
     isHotDeal: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,

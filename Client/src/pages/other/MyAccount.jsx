@@ -75,6 +75,9 @@ const inp = {
   marginBottom: 14, color: "#333", background: "#fafafa",
 };
 
+const hoursSince = (date) => (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60);
+const daysSince  = (date) => hoursSince(date) / 24;
+
 const MyAccount = () => {
   const user = useSelector((state) => state.auth?.user);
   const { addresses, activeAddressId, loading: addrLoading } = useSelector((state) => state.address);
@@ -463,29 +466,120 @@ const toggleVisibility = (field) => {
                             <p>No orders yet. Start shopping!</p>
                           </div>
                         )}
-                        {!ordersLoading && orders.length > 0 && orders.map((order) => (
+                        {!ordersLoading && orders.length > 0 && orders.map((order) => {
+                          // ── Cancel order eligibility ──────────────────────────
+                          const hoursFromCreated = hoursSince(order.createdAt);
+                          const orderStatusLow = order.status?.toLowerCase() || "";
+                          const nonCancellableStatuses = ["shipped", "processing", "delivered", "cancelled"];
+                          const hasCustomItem = order.items?.some(i => i.product?.isCustomisable);
+                          const isProductionCustom = hasCustomItem && orderStatusLow !== "pending";
+                          const canCancel = hoursFromCreated < 24 && !nonCancellableStatuses.includes(orderStatusLow) && !isProductionCustom;
+
+                          const handleCancelFromAccount = async () => {
+                            if (!window.confirm("Cancel this order?")) return;
+                            try {
+                              const axios = await import("../../api/axios");
+                              await axios.default.patch(`/returns/cancel-order/${order.id}`);
+                              cogoToast.success("Order cancelled!");
+                              dispatch(fetchOrders());
+                            } catch (err) {
+                              cogoToast.error(err?.response?.data?.message || "Failed to cancel order");
+                            }
+                          };
+
+                          return (
                           <div className="order-main-card" key={order.id}>
                             <div className="order-card-header">
                               <div className="header-left">
                                 <span className="order-label">Order</span>
-                                {/* <span className="order-number">#{order.id}</span> */}
                               </div>
-                              <div className="header-right">
-                                <span className={`status-pill ${order.status?.toLowerCase() || 'pending'}`}>{order.status || 'Pending'}</span>
+                              <div className="header-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <span className={`status-pill ${orderStatusLow || 'pending'}`}>{order.status || 'Pending'}</span>
+                                {canCancel && (
+                                  <button
+                                    onClick={handleCancelFromAccount}
+                                    className="btn-cancel-action"
+                                    style={{ fontSize: "12px", padding: "4px 12px" }}
+                                  >
+                                    Cancel
+                                  </button>
+                                )}
                               </div>
                             </div>
                             <div className="order-card-body">
-                              {Array.isArray(order.items) && order.items.map((item, i) => (
-                                <div className="product-row" key={i}>
-                                  <div className="product-img">
-                                    <img src={getOrderItemImage(item.image)} alt={item.productName || "Product"} onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_IMG; }} />
+                              {Array.isArray(order.items) && order.items.map((item, i) => {
+                                // ── Per-item return eligibility ──────────────
+                                const deliveredHours = order.status?.toLowerCase() === "delivered" ? hoursSince(order.updatedAt) : Infinity;
+                                const withinReturn = deliveredHours <= 72;
+                                const isReturnable = item.product ? (!item.product.isNonReturnable && !item.product.isCustomisable) : true;
+                                const itemReturns = item.returns || [];
+                                const activeReturn = itemReturns.find(r => r.status !== "rejected");
+
+                                const statusLabels = {
+                                  pending_review: "Under Review", approved: "Approved", rejected: "Rejected",
+                                  pickup_scheduled: "Pickup Scheduled", picked_up: "Picked Up",
+                                  inspection_completed: "Inspection Done", refund_initiated: "Refund Initiated",
+                                  refund_completed: "Refund Completed", replacement_shipped: "Replacement Shipped",
+                                  replacement_delivered: "Replacement Delivered",
+                                };
+
+                                const remHrsTotal = Math.max(0, 72 - deliveredHours);
+                                const remDays = Math.floor(remHrsTotal / 24);
+                                const remHrs = Math.floor(remHrsTotal % 24);
+
+                                return (
+                                  <div className="product-row" key={i}>
+                                    <div className="product-img">
+                                      <img src={getOrderItemImage(item.image)} alt={item.productName || "Product"} onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_IMG; }} />
+                                    </div>
+                                    <div className="product-details" style={{ flex: 1 }}>
+                                      <h6>{item.productName || "Product"}</h6>
+                                      <p>Qty: {item.quantity}</p>
+
+                                      {/* ── Existing return status ── */}
+                                      {activeReturn && (
+                                        <div style={{ marginTop: "6px" }}>
+                                          <span className={`return-status-badge ${activeReturn.status}`}>
+                                            {statusLabels[activeReturn.status] || activeReturn.status}
+                                          </span>
+                                          <div style={{ marginTop: "4px" }}>
+                                            <Link to={`/return-tracking/${activeReturn.id}`} style={{ color: "#db1a5d", fontWeight: 600, fontSize: "12px" }}>
+                                              Track Return
+                                            </Link>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* ── Non-returnable badge ── */}
+                                      {!activeReturn && !isReturnable && order.status?.toLowerCase() === "delivered" && (
+                                        <span className="non-returnable-badge">Non-Returnable</span>
+                                      )}
+
+                                      {/* ── Return window expired ── */}
+                                      {!activeReturn && isReturnable && order.status?.toLowerCase() === "delivered" && !withinReturn && (
+                                        <span className="return-window-expired">Return window expired</span>
+                                      )}
+
+                                      {/* ── Return window countdown + actions ── */}
+                                      {!activeReturn && isReturnable && order.status?.toLowerCase() === "delivered" && withinReturn && (
+                                        <div style={{ marginTop: "6px" }}>
+                                          <span className="return-window-timer">
+                                            Return Window: {remDays > 0 ? `${remDays}d ` : ""}{remHrs}h left
+                                          </span>
+                                          <div className="return-action-buttons" style={{ marginTop: "6px" }}>
+                                            <Link to={`/return-request?orderId=${order.id}&itemId=${item.id}`} className="btn-return-action" style={{ fontSize: "12px", padding: "6px 12px" }}>
+                                              Return
+                                            </Link>
+                                            <Link to={`/return-request?orderId=${order.id}&itemId=${item.id}&type=replacement`} className="btn-replace-action" style={{ fontSize: "12px", padding: "6px 12px" }}>
+                                              Replace
+                                            </Link>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="product-details">
-                                    <h6>{item.productName || "Product"}</h6>
-                                    <p>Qty: {item.quantity}</p>
-                                  </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                             <div className="order-card-footer">
                               <div className="footer-left"><p>Placed on: <strong>{new Date(order.createdAt).toLocaleDateString()}</strong></p></div>
@@ -495,7 +589,8 @@ const toggleVisibility = (field) => {
                               </div>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}

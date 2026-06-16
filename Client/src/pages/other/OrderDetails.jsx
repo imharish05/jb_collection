@@ -1,4 +1,4 @@
-﻿import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
@@ -49,6 +49,9 @@ const firstAmount = (...values) => {
   return null;
 };
 
+const hoursSince = (date) => (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60);
+const daysSince  = (date) => hoursSince(date) / 24;
+
 const OrderDetails = () => {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
@@ -72,7 +75,129 @@ const OrderDetails = () => {
     if (normalized === "cod") return "Cash on Delivery";
     if (normalized === "upi") return "UPI";
     if (normalized === "razorpay") return "Razorpay";
+    if (normalized === "partial_cod") return "Partial Cash on Delivery";
     return method;
+  };
+
+  const handleCancelOrder = async () => {
+    if (!window.confirm("Are you sure you want to cancel this order?")) return;
+    try {
+      await api.patch(`/returns/cancel-order/${order.id}`);
+      cogoToast.success("Order cancelled successfully!");
+      // Reload order details
+      const res = await api.get(`/orders/${order.id}`);
+      setOrder(res.data);
+    } catch (err) {
+      console.error(err);
+      cogoToast.error(err.response?.data?.message || "Failed to cancel order");
+    }
+  };
+
+  const renderCancelButton = () => {
+    if (!order) return null;
+    const hours = hoursSince(order.createdAt);
+    const orderStatusLower = order.status?.toLowerCase();
+    const nonCancellable = ["shipped", "processing", "delivered", "cancelled"];
+    
+    // Check if customised items in production
+    const hasCustom = order.items?.some(i => i.product?.isCustomisable);
+    const isProductionCustom = hasCustom && orderStatusLower !== "pending";
+
+    const cancellable = hours < 24 && !nonCancellable.includes(orderStatusLower) && !isProductionCustom;
+
+    if (!cancellable) return null;
+
+    return (
+      <button
+        onClick={handleCancelOrder}
+        className="btn-cancel-action"
+        style={{ width: "100%", marginTop: "12px", border: "none", padding: "10px", fontWeight: "bold", borderRadius: "4px" }}
+      >
+        Cancel Order
+      </button>
+    );
+  };
+
+  const renderItemActions = (item) => {
+    if (!order || order.status?.toLowerCase() !== "delivered") return null;
+
+    const deliveredAt = order.updatedAt;
+    const hours = hoursSince(deliveredAt);
+    const isReturnable = item.product ? (!item.product.isNonReturnable && !item.product.isCustomisable) : true;
+    
+    const returns = item.returns || [];
+    const activeReturn = returns.find(r => r.status !== "rejected");
+    const hasExistingReturn = !!activeReturn;
+
+    if (hasExistingReturn) {
+      const statusLabels = {
+        pending_review: "Under Review",
+        approved: "Approved",
+        rejected: "Rejected",
+        pickup_scheduled: "Pickup Scheduled",
+        picked_up: "Picked Up",
+        inspection_completed: "Inspection Done",
+        refund_initiated: "Refund Initiated",
+        refund_completed: "Refund Completed",
+        replacement_shipped: "Replacement Shipped",
+        replacement_delivered: "Replacement Delivered",
+      };
+      return (
+        <div className="item-return-status-section" style={{ marginTop: "10px" }}>
+          <span className={`return-status-badge ${activeReturn.status}`}>
+            Return Status: {statusLabels[activeReturn.status] || activeReturn.status}
+          </span>
+          <div style={{ marginTop: "6px" }}>
+            <Link to={`/return-tracking/${activeReturn.id}`} style={{ color: "#db1a5d", fontWeight: 600, fontSize: "13px" }}>
+              <i className="fa fa-map-marker"></i> Track Return
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
+    if (!isReturnable) {
+      return (
+        <div style={{ marginTop: "10px" }}>
+          <span className="non-returnable-badge">Non-Returnable Product</span>
+        </div>
+      );
+    }
+
+    const withinReturnWindow = hours <= 72; // 3 days
+    if (!withinReturnWindow) {
+      return (
+        <div style={{ marginTop: "10px" }}>
+          <span className="return-window-expired">Return window expired</span>
+        </div>
+      );
+    }
+
+    const remainingHoursTotal = Math.max(0, 72 - hours);
+    const remDays = Math.floor(remainingHoursTotal / 24);
+    const remHours = Math.floor(remainingHoursTotal % 24);
+
+    return (
+      <div style={{ marginTop: "10px" }}>
+        <span className="return-window-timer">
+          Return Window: {remDays > 0 ? `${remDays}d ` : ""}{remHours}h remaining
+        </span>
+        <div className="return-action-buttons">
+          <Link
+            to={`/return-request?orderId=${order.id}&itemId=${item.id}`}
+            className="btn-return-action"
+          >
+            Return Product
+          </Link>
+          <Link
+            to={`/return-request?orderId=${order.id}&itemId=${item.id}&type=replacement`}
+            className="btn-replace-action"
+          >
+            Replace Product
+          </Link>
+        </div>
+      </div>
+    );
   };
 
   const statusMap = {
@@ -256,6 +381,7 @@ const couponDiscount =
                       <p className="mini-label">Current Status</p>
                       <h4>{orderStatus}</h4>
                       <div className="pulse-indicator"></div>
+                      {renderCancelButton()}
                     </div>
 
                     <div className="side-card info-summary">
@@ -319,6 +445,7 @@ const couponDiscount =
                             <div className="prod-info">
                               <h6>{item.productName || "Product"}</h6>
                               <p>{getVariantLabel(item)}</p>
+                              {renderItemActions(item)}
                             </div>
                             <div className="prod-price">₹{itemPrice(item).toFixed(2)}</div>
                           </div>

@@ -1,0 +1,391 @@
+/* Returns, Refunds, Replacements & Cancellations style overrides/additions */
+
+.return-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.return-action-buttons button,
+.return-action-buttons a {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-return-action {
+  background-color: #db1a5d;
+  color: #fff !important;
+}
+
+.btn-return-action:hover {
+  background-color: #0d1b40;
+}
+
+.btn-replace-action {
+  background-color: #0d1b40;
+  color: #fff !important;
+}
+
+.btn-replace-action:hover {
+  background-color: #db1a5d;
+}
+
+.btn-cancel-action {
+  background-color: #fee2e2;
+  color: #dc2626 !important;
+  border: 1px solid #fecaca !important;
+}
+
+.btn-cancel-action:hover {
+  background-color: #dc2626;
+  color: #fff !important;
+}
+
+/* Badges */
+.return-status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+  text-align: center;
+  margin-top: 6px;
+}
+
+.return-status-badge.pending_review {
+  background-color: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+}
+
+.return-status-badge.approved {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.return-status-badge.rejected {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.return-status-badge.pickup_scheduled,
+.return-status-badge.picked_up,
+.return-status-badge.inspection_completed,
+.return-status-badge.replacement_shipped {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.return-status-badge.refund_initiated {
+  background-color: #faf5ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+
+.return-status-badge.refund_completed,
+.return-status-badge.replacement_delivered {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.non-returnable-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 20px;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  margin-top: 6px;
+}
+
+.return-window-timer {
+  font-size: 12px;
+  color: #db1a5d;
+  font-weight: 600;
+  margin-top: 6px;
+  display: block;
+}
+
+.return-window-expired {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 6px;
+  display: block;
+}
+
+/* Stepper */
+.return-stepper {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin: 30px 0;
+  padding-left: 20px;
+}
+
+.return-stepper::before {
+  content: "";
+  position: absolute;
+  left: 34px;
+  top: 15px;
+  bottom: 15px;
+  width: 2px;
+  background-color: #e5e7eb;
+  z-index: 1;
+}
+
+.return-stepper-step {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 30px;
+  position: relative;
+  z-index: 2;
+}
+
+.return-stepper-step:last-child {
+  margin-bottom: 0;
+}
+
+.return-stepper-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 2px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: #9ca3af;
+  margin-right: 15px;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.return-stepper-step.completed .return-stepper-icon {
+  background-color: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+
+.return-stepper-step.active .return-stepper-icon {
+  background-color: #db1a5d;
+  border-color: #db1a5d;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(219, 26, 93, 0.2);
+}
+
+.return-stepper-content {
+  padding-top: 3px;
+}
+
+.return-stepper-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 2px 0;
+}
+
+.return-stepper-step.active .return-stepper-title {
+  color: #db1a5d;
+}
+
+.return-stepper-step.completed .return-stepper-title {
+  color: #111827;
+}
+
+.return-stepper-date {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* Upload zone */
+.return-upload-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  background-color: #f9fafb;
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+}
+
+.return-upload-zone:hover {
+  border-color: #db1a5d;
+  background-color: #fffafa;
+}
+
+.return-upload-zone i {
+  font-size: 32px;
+  color: #9ca3af;
+  margin-bottom: 10px;
+}
+
+.return-upload-zone p {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.return-upload-zone span {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.return-proof-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.return-proof-preview-item {
+  position: relative;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
+.return-proof-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.return-proof-preview-item .video-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #1f2937;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+
+.return-proof-preview-item .video-placeholder i {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.return-proof-preview-item .remove-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: rgba(220, 38, 38, 0.8);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+/* Tracking Card */
+.return-tracking-card {
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.return-tracking-card h5 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 10px;
+}
+
+.refund-details-card {
+  background-color: #faf5ff;
+  border-color: #e9d5ff;
+}
+
+.replacement-tracking-card {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.return-rejection-card {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.return-rejection-card h6 {
+  color: #dc2626;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  font-size: 14px;
+}
+
+.return-rejection-card p {
+  margin: 0;
+  color: #7f1d1d;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Return Request form page elements */
+.return-req-item-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 24px;
+}
+
+.return-req-item-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  object-fit: cover;
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+}
+
+.return-req-item-info h6 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.return-req-item-info p {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}

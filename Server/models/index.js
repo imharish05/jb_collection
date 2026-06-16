@@ -23,6 +23,11 @@ const Testimonial = require("./Testimonial");
 const InventoryLog = require("./InventoryLog");
 const OrderStatusEmailAudit = require("./OrderStatusEmailAudit");
 
+const Return          = require("./Return");
+const ReturnMedia     = require("./ReturnMedia");
+const Refund          = require("./Refund");
+const ReverseShipment = require("./ReverseShipment");
+
 // ── Password Reset OTP ────────────────────────────────────────────────────────
 const PasswordResetOtp = require("./PasswordResetOtp");
 User.hasMany(PasswordResetOtp, { foreignKey: "user_id", as: "passwordResetOtps", onDelete: "CASCADE" });
@@ -91,6 +96,7 @@ Review.belongsTo(User,  { foreignKey: "customer_id", as: "Customer" });
 // ── Order ↔ OrderItem ────────────────────────────────────────────────────────
 Order.hasMany(OrderItem, { foreignKey: "order_id", as: "items", onDelete: "CASCADE" });
 OrderItem.belongsTo(Order, { foreignKey: "order_id" });
+OrderItem.belongsTo(Product, { foreignKey: "productId", as: "product", constraints: false });
 
 // ── RootCombo ↔ ChildCombo ────────────────────────────────────────────────────
 RootCombo.hasMany(ChildCombo, { foreignKey: "root_combo_id", as: "children", onDelete: "CASCADE" });
@@ -106,6 +112,20 @@ ChildComboProduct.belongsTo(ChildCombo, { foreignKey: "child_combo_id", as: "chi
 // ── ChildComboProduct ↔ Product / Variant ─────────────────────────────────────
 ChildComboProduct.belongsTo(Product, { foreignKey: "product_id", as: "product", constraints: false });
 ChildComboProduct.belongsTo(Variant, { foreignKey: "variant_id", as: "variant", constraints: false });
+
+// ── Returns module associations ───────────────────────────────────────────────
+Return.belongsTo(Order,           { foreignKey: 'order_id',      as: 'order',           constraints: false });
+Return.belongsTo(OrderItem,       { foreignKey: 'order_item_id', as: 'orderItem',       constraints: false });
+Return.belongsTo(User,            { foreignKey: 'user_id',       as: 'user',            constraints: false });
+Return.hasMany(ReturnMedia,       { foreignKey: 'return_id',     as: 'media',           onDelete: 'CASCADE' });
+Return.hasOne(Refund,             { foreignKey: 'return_id',     as: 'refund',          onDelete: 'CASCADE' });
+Return.hasOne(ReverseShipment,    { foreignKey: 'return_id',     as: 'reverseShipment', onDelete: 'CASCADE' });
+ReturnMedia.belongsTo(Return,     { foreignKey: 'return_id',     as: 'return' });
+Refund.belongsTo(Return,          { foreignKey: 'return_id',     as: 'return' });
+ReverseShipment.belongsTo(Return, { foreignKey: 'return_id',     as: 'return' });
+Order.hasMany(Return,             { foreignKey: 'order_id',      as: 'returns',         constraints: false });
+OrderItem.hasMany(Return,         { foreignKey: 'order_item_id', as: 'returns',         constraints: false });
+User.hasMany(Return,              { foreignKey: 'user_id',       as: 'returns',         constraints: false });
 
 module.exports = {
   sequelize,
@@ -140,4 +160,8 @@ module.exports = {
   InventoryLog,
   // Order status email audit
   OrderStatusEmailAudit,
+  Return,
+  ReturnMedia,
+  Refund,
+  ReverseShipment,
 };

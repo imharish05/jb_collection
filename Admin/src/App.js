@@ -24,6 +24,9 @@ import HeroSlider from './components/HeroSlider/HeroSlider';
 import TimelessTreasures from './components/TimelessTreasures/TimelessTreasures';
 import Marquee from './components/Marquee/Marquee';
 import Testimonials from './components/Testimonials/Testimonials';
+// ── Returns / Refunds ────────────────────────────────────────
+import ReturnsDashboard from './components/Returns/ReturnsDashboard';
+import ReturnDetail from './components/Returns/ReturnDetail';
 
 import './components/global.css';
 import Swal from 'sweetalert2';
@@ -50,10 +53,12 @@ const PAGE_CONFIG = {
   orders_cancelled:    { title: 'Cancelled Orders' },
   contacts:            { title: 'Contact Requests' },
   // ── Marketing ───────────────────────────────────────────────
-  banners:         { title: 'Banners' },
+  banners:             { title: 'Banners' },
   timeless_treasures:  { title: 'Timeless Treasures' },
   marquee:             { title: 'Slider Messages' },
   testimonials:        { title: 'Testimonials' },
+  // ── Returns ─────────────────────────────────────────────────
+  returns:             { title: 'Returns & Refunds' },
 };
 
 function AdminLayoutWrapper({ handleLogout }) {
@@ -100,10 +105,13 @@ function AdminLayoutWrapper({ handleLogout }) {
             <Route path="/orders_cancelled"    element={<Orders             status="cancelled" />} />
             <Route path="/contacts"            element={<AdminContactManager />} />
             {/* ── Marketing ──────────────────────────────────── */}
-            <Route path="/banners"         element={<HeroSlider         showToast={showToast} />} />
+            <Route path="/banners"             element={<HeroSlider         showToast={showToast} />} />
             <Route path="/timeless_treasures"  element={<TimelessTreasures  showToast={showToast} />} />
             <Route path="/marquee"             element={<Marquee            showToast={showToast} />} />
             <Route path="/testimonials"        element={<Testimonials       showToast={showToast} />} />
+            {/* ── Returns & Refunds ──────────────────────────── */}
+            <Route path="/returns"             element={<ReturnsDashboard   showToast={showToast} />} />
+            <Route path="/returns/:id"         element={<ReturnDetail />} />
             <Route path="/"                    element={<Navigate to="/dashboard" />} />
           </Routes>
         </div>

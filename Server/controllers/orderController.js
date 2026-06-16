@@ -178,7 +178,14 @@ const getMyOrders = async (req, res, next) => {
     const orders = await Order.findAll({
       where: { userId: req.user.id },
       include: [
-        { model: OrderItem, as: "items" },
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            { model: require("../models").Product, as: "product", attributes: ["id", "sku", "isNonReturnable", "isCustomisable"] },
+            { model: require("../models").Return, as: "returns" }
+          ]
+        },
         { model: Address, as: "shippingAddress" },
         { model: Address, as: "billingAddress" },
       ],
@@ -196,7 +203,14 @@ const getOrderById = async (req, res, next) => {
     const order = await Order.findOne({
       where: { id: req.params.id, userId: req.user.id },
       include: [
-        { model: OrderItem, as: "items" },
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            { model: require("../models").Product, as: "product", attributes: ["id", "sku", "isNonReturnable", "isCustomisable"] },
+            { model: require("../models").Return, as: "returns" }
+          ]
+        },
         { model: Address, as: "shippingAddress" },
         { model: Address, as: "billingAddress" },
       ],

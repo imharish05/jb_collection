@@ -29,6 +29,7 @@ const dashboardRoutes = require("./routes/dashboard");
 const testimonialRoutes = require("./routes/testimonials");
 const shippingRoutes = require("./routes/shipping");
 const newComboRoutes = require("./routes/combos");
+const returnRoutes = require("./routes/returns");
 
 const { protect } = require("./middleware/auth");
 const seed = require("./seeders/seed");
@@ -40,6 +41,7 @@ app.use(cors());
 // ── Webhook raw-body parser (MUST be before express.json())
 // Razorpay webhook signature verification requires the raw, unparsed request body.
 app.use("/api/payment/webhook", express.raw({ type: "*/*" }));
+app.use("/api/returns/webhook/shiprocket-return", express.raw({ type: "*/*" }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -68,6 +70,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/combos", newComboRoutes);
+app.use("/api/returns", returnRoutes);
 
 app.get("/api/health", (req, res) =>
   res.json({ status: "ok", service: "Kamali Gifts API", db: "MySQL" })

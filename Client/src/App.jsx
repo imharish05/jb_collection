@@ -55,6 +55,8 @@ const Compare = lazy(() => import("./pages/other/Compare"));
 const Checkout = lazy(() => import("./pages/other/Checkout"));
 const OrderConfirmation = lazy(() => import("./pages/other/OrderConfirmation"));
 const OrderDetails = lazy(() => import("./pages/other/OrderDetails"));
+const ReturnRequest = lazy(() => import("./pages/other/ReturnRequest"));
+const ReturnTracking = lazy(() => import("./pages/other/ReturnTracking"));
 const NotFound = lazy(() => import("./pages/other/NotFound"));
 const PrivacyPolicy = lazy(() => import("./pages/other/policies/PrivacyPolicy"));
 const TermsConditions = lazy(() => import("./pages/other/policies/TermsConditions"));
@@ -188,6 +190,8 @@ useEffect(() => {
             <Route path={process.env.PUBLIC_URL + "/checkout"} element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
             <Route path={process.env.PUBLIC_URL + "/order-confirmation"} element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>} />
             <Route path="/order-details/:id" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
+            <Route path="/return-request" element={<ProtectedRoute><ReturnRequest /></ProtectedRoute>} />
+            <Route path="/return-tracking/:id" element={<ProtectedRoute><ReturnTracking /></ProtectedRoute>} />
 
             {/* Other public */}
             <Route path={process.env.PUBLIC_URL + "/about"} element={<About />} />
