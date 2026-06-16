@@ -43,7 +43,7 @@ const ExchangePolicy = () => {
             </div>
             <div className="policy-hero-badge">Returns</div>
             <h1>Refund &amp; Return Policy</h1>
-           
+           <p>Last Updated: June 2026</p>
           </div>
 
           <div className="policy-body">

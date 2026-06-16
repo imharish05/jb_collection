@@ -8,26 +8,25 @@ const TermsConditions = () => {
   const { pathname } = useLocation();
 
   const sections = [
-    "Definitions",
-    "Account Registration",
-    "Ordering & Acceptance",
-    "Pricing & Payments (Razorpay)",
-    "Customization Policy",
+    "Pricing & Orders",
+    "Product Variations",
+    "Customized, Personalized & Bulk Orders",
+    "Pre-Booking Orders",
+    "Processing & Delivery",
+    "Returns & Replacements",
+    "Shipping Charges",
+    "Order Refusal & Cancellation",
+    "Promotional Use of Content",
     "Intellectual Property",
-    "Prohibited Activities",
-    "Disclaimer of Warranties",
-    "Limitation of Liability",
-    "Governing Law & Dispute Resolution",
     "Amendments",
     "Contact",
   ];
 
   return (
     <Fragment>
-      
       <SEO
         titleTemplate="Terms & Conditions – Kamali Gifts"
-        description="Read the Terms and Conditions for shopping at Kamali Gifts — customized gifts, toys, and stationery. Covers orders, payments via Razorpay, delivery via Shiprocket, and more."
+        description="Read the Terms and Conditions for shopping at Kamali Gifts — customized gifts, toys, and stationery."
       />
       <LayoutOne headerTop="visible">
         <Breadcrumb
@@ -50,16 +49,13 @@ const TermsConditions = () => {
             </div>
             <div className="policy-hero-badge">Legal</div>
             <h1>Terms &amp; Conditions</h1>
-            <p>Last Updated: June 2026 &nbsp;•&nbsp; Effective Date: June 2026</p>
+            <p>Last Updated: June 2026</p>
           </div>
 
           <div className="policy-body">
             <div style={{ marginBottom: 40 }}>
               <p style={{ fontSize: 15, lineHeight: 1.85, color: "#444" }}>
-                These Terms and Conditions (<strong>"Terms"</strong>) govern your use of the Kamali Gifts website, mobile application, and all associated services. By accessing our platform or placing an order, you agree to be legally bound by these Terms. If you do not agree, please do not use our services.
-              </p>
-              <p style={{ fontSize: 15, lineHeight: 1.85, color: "#444" }}>
-                Payments on our platform are processed exclusively through <strong>Razorpay</strong> and shipping is managed through <strong>Shiprocket</strong>, each with their own terms that govern those specific services.
+                By accessing and placing an order through our website, you agree to the following Terms &amp; Conditions.
               </p>
             </div>
 
@@ -76,16 +72,11 @@ const TermsConditions = () => {
             <div className="policy-section" id="tc-1">
               <div className="policy-section-header">
                 <div className="policy-section-num">1</div>
-                <h2>Definitions</h2>
+                <h2>Pricing &amp; Orders</h2>
               </div>
               <ul className="policy-ul">
-                <li><strong>"Company" / "We" / "Us"</strong> refers to Kamali Gifts</li>
-                <li><strong>"Customer" / "You"</strong> refers to any person accessing or using our services</li>
-                <li><strong>"Products"</strong> refers to customized gifts, toys, stationery, and related merchandise</li>
-                <li><strong>"Order"</strong> refers to a confirmed purchase of one or more Products</li>
-                <li><strong>"Customization"</strong> refers to personalization of Products including printing, engraving, embroidery, or photo/text overlay</li>
-                <li><strong>"Razorpay"</strong> refers to Razorpay Software Private Limited, our payment processing partner</li>
-                <li><strong>"Shiprocket"</strong> refers to Bigfoot Retail Solutions Pvt Ltd, our logistics aggregation partner</li>
+                <li>All product prices are displayed in the applicable currency and are subject to change without prior notice.</li>
+                <li>Orders are considered confirmed only after successful payment and order verification.</li>
               </ul>
             </div>
 
@@ -93,34 +84,21 @@ const TermsConditions = () => {
             <div className="policy-section" id="tc-2">
               <div className="policy-section-header">
                 <div className="policy-section-num">2</div>
-                <h2>Account Registration</h2>
+                <h2>Product Variations</h2>
               </div>
-              <p>
-                To place orders, you are required to create an account. You are solely responsible for maintaining the confidentiality of your login credentials and for all activities conducted under your account. You must provide accurate, current, and complete information during registration and keep it updated.
-              </p>
-              <p>
-                Kamali Gifts reserves the right to suspend or permanently terminate accounts that are found to be in violation of these Terms, engaged in fraudulent activity, or have provided false information. You may not create multiple accounts to circumvent restrictions.
-              </p>
+              <ul className="policy-ul">
+                <li>Product images are for illustrative purposes only. Minor variations in color, size, packaging, or finish may occur due to photography, screen settings, manufacturing processes, or supplier variations.</li>
+              </ul>
             </div>
 
             {/* 3 */}
             <div className="policy-section" id="tc-3">
               <div className="policy-section-header">
                 <div className="policy-section-num">3</div>
-                <h2>Ordering & Acceptance</h2>
+                <h2>Customized, Personalized &amp; Bulk Orders</h2>
               </div>
-              <p>
-                All orders placed through our platform are subject to acceptance by Kamali Gifts. An order is confirmed only upon receipt of a confirmation email and successful payment authorization via Razorpay. We reserve the right to refuse or cancel any order due to:
-              </p>
-              <ul className="policy-ul">
-                <li>Product unavailability or stock depletion after order placement</li>
-                <li>Pricing errors or technical glitches displaying incorrect prices</li>
-                <li>Suspected fraudulent activity or policy violations</li>
-                <li>Inability to verify payment or delivery address</li>
-                <li>Operational constraints during peak seasons</li>
-              </ul>
               <div className="policy-warning">
-                <strong>Important for customized orders:</strong> You are fully responsible for providing accurate personalization details — names, dates, photos, and messages. Errors in submitted details resulting in incorrect production are not eligible for free replacement. Please review all customization inputs carefully before confirming.
+                Customized, personalized, made-to-order, and bulk orders are produced according to customer requirements and are <strong>not eligible for cancellation, return, or refund</strong> once production has commenced.
               </div>
             </div>
 
@@ -128,17 +106,13 @@ const TermsConditions = () => {
             <div className="policy-section" id="tc-4">
               <div className="policy-section-header">
                 <div className="policy-section-num">4</div>
-                <h2>Pricing & Payments (Razorpay)</h2>
+                <h2>Pre-Booking Orders</h2>
               </div>
               <ul className="policy-ul">
-                <li>All prices are listed in Indian Rupees (INR) and include GST unless explicitly stated otherwise</li>
-                <li>Prices are subject to change without notice; orders are billed at the price confirmed at checkout</li>
-                <li>Payments are processed via <strong>Razorpay</strong>, supporting Credit/Debit Cards, UPI, Net Banking, EMI, and Wallets</li>
-                <li>Partial Cash on Delivery (COD) may be available on eligible orders; remaining balance is collected at delivery</li>
-                <li>Failed payments must be retried; orders will not enter production until payment is fully confirmed</li>
-                <li>In the event of a double-charge due to technical error, a full refund will be initiated through Razorpay within 5–7 business days</li>
-                <li>Kamali Gifts does not store any payment card details; all sensitive payment data is handled exclusively by Razorpay's PCI-DSS Level 1 certified infrastructure</li>
-                <li>Razorpay's own Terms of Service apply to the payment processing portion of your transaction</li>
+                <li>Certain products are offered on a pre-booking basis and may be imported, manufactured, or specially sourced only after a confirmed order is placed.</li>
+                <li>Pre-booking products may require <strong>up to 20 days or more</strong> before dispatch, depending on manufacturing, sourcing, or import timelines.</li>
+                <li>Pre-booking orders <strong>cannot be canceled, modified, or refunded</strong> by the customer after confirmation.</li>
+                <li>In exceptional circumstances where we are unable to manufacture, source, or import a pre-booked product, we reserve the right to cancel the order and provide a <strong>full refund</strong> of the amount paid.</li>
               </ul>
             </div>
 
@@ -146,51 +120,35 @@ const TermsConditions = () => {
             <div className="policy-section" id="tc-5">
               <div className="policy-section-header">
                 <div className="policy-section-num">5</div>
-                <h2>Customization Policy</h2>
+                <h2>Processing &amp; Delivery</h2>
               </div>
-              <p>Kamali Gifts specializes in personalized products. By submitting personalization details, you confirm that:</p>
               <ul className="policy-ul">
-                <li>You own or have lawful permission to use any images, logos, or copyrighted material submitted</li>
-                <li>Content submitted does not violate any applicable law or third-party intellectual property rights</li>
-                <li>Personalization details submitted are treated as final once production begins; changes are not guaranteed after this point</li>
-                <li>We reserve the right to refuse production of content deemed offensive, illegal, defamatory, or otherwise inappropriate</li>
-                <li>Submitting another person's photo without their consent may violate their privacy rights; you bear full legal responsibility</li>
+                <li>Standard orders are generally processed within <strong>1–3 business days</strong>, while customized, bulk, or pre-booking orders may require additional processing time.</li>
+                <li>Delivery timelines are estimates only and may be affected by courier delays, weather conditions, customs clearance, public holidays, or other circumstances beyond our control.</li>
+                <li>Customers are responsible for providing accurate shipping and contact information. We are not liable for delays or losses resulting from incorrect details provided by the customer.</li>
               </ul>
-              <p>
-                A preview confirmation may be sent for complex or high-value customized orders. It is your responsibility to approve or request corrections within the specified time window before production proceeds.
-              </p>
             </div>
 
             {/* 6 */}
             <div className="policy-section" id="tc-6">
               <div className="policy-section-header">
                 <div className="policy-section-num">6</div>
-                <h2>Intellectual Property</h2>
+                <h2>Returns &amp; Replacements</h2>
               </div>
-              <p>
-                All content on the Kamali Gifts website — including logos, product images, designs, descriptions, UI elements, and software — is the exclusive property of Kamali Gifts or its licensors and is protected under applicable intellectual property laws. You may not reproduce, distribute, modify, or commercially exploit our content without prior written permission.
-              </p>
-              <p>
-                Customer-submitted content (photos, custom text) remains the intellectual property of the customer. However, by submitting content for order production, you grant Kamali Gifts a limited, non-exclusive, royalty-free license to use such content solely for fulfilling your specific order.
-              </p>
+              <ul className="policy-ul">
+                <li>Returns and replacements are accepted only for products that are damaged, defective, or incorrectly supplied, subject to verification.</li>
+                <li>Claims regarding damaged, defective, or incorrect products must be reported within the specified return window along with supporting photographs and parcel opening videos.</li>
+              </ul>
             </div>
 
             {/* 7 */}
             <div className="policy-section" id="tc-7">
               <div className="policy-section-header">
                 <div className="policy-section-num">7</div>
-                <h2>Prohibited Activities</h2>
+                <h2>Shipping Charges</h2>
               </div>
-              <p>You agree not to:</p>
               <ul className="policy-ul">
-                <li>Use our platform for any unlawful purpose or in violation of applicable laws or regulations</li>
-                <li>Submit false, misleading, or fraudulent information including fake delivery addresses</li>
-                <li>Engage in unauthorized scraping, crawling, or systematic data extraction from our website</li>
-                <li>Attempt to gain unauthorized access to our systems, servers, or other user accounts</li>
-                <li>Submit offensive, hateful, defamatory, or sexually explicit content for customization</li>
-                <li>Resell our products for commercial purposes without prior written consent from Kamali Gifts</li>
-                <li>Misuse our return, exchange, or refund policies through fraudulent claims</li>
-                <li>Initiate chargebacks through Razorpay for valid, fulfilled orders without first contacting our support team</li>
+                <li>Shipping charges, if applicable, are <strong>non-refundable</strong> except where an incorrect or damaged product has been delivered by us.</li>
               </ul>
             </div>
 
@@ -198,42 +156,35 @@ const TermsConditions = () => {
             <div className="policy-section" id="tc-8">
               <div className="policy-section-header">
                 <div className="policy-section-num">8</div>
-                <h2>Disclaimer of Warranties</h2>
+                <h2>Order Refusal &amp; Cancellation</h2>
               </div>
-              <p>
-                Our products and services are provided "as is" and "as available." While we strive for the highest quality in every customized and standard product, Kamali Gifts does not warrant that products will always match digital previews exactly due to natural variations in screen color calibration, printing substrates, and material batches. Slight color or texture variations are not considered defects.
-              </p>
-              <p>
-                Delivery timelines provided are estimates facilitated through <strong>Shiprocket</strong> and its associated courier partners. Kamali Gifts does not guarantee delivery by a specific date and is not liable for delays caused by courier operations, weather events, public holidays, or force majeure circumstances.
-              </p>
+              <ul className="policy-ul">
+                <li>We reserve the right to refuse, cancel, or limit any order if fraudulent activity, pricing errors, stock unavailability, or other operational issues are identified.</li>
+              </ul>
             </div>
 
             {/* 9 */}
             <div className="policy-section" id="tc-9">
               <div className="policy-section-header">
                 <div className="policy-section-num">9</div>
-                <h2>Limitation of Liability</h2>
+                <h2>Promotional Use of Content</h2>
               </div>
-              <p>
-                To the maximum extent permitted by applicable law, Kamali Gifts shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from the use or inability to use our services, products, or information on this website.
-              </p>
-              <p>
-                Our total liability for any claim arising from an order shall not exceed the total value of that specific order as paid by the customer. We are not responsible for delays, losses, or damages caused by third-party services including Razorpay or Shiprocket, whose own liability terms apply.
-              </p>
+              <div className="policy-highlight">
+                <p>
+                  With customer consent, we may use product photographs, customer reviews, testimonials, first names, and city/state/country information for promotional and marketing purposes on our website, social media platforms, advertisements, and other marketing materials. Sensitive personal information will never be disclosed.
+                </p>
+              </div>
             </div>
 
             {/* 10 */}
             <div className="policy-section" id="tc-10">
               <div className="policy-section-header">
                 <div className="policy-section-num">10</div>
-                <h2>Governing Law & Dispute Resolution</h2>
+                <h2>Intellectual Property</h2>
               </div>
-              <p>
-                These Terms shall be governed by and construed in accordance with the laws of India, including the Consumer Protection Act 2019 and the Information Technology Act 2000.
-              </p>
-              <p>
-                Any disputes arising from or relating to these Terms shall first be attempted to be resolved through good-faith negotiation. If unresolved within 30 days of notice, disputes shall be subject to the exclusive jurisdiction of competent courts in Tamil Nadu, India. Consumer disputes may also be referred to the appropriate Consumer Disputes Redressal Forum under Indian law.
-              </p>
+              <ul className="policy-ul">
+                <li>All website content, including images, logos, designs, text, and branding, remains the intellectual property of <strong>Kamali Gifts Factory</strong> and may not be copied, reproduced, or distributed without prior written permission.</li>
+              </ul>
             </div>
 
             {/* 11 */}
@@ -243,7 +194,7 @@ const TermsConditions = () => {
                 <h2>Amendments</h2>
               </div>
               <p>
-                We reserve the right to modify these Terms at any time to reflect changes in our business practices, legal requirements, or service offerings. Updated Terms will be published on our website with a revised effective date. For material changes, we will provide at least 7 days' notice via email or a website banner. Continued use of our services after the effective date of such changes constitutes your acceptance of the amended Terms.
+                Kamali Gifts Factory reserves the right to modify these Terms &amp; Conditions at any time without prior notice. Updated terms will be posted on this page and will become effective immediately upon publication.
               </p>
             </div>
 
@@ -253,16 +204,15 @@ const TermsConditions = () => {
                 <div className="policy-section-num">12</div>
                 <h2>Contact</h2>
               </div>
-              <p>For legal or compliance-related queries:</p>
+              <p>For any queries related to these Terms &amp; Conditions:</p>
               <div className="policy-contact-box">
                 <div>
-                  <h3>Legal Queries</h3>
-                  <p>Kamali Gifts legal & compliance team.</p>
+                  <h3>Kamali Gifts Factory</h3>
+                  <p>Mon–Sat, 9 AM – 6 PM IST.</p>
                 </div>
                 <div className="policy-contact-items">
-                  <div className="policy-contact-item"><span>Email</span> legal@kamaligifts.com</div>
-                  <div className="policy-contact-item"><span>Phone</span> +91-XXXXX-XXXXX</div>
-                  <div className="policy-contact-item"><span>Hours</span> Mon–Sat, 9 AM – 6 PM IST</div>
+                  <div className="policy-contact-item"><span>Email</span> kamalireturngifts@gmail.com</div>
+                  <div className="policy-contact-item"><span>WhatsApp</span> +91 73388 14319</div>
                 </div>
               </div>
             </div>
@@ -271,6 +221,7 @@ const TermsConditions = () => {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               These Terms were last reviewed and updated in June 2026.
             </div>
+
           </div>
         </div>
       </LayoutOne>
