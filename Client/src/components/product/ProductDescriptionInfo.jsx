@@ -297,9 +297,9 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, oosS
     <div className="pdp-attr-group">
       <div className="pdp-attr-label">
         <span className="pdp-attr-key">{attrKey}</span>
-        {selectedValue && (
+        {/* {selectedValue && (
           <span className="pdp-attr-selected">— {selectedValue}</span>
-        )}
+        )} */}
       </div>
       <div className={`pdp-attr-options${isColour ? " is-colour" : ""}${allCompact ? " is-size" : ""}`}>
         {[...allValues].map(val => {
