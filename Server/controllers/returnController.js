@@ -30,6 +30,7 @@ const VALID_RETURN_STATUSES = [
   "pending_review", "approved", "rejected", "pickup_scheduled",
   "picked_up", "inspection_completed", "refund_initiated",
   "refund_completed", "replacement_shipped", "replacement_delivered",
+  "cancelled",
 ];
 
 const returnInclude = [
@@ -372,7 +373,9 @@ const getReturnByIdAdmin = async (req, res, next) => {
 // ── PATCH /api/returns/admin/:id/status — Admin: update status ───────────────
 const updateReturnStatus = async (req, res, next) => {
   try {
-    const { status, admin_notes } = req.body;
+    const { status } = req.body;
+    const admin_notes = req.body.admin_notes || req.body.adminNote || req.body.adminNotes;
+
     if (status && !VALID_RETURN_STATUSES.includes(status))
       return res.status(400).json({ message: "Invalid status value" });
 
@@ -381,6 +384,9 @@ const updateReturnStatus = async (req, res, next) => {
 
     if (status)      returnRequest.status     = status;
     if (admin_notes) returnRequest.adminNotes = admin_notes;
+    if (status === "rejected" && admin_notes) {
+      returnRequest.rejectedReason = admin_notes;
+    }
     await returnRequest.save();
 
     // Send email if status changed
@@ -393,6 +399,7 @@ const updateReturnStatus = async (req, res, next) => {
           order:     returnRequest.order,
           orderItem: returnRequest.orderItem,
           status,
+          extra:     status === "rejected" ? { rejectedReason: admin_notes } : {},
         });
       } catch (emailErr) {
         console.error("[Return Email] Status update email failed:", emailErr.message);

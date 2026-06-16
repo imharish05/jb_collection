@@ -38,7 +38,7 @@ const ReturnTracking = () => {
 
   const getActiveStageIndex = (status) => {
     if (!status) return 0;
-    if (status === "rejected") return -1;
+    if (status === "rejected" || status === "cancelled") return -1;
     
     // Map status strings to stages
     if (status === "pending_review") return 0;
@@ -116,7 +116,14 @@ const ReturnTracking = () => {
                 {returnReq.status === "rejected" && (
                   <div className="return-rejection-card">
                     <h6>Request Rejected</h6>
-                    <p>Reason: {returnReq.rejectedReason || "No details provided by administration"}</p>
+                    <p>Reason: {returnReq.rejectedReason || returnReq.adminNotes || "No details provided by administration"}</p>
+                  </div>
+                )}
+
+                {returnReq.status === "cancelled" && (
+                  <div className="return-rejection-card" style={{ backgroundColor: "#fef2f2", borderColor: "#fca5a5" }}>
+                    <h6 style={{ color: "#b91c1c" }}>Request Cancelled</h6>
+                    <p style={{ color: "#7f1d1d", margin: 0 }}>This return/replacement request has been cancelled.</p>
                   </div>
                 )}
 
@@ -162,7 +169,7 @@ const ReturnTracking = () => {
                   )}
                 </div>
 
-                {returnReq.status !== "rejected" && (
+                {returnReq.status !== "rejected" && returnReq.status !== "cancelled" && (
                   <div className="return-tracking-card">
                     <h5>Tracking Lifecycle</h5>
                     <div className="return-stepper">

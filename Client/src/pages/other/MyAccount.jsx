@@ -513,7 +513,7 @@ const toggleVisibility = (field) => {
                                 const withinReturn = deliveredHours <= 72;
                                 const isReturnable = item.product ? (!item.product.isNonReturnable && !item.product.isCustomisable) : true;
                                 const itemReturns = item.returns || [];
-                                const activeReturn = itemReturns.find(r => r.status !== "rejected");
+                                const activeReturn = itemReturns[0];
 
                                 const statusLabels = {
                                   pending_review: "Under Review", approved: "Approved", rejected: "Rejected",
@@ -521,6 +521,7 @@ const toggleVisibility = (field) => {
                                   inspection_completed: "Inspection Done", refund_initiated: "Refund Initiated",
                                   refund_completed: "Refund Completed", replacement_shipped: "Replacement Shipped",
                                   replacement_delivered: "Replacement Delivered",
+                                  cancelled: "Cancelled",
                                 };
 
                                 const remHrsTotal = Math.max(0, 72 - deliveredHours);

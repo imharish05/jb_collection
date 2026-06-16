@@ -652,8 +652,8 @@ const sendReturnNotificationEmail = async ({ returnRequest, user, order, orderIt
   const orderData = asPlain(order || retData.order || {});
   const itemData = asPlain(orderItem || retData.orderItem || {});
 
-  // normalize status key (pending_review -> return_submitted, else use status directly)
-  const statusKey = status === "pending_review" ? "return_submitted" : status;
+  // normalize status key (pending_review -> return_submitted, return_rejected -> rejected, else use status directly)
+  const statusKey = status === "pending_review" ? "return_submitted" : (status === "return_rejected" ? "rejected" : status);
   const config = RETURN_EMAIL_CONFIG[statusKey];
 
   if (!config) {

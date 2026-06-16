@@ -329,9 +329,20 @@ export default function ReturnDetail() {
                   outline: 'none', cursor: 'pointer',
                 }}>
                 <option value="">— Select next status —</option>
-                {Object.entries(STATUS_LABELS).map(([k, v]) => (
-                  <option key={k} value={k}>{v}</option>
-                ))}
+                {Object.entries(STATUS_LABELS)
+                  .filter(([k]) => {
+                    if (['pending_review', 'approved', 'rejected', 'cancelled'].includes(k)) return true;
+                    if (r?.returnType === 'refund') {
+                      return ['pickup_scheduled', 'picked_up', 'inspection_completed', 'refund_initiated', 'refund_completed'].includes(k);
+                    }
+                    if (r?.returnType === 'replacement') {
+                      return ['pickup_scheduled', 'picked_up', 'inspection_completed', 'replacement_shipped', 'replacement_delivered'].includes(k);
+                    }
+                    return true;
+                  })
+                  .map(([k, v]) => (
+                    <option key={k} value={k}>{v}</option>
+                  ))}
               </select>
               <textarea
                 rows={3}
@@ -414,14 +425,20 @@ export default function ReturnDetail() {
           )}
 
           {/* Admin notes history */}
-          {r.adminNotes?.length > 0 && (
+          {r.adminNotes && (
             <Section title="Admin Notes">
-              {r.adminNotes.map((n, i) => (
-                <div key={i} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px', marginBottom: '8px', fontSize: '13px', color: '#374151' }}>
-                  <div style={{ color: '#6b7280', fontSize: '11px', marginBottom: '4px', fontWeight: 600 }}>{fmt(n.at)}</div>
-                  {n.note}
-                </div>
-              ))}
+              <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#374151' }}>
+                {Array.isArray(r.adminNotes) ? (
+                  r.adminNotes.map((n, i) => (
+                    <div key={i} style={{ marginBottom: i < r.adminNotes.length - 1 ? '8px' : 0 }}>
+                      <div style={{ color: '#6b7280', fontSize: '11px', marginBottom: '4px', fontWeight: 600 }}>{fmt(n.at)}</div>
+                      {n.note}
+                    </div>
+                  ))
+                ) : (
+                  typeof r.adminNotes === 'string' ? r.adminNotes : JSON.stringify(r.adminNotes)
+                )}
+              </div>
             </Section>
           )}
         </div>

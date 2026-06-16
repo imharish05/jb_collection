@@ -61,7 +61,8 @@ const Return = sequelize.define(
         "refund_initiated",
         "refund_completed",
         "replacement_shipped",
-        "replacement_delivered"
+        "replacement_delivered",
+        "cancelled"
       ),
       defaultValue: "pending_review",
     },

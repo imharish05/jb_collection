@@ -126,7 +126,7 @@ const OrderDetails = () => {
     const isReturnable = item.product ? (!item.product.isNonReturnable && !item.product.isCustomisable) : true;
     
     const returns = item.returns || [];
-    const activeReturn = returns.find(r => r.status !== "rejected");
+    const activeReturn = returns[0];
     const hasExistingReturn = !!activeReturn;
 
     if (hasExistingReturn) {
@@ -141,6 +141,7 @@ const OrderDetails = () => {
         refund_completed: "Refund Completed",
         replacement_shipped: "Replacement Shipped",
         replacement_delivered: "Replacement Delivered",
+        cancelled: "Cancelled",
       };
       return (
         <div className="item-return-status-section" style={{ marginTop: "10px" }}>
