@@ -237,7 +237,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
                
                
                 <li><Link to="/shipping-policy">Shipping Policy</Link></li>
-                <li><Link to="/exchange-policy">Exchange & Returns</Link></li>
+                <li><Link to="/exchange-policy">Refund & Return Policy</Link></li>
                 <li><Link to="/privacy-policy">Privacy Policy</Link></li>
                 <li><Link to="/payment-policy">Payment Policy</Link></li>
                 <li><Link to="/terms-conditions">Terms & Conditions</Link></li>
