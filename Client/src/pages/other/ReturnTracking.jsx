@@ -302,16 +302,24 @@ const ReturnTracking = () => {
                     <h5>Submitted Proof of Issue</h5>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "12px", marginTop: "10px" }}>
                       {returnReq.media.map((med, idx) => {
+                        const getMediaUrl = (url) => {
+                          if (!url) return "";
+                          if (url.startsWith("http://") || url.startsWith("https://")) return url;
+                          const imgHost = process.env.REACT_APP_IMG_URL || "";
+                          const clean = url.replace(/^\//, "");
+                          return `${imgHost}/${clean}`;
+                        };
+                        const resolvedUrl = getMediaUrl(med.mediaUrl);
                         if (med.mediaType === "video") {
                           return (
                             <div key={idx} style={{ gridColumn: "span 2" }}>
-                              <video src={med.mediaUrl} controls style={{ width: "100%", borderRadius: "4px", border: "1px solid #e5e7eb" }} />
+                              <video src={resolvedUrl} controls style={{ width: "100%", borderRadius: "4px", border: "1px solid #e5e7eb" }} />
                             </div>
                           );
                         } else {
                           return (
-                            <a href={med.mediaUrl} target="_blank" rel="noopener noreferrer" key={idx}>
-                              <img src={med.mediaUrl} alt="proof" style={{ width: "100%", borderRadius: "4px", border: "1px solid #e5e7eb", cursor: "zoom-in" }} />
+                            <a href={resolvedUrl} target="_blank" rel="noopener noreferrer" key={idx}>
+                              <img src={resolvedUrl} alt="proof" style={{ width: "100%", borderRadius: "4px", border: "1px solid #e5e7eb", cursor: "zoom-in" }} />
                             </a>
                           );
                         }

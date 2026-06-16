@@ -44,9 +44,45 @@ const STATUS_COLORS = {
   cancelled:             { bg: '#fee2e2', color: '#b91c1c' },
 };
 
-// ── Utility ──────────────────────────────────────────────────────────────────
+const IMG_URL = process.env.REACT_APP_IMG_URL || 'http://localhost:5000';
 const fmt = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 const FALLBACK = 'https://via.placeholder.com/80x80?text=IMG';
+
+const getOrderItemImage = (img) => {
+  if (!img) return FALLBACK;
+  let raw = img;
+  if (Array.isArray(img)) {
+    raw = img[0];
+  } else if (typeof img === 'string') {
+    try {
+      const parsed = JSON.parse(img);
+      raw = Array.isArray(parsed) ? parsed[0] : parsed;
+    } catch (e) {
+      raw = img;
+    }
+  } else if (typeof img === 'object') {
+    raw = Object.values(img)[0];
+  }
+
+  if (!raw || typeof raw !== 'string') return FALLBACK;
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  
+  if (raw.startsWith('/assets') || raw.startsWith('assets')) {
+    const cleanAssets = raw.replace(/^\//, "");
+    const publicUrl = process.env.PUBLIC_URL || '';
+    return `${publicUrl}/${cleanAssets}`;
+  }
+
+  const clean = raw.replace(/^\//, "").replace(/^uploads\//, "");
+  return `${IMG_URL}/uploads/${clean}`;
+};
+
+const getReturnMediaUrl = (mediaUrl) => {
+  if (!mediaUrl) return FALLBACK;
+  if (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://')) return mediaUrl;
+  const clean = mediaUrl.replace(/^\//, "");
+  return `${IMG_URL}/${clean}`;
+};
 
 function Section({ title, children }) {
   return (
@@ -120,7 +156,12 @@ export default function ReturnDetail() {
 
   if (!data) return <div style={{ color: '#ef4444', padding: '40px', textAlign: 'center', fontWeight: 600 }}>Return not found.</div>;
 
-  const { returnRequest: r, refunds, reverseShipment, media } = data;
+  const r = data;
+  const refundObj = data.refund;
+  const reverseShipment = data.reverseShipment;
+  const media = data.media;
+  const refundList = refundObj ? [refundObj] : [];
+
   const flow = STATUS_FLOW[r?.returnType] || STATUS_FLOW.refund;
   const currentIdx = flow.indexOf(r?.status);
 
@@ -221,7 +262,7 @@ export default function ReturnDetail() {
           <Section title="Order Item">
             <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
               <img
-                src={r.orderItem?.image || FALLBACK}
+                src={getOrderItemImage(r.orderItem?.image)}
                 alt={r.orderItem?.productName}
                 onError={e => { e.target.src = FALLBACK; }}
                 style={{ width: '80px', height: '80px', borderRadius: '10px', objectFit: 'cover', background: '#f3f4f6', border: '1px solid #e5e7eb' }}
@@ -237,10 +278,10 @@ export default function ReturnDetail() {
 
           {/* Customer info */}
           <Section title="Customer">
-            <InfoRow label="Name"     value={r.orderItem?.order?.user?.name} />
-            <InfoRow label="Email"    value={r.orderItem?.order?.user?.email} />
-            <InfoRow label="Phone"    value={r.orderItem?.order?.user?.phone} />
-            <InfoRow label="Payment"  value={r.orderItem?.order?.paymentMethod} />
+            <InfoRow label="Name"     value={r.user?.name} />
+            <InfoRow label="Email"    value={r.user?.email} />
+            <InfoRow label="Phone"    value={r.user?.phone} />
+            <InfoRow label="Payment"  value={r.order?.paymentMethod} />
           </Section>
 
           {/* Reverse shipment */}
@@ -260,15 +301,15 @@ export default function ReturnDetail() {
           )}
 
           {/* Refunds */}
-          {refunds?.length > 0 && (
+          {refundList.length > 0 && (
             <Section title="Refund Records">
-              {refunds.map((rf, i) => (
+              {refundList.map((rf, i) => (
                 <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '12px 16px', marginBottom: '8px', background: '#f9fafb' }}>
-                  <InfoRow label="Method"      value={rf.method} />
-                  <InfoRow label="Amount"      value={rf.amount ? `₹${rf.amount}` : null} />
-                  <InfoRow label="Status"      value={rf.status} />
+                  <InfoRow label="Method"      value={rf.refundMode} />
+                  <InfoRow label="Amount"      value={rf.refundAmount ? `₹${rf.refundAmount}` : null} />
+                  <InfoRow label="Status"      value={rf.refundStatus} />
                   <InfoRow label="Razorpay ID" value={rf.razorpayRefundId} />
-                  <InfoRow label="Note"        value={rf.note} />
+                  <InfoRow label="Note"        value={rf.manualRefundNotes} />
                   <InfoRow label="Initiated"   value={fmt(rf.createdAt)} />
                 </div>
               ))}
@@ -345,25 +386,29 @@ export default function ReturnDetail() {
           {media?.length > 0 && (
             <Section title={`Evidence Media (${media.length})`}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                {media.map((m, i) => (
-                  <div key={i} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setMediaOpen(m.url || m.filePath)}>
-                    {m.fileType?.startsWith('video') ? (
-                      <div style={{
-                        width: '100%', paddingBottom: '100%', background: '#f3f4f6', borderRadius: '8px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
-                        border: '1px solid #e5e7eb',
-                      }}>
-                        <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: '24px', color: '#4b5563' }}>▶</span>
-                      </div>
-                    ) : (
-                      <img
-                        src={m.url || m.filePath} alt=""
-                        onError={e => { e.target.src = FALLBACK; }}
-                        style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'block' }}
-                      />
-                    )}
-                  </div>
-                ))}
+                {media.map((m, i) => {
+                  const resolvedUrl = getReturnMediaUrl(m.mediaUrl);
+                  const isVideo = m.mediaType === "video";
+                  return (
+                    <div key={i} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setMediaOpen(resolvedUrl)}>
+                      {isVideo ? (
+                        <div style={{
+                          width: '100%', paddingBottom: '100%', background: '#f3f4f6', borderRadius: '8px',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
+                          border: '1px solid #e5e7eb',
+                        }}>
+                          <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: '24px', color: '#4b5563' }}>▶</span>
+                        </div>
+                      ) : (
+                        <img
+                          src={resolvedUrl} alt=""
+                          onError={e => { e.target.src = FALLBACK; }}
+                          style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'block' }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </Section>
           )}

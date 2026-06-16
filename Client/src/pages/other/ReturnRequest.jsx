@@ -52,7 +52,7 @@ const ReturnRequest = () => {
   const [loading, setLoading] = useState(true);
 
   // Form states
-  const [returnType, setReturnType] = useState("refund");
+  const [returnType, setReturnType] = useState(searchParams.get("type") || "refund");
   const [reason, setReason] = useState("");
   const [returnQuantity, setReturnQuantity] = useState(1);
   const [comments, setComments] = useState("");
