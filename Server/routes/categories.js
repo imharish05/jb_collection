@@ -6,7 +6,8 @@ const fs = require("fs");
 const { protect, adminOnly } = require("../middleware/auth");
 
 const { getNav, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory,
-        getEvents, getEventById, createEvent, updateEvent, deleteEvent } = require("../controllers/categoryController");
+        getEvents, getEventById, createEvent, updateEvent, deleteEvent,
+        getCombos, getComboById, createCombo, updateCombo, deleteCombo } = require("../controllers/categoryController");
 const {
   getAllSubCategories, getSubCategoryById, createSubCategory, updateSubCategory, deleteSubCategory
 } = require("../controllers/subCategoryController");
@@ -31,6 +32,16 @@ const eventStorage = multer.diskStorage({
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
 const uploadEvent = multer({ storage: eventStorage });
+
+// Add at the top with other upload dirs
+const comboUploadDir = path.join(__dirname, "../uploads/combos");
+if (!fs.existsSync(comboUploadDir)) fs.mkdirSync(comboUploadDir, { recursive: true });
+
+const comboStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, comboUploadDir),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
+});
+const uploadCombo = multer({ storage: comboStorage });
 
 router.get("/", getNav);
 router.get("/categories", getCategories);
