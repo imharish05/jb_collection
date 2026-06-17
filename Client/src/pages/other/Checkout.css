@@ -1118,13 +1118,14 @@
   border-radius: 4px;
   padding: 2px 7px;
   display: inline-block;
+  align-self: flex-start;   /* ← stops the flex parent from stretching it */
+  width: fit-content;       /* ← belt-and-suspenders: sizes to content */
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-top: 1px;
 }
-
 .kco-item-price-row {
   display: flex;
   align-items: center;
