@@ -65,7 +65,6 @@ export default function InventorySettingsModal({ onClose }) {
 
   const highN   = parseInt(high)   || 0;
   const mediumN = parseInt(medium) || 0;
-  const lowN    = parseInt(low)    || 0;
 
   return (
     <div style={{
@@ -103,10 +102,9 @@ export default function InventorySettingsModal({ onClose }) {
         {/* Preview bands */}
         <div style={{ padding: "12px 22px 0", display: "flex", gap: 6, flexWrap: "wrap" }}>
           {[
-            { label: `High Stock`, hint: `≥ ${highN}`, dot: "#22c55e", bg: "#dcfce7", color: "#15803d" },
-            { label: `Medium`,     hint: `${mediumN}–${highN - 1}`, dot: "#3b82f6", bg: "#dbeafe", color: "#1d4ed8" },
-            { label: `Low`,        hint: `${lowN}–${mediumN - 1}`, dot: "#f97316", bg: "#ffedd5", color: "#c2410c" },
-            { label: `Out`,        hint: `= 0`, dot: "#ef4444", bg: "#fee2e2", color: "#b91c1c" },
+            { label: `In Stock`,  hint: `≥ ${highN}`,        dot: "#45b369", bg: "#dcfce7", color: "#15803d" },
+            { label: `Medium`,    hint: `${mediumN}–${highN - 1}`, dot: "#f97316", bg: "#ffedd5", color: "#c2410c" },
+            { label: `Low / Out`, hint: `< ${mediumN}`,      dot: "#ef4444", bg: "#fee2e2", color: "#b91c1c" },
           ].map(b => (
             <span key={b.label} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: b.bg, color: b.color, fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 20 }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: b.dot }} />

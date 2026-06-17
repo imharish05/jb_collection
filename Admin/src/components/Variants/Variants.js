@@ -147,9 +147,7 @@ export default function Variants({ showToast }) {
   const stockColor = (qty) => {
     const high   = invSettings?.highStockThreshold   ?? 51;
     const medium = invSettings?.mediumStockThreshold  ?? 11;
-    const low    = invSettings?.lowStockThreshold     ?? 1;
     if (qty === 0)        return KM.red;
-    if (qty < low)        return KM.red;
     if (qty < medium)     return KM.red;
     if (qty < high)       return '#F59E0B';
     return KM.green;

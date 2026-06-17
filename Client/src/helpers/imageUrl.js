@@ -11,11 +11,14 @@ const IMG_URL = process.env.REACT_APP_IMG_URL || "";
  */
 export function getImgUrl(img) {
   if (!img) return "";
+  // Some fields store image as array — take the first entry
+  const src = Array.isArray(img) ? (img[0] || "") : img;
+  if (!src || typeof src !== "string") return "";
   // Already absolute
-  if (img.startsWith("http://") || img.startsWith("https://")) return img;
+  if (src.startsWith("http://") || src.startsWith("https://")) return src;
   // Static legacy asset (from public folder)
-  if (img.startsWith("/assets")) return process.env.PUBLIC_URL + img;
+  if (src.startsWith("/assets")) return process.env.PUBLIC_URL + src;
   // Backend-stored relative path: strip leading slash + "uploads/" prefix
-  const clean = img.replace(/^\//, "").replace(/^uploads\//, "");
+  const clean = src.replace(/^\//, "").replace(/^uploads\//, "");
   return `${IMG_URL}/uploads/${clean}`;
 }

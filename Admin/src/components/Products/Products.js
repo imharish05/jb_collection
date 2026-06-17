@@ -267,9 +267,7 @@ export default function Products({ showToast }) {
   const stockColor = (q) => {
     const high   = invSettings?.highStockThreshold   ?? 51;
     const medium = invSettings?.mediumStockThreshold  ?? 11;
-    const low    = invSettings?.lowStockThreshold     ?? 1;
-    if (q === 0)    return '#dc2626';
-    if (q < low)    return '#dc2626';
+    if (q === 0)    return '#EF4444';
     if (q < medium) return '#EF4444';
     if (q < high)   return '#F59E0B';
     return '#39B54A';

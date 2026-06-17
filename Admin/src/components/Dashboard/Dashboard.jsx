@@ -29,15 +29,13 @@ export default function Dashboard() {
   // Settings-aware stock helpers
   const stockColor = (s) => {
     if (s === 0) return '#ef4444';
-    if (s < thresholds.low) return '#ef4444';
     if (s < thresholds.medium) return '#ef4444';
     if (s < thresholds.high) return '#f97316';
     return '#45b369';
   };
   const stockLabel = (s) => {
-    if (s === 0) return 'Out';
-    if (s < thresholds.low) return 'Out';
-    if (s < thresholds.medium) return 'Low Stock';
+    if (s === 0) return 'Low / Out';
+    if (s < thresholds.medium) return 'Low / Out';
     if (s < thresholds.high) return 'Medium';
     return 'In Stock';
   };

@@ -123,7 +123,12 @@ const ShopGridStandard = () => {
 
   useEffect(() => {
     if (isComboMode && reduxCurrentCombo?.children) {
-      setChildCombos(reduxCurrentCombo.children.filter(c => c.isActive));
+      const rootSlug = reduxCurrentCombo.slug || reduxCurrentCombo.id;
+      setChildCombos(
+        reduxCurrentCombo.children
+          .filter(c => c.isActive)
+          .map(c => ({ ...c, rootComboId: rootSlug, slug: rootSlug }))
+      );
     }
   }, [reduxCurrentCombo, isComboMode]);
 

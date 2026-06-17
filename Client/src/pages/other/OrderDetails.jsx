@@ -333,6 +333,34 @@ const couponDiscount =
     order.couponDiscount,
     order.coupon_discount
   ) ?? 0;
+
+  // ── Paid / Due breakdown ──────────────────────────────────────────────────
+  // advancePaid = paid online (Razorpay). For PREPAID this equals totalAmount.
+  // codAmount   = remaining amount to collect at delivery (0 for PREPAID).
+  const paymentTypeNorm = String(order.paymentType || "").toUpperCase();
+  const isPrepaid = paymentTypeNorm === "PREPAID" || order.paymentStatus === "paid";
+  const paidAmount = firstAmount(order.advancePaid) ?? (isPrepaid ? totalAmount : 0);
+  const rawDueAmount = firstAmount(order.codAmount) ?? Math.max(0, totalAmount - paidAmount);
+  const dueAmount = order.codCollected ? 0 : rawDueAmount;
+  const paidLabel = paymentTypeNorm === "PARTIAL_COD" ? "Paid Online (Advance)" : "Amount Paid";
+  const dueLabel = dueAmount > 0 ? "Due at Delivery" : "Balance Due";
+
+  const paymentRows = [
+    paidAmount > 0 && {
+      key: "paid",
+      label: paidLabel,
+      value: formatCurrency(paidAmount),
+      className: "breakdown-row--paid",
+      footerClassName: "paid-line",
+    },
+    {
+      key: "due",
+      label: dueLabel,
+      value: formatCurrency(dueAmount),
+      className: dueAmount > 0 ? "breakdown-row--due" : "breakdown-row--due-clear",
+      footerClassName: dueAmount > 0 ? "due-line" : "due-line due-line--clear",
+    },
+  ].filter(Boolean);
   const priceRows = [
     discount > 0 && {
       key: "items-total",
@@ -424,6 +452,12 @@ const couponDiscount =
                         <span>Grand Total</span>
                         <strong>{formatCurrency(totalAmount)}</strong>
                       </div>
+                      {paymentRows.map((row) => (
+                        <div key={row.key} className={`breakdown-row ${row.className || ""}`}>
+                          <span>{row.label}</span>
+                          <strong className={row.valueClassName || ""}>{row.value}</strong>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
@@ -475,6 +509,12 @@ const couponDiscount =
                           <span>Grand Total</span>
                           <span>{formatCurrency(totalAmount)}</span>
                         </div>
+                        {paymentRows.map((row) => (
+                          <div key={row.key} className={`total-line ${row.footerClassName || ""}`}>
+                            <span>{row.label}</span>
+                            <span className={row.valueClassName || ""}>{row.value}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
