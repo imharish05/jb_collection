@@ -91,16 +91,16 @@ const OrderDetails = () => {
   };
 
   const handleCancelOrder = async () => {
-    if (!window.confirm("Are you sure you want to cancel this order?")) return;
     try {
+      cogoToast.loading("Cancelling order...", { position: "top-center" });
       await api.patch(`/returns/cancel-order/${order.referenceSlug || order.id}`);
-      cogoToast.success("Order cancelled successfully!");
+      cogoToast.success("Order cancelled successfully!", { position: "top-center" });
       // Reload order details
       const res = await api.get(`/orders/${order.referenceSlug || order.id}`);
       setOrder(res.data);
     } catch (err) {
       console.error(err);
-      cogoToast.error(err.response?.data?.message || "Failed to cancel order");
+      cogoToast.error(err.response?.data?.message || "Failed to cancel order", { position: "top-center" });
     }
   };
 

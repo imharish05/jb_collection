@@ -8,6 +8,7 @@ import api from "../../api/axios";
 import { submitReturnRequest } from "../../store/services/returnService";
 import cogoToast from "cogo-toast";
 import { getImgUrl } from "../../helpers/imageUrl";
+import { isColourKey, isHexColor } from "../../helpers/product";
 import "./ReturnRequest.css";
 
 const FALLBACK_IMG = "/assets/img/logo.png";
@@ -42,6 +43,77 @@ const getOrderItemImage = (img) => {
   if (!raw) return FALLBACK_IMG;
   if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
   return getImgUrl(raw);
+};
+
+const getOrderVariantAttrs = (item) => {
+  if (Array.isArray(item?.variantAttributes) && item.variantAttributes.length > 0) {
+    return item.variantAttributes.filter((attr) => attr?.key && attr?.value && attr.key !== "Custom Note");
+  }
+
+  if (!item?.selectedVariantName) return [];
+
+  const parts = String(item.selectedVariantName)
+    .split(/(?:\s*·\s*|\s*\/\s*)/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return parts.reduce((acc, part) => {
+    const idx = part.indexOf(":");
+    if (idx === -1) return acc;
+    const key = part.slice(0, idx).trim();
+    const value = part.slice(idx + 1).trim();
+    if (key && value) acc.push({ key, value });
+    return acc;
+  }, []);
+};
+
+const renderOrderVariantChips = (item) => {
+  const attrs = getOrderVariantAttrs(item);
+  if (!attrs.length) return null;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginTop: "6px" }}>
+      {attrs.map((attr, idx) => {
+        const key = attr.key;
+        const value = attr.value;
+        const isColour = isColourKey(key);
+        const showSwatch = isColour && isHexColor(value);
+
+        return (
+          <span
+            key={`${key}-${value}-${idx}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "#f7f7f7",
+              border: "1px solid #eee",
+              borderRadius: "999px",
+              padding: "2px 6px",
+            }}
+          >
+            <span style={{ fontSize: 11, color: "#888" }}>{key}:</span>
+            {showSwatch ? (
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  border: "1px solid #dcdcdc",
+                  backgroundColor: value,
+                  display: "inline-block",
+                  flexShrink: 0,
+                }}
+                title={value}
+              />
+            ) : (
+              <span style={{ fontSize: 11, color: "#444" }}>{value}</span>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
 };
 
 const ReturnRequest = () => {
@@ -89,7 +161,7 @@ const ReturnRequest = () => {
           return;
         }
         setItem(matchedItem);
-        setReturnQuantity(matchedItem.quantity || 1);
+        setReturnQuantity(Math.max(1, Number(matchedItem.quantity) || 1));
       })
       .catch((err) => {
         console.error(err);
@@ -148,6 +220,13 @@ const ReturnRequest = () => {
       return;
     }
 
+    const maxAllowedQty = Math.max(1, Number(item?.quantity) || 1);
+    const safeQty = Math.max(1, Math.min(maxAllowedQty, Number(returnQuantity) || 1));
+
+    if (safeQty !== Number(returnQuantity)) {
+      setReturnQuantity(safeQty);
+    }
+
     if (!videoFile && imageFiles.length === 0) {
       cogoToast.error("Please upload at least one proof (unboxing video or images)", { position: "top-center" });
       return;
@@ -161,7 +240,7 @@ const ReturnRequest = () => {
       formData.append("orderItemId", itemId);
       formData.append("returnType", returnType);
       formData.append("reason", reason);
-      formData.append("return_quantity", returnQuantity);
+      formData.append("return_quantity", safeQty);
       formData.append("comments", comments);
 
       if (videoFile) {
@@ -198,6 +277,9 @@ const ReturnRequest = () => {
     );
   }
 
+  const maxReturnQty = Math.max(1, Number(item?.quantity) || 1);
+  const itemVariantChips = renderOrderVariantChips(item);
+
   return (
     <Fragment>
       <SEO titleTemplate="Return Request" />
@@ -232,11 +314,15 @@ const ReturnRequest = () => {
                       <div className="rr-item-body">
                         <span className="rr-item-badge">Item Summary</span>
                         <h6 className="rr-item-name">{cleanProductName(item.productName)}</h6>
-                        <p className="rr-item-variant">
-                          Variant: <strong>{item.selectedVariantName || "Default"}</strong>
-                        </p>
+                        <div className="rr-item-variant">
+                          {itemVariantChips || (
+                            <p style={{ margin: 0 }}>
+                              Variant: <strong>{item.selectedVariantName || "Default"}</strong>
+                            </p>
+                          )}
+                        </div>
                         <p className="rr-item-meta">
-                          Quantity: {item.quantity} · Price: ₹{parseFloat(item.salesPrice || item.price).toFixed(2)}
+                          Quantity: {maxReturnQty} · Price: ₹{parseFloat(item.salesPrice || item.price).toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -318,9 +404,15 @@ const ReturnRequest = () => {
                       <input
                         type="number"
                         min="1"
-                        max={item?.quantity || 1}
+                        max={maxReturnQty}
                         value={returnQuantity}
-                        onChange={(e) => setReturnQuantity(parseInt(e.target.value, 10))}
+                        onChange={(e) => {
+                          const parsed = parseInt(e.target.value, 10);
+                          const next = Number.isNaN(parsed)
+                            ? 1
+                            : Math.max(1, Math.min(maxReturnQty, parsed));
+                          setReturnQuantity(next);
+                        }}
                         className="rr-input rr-input--narrow"
                         required
                       />
