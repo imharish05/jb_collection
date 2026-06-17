@@ -179,6 +179,11 @@ const getAllProducts = async (req, res, next) => {
         where: { isActive: true },
         include: [
           {
+            model: RootCombo,
+            as: "rootCombo",
+            attributes: ["id", "slug"],
+          },
+          {
             model: ChildComboProduct,
             as: "comboProducts",
             include: [
@@ -252,7 +257,7 @@ const getAllProducts = async (req, res, next) => {
           rating: 5.0,
           saleCount: 0,
           Variants: [],
-          slug: cc.id,
+          slug: cc.rootCombo?.slug || cc.rootComboId,
           comboProducts: cc.comboProducts
         };
       });

@@ -459,7 +459,7 @@ const ProductDescriptionInfo = ({
     };
   }, [product.id, localProduct]);
 
-  const currencySymbol = currency?.currencySymbol || "₹";
+  const currencySymbol = "₹";
   const hasNewVar = hasBackendVariants(localProduct);
   const hasOldVar = !hasNewVar && hasOldVariation(localProduct);
 
