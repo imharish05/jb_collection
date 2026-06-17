@@ -49,15 +49,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 10px 0;
-  border-bottom: 1px solid #f1f1f1;
-  color: #555;
+  padding: 9px 0;
+  border-bottom: 1px solid #f3f3f3;
+  color: #6b7280;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .breakdown-row strong {
   color: #1f2937;
   font-size: 14px;
+  font-weight: 700;
   white-space: nowrap;
 }
 .breakdown-row--coupon span,
@@ -99,6 +100,58 @@
   font-weight: 900;
 }
 
+/* Payment status — visually separated from the cost breakdown above,
+   and styled as calm pills so "paid" and "due" read at a glance. */
+.payment-status-block {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #ece6df;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.breakdown-row--paid,
+.breakdown-row--due,
+.breakdown-row--due-clear {
+  border-bottom: 0;
+  border-radius: 12px;
+  padding: 11px 14px;
+}
+.breakdown-row--paid {
+  background: #f0faf3;
+}
+.breakdown-row--paid span {
+  color: #15803d;
+  font-weight: 600;
+}
+.breakdown-row--paid strong {
+  color: #15803d;
+  font-size: 14px;
+}
+.breakdown-row--due {
+  background: #fff6ec;
+}
+.breakdown-row--due span {
+  color: #b45309;
+  font-weight: 600;
+}
+.breakdown-row--due strong {
+  color: #b45309;
+  font-size: 15px;
+  font-weight: 800;
+}
+.breakdown-row--due-clear {
+  background: #f6f7f8;
+}
+.breakdown-row--due-clear span {
+  color: #6b7280;
+  font-weight: 600;
+}
+.breakdown-row--due-clear strong {
+  color: #6b7280;
+  font-size: 14px;
+}
+
 /* Right Panel Tracker */
 .tracker-header-card { background: #fff; border-radius: 20px; padding: 30px; margin-bottom: 25px; }
 .tracker-steps-row { display: flex; justify-content: space-between; }
@@ -120,9 +173,13 @@
 
 /* Footer */
 .premium-total-footer { margin-top: 30px; background: #fafafa; padding: 25px; border-radius: 15px; }
-.total-line { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; color: #666; font-size: 14px; }
+.total-line { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 500; color: #6b7280; font-size: 14px; }
 .coupon-line { color: #16a34a; }
+.discount-line { color: #16a34a; }
 .grand-total {padding-top: 15px; margin-top: 15px; color: #000; font-weight: 900; }
+.paid-line { margin-top: 16px; padding-top: 16px; border-top: 1px dashed #e3ddd3; color: #15803d; font-weight: 700; }
+.due-line { color: #b45309; font-weight: 800; }
+.due-line.due-line--clear { color: #6b7280; font-weight: 600; }
 
 /* Mobile */
 @media (max-width: 991px) {
@@ -153,5 +210,3 @@
     white-space: nowrap;
   }
 }
-
-

@@ -342,7 +342,8 @@ const couponDiscount =
   const paidAmount = firstAmount(order.advancePaid) ?? (isPrepaid ? totalAmount : 0);
   const rawDueAmount = firstAmount(order.codAmount) ?? Math.max(0, totalAmount - paidAmount);
   const dueAmount = order.codCollected ? 0 : rawDueAmount;
-  const paidLabel = paymentTypeNorm === "PARTIAL_COD" ? "Paid Online (Advance)" : "Amount Paid";
+  const isPartialCod = paymentTypeNorm === "PARTIAL_COD";
+  const paidLabel = isPartialCod ? "Paid Online (Advance)" : "Amount Paid";
   const dueLabel = dueAmount > 0 ? "Due at Delivery" : "Balance Due";
 
   const paymentRows = [
@@ -353,7 +354,10 @@ const couponDiscount =
       className: "breakdown-row--paid",
       footerClassName: "paid-line",
     },
-    {
+    // Only Partial COD orders ever have a balance left to collect — UPI/Card/full
+    // prepaid orders are always fully settled, so we skip this row for them
+    // entirely rather than showing a redundant "Balance Due ₹0.00".
+    isPartialCod && {
       key: "due",
       label: dueLabel,
       value: formatCurrency(dueAmount),
@@ -452,12 +456,16 @@ const couponDiscount =
                         <span>Grand Total</span>
                         <strong>{formatCurrency(totalAmount)}</strong>
                       </div>
-                      {paymentRows.map((row) => (
-                        <div key={row.key} className={`breakdown-row ${row.className || ""}`}>
-                          <span>{row.label}</span>
-                          <strong className={row.valueClassName || ""}>{row.value}</strong>
+                      {paymentRows.length > 0 && (
+                        <div className="payment-status-block">
+                          {paymentRows.map((row) => (
+                            <div key={row.key} className={`breakdown-row ${row.className || ""}`}>
+                              <span>{row.label}</span>
+                              <strong className={row.valueClassName || ""}>{row.value}</strong>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
 
