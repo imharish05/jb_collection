@@ -13,10 +13,10 @@ export const fetchOrders = () => async (dispatch) => {
     }
 };
 
-export const changeOrderStatus = ({ id, status }) => async (dispatch) => {
+export const changeOrderStatus = ({ id, ...payload }) => async (dispatch) => {
     try {
-        await api.patch(`/orders/${id}/status`, { status });
-        dispatch(updateStatus({ id, status }));
+        await api.patch(`/orders/${id}/status`, payload);
+        dispatch(updateStatus({ id, ...payload }));
     } catch (err) {
         throw err;
     }

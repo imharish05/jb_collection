@@ -625,7 +625,7 @@ const updateOrderStatus = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   let transactionCommitted = false;
   try {
-    const { status, paymentStatus, trackingDetails } = req.body;
+    const { status, paymentStatus, trackingDetails, codCollected } = req.body;
     const order = await findOrderAny(req.params.id, { transaction, lock: true });
     if (!order) {
       await transaction.rollback();
@@ -644,6 +644,12 @@ const updateOrderStatus = async (req, res, next) => {
       order.status = newStatus;
     }
     if (paymentStatus) order.paymentStatus = paymentStatus;
+    if (codCollected !== undefined) {
+      order.codCollected = Boolean(codCollected);
+      if (order.codCollected && !paymentStatus) {
+        order.paymentStatus = "paid";
+      }
+    }
 
     const targetStatuses = ["cancelled", "returned", "rto"];
     if (statusChanged && targetStatuses.includes(newStatus.toLowerCase())) {

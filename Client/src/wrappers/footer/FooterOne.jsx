@@ -303,6 +303,16 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
             <span className="km-copyright">
               © {new Date().getFullYear()} Kamali Gifts & Crafts. All rights reserved.
             </span>
+            <span className="km-copyright">
+  Developed by{" "}
+  <a
+    href="https://saitechnosolutions.com/"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    Sai Techno Solutions
+  </a>
+</span>
           </div>
         </div>
       </div>

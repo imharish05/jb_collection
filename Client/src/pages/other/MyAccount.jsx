@@ -487,7 +487,7 @@ const toggleVisibility = (field) => {
                             if (!window.confirm("Cancel this order?")) return;
                             try {
                               const axios = await import("../../api/axios");
-                              await axios.default.patch(`/returns/cancel-order/${order.id}`);
+                              await axios.default.patch(`/returns/cancel-order/${order.referenceSlug || order.id}`);
                               cogoToast.success("Order cancelled!");
                               dispatch(fetchOrders());
                             } catch (err) {
@@ -499,7 +499,7 @@ const toggleVisibility = (field) => {
                           <div className="order-main-card" key={order.id}>
                             <div className="order-card-header">
                               <div className="header-left">
-                                <span className="order-label">Order</span>
+                                <span className="order-label">Order <strong style={{ fontFamily: 'monospace', fontSize: '12px' }}>#{order.referenceSlug || order.id}</strong></span>
                               </div>
                               <div className="header-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                                 <span className={`status-pill ${orderStatusLow || 'pending'}`}>{order.status || 'Pending'}</span>
@@ -551,7 +551,7 @@ const toggleVisibility = (field) => {
                                           <span className={`return-status-badge ${activeReturn.status}`}>
                                             {statusLabels[activeReturn.status] || activeReturn.status}
                                           </span>
-                                          <Link to={`/return-tracking/${activeReturn.id}`} className="btn-track-return">
+                                          <Link to={`/return-tracking/${activeReturn.referenceSlug || activeReturn.id}`} className="btn-track-return">
                                             Track Return
                                           </Link>
                                         </div>
@@ -574,10 +574,10 @@ const toggleVisibility = (field) => {
                                             Return Window: {remDays > 0 ? `${remDays}d ` : ""}{remHrs}h left
                                           </span>
                                           <div className="return-action-buttons" style={{ marginTop: "6px" }}>
-                                            <Link to={`/return-request?orderId=${order.id}&itemId=${item.id}`} className="btn-return-action" style={{ fontSize: "12px", padding: "6px 12px" }}>
+                                            <Link to={`/return-request?orderId=${order.referenceSlug || order.id}&itemId=${item.id}`} className="btn-return-action" style={{ fontSize: "12px", padding: "6px 12px" }}>
                                               Return
                                             </Link>
-                                            <Link to={`/return-request?orderId=${order.id}&itemId=${item.id}&type=replacement`} className="btn-replace-action" style={{ fontSize: "12px", padding: "6px 12px" }}>
+                                            <Link to={`/return-request?orderId=${order.referenceSlug || order.id}&itemId=${item.id}&type=replacement`} className="btn-replace-action" style={{ fontSize: "12px", padding: "6px 12px" }}>
                                               Replace
                                             </Link>
                                           </div>
@@ -592,7 +592,7 @@ const toggleVisibility = (field) => {
                               <div className="footer-left"><p>Placed on: <strong>{new Date(order.createdAt).toLocaleDateString()}</strong></p></div>
                               <div className="footer-right w-100 d-flex align-items-center justify-content-between">
                                 <span className="order-total-price">Total: ₹{order.totalAmount}</span>
-                                <Link to={`/order-details/${order.id}`} className="btn-view-order">Details</Link>
+                                <Link to={`/order-details/${order.referenceSlug || order.id}`} className="btn-view-order">Details</Link>
                               </div>
                             </div>
                           </div>

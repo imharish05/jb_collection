@@ -16,6 +16,7 @@ const {
 const { Op } = require("sequelize");
 const { shiprocketPost } = require("../utils/shiprocket");
 const { sendReturnNotificationEmail } = require("../utils/mailer");
+const { referenceWhere } = require("../utils/referenceSlugs");
 
 const razorpay = new Razorpay({
   key_id:     process.env.RAZORPAY_KEY_ID,
@@ -34,7 +35,7 @@ const VALID_RETURN_STATUSES = [
 ];
 
 const returnInclude = [
-  { model: Order,           as: "order",           attributes: ["id","status","totalAmount","paymentType","paymentMethod","razorpayPaymentId","advancePaid","shippingCharge","createdAt","updatedAt"] },
+  { model: Order,           as: "order",           attributes: ["id","status","totalAmount","paymentType","paymentMethod","razorpayPaymentId","advancePaid","shippingCharge","createdAt","updatedAt","referenceSlug"] },
   { model: OrderItem,       as: "orderItem",        attributes: ["id","productId","productName","image","quantity","price","salesPrice","selectedVariantName","variantAttributes"] },
   { model: User,            as: "user",             attributes: ["id","name","email","phone"] },
   { model: ReturnMedia,     as: "media" },
@@ -55,7 +56,7 @@ const createReturnRequest = async (req, res, next) => {
     } = req.body;
 
     // 1. Find order owned by this user
-    const order = await Order.findOne({ where: { id: orderId, userId: req.user.id } });
+    const order = await Order.findOne({ where: { ...referenceWhere(orderId), userId: req.user.id } });
     if (!order) return res.status(404).json({ message: "Order not found" });
 
     // 2. Order must be delivered
@@ -180,7 +181,10 @@ const getMyReturns = async (req, res, next) => {
 // ── GET /api/returns/:id — Customer: single return ────────────────────────────
 const getReturnById = async (req, res, next) => {
   try {
-    const returnRequest = await Return.findByPk(req.params.id, { include: returnInclude });
+    const returnRequest = await Return.findOne({
+      where: referenceWhere(req.params.id),
+      include: returnInclude,
+    });
     if (!returnRequest) return res.status(404).json({ message: "Return not found" });
     if (returnRequest.userId !== req.user.id)
       return res.status(403).json({ message: "Access denied" });
@@ -194,7 +198,7 @@ const getReturnById = async (req, res, next) => {
 const cancelOrder = async (req, res, next) => {
   try {
     const order = await Order.findOne({
-      where: { id: req.params.orderId, userId: req.user.id },
+      where: { ...referenceWhere(req.params.orderId), userId: req.user.id },
       include: [{ model: OrderItem, as: "items", include: [{ model: Product, as: "product" }] }],
     });
     if (!order) return res.status(404).json({ message: "Order not found" });
@@ -342,7 +346,8 @@ const getAllReturns = async (req, res, next) => {
 // ── GET /api/returns/admin/:id — Admin: return detail ────────────────────────
 const getReturnByIdAdmin = async (req, res, next) => {
   try {
-    const returnRequest = await Return.findByPk(req.params.id, {
+    const returnRequest = await Return.findOne({
+      where: referenceWhere(req.params.id),
       include: [
         {
           model: Order, as: "order",

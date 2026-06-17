@@ -176,7 +176,7 @@ export default function ReturnDetail() {
         </Link>
         <span style={{ color: '#d1d5db' }}>|</span>
         <h2 style={{ margin: 0, color: '#111827', fontSize: '18px', fontWeight: 700 }}>
-          Return #{r.id.substring(0, 8)}...
+          Return #{r.referenceSlug || r.id}
           <span style={{
             marginLeft: '12px', padding: '4px 12px', borderRadius: '20px', fontSize: '12px',
             background: STATUS_COLORS[r.status]?.bg || '#f3f4f6',
@@ -250,7 +250,7 @@ export default function ReturnDetail() {
         <div>
           {/* Request info */}
           <Section title="Request Details">
-            <InfoRow label="Request ID"    value={`#${r.id}`} />
+            <InfoRow label="Request ID"    value={`#${r.referenceSlug || r.id}`} />
             <InfoRow label="Type"          value={r.returnType === 'refund' ? 'Return (Refund)' : 'Replacement'} />
             <InfoRow label="Reason"        value={r.reason ? r.reason.replace(/_/g, ' ') : ''} />
             <InfoRow label="Description"   value={r.comments || r.description} />
@@ -271,7 +271,7 @@ export default function ReturnDetail() {
                 <InfoRow label="Product"    value={r.orderItem?.productName} />
                 <InfoRow label="Quantity"   value={r.orderItem?.quantity} />
                 <InfoRow label="Price"      value={r.orderItem?.price ? `₹${r.orderItem.price}` : null} />
-                <InfoRow label="Order ID"   value={r.orderItem?.orderId ? `ORD-${r.orderItem.orderId}` : null} />
+                <InfoRow label="Order ID"   value={r.order?.referenceSlug || r.order?.id || r.orderItem?.orderId} />
               </div>
             </div>
           </Section>
@@ -368,17 +368,37 @@ export default function ReturnDetail() {
               {/* Quick reject */}
               {r.status === 'pending_review' && (
                 <button
-                  onClick={async () => {
-                    if (!window.confirm('Reject this return request?')) return;
-                    setSubmitting(true);
-                    const tid = toast.loading('Rejecting…');
-                    try {
-                      await axios.patch(`/returns/admin/${id}/status`, { status: 'rejected', adminNote }, { headers });
-                      toast.success('Rejected', { id: tid });
-                      fetchDetail();
-                    } catch { toast.error('Failed', { id: tid }); }
-                    finally { setSubmitting(false); }
-                  }}
+                    onClick={() => {
+                      toast(
+                        (t) => (
+                          <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <strong>Reject this return request?</strong>
+                            <span style={{ fontSize: 12, color: '#aaa' }}>The customer will be notified of the rejection.</span>
+                            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                              <button
+                                onClick={async () => {
+                                  toast.dismiss(t.id);
+                                  setSubmitting(true);
+                                  const tid = toast.loading('Rejecting…');
+                                  try {
+                                    await axios.patch(`/returns/admin/${id}/status`, { status: 'rejected', adminNote }, { headers });
+                                    toast.success('Return request rejected', { id: tid });
+                                    fetchDetail();
+                                  } catch { toast.error('Failed to reject', { id: tid }); }
+                                  finally { setSubmitting(false); }
+                                }}
+                                style={{ padding: '5px 14px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 5, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
+                              >Reject</button>
+                              <button
+                                onClick={() => toast.dismiss(t.id)}
+                                style={{ padding: '5px 14px', background: '#374151', color: '#d1d5db', border: 'none', borderRadius: 5, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
+                              >Cancel</button>
+                            </div>
+                          </span>
+                        ),
+                        { duration: Infinity }
+                      );
+                    }}
                   style={{
                     background: 'var(--danger-50)', color: 'var(--danger-600)', border: '1px solid var(--danger-border)',
                     borderRadius: '8px', padding: '10px', fontWeight: 700, cursor: 'pointer',

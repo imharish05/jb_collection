@@ -93,10 +93,10 @@ const OrderDetails = () => {
   const handleCancelOrder = async () => {
     if (!window.confirm("Are you sure you want to cancel this order?")) return;
     try {
-      await api.patch(`/returns/cancel-order/${order.id}`);
+      await api.patch(`/returns/cancel-order/${order.referenceSlug || order.id}`);
       cogoToast.success("Order cancelled successfully!");
       // Reload order details
-      const res = await api.get(`/orders/${order.id}`);
+      const res = await api.get(`/orders/${order.referenceSlug || order.id}`);
       setOrder(res.data);
     } catch (err) {
       console.error(err);
@@ -160,7 +160,7 @@ const OrderDetails = () => {
             Return Status: {statusLabels[activeReturn.status] || activeReturn.status}
           </span>
           <div style={{ marginTop: "6px" }}>
-            <Link to={`/return-tracking/${activeReturn.id}`} style={{ color: "#db1a5d", fontWeight: 600, fontSize: "13px" }}>
+            <Link to={`/return-tracking/${activeReturn.referenceSlug || activeReturn.id}`} style={{ color: "#db1a5d", fontWeight: 600, fontSize: "13px" }}>
               <i className="fa fa-map-marker"></i> Track Return
             </Link>
           </div>
@@ -443,7 +443,7 @@ const couponDiscount =
                       </div>
                       <div className="info-group">
                         <label>Order ID</label>
-                        <p className="text-dark font-weight-bold">#{order.orderNumber || order.id}</p>
+                        <p className="text-dark font-weight-bold">#{order.referenceSlug || order.orderNumber || order.id}</p>
                       </div>
                     </div>
 

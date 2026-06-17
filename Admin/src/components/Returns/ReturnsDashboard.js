@@ -201,9 +201,9 @@ export default function ReturnsDashboard({ showToast }) {
                   Array.from(e.currentTarget.children).forEach(td => td.style.background = 'transparent');
                 }}
               >
-                <td style={{ padding: '12px 16px', color: '#6b7280', fontFamily: 'monospace', fontWeight: 600, borderLeft: idx > 0 ? 'none' : undefined }}>#{r.id ? String(r.id).substring(0, 8) : ''}...</td>
+                <td style={{ padding: '12px 16px', color: '#6b7280', fontFamily: 'monospace', fontWeight: 600, borderLeft: idx > 0 ? 'none' : undefined }}>#{r.referenceSlug || r.id}</td>
                 <td style={{ padding: '12px 16px', color: '#111827', fontWeight: 700, borderLeft: '1px solid #e5e7eb' }}>
-                  {r.order?.id ? `ORD-${String(r.order.id).substring(0, 8)}` : '—'}
+                  {r.order?.referenceSlug || r.order?.id || '—'}
                 </td>
                 <td style={{ padding: '12px 16px', color: '#374151', borderLeft: '1px solid #e5e7eb' }}>
                   <div style={{ fontWeight: 600 }}>{r.user?.name || '—'}</div>

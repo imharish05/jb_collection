@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import tableStyles from '../Dashboard/Dashboard.module.css';
 import styles from './DataTable.module.css';
 
@@ -65,9 +66,28 @@ export default function DataTable({
   const paginated = filtered.slice(startIndex, endIndex);
 
   const deleteRow = (id) => {
-    if (window.confirm('Are you sure?')) {
-      setRows((prev) => prev.filter((r) => r.id !== id));
-    }
+    toast(
+      (t) => (
+        <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <strong>Are you sure?</strong>
+          <span style={{ fontSize: 12, color: '#aaa' }}>This action cannot be undone.</span>
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                setRows((prev) => prev.filter((r) => r.id !== id));
+              }}
+              style={{ padding: '5px 14px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 5, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
+            >Delete</button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              style={{ padding: '5px 14px', background: '#374151', color: '#d1d5db', border: 'none', borderRadius: 5, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
+            >Cancel</button>
+          </div>
+        </span>
+      ),
+      { duration: Infinity }
+    );
   };
 
   const goToPage = (p) => {

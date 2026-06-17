@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
 import DataTable from '../DataTable/DataTable';
 import { fetchOrders, changeOrderStatus, changeOrderItemStatus } from '../../redux/services/ordersService';
 import { renderVariantLabel } from '../Products/VariantBuilder';
@@ -146,10 +147,13 @@ export default function Orders({ status = null }) {
     if (!currentOrder || currentOrder.status === newStatus || updatingOrderId === orderId) return;
 
     setUpdatingOrderId(orderId);
+    const toastId = toast.loading(`Updating order to ${labelFor(newStatus)}…`);
     try {
       await dispatch(changeOrderStatus({ id: orderId, status: newStatus }));
+      toast.success(`Order status updated to ${labelFor(newStatus)}`, { id: toastId });
     } catch (err) {
       console.error('Failed to update status:', err);
+      toast.error(err?.response?.data?.message || 'Failed to update order status', { id: toastId });
     } finally {
       setUpdatingOrderId(current => current === orderId ? null : current);
     }
@@ -188,7 +192,7 @@ export default function Orders({ status = null }) {
             return (
               <>
                 <tr key={order.id}>
-                  <td className="td-id">#{order.id}</td>
+                  <td className="td-id">#{order.referenceSlug || order.id}</td>
                   <td>
                     <div className="td-name">{order.customer_name || '—'}</div>
                     {order.customer_email && <div className="td-sub">{order.customer_email}</div>}
@@ -235,7 +239,7 @@ export default function Orders({ status = null }) {
                         <div className="km-form-header">
                           <div className="km-form-header-icon">📦</div>
                           <div>
-                            <div className="km-form-header-title">Order #{order.id} — {order.customer_name}</div>
+                            <div className="km-form-header-title">Order #{order.referenceSlug || order.id} — {order.customer_name}</div>
                             <div className="km-form-header-sub">
                               Payment: {
                                 (() => {
@@ -371,6 +375,20 @@ export default function Orders({ status = null }) {
                                         <span>Total Paid</span>
                                         <span className="td-price" style={{ color: '#2e7d32' }}>₹{total.toFixed(2)}</span>
                                       </div>
+                                      {order.codCollected && (
+                                        <div style={{
+                                          marginTop: 8,
+                                          padding: '4px 8px',
+                                          background: '#e8f5e9',
+                                          color: '#2e7d32',
+                                          borderRadius: 4,
+                                          fontWeight: 700,
+                                          fontSize: 11,
+                                          textAlign: 'center'
+                                        }}>
+                                          ✓ COD Cash Collected
+                                        </div>
+                                      )}
                                       <div className="km-payment-row" style={{ borderTop: 'none', paddingTop: 0 }}>
                                         <span className="td-muted" style={{ fontSize: 11 }}>Due Amount</span>
                                         <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>₹0.00</span>
@@ -392,6 +410,57 @@ export default function Orders({ status = null }) {
                                         <strong>Grand Total</strong>
                                         <strong>₹{total.toFixed(2)}</strong>
                                       </div>
+                                      {order.status !== 'cancelled' && order.status !== 'returned' && (
+                                        <button
+                                          onClick={() => {
+                                            toast(
+                                              (t) => (
+                                                <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                  <strong>Mark COD as Collected?</strong>
+                                                  <span style={{ fontSize: 12, color: '#555' }}>This will mark the payment as paid and close the COD collection.</span>
+                                                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                                                    <button
+                                                      onClick={async () => {
+                                                        toast.dismiss(t.id);
+                                                        const tid = toast.loading('Marking COD as collected…');
+                                                        try {
+                                                          await dispatch(changeOrderStatus({ id: order.id, paymentStatus: 'paid', codCollected: true }));
+                                                          toast.success('COD cash marked as collected!', { id: tid });
+                                                        } catch (err) {
+                                                          toast.error(err?.response?.data?.message || 'Failed to update payment status', { id: tid });
+                                                        }
+                                                      }}
+                                                      style={{ padding: '5px 14px', background: '#db1a5d', color: '#fff', border: 'none', borderRadius: 5, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
+                                                    >Confirm</button>
+                                                    <button
+                                                      onClick={() => toast.dismiss(t.id)}
+                                                      style={{ padding: '5px 14px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 5, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
+                                                    >Cancel</button>
+                                                  </div>
+                                                </span>
+                                              ),
+                                              { duration: Infinity }
+                                            );
+                                          }}
+                                          style={{
+                                            marginTop: 10,
+                                            width: '100%',
+                                            padding: '8px 12px',
+                                            background: '#db1a5d',
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: 6,
+                                            fontWeight: 700,
+                                            fontSize: 12,
+                                            cursor: 'pointer',
+                                            transition: 'background 0.2s',
+                                          }}
+                                          onMouseEnter={(e) => e.target.style.background = '#b8124b'}
+                                          onMouseLeave={(e) => e.target.style.background = '#db1a5d'}
+                                        >
+                                          💵 Mark COD as Collected
+                                        </button>
+                                      )}
                                     </>
                                   );
                                 }
@@ -411,6 +480,20 @@ export default function Orders({ status = null }) {
                                         <span>Total Paid</span>
                                         <span className="td-price" style={{ color: '#2e7d32' }}>₹{total.toFixed(2)}</span>
                                       </div>
+                                      {order.codCollected && (
+                                        <div style={{
+                                          marginTop: 8,
+                                          padding: '4px 8px',
+                                          background: '#e8f5e9',
+                                          color: '#2e7d32',
+                                          borderRadius: 4,
+                                          fontWeight: 700,
+                                          fontSize: 11,
+                                          textAlign: 'center'
+                                        }}>
+                                          ✓ COD Cash Collected
+                                        </div>
+                                      )}
                                       <div className="km-payment-row" style={{ borderTop: 'none', paddingTop: 0 }}>
                                         <span className="td-muted" style={{ fontSize: 11 }}>Due Amount</span>
                                         <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>₹0.00</span>
@@ -432,6 +515,57 @@ export default function Orders({ status = null }) {
                                         <span>Total Order</span>
                                         <span className="td-price">₹{total.toFixed(2)}</span>
                                       </div>
+                                      {order.status !== 'cancelled' && order.status !== 'returned' && (
+                                        <button
+                                          onClick={() => {
+                                            toast(
+                                              (t) => (
+                                                <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                  <strong>Mark COD as Collected?</strong>
+                                                  <span style={{ fontSize: 12, color: '#555' }}>This will mark the payment as paid and close the COD collection.</span>
+                                                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                                                    <button
+                                                      onClick={async () => {
+                                                        toast.dismiss(t.id);
+                                                        const tid = toast.loading('Marking COD as collected…');
+                                                        try {
+                                                          await dispatch(changeOrderStatus({ id: order.id, paymentStatus: 'paid', codCollected: true }));
+                                                          toast.success('COD cash marked as collected!', { id: tid });
+                                                        } catch (err) {
+                                                          toast.error(err?.response?.data?.message || 'Failed to update payment status', { id: tid });
+                                                        }
+                                                      }}
+                                                      style={{ padding: '5px 14px', background: '#db1a5d', color: '#fff', border: 'none', borderRadius: 5, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
+                                                    >Confirm</button>
+                                                    <button
+                                                      onClick={() => toast.dismiss(t.id)}
+                                                      style={{ padding: '5px 14px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 5, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
+                                                    >Cancel</button>
+                                                  </div>
+                                                </span>
+                                              ),
+                                              { duration: Infinity }
+                                            );
+                                          }}
+                                          style={{
+                                            marginTop: 10,
+                                            width: '100%',
+                                            padding: '8px 12px',
+                                            background: '#db1a5d',
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: 6,
+                                            fontWeight: 700,
+                                            fontSize: 12,
+                                            cursor: 'pointer',
+                                            transition: 'background 0.2s',
+                                          }}
+                                          onMouseEnter={(e) => e.target.style.background = '#b8124b'}
+                                          onMouseLeave={(e) => e.target.style.background = '#db1a5d'}
+                                        >
+                                          💵 Mark COD as Collected
+                                        </button>
+                                      )}
                                     </>
                                   );
                                 }

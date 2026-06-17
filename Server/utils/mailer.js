@@ -1,5 +1,6 @@
 // utils/mailer.js
 const nodemailer = require("nodemailer");
+const { getDisplayReference } = require("./referenceSlugs");
 
 const SUPPORT_EMAIL = "kamalireturngifts@gmail.com";
 const SUPPORT_WHATSAPP = "+91 73388 14319";
@@ -434,7 +435,7 @@ const buildOrderEmailHtml = ({ order, user, status, trackingDetails }) => {
   const paymentLabel = PAYMENT_LABELS[orderData.paymentMethod] || orderData.paymentMethod || "COD";
   const isCOD = orderData.paymentMethod === "cod" || orderData.paymentMethod === "partial_cod";
   const contactEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || SUPPORT_EMAIL;
-  const orderId = escapeHtml(orderData.id);
+  const orderId = escapeHtml(getDisplayReference(orderData, orderData.id));
   const customerName = escapeHtml(addr.fullName || user?.name || "—");
   const customerPhone = escapeHtml(addr.phone || "—");
 
@@ -641,14 +642,15 @@ const sendOrderStatusEmail = async ({ order, user, status, trackingDetails } = {
   }
 
   const sentAt = new Date();
+  const displayId = getDisplayReference(orderData, orderData.id);
   await transporter.sendMail({
     from: `"Kamali Gifts" <${process.env.EMAIL_USER}>`,
     to: user.email,
-    subject: config.subject(orderData.id),
+    subject: config.subject(displayId),
     html,
   });
 
-  console.log(`[Mailer] Order ${statusKey} email sent to ${user.email}`);
+  console.log(`[Mailer] Order ${statusKey} email sent to ${user.email} (Order #${displayId})`);
   return { sent: true, sentAt };
 };
 
@@ -686,14 +688,15 @@ const sendAdminNewOrderEmail = async (order, user) => {
   }
 
   const sentAt = new Date();
+  const displayId = getDisplayReference(orderData, orderData.id);
   await transporter.sendMail({
     from: `"Kamali Gifts Alert" <${process.env.EMAIL_USER}>`,
     to: adminEmail,
-    subject: config.subject(orderData.id),
+    subject: config.subject(displayId),
     html,
   });
 
-  console.log(`[Mailer] Admin new order alert email sent to ${adminEmail} for Order #${orderData.id}`);
+  console.log(`[Mailer] Admin new order alert email sent to ${adminEmail} for Order #${displayId}`);
   return { sent: true, sentAt };
 };
 
@@ -717,8 +720,8 @@ const sendReturnNotificationEmail = async ({ returnRequest, user, order, orderIt
   }
 
   const contactEmail = process.env.SUPPORT_EMAIL || SUPPORT_EMAIL;
-  const returnId = escapeHtml(retData.id);
-  const orderId = escapeHtml(orderData.id || retData.orderId);
+  const returnId = escapeHtml(getDisplayReference(retData, retData.id));
+  const orderId = escapeHtml(getDisplayReference(orderData, orderData.id || retData.orderId));
   const productName = escapeHtml(itemData.productName || "Product");
   const qty = retData.returnQuantity || 1;
   const returnTypeLabel = retData.returnType === "replacement" ? "Replacement" : "Refund";
@@ -866,7 +869,8 @@ const sendReturnNotificationEmail = async ({ returnRequest, user, order, orderIt
 </body>
 </html>`;
 
-  const subjectText = config.subject(retData.id.slice(0, 8));
+  const displayRetId = getDisplayReference(retData, retData.id.slice(0, 8));
+  const subjectText = config.subject(displayRetId);
 
   await transporter.sendMail({
     from: `"Kamali Gifts" <${process.env.EMAIL_USER}>`,
@@ -875,7 +879,7 @@ const sendReturnNotificationEmail = async ({ returnRequest, user, order, orderIt
     html,
   });
 
-  console.log(`[Mailer] Return ${statusKey} email sent to ${user.email}`);
+  console.log(`[Mailer] Return ${statusKey} email sent to ${user.email} (Return #${displayRetId})`);
   return { sent: true };
 };
 

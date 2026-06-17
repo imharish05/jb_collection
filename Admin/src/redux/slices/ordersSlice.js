@@ -9,7 +9,11 @@ const ordersSlice = createSlice({
         setError:     (state, action) => { state.loading = false; state.error = action.payload; },
         updateStatus: (state, action) => {
             const order = state.items.find(o => o.id === action.payload.id);
-            if (order) order.status = action.payload.status;
+            if (order) {
+                if (action.payload.status !== undefined) order.status = action.payload.status;
+                if (action.payload.paymentStatus !== undefined) order.paymentStatus = action.payload.paymentStatus;
+                if (action.payload.codCollected !== undefined) order.codCollected = action.payload.codCollected;
+            }
         },
         updateItemStatus: (state, action) => {
             const order = state.items.find(o => o.id === action.payload.orderId);

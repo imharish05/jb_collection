@@ -100,7 +100,7 @@ const ReturnTracking = () => {
 
   return (
     <Fragment>
-      <SEO titleTemplate={`Track Return #${id.slice(0, 8)}`} />
+      <SEO titleTemplate={`Track Return #${returnReq.referenceSlug || id}`} />
       <LayoutOne headerTop="visible">
         <Breadcrumb
           pages={[
@@ -132,10 +132,10 @@ const ReturnTracking = () => {
                   <div className="row">
                     <div className="col-md-6 mb-3">
                       <p style={{ margin: "0 0 6px 0", fontSize: "14px" }}>
-                        Return ID: <strong>#{returnReq.id}</strong>
+                        Return ID: <strong>#{returnReq.referenceSlug || returnReq.id}</strong>
                       </p>
                       <p style={{ margin: "0 0 6px 0", fontSize: "14px" }}>
-                        Order ID: <strong>#{returnReq.orderId}</strong>
+                        Order ID: <strong>#{returnReq.order?.referenceSlug || returnReq.orderId}</strong>
                       </p>
                       <p style={{ margin: "0 0 6px 0", fontSize: "14px" }}>
                         Product: <strong>{returnReq.orderItem?.productName || "Product"}</strong>

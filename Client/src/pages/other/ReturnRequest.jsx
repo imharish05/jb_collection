@@ -174,7 +174,7 @@ const ReturnRequest = () => {
 
       const res = await dispatch(submitReturnRequest(formData));
       if (res && res.id) {
-        navigate(`/return-tracking/${res.id}`);
+        navigate(`/return-tracking/${res.referenceSlug || res.id}`);
       } else {
         navigate("/my-account?tab=orders");
       }
