@@ -54,18 +54,6 @@ export const getDiscountPrice = (price, discount) => {
   return discount && discount > 0 ? price - price * (discount / 100) : null;
 };
 
-/**
- * Single source of truth for product price display.
- * Reads directly from backend fields — NO client-side discount computation.
- *
- * For variant products:  salesPrice = final price, mrp = strikethrough
- * For non-variant products: uses product.price + product.discount (legacy)
- *
- * Returns: { displayPrice, strikePrice, discountPct }
- *   displayPrice  — the price to show prominently (number)
- *   strikePrice   — the crossed-out original price (number | null)
- *   discountPct   — badge percentage (number | null)
- */
 export const getProductPrice = (product, variantIndex = 0) => {
   const variants = Array.isArray(product.Variants) ? product.Variants
                  : Array.isArray(product.variants) ? product.variants
@@ -85,28 +73,19 @@ export const getProductPrice = (product, variantIndex = 0) => {
     return { displayPrice, strikePrice, discountPct };
   }
 
-  // Non-variant fallback
-  // product.price is ALREADY the final/sale price stored by the server.
-  // product.discount is a display-only badge (%) — never reapply it.
   const base = parseFloat(product.price || 0);
   const disc = parseFloat(product.discount || 0);
 
   return {
     displayPrice: base,
-    strikePrice:  null,   // no MRP stored for non-variant products
+    strikePrice:  null,
     discountPct:  disc > 0 ? disc : null,
   };
 };
 
-/**
- * Price for a cart item — item.price is already the final price (salesPrice
- * stored in productSnapshot). Never apply discount on top.
- */
 export const getCartItemPrice = (item) => {
   return parseFloat(item.price || 0);
 };
-
-
 
 // get product cart quantity
 export const getProductCartQuantity = (cartItems, product, color, size) => {
@@ -141,7 +120,6 @@ export const cartItemStock = (item, color, size) => {
     return item.stock;
   }
 
-  // variation may come from backend as a JSON string — parse it
   let variation = item.variation;
   if (typeof variation === "string") {
     try { variation = JSON.parse(variation); } catch { variation = []; }
@@ -158,7 +136,6 @@ export const cartItemStock = (item, color, size) => {
   return sizeMatch ? sizeMatch.stock : 0;
 };
 
-//get products based on category
 export const getSortedProducts = (products, sortType, sortValue) => {
   if (products && sortType && sortValue) {
     if (sortType === "search") {
@@ -175,20 +152,15 @@ export const getSortedProducts = (products, sortType, sortValue) => {
       if (isAllCategory(sortValue)) return products;
       return products.filter(
         product =>
-          // match by slug in category array
           product.category?.filter(single => single === sortValue)[0] ||
-          // match by categoryId UUID (backend stores UUID in category[] and categoryId)
           product.categoryId === sortValue ||
-          // match by Category.value (slug from joined Category)
           product.Category?.value === sortValue
       );
     }
     if (sortType === "combo") {
       if (sortValue === "all") {
-        // match any product that belongs to a combo (comboId set)
         return products.filter(product => product.comboId != null);
       }
-      // sortValue is the combo UUID id (navMenu returns combo.id now)
       return products.filter(
         product => product.comboId != null && String(product.comboId) === String(sortValue)
       );
@@ -234,7 +206,6 @@ export const getSortedProducts = (products, sortType, sortValue) => {
   return products;
 };
 
-// get individual element
 const getIndividualItemArray = array => {
   let individualItemArray = array.filter(function(v, i, self) {
     return i === self.indexOf(v);
@@ -242,7 +213,6 @@ const getIndividualItemArray = array => {
   return individualItemArray;
 };
 
-// get individual categories
 export const getIndividualCategories = products => {
   let productCategories = [];
   products &&
@@ -258,7 +228,6 @@ export const getIndividualCategories = products => {
   return individualProductCategories;
 };
 
-// get individual tags
 export const getIndividualTags = products => {
   let productTags = [];
   products &&
@@ -274,7 +243,6 @@ export const getIndividualTags = products => {
   return individualProductTags;
 };
 
-// get individual colors
 export const getIndividualColors = products => {
   let productColors = [];
   products &&
@@ -290,7 +258,6 @@ export const getIndividualColors = products => {
   return individualProductColors;
 };
 
-// get individual sizes
 export const getProductsIndividualSizes = products => {
   let productSizes = [];
   products &&
@@ -308,7 +275,6 @@ export const getProductsIndividualSizes = products => {
   return individualProductSizes;
 };
 
-// get product individual sizes
 export const getIndividualSizes = product => {
   let productSizes = [];
   product.variation &&
@@ -389,7 +355,6 @@ export const renderVariantLabel = (str, circleSize = 12, spacing = 4) => {
                     flexShrink: 0,
                   }}
                 />
-                <span>{val.toUpperCase()}</span>
               </span>
             );
           }
@@ -410,7 +375,6 @@ export const renderVariantLabel = (str, circleSize = 12, spacing = 4) => {
                   flexShrink: 0,
                 }}
               />
-              <span>{trimmed.toUpperCase()}</span>
             </span>
           );
         }

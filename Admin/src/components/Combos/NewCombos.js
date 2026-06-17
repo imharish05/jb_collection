@@ -8,7 +8,7 @@ import {
   fetchRootCombos, fetchRootComboById,
   createRootCombo, updateRootComboAction, deleteRootCombo,
   createChildCombo, updateChildCombo, deleteChildCombo,
-  addChildProduct, removeChildProduct,
+  addChildProduct, removeChildProduct, updateChildProductAction,
 } from "../../redux/services/newComboService";
 import { fetchProducts } from "../../redux/services/productsService";
 import { confirmDelete } from "../../utils/sweetalert";
@@ -294,7 +294,7 @@ const validateProductDuplicate = (productId, variantId, existingProducts) => {
 };
 
 // ── Product + Variant Picker Row ───────────────────────────────────────────────
-function ProductPickerRow({ allProducts, onAdd, label = "Included Products", currentProducts = [] }) {
+function ProductPickerRow({ allProducts, onAdd, label = "Included Products", currentProducts = [], showToast }) {
   const [search, setSearch]   = useState("");
   const [selProd, setSelProd] = useState(null);
   const [selVar,  setSelVar]  = useState("");
@@ -314,13 +314,22 @@ function ProductPickerRow({ allProducts, onAdd, label = "Included Products", cur
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const variants = selProd?.Variants || [];
+
   const handleAdd = () => {
     if (!selProd) return;
+
+    if (variants.length > 0 && !selVar) {
+      showToast.error("Please select a variant for the selected product.");
+      return;
+    }
+
     onAdd({ productId: selProd.id, variantId: selVar || null, quantity: qty });
     setSelProd(null); setSelVar(""); setQty(1); setSearch("");
   };
 
-  const variants = selProd?.Variants || [];
+  const selectedVariantObj = variants.find(v => String(v.id) === String(selVar));
+  const selectedStock = selectedVariantObj ? Number(selectedVariantObj.stock) : (selProd ? Number(selProd.stock ?? 0) : null);
 
   return (
     <div style={{ border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)", overflow: "visible" }}>
@@ -345,13 +354,8 @@ function ProductPickerRow({ allProducts, onAdd, label = "Included Products", cur
               boxShadow: "0 8px 24px rgba(0,0,0,0.12)", maxHeight: 220, overflowY: "auto", marginTop: 2,
             }}>
               {filtered.map(p => {
-               const img =
-  resolveImage(p.image) ||
-  p.Variants?.[0]?.image;
-
-const imgSrc = img ? getImg(img) : null;
-                console.log(p);
-                
+                const img = resolveImage(p.image) || p.Variants?.[0]?.image;
+                const imgSrc = img ? getImg(img) : null;
                 return (
                   <div key={p.id}
                     onClick={() => { setSelProd(p); setSelVar(""); setOpen(false); setSearch(""); }}
@@ -396,12 +400,14 @@ const imgSrc = img ? getImg(img) : null;
           <div style={{ flex: "1 1 200px" }}>
             <label className="km-label" style={{ display: "block", marginBottom: 5 }}>Variant</label>
             <select className="km-input" value={selVar} onChange={e => setSelVar(e.target.value)}>
-              <option value="">Any / No variant</option>
+              <option value="">Select Variant...</option>
               {variants.map(v => {
                 const isDuplicate = validateProductDuplicate(selProd.id, v.id, currentProducts);
+                const isOutOfStock = Number(v.stock) <= 0;
+                const labelText = buildVariantLabel(v) || v.variantName;
                 return (
-                  <option key={v.id} value={v.id} disabled={isDuplicate}>
-                    {buildVariantLabel(v) || v.variantName} — ₹{v.salesPrice}
+                  <option key={v.id} value={v.id} disabled={isDuplicate || isOutOfStock}>
+                    {labelText} {isOutOfStock ? " - Out of Stock" : `(Stock: ${v.stock})`} — ₹{v.salesPrice}
                     {isDuplicate ? " (Already added)" : ""}
                   </option>
                 );
@@ -410,10 +416,15 @@ const imgSrc = img ? getImg(img) : null;
           </div>
         )}
 
-        <div style={{ flex: "0 0 80px" }}>
+        <div style={{ flex: "0 0 140px" }}>
           <label className="km-label" style={{ display: "block", marginBottom: 5 }}>Qty</label>
           <input type="number" min={1} className="km-input"
             value={qty} onChange={e => setQty(Math.max(1, parseInt(e.target.value) || 1))} />
+          {selProd && selectedStock !== null && (
+            <span style={{ fontSize: 10, color: "var(--neutral-400)", marginTop: 4, display: "block", whiteSpace: "nowrap" }}>
+              Available Stock: {selectedStock}
+            </span>
+          )}
         </div>
 
         <button type="button" onClick={handleAdd} disabled={!selProd}
@@ -445,8 +456,74 @@ function ProductImg({ src, size = 36, style = {} }) {
   );
 }
 
+// ── Editable Quantity Input Component ─────────────────────────────────────────
+function QuantityInput({ cp, allProducts, isEdit, initialId, dispatch, showToast, onChangePending }) {
+  const [val, setVal] = useState(cp.quantity);
+
+  // Sync with prop changes
+  useEffect(() => {
+    setVal(cp.quantity);
+  }, [cp.quantity]);
+
+  const prod = cp.product || (allProducts || []).find(p => p.id === cp.productId);
+  const variant = cp.variant || prod?.Variants?.find(v => String(v.id) === String(cp.variantId));
+  const stock = variant ? Number(variant.stock) : Number(prod?.stock ?? 0);
+
+  const handleUpdate = (newVal) => {
+    const qty = Number(newVal);
+
+    if (isNaN(qty) || qty < 1) {
+      showToast.error("Quantity must be at least 1.");
+      setVal(cp.quantity); // revert
+      return;
+    }
+
+    if (qty > stock) {
+      showToast.error(`Maximum allowed quantity is ${stock}.`);
+      setVal(cp.quantity); // revert
+      return;
+    }
+
+    if (isEdit) {
+      dispatch(updateChildProductAction({ childId: initialId, pid: cp.id, quantity: qty }))
+        .catch(() => {
+          showToast.error("Failed to update quantity");
+          setVal(cp.quantity); // revert
+        });
+    } else {
+      onChangePending(cp._tempId, qty);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 130, alignItems: "flex-end" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 11, color: "var(--neutral-500)", fontWeight: 600 }}>Qty:</span>
+        <input
+          type="number"
+          className="km-input"
+          style={{ width: 65, padding: "4px 8px", fontSize: 13, height: 28 }}
+          value={val}
+          min={1}
+          onChange={e => setVal(e.target.value)}
+          onBlur={e => handleUpdate(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleUpdate(e.target.value);
+            }
+          }}
+        />
+      </div>
+      <span style={{ fontSize: 10, color: "var(--neutral-400)", whiteSpace: "nowrap", display: "block", textAlign: "right" }}>
+        Available Stock: {stock}
+      </span>
+    </div>
+  );
+}
+
 // ── Product List ───────────────────────────────────────────────────────────────
-function ProductList({ products, allProducts, onRemove }) {
+function ProductList({ products, allProducts, onRemove, isEdit, initialId, dispatch, showToast, onChangePending }) {
   if (!products || products.length === 0) return null;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
@@ -481,9 +558,20 @@ function ProductList({ products, allProducts, onRemove }) {
                 <span style={{ fontSize: 10, background: stock > 0 ? "var(--success-50)" : "var(--danger-50)", color: stock > 0 ? "var(--success-main)" : "var(--danger-main)", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>
                   {stock > 0 ? `${stock} in stock` : "Out of stock"}
                 </span>
-                <span style={{ fontSize: 10, color: "var(--neutral-400)" }}>Qty: {cp.quantity}</span>
                 <span style={{ fontSize: 10, color: "var(--neutral-400)" }}>₹{price.toLocaleString("en-IN")}</span>
               </div>
+            </div>
+            {/* Editable quantity input */}
+            <div style={{ display: "flex", alignItems: "center", marginRight: 8 }}>
+              <QuantityInput
+                cp={cp}
+                allProducts={allProducts}
+                isEdit={isEdit}
+                initialId={initialId}
+                dispatch={dispatch}
+                showToast={showToast}
+                onChangePending={onChangePending}
+              />
             </div>
             <button type="button" onClick={() => onRemove(cp.id || cp._tempId)}
               style={{ background: "none", border: "none", color: "var(--danger-500)", cursor: "pointer", fontSize: 18, flexShrink: 0, padding: 4, lineHeight: 1 }}>✕</button>
@@ -558,6 +646,104 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // 1. Combo Name
+    if (!form.name || !form.name.trim()) {
+      showToast.error("Combo Name is required.");
+      return;
+    }
+
+    // 2. Image
+    if (!imgFile && !imgPreview) {
+      showToast.error('Image is required');
+      return;
+    }
+
+    if (imgFile) {
+      const imageCheck = imageValidation || await validateComboImageDimensions(imgFile);
+      setImageValidation(imageCheck);
+      if (!imageCheck.valid) {
+        showToast.error(imageCheck.error);
+        return;
+      }
+    }
+
+    // 3. At least one Included Product
+    if (currentProducts.length === 0) {
+      showToast.error("Please add at least one product to the combo before saving.");
+      return;
+    }
+
+    // Validate each included product
+    for (const item of currentProducts) {
+      const prod = item.product || allProducts.find(p => p.id === item.productId);
+      const hasVariants = prod?.Variants && prod.Variants.length > 0;
+      
+      // 4. Variant Selected
+      if (hasVariants && !item.variantId) {
+        showToast.error(`Please select a variant for ${prod?.name || "Product"}.`);
+        return;
+      }
+
+      let stock = 0;
+      let variantName = prod?.name || "Product";
+      if (hasVariants) {
+        const v = prod.Variants.find(v => String(v.id) === String(item.variantId));
+        if (v) {
+          stock = Number(v.stock);
+          variantName = `${prod.name} (${buildVariantLabel(v) || v.variantName})`;
+        }
+      } else {
+        stock = Number(prod?.stock ?? 0);
+      }
+
+      // 5. Quantity >= 1
+      const qty = Number(item.quantity);
+      if (isNaN(qty) || qty < 1) {
+        showToast.error(`Quantity must be greater than 0 for ${prod?.name || "Product"}.`);
+        return;
+      }
+
+      // 6. Quantity <= Variant Stock
+      if (qty > stock) {
+        showToast.error(`${prod?.name || "Product"} quantity cannot exceed available stock (${stock}).`);
+        return;
+      }
+
+      // 7. Product Not Out Of Stock
+      if (stock <= 0) {
+        showToast.error("This variant is out of stock and cannot be added to the combo.");
+        return;
+      }
+    }
+
+    // 8. Min Qty <= Max Qty
+    if (
+      form.type === "mix_match" &&
+      form.minQty &&
+      form.maxQty &&
+      Number(form.minQty) > Number(form.maxQty)
+    ) {
+      showToast.error("Minimum Quantity cannot be greater than Maximum Quantity.");
+      return;
+    }
+
+    // 9. Mix & Match Total Qty >= Min Qty
+    const totalIncludedQty = currentProducts.reduce(
+      (sum, item) => sum + Number(item.quantity || 0),
+      0
+    );
+    if (
+      form.type === "mix_match" &&
+      form.minQty &&
+      totalIncludedQty < Number(form.minQty)
+    ) {
+      showToast.error(
+        `Minimum Quantity is ${form.minQty}, but only ${totalIncludedQty} product quantity is available. Please add more products or increase quantities.`
+      );
+      return;
+    }
+
+    // Word count / size limits validation for descriptions
     const nextErrors = {};
     const shortWordCount = countWords(form.shortDescription);
     if (form.shortDescription && shortWordCount > DESC_LIMITS.short.maxWords) {
@@ -576,20 +762,7 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
     }
     setErrors({});
 
-    if (!imgFile && !imgPreview) {
-      showToast.error('Image is required');
-      return;
-    }
-
-    if (imgFile) {
-      const imageCheck = imageValidation || await validateComboImageDimensions(imgFile);
-      setImageValidation(imageCheck);
-      if (!imageCheck.valid) {
-        showToast.error(imageCheck.error);
-        return;
-      }
-    }
-
+    // 10. Save Combo
     setSaving(true);
     const tid = showToast.loading(isEdit ? "Updating…" : "Creating…");
     try {
@@ -618,6 +791,48 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
   };
 
   const handleAddProduct = async (data) => {
+    const product = allProducts?.find(p => String(p.id) === String(data.productId));
+    if (!product) return;
+
+    const hasVariants = product.Variants && product.Variants.length > 0;
+    
+    // 2. Variant Selection Is Mandatory
+    if (hasVariants && !data.variantId) {
+      showToast.error("Please select a variant for the selected product.");
+      return;
+    }
+
+    let stock = 0;
+    if (hasVariants) {
+      const variant = product.Variants.find(v => String(v.id) === String(data.variantId));
+      if (!variant) {
+        showToast.error("Please select a variant for the selected product.");
+        return;
+      }
+      stock = Number(variant.stock);
+    } else {
+      stock = Number(product.stock ?? 0);
+    }
+
+    // 8. Out Of Stock Variants Cannot Be Added
+    if (stock <= 0) {
+      showToast.error("This variant is out of stock and cannot be added to the combo.");
+      return;
+    }
+
+    // 3. Quantity Is Mandatory During Add
+    const qty = Number(data.quantity);
+    if (!qty || qty < 1) {
+      showToast.error("Quantity must be at least 1.");
+      return;
+    }
+
+    // 5. Quantity Cannot Exceed Available Stock
+    if (qty > stock) {
+      showToast.error(`Quantity cannot exceed available stock (${stock}) for ${product.name}.`);
+      return;
+    }
+
     // Validate no duplicate product-variant combination
     if (validateProductDuplicate(data.productId, data.variantId, currentProducts)) {
       showToast.error("This product variant has already been added to the combo.");
@@ -629,8 +844,8 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
       try {
         await dispatch(addChildProduct({ childId: initial.id, data: { ...data, isEligible: form.type === "mix_match" } }));
         showToast.success("Product added", tid);
-      } catch {
-        showToast.error("Failed to add product", tid);
+      } catch (err) {
+        showToast.error(err?.response?.data?.message || "Failed to add product", tid);
       }
     } else {
       setPendingProducts(prev => [...prev, { ...data, isEligible: form.type === "mix_match", _tempId: Date.now() }]);
@@ -819,11 +1034,19 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
               currentProducts={currentProducts}
               label={form.type === "mix_match" ? "Eligible Pool" : "Included Products"}
               onAdd={handleAddProduct}
+              showToast={showToast}
             />
             <ProductList
               products={currentProducts}
               allProducts={allProducts}
               onRemove={handleRemoveProduct}
+              isEdit={isEdit}
+              initialId={initial?.id}
+              dispatch={dispatch}
+              showToast={showToast}
+              onChangePending={(tempId, qty) => {
+                setPendingProducts(prev => prev.map(p => p._tempId === tempId ? { ...p, quantity: qty } : p));
+              }}
             />
           </div>
 

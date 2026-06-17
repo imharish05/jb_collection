@@ -40,6 +40,7 @@ router.delete("/child/:id",  protect, adminOnly, ctrl.deleteChildCombo);
 
 // ── Child combo products ──────────────────────────────────────────────────────
 router.post(  "/child/:id/products",       protect, adminOnly, ctrl.addChildProduct);
+router.put(   "/child/:id/products/:pid",  protect, adminOnly, ctrl.updateChildProduct);
 router.delete("/child/:id/products/:pid",  protect, adminOnly, ctrl.removeChildProduct);
 
 // ── Public validate + Cart add ────────────────────────────────────────────────

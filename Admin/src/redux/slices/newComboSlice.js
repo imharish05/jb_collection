@@ -58,6 +58,17 @@ const newComboSlice = createSlice({
         }
       }
     },
+    updateProductInChild: (state, { payload: { childId, product } }) => {
+      if (state.currentRoot?.children) {
+        const child = state.currentRoot.children.find(c => c.id === childId);
+        if (child?.comboProducts) {
+          const idx = child.comboProducts.findIndex(p => p.id === product.id);
+          if (idx !== -1) {
+            child.comboProducts[idx] = product;
+          }
+        }
+      }
+    },
     removeProductFromChild: (state, { payload: { childId, productRecordId } }) => {
       if (state.currentRoot?.children) {
         const child = state.currentRoot.children.find(c => c.id === childId);
@@ -73,7 +84,7 @@ export const {
   setLoading, setRootCombos, setCurrentRoot, setError,
   addRootCombo, updateRootCombo, removeRootCombo,
   addChildToRoot, updateChildInRoot, removeChildFromRoot,
-  addProductToChild, removeProductFromChild,
+  addProductToChild, updateProductInChild, removeProductFromChild,
 } = newComboSlice.actions;
 
 export default newComboSlice.reducer;

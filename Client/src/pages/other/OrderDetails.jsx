@@ -226,15 +226,18 @@ const OrderDetails = () => {
     { label: "Out for Delivery", icon: "fa-map-marker" },
     { label: "Delivered", icon: "fa-check-circle" },
   ];
-
-  const getVariantLabel = (item) => {
-    if (item.selectedVariantName) return renderVariantLabel(item.selectedVariantName);
-    if (item.variantAttributes && Array.isArray(item.variantAttributes) && item.variantAttributes.length) {
-      const label = item.variantAttributes.map((attr) => `${attr.key}: ${attr.value}`).join(" · ");
-      return renderVariantLabel(label);
-    }
-    return "Handcrafted Series";
-  };
+const getVariantLabel = (item) => {
+  if (item.selectedVariantName) {
+    // Keep "Colour: #FF0000" as-is so renderVariantLabel can render the dot
+    // but strip the hex TEXT by passing original — renderVariantLabel handles the dot
+    return renderVariantLabel(item.selectedVariantName);
+  }
+  if (item.variantAttributes && Array.isArray(item.variantAttributes) && item.variantAttributes.length) {
+    const label = item.variantAttributes.map((attr) => `${attr.key}: ${attr.value}`).join(" · ");
+    return renderVariantLabel(label);
+  }
+  return renderVariantLabel("Handcrafted Series");
+};
 
   const itemPrice = (item) => {
     const price = item.salesPrice ?? item.price ?? item.unitPrice ?? item.sellingPrice ?? item.mrp ?? 0;

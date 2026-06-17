@@ -4,7 +4,7 @@ import {
   setLoading, setRootCombos, setCurrentRoot, setError,
   addRootCombo, updateRootCombo, removeRootCombo,
   addChildToRoot, updateChildInRoot, removeChildFromRoot,
-  addProductToChild, removeProductFromChild,
+  addProductToChild, updateProductInChild, removeProductFromChild,
 } from "../slices/newComboSlice";
 
 // ── Root combos ───────────────────────────────────────────────────────────────
@@ -98,6 +98,16 @@ export const addChildProduct = ({ childId, data }) => async (dispatch) => {
   try {
     const res = await api.post(`/combos/child/${childId}/products`, data);
     dispatch(addProductToChild({ childId, product: res.data.data }));
+    return res.data.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const updateChildProductAction = ({ childId, pid, quantity }) => async (dispatch) => {
+  try {
+    const res = await api.put(`/combos/child/${childId}/products/${pid}`, { quantity });
+    dispatch(updateProductInChild({ childId, product: res.data.data }));
     return res.data.data;
   } catch (err) {
     throw err;

@@ -288,6 +288,42 @@ exports.addChildProduct = async (req, res) => {
     const { productId, variantId, quantity, isEligible } = req.body;
     if (!productId) return res.status(400).json({ message: "productId required" });
 
+    const product = await Product.findByPk(productId, {
+      include: [{ model: Variant, as: "Variants" }],
+    });
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    const hasVariants = product.Variants && product.Variants.length > 0;
+    if (hasVariants && !variantId) {
+      return res.status(400).json({ message: "Please select a variant for the selected product." });
+    }
+
+    let stock = 0;
+    if (hasVariants) {
+      const variant = product.Variants.find(v => String(v.id) === String(variantId));
+      if (!variant) {
+        return res.status(400).json({ message: "Please select a variant for the selected product." });
+      }
+      stock = Number(variant.stock);
+    } else {
+      stock = Number(product.stock ?? 0);
+    }
+
+    // Out of stock check
+    if (stock <= 0) {
+      return res.status(400).json({ message: "This variant is out of stock and cannot be added to the combo." });
+    }
+
+    // Quantity check
+    const qty = parseInt(quantity) || 1;
+    if (qty < 1) {
+      return res.status(400).json({ message: "Quantity must be at least 1." });
+    }
+
+    if (qty > stock) {
+      return res.status(400).json({ message: `Quantity cannot exceed available stock (${stock}) for ${product.name}.` });
+    }
+
     const child = await ChildCombo.findByPk(req.params.id);
     if (!child) return res.status(404).json({ message: "Child combo not found" });
 
@@ -295,7 +331,7 @@ exports.addChildProduct = async (req, res) => {
       childComboId: req.params.id,
       productId,
       variantId: variantId || null,
-      quantity: parseInt(quantity) || 1,
+      quantity: qty,
       isEligible: isEligible === "true" || isEligible === true,
     });
 
@@ -308,6 +344,42 @@ exports.addChildProduct = async (req, res) => {
   } catch (err) {
     console.error("addChildProduct:", err);
     res.status(500).json({ message: "Failed to add product" });
+  }
+};
+
+// PUT /api/combos/child/:id/products/:pid  — update product quantity in child combo
+exports.updateChildProduct = async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    const cp = await ChildComboProduct.findByPk(req.params.pid, {
+      include: [productInclude, variantInclude],
+    });
+    if (!cp) return res.status(404).json({ message: "Product in combo not found" });
+
+    const qty = parseInt(quantity) || 1;
+    if (qty < 1) {
+      return res.status(400).json({ message: "Quantity must be at least 1." });
+    }
+
+    const v = cp.variant;
+    const stock = v ? Number(v.stock) : Number(cp.product?.stock ?? 0);
+
+    if (qty > stock) {
+      return res.status(400).json({ message: `Maximum allowed quantity is ${stock}.` });
+    }
+
+    cp.quantity = qty;
+    await cp.save();
+
+    // Return with product + variant populated
+    const populated = await ChildComboProduct.findByPk(cp.id, {
+      include: [productInclude, variantInclude],
+    });
+
+    res.json({ success: true, data: populated });
+  } catch (err) {
+    console.error("updateChildProduct:", err);
+    res.status(500).json({ message: "Failed to update product quantity" });
   }
 };
 

@@ -554,10 +554,10 @@ const buildOrderEmailHtml = ({ order, user, status, trackingDetails }) => {
           <td style="padding:10px 16px;background:#fafafa;font-size:12px;color:#999;font-weight:600;border-bottom:1px solid #f0f0f0;">Address</td>
           <td style="padding:10px 16px;font-size:13px;color:#333;border-bottom:1px solid #f0f0f0;">${addrLine || "—"}</td>
         </tr>
-        <tr>
-          <td style="padding:10px 16px;background:#fafafa;font-size:12px;color:#999;font-weight:600;">Est. Delivery</td>
-          <td style="padding:10px 16px;font-size:13px;color:#16a34a;font-weight:600;">🚚 ${estDeliveryText}</td>
-        </tr>
+        // <tr>
+        //   <td style="padding:10px 16px;background:#fafafa;font-size:12px;color:#999;font-weight:600;">Est. Delivery</td>
+        //   <td style="padding:10px 16px;font-size:13px;color:#16a34a;font-weight:600;">🚚 ${estDeliveryText}</td>
+        // </tr>
       </table>
     </td>
   </tr>
