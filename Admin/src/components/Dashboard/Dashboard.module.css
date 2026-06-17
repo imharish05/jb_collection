@@ -490,7 +490,8 @@
   background: rgba(17, 24, 39, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  padding-top: 150px;
+  align-items: start;
   justify-content: center;
   z-index: 9999;
   animation: fadeInOverlay 0.2s ease-out;
