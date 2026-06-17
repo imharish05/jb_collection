@@ -25,7 +25,6 @@ const checkShippingServiceability = async (pincode, orderValue, weight = 0.5) =>
     const res = await api.get("/shipping/rates", {
       params: { pincode, weight, cod },
     });
-    // Map new response shape to what checkout expects
     return {
       serviceable: res.data.serviceable,
       shippingCharge: res.data.charge || 0,
@@ -55,7 +54,6 @@ const withGrandTotal = (pricing) => {
   const subtotal = toAmount(pricing.subtotal);
   const shipping = toAmount(pricing.shipping);
   const couponDiscount = toAmount(pricing.couponDiscount);
-  // Use passed gstAmount if available, otherwise compute from subtotal
   const gstAmount = pricing.gstAmount !== undefined
     ? toAmount(pricing.gstAmount)
     : subtotal * GST_RATE;
@@ -117,14 +115,114 @@ const PAYMENT_METHODS = [
   },
 ];
 
+/* ── Variant attr helpers (same as Cart) ────────────────────────────────── */
+const safeAttrs = (raw) => {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; }
+  }
+  return [];
+};
 
+const buildVariantAttrs = (item) => {
+  // 1. selectedVariant.attributes (preferred)
+  const resolvedVariant =
+    item.selectedVariant ||
+    (item.selectedVariantId && Array.isArray(item.Variants)
+      ? item.Variants.find(v => Number(v.id) === Number(item.selectedVariantId)) || null
+      : null);
+
+  if (resolvedVariant) {
+    const attrs = safeAttrs(resolvedVariant.attributes).filter(
+      a => a.key && a.value && a.key !== "Custom Note"
+    );
+    if (attrs.length) return attrs.map(a => ({ key: a.key, val: a.value }));
+  }
+
+  // 2. variation[0].attributes
+  const v = Array.isArray(item.variation) ? item.variation[0] : null;
+  const rawAttrs = v?.attributes;
+  const attrsArray = Array.isArray(rawAttrs)
+    ? rawAttrs
+    : typeof rawAttrs === "string"
+    ? (() => { try { return JSON.parse(rawAttrs); } catch { return []; } })()
+    : [];
+  if (attrsArray.length) return attrsArray.map(a => ({ key: a.key, val: a.value }));
+
+  // 3. Parse selectedVariantName string
+  if (item.selectedVariantName?.includes(":")) {
+    const seen = new Set();
+    return item.selectedVariantName.split("·").map(part => {
+      const [k, ...rest] = part.split(":").map(s => s.trim());
+      return { key: k, val: rest.join(":").trim() };
+    }).filter(a => {
+      if (!a.key || !a.val) return false;
+      const k = a.key.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }
+  if (item.selectedVariantName) return [{ key: "Variant", val: item.selectedVariantName }];
+
+  // 4. selectedProductColor / selectedProductSize fallback
+  const fallback = [];
+  if (item.selectedProductColor) fallback.push({ key: "Colour", val: item.selectedProductColor });
+  if (item.selectedProductSize) fallback.push({ key: "Size", val: item.selectedProductSize });
+  return fallback;
+};
+
+/* ── Colour swatch chip renderer (shared by both columns) ───────────────── */
+const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
+  if (!attrs || attrs.length === 0) return null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+      {attrs.map((a, i) => {
+        const isCol = isColourKey(a.key);
+        const hasPreview = isCol && isHexColor(a.val);
+        const displayVal = hasPreview ? a.val.toUpperCase() : a.val;
+        return (
+          <span
+            key={i}
+            style={{
+              fontSize,
+              color: "#666",
+              background: "#f5f5f5",
+              borderRadius: 4,
+              padding: "2px 6px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <span>{a.key}:</span>
+            {hasPreview && (
+              <span
+                style={{
+                  width: swatchSize,
+                  height: swatchSize,
+                  borderRadius: "50%",
+                  border: "1px solid #dcdcdc",
+                  backgroundColor: displayVal,
+                  display: "inline-block",
+                  flexShrink: 0,
+                }}
+              />
+            )}
+            <span>{displayVal}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+};
 
 /* ════════════════════════════════════════════════════════════════════════════
    Checkout Component
 ════════════════════════════════════════════════════════════════════════════ */
 const Checkout = () => {
   const newAddrFormRef = useRef(null);
-  const navigatingRef = useRef(false); // prevents route guard from firing during nav
+  const navigatingRef = useRef(false);
   const { pathname, state: navState } = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -139,7 +237,7 @@ const Checkout = () => {
 
   /* ── Route & Session Protection ── */
   useEffect(() => {
-    if (navigatingRef.current) return; // already navigating to confirmation
+    if (navigatingRef.current) return;
     if (!checkoutItems || checkoutItems.length === 0) {
       cogoToast.warn("Your checkout session is empty.", { position: "top-center" });
       navigate(`${process.env.PUBLIC_URL}/cart`);
@@ -150,7 +248,7 @@ const Checkout = () => {
     }
   }, [checkoutItems, checkoutExpiresAt, navigate, dispatch]);
 
-  /* ── Pricing (passed from Cart or recomputed) ──────────────────────────── */
+  /* ── Pricing ── */
   useEffect(() => {
     let sub = 0;
     (checkoutItems || []).forEach((item) => {
@@ -180,7 +278,7 @@ const Checkout = () => {
     }
   }, [checkoutItems, currency.currencyRate, navState]);
 
-  /* ── State ─────────────────────────────────────────────────────────────── */
+  /* ── State ── */
   const [selectedShippingAddrId, setSelectedShippingAddrId] = useState(activeAddressId);
   const [selectedBillingAddrId, setSelectedBillingAddrId] = useState(null);
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
@@ -195,7 +293,6 @@ const Checkout = () => {
   const [shippingCollapsed, setShippingCollapsed] = useState(false);
   const [billingCollapsed, setBillingCollapsed] = useState(false);
 
-  // ── Serviceability & Shipping State ────────────────────────────────────
   const [shippingInfo, setShippingInfo] = useState(null);
   const [checkingServiceability, setCheckingServiceability] = useState(false);
   const [shippingPricing, setShippingPricing] = useState({
@@ -217,14 +314,13 @@ const Checkout = () => {
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [couponError, setCouponError] = useState("");
 
-  /* ── Fetch addresses from backend ──────────────────────────────────────── */
+  /* ── Fetch addresses ── */
   useEffect(() => {
     if (user?.id) dispatch(fetchAddresses());
   }, [user?.id, dispatch]);
 
   useEffect(() => {
     let mounted = true;
-
     const loadActiveCoupons = async () => {
       setLoadingCoupons(true);
       try {
@@ -237,48 +333,37 @@ const Checkout = () => {
         if (mounted) setLoadingCoupons(false);
       }
     };
-
     loadActiveCoupons();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
-  /* ── Check shipping rates when address changes ───────────────────────── */
+  /* ── Check shipping rates when address changes ── */
   useEffect(() => {
     const checkShipping = async () => {
       if (!selectedShippingAddr?.pincode) {
         setShippingInfo(null);
         return;
       }
-
       setCheckingServiceability(true);
       const result = await checkShippingServiceability(
         selectedShippingAddr.pincode,
         shippingPricing.subtotal
       );
       setCheckingServiceability(false);
-
       if (result) {
         setShippingInfo(result);
         const newShipping = result.serviceable ? (result.shippingCharge || 0) : 0;
-        setShippingPricing((prev) => withGrandTotal({
-          ...prev,
-          shipping: newShipping,
-        }));
+        setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: newShipping }));
       } else {
         setShippingInfo(null);
       }
     };
-
     checkShipping();
   }, [selectedShippingAddrId, shippingPricing.subtotal]);
 
   /* ── Mount-time inventory & price revalidation ── */
   useEffect(() => {
     if (!checkoutItems || checkoutItems.length === 0) return;
-
     const revalidateCheckoutOnMount = async () => {
       try {
         const revalPayload = {
@@ -296,12 +381,10 @@ const Checkout = () => {
         };
         const revalRes = await api.post("/cart/revalidate", revalPayload);
         const { hasChanges, items: revalResults } = revalRes.data;
-
         if (hasChanges) {
           const blockers = revalResults.filter(r =>
             r.adjustedQty === 0 && ["OOS", "Discontinued", "Unavailable"].includes(r.status)
           );
-
           const updatedCheckout = checkoutItems.map(item => {
             const result = revalResults.find(r => r.cartItemId === item.cartItemId);
             if (!result || result.status === "OK") return item;
@@ -309,7 +392,6 @@ const Checkout = () => {
             return { ...item, quantity: result.adjustedQty };
           }).filter(Boolean);
           dispatch(replaceCheckoutItems(updatedCheckout));
-
           if (checkoutSource === "cart") {
             const updatedCart = cartItems.map(item => {
               const result = revalResults.find(r => r.cartItemId === item.cartItemId);
@@ -319,15 +401,12 @@ const Checkout = () => {
             }).filter(Boolean);
             dispatch(replaceCart(updatedCart));
           }
-
           if (blockers.length > 0) {
             cogoToast.error(
               "Some items in your order are no longer available. Redirecting to cart...",
               { position: "top-center" }
             );
-            setTimeout(() => {
-              navigate(`${process.env.PUBLIC_URL}/cart`);
-            }, 2000);
+            setTimeout(() => { navigate(`${process.env.PUBLIC_URL}/cart`); }, 2000);
           } else {
             cogoToast.warn(
               "Some quantities in your order were adjusted due to stock changes.",
@@ -339,12 +418,11 @@ const Checkout = () => {
         console.warn("Mount-time checkout revalidation failed:", err);
       }
     };
-
     revalidateCheckoutOnMount();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ── Auto-select default/first address ────────────────────────────────── */
+  /* ── Auto-select default/first address ── */
   useEffect(() => {
     if (addresses.length === 0) return;
     const def = addresses.find((a) => a.isDefault) || addresses[0];
@@ -356,7 +434,7 @@ const Checkout = () => {
     }
   }, [addresses, billingSameAsShipping, selectedShippingAddrId]);
 
-  /* ── Address validation ────────────────────────────────────────────────── */
+  /* ── Address validation ── */
   const validateAddr = () => {
     const errs = {};
     if (!addrForm.fullName.trim()) errs.fullName = "Full name is required";
@@ -387,9 +465,7 @@ const Checkout = () => {
     if (billingSameAsShipping) setSelectedBillingAddrId(id);
   };
 
-  const handleSelectBillingAddr = (id) => {
-    setSelectedBillingAddrId(id);
-  };
+  const handleSelectBillingAddr = (id) => { setSelectedBillingAddrId(id); };
 
   const handleToggleBillingSame = (checked) => {
     setBillingSameAsShipping(checked);
@@ -398,40 +474,17 @@ const Checkout = () => {
 
   const handleApplyCoupon = async () => {
     const code = couponInput.trim().toUpperCase();
-
-    if (!code) {
-      setCouponError("Enter a coupon code.");
-      return;
-    }
-
-    if (shippingPricing.subtotal <= 0) {
-      setCouponError("Add items before applying a coupon.");
-      return;
-    }
-
+    if (!code) { setCouponError("Enter a coupon code."); return; }
+    if (shippingPricing.subtotal <= 0) { setCouponError("Add items before applying a coupon."); return; }
     setApplyingCoupon(true);
     setCouponError("");
-
     try {
-      const res = await api.post("/coupons/validate", {
-        code,
-        order_total: shippingPricing.subtotal,
-      });
+      const res = await api.post("/coupons/validate", { code, order_total: shippingPricing.subtotal });
       const data = res.data || {};
-
-      if (!data.valid) {
-        throw new Error(data.message || "Coupon could not be applied.");
-      }
-
+      if (!data.valid) throw new Error(data.message || "Coupon could not be applied.");
       const couponCode = data.coupon_code || code;
       const discount = toAmount(data.discount);
-      const coupon = {
-        code: couponCode,
-        discount,
-        type: data.type || null,
-        value: data.value ?? null,
-      };
-
+      const coupon = { code: couponCode, discount, type: data.type || null, value: data.value ?? null };
       setShippingPricing((prev) => withGrandTotal({
         ...prev,
         couponDiscount: discount,
@@ -444,9 +497,7 @@ const Checkout = () => {
       setCouponOpen(true);
     } catch (err) {
       setCouponError(
-        err.response?.data?.message ||
-        err.message ||
-        "This coupon is not valid for your order."
+        err.response?.data?.message || err.message || "This coupon is not valid for your order."
       );
     } finally {
       setApplyingCoupon(false);
@@ -466,18 +517,16 @@ const Checkout = () => {
     setCouponError("");
   };
 
-  /* ── Derived values ────────────────────────────────────────────────────── */
+  /* ── Derived values ── */
   const selectedShippingAddr = addresses.find((a) => a.id === selectedShippingAddrId);
   const selectedBillingAddr = billingSameAsShipping
     ? selectedShippingAddr
     : addresses.find((a) => a.id === selectedBillingAddrId);
 
-  // Filter payment methods based on COD availability (hide partial COD when COD not available)
   const availablePaymentMethods = PAYMENT_METHODS.filter(
     (pm) => pm.id !== "partial_cod" || (shippingInfo?.codAvailable === true)
   );
 
-  // Reset payment method if Partial COD was selected but not available
   useEffect(() => {
     if (paymentMethod === "partial_cod" && !shippingInfo?.codAvailable) {
       const fallback = availablePaymentMethods.length ? availablePaymentMethods[0].id : "upi";
@@ -485,7 +534,6 @@ const Checkout = () => {
     }
   }, [shippingInfo?.codAvailable, paymentMethod, availablePaymentMethods]);
 
-  // If COD becomes available after load, prefer Partial COD by default
   useEffect(() => {
     if (shippingInfo?.codAvailable && paymentMethod !== "partial_cod") {
       setPaymentMethod("partial_cod");
@@ -497,7 +545,7 @@ const Checkout = () => {
   const [razorpayOrderId, setRazorpayOrderId] = useState(null);
   const [processingRazorpay, setProcessingRazorpay] = useState(false);
 
-  /* ── Place order ───────────────────────────────────────────────────────── */
+  /* ── Place order ── */
   const handlePlaceOrder = async () => {
     if (!selectedShippingAddr) {
       cogoToast.warn("Please select a shipping address", { position: "top-center" });
@@ -508,7 +556,6 @@ const Checkout = () => {
       return;
     }
 
-    // ── Pre-order stock revalidation ──────────────────────────────────────
     try {
       const revalPayload = {
         items: checkoutItems.map(item => ({
@@ -525,12 +572,10 @@ const Checkout = () => {
       };
       const revalRes = await api.post("/cart/revalidate", revalPayload);
       const { hasChanges, items: revalResults } = revalRes.data;
-
       if (hasChanges) {
         const blockers = revalResults.filter(r =>
           r.adjustedQty === 0 && ["OOS", "Discontinued", "Unavailable"].includes(r.status)
         );
-
         const updatedCheckout = checkoutItems.map(item => {
           const result = revalResults.find(r => r.cartItemId === item.cartItemId);
           if (!result || result.status === "OK") return item;
@@ -538,7 +583,6 @@ const Checkout = () => {
           return { ...item, quantity: result.adjustedQty };
         }).filter(Boolean);
         dispatch(replaceCheckoutItems(updatedCheckout));
-
         if (checkoutSource === "cart") {
           const updatedCart = cartItems.map(item => {
             const result = revalResults.find(r => r.cartItemId === item.cartItemId);
@@ -548,17 +592,10 @@ const Checkout = () => {
           }).filter(Boolean);
           dispatch(replaceCart(updatedCart));
         }
-
         if (blockers.length > 0) {
-          cogoToast.error(
-            "Some items are no longer available. Please review your order.",
-            { position: "top-center" }
-          );
+          cogoToast.error("Some items are no longer available. Please review your order.", { position: "top-center" });
         } else {
-          cogoToast.warn(
-            "Some quantities were adjusted due to stock changes. Please review your order.",
-            { position: "top-center" }
-          );
+          cogoToast.warn("Some quantities were adjusted due to stock changes. Please review your order.", { position: "top-center" });
         }
         navigate(`${process.env.PUBLIC_URL}/cart`);
         return;
@@ -584,132 +621,110 @@ const Checkout = () => {
           childComboId: item.childComboId || null,
           comboName: item.isCombo ? item.name : null,
           comboType: item.comboType || null,
-          // ← Mix & Match selections: required for inventory deduction
           selectedProducts: item.selectedProducts || null,
         })),
-  totalAmount: shippingPricing.grandTotal,
-  shippingAddressId: selectedShippingAddrId,
-  billingAddressId: selectedBillingAddrId,
-  paymentMethod,
-  couponCode: shippingPricing.couponCode || null,
-  couponDiscount: shippingPricing.couponDiscount || 0,
-  couponType: shippingPricing.couponType || null,
-  couponValue: shippingPricing.couponValue || null,
-  notes: giftNote.trim() || null,
-  shippingCharge: shippingInfo?.shippingCharge || 0,
-  taxAmount: shippingPricing.gstAmount || 0,           // ← NEW: send tax to backend
-  gstAmount: shippingPricing.gstAmount || 0,           // ← NEW: alias for safety
-  courier: shippingInfo?.courier || null,
-  estimatedDeliveryDays: shippingInfo?.estimatedDays || null,
+        totalAmount: shippingPricing.grandTotal,
+        shippingAddressId: selectedShippingAddrId,
+        billingAddressId: selectedBillingAddrId,
+        paymentMethod,
+        couponCode: shippingPricing.couponCode || null,
+        couponDiscount: shippingPricing.couponDiscount || 0,
+        couponType: shippingPricing.couponType || null,
+        couponValue: shippingPricing.couponValue || null,
+        notes: giftNote.trim() || null,
+        shippingCharge: shippingInfo?.shippingCharge || 0,
+        taxAmount: shippingPricing.gstAmount || 0,
+        gstAmount: shippingPricing.gstAmount || 0,
+        courier: shippingInfo?.courier || null,
+        estimatedDeliveryDays: shippingInfo?.estimatedDays || null,
       };
 
       const res = await api.post("/orders", payload);
       const id = res.data?.id || res.data?.orderId || "KG" + Date.now();
 
       if (paymentMethod === "partial_cod") {
-        // Collect delivery charge via Razorpay, rest on delivery
         initPartialCodPayment(id, shippingInfo?.shippingCharge || 0);
       } else if (paymentMethod !== "cod") {
         initRazorpayPayment(id);
       } else {
-        if (checkoutSource === "cart") {
-          dispatch(deleteAllFromCart());
-        }
+        if (checkoutSource === "cart") dispatch(deleteAllFromCart());
         navigatingRef.current = true;
         dispatch(clearCheckout());
         setTimeout(() => {
- navigate(`/order-confirmation`, {
-  replace: true,
-  state: {
-    orderId: id,
-    selectedShippingAddr,
-    billingAddress: selectedBillingAddr,
-    paymentMethod,
-    cartItems: checkoutItems,
-    estimatedDays: shippingInfo?.estimatedDays || null,
-    // ── FIXES: shipping, coupon, tax ──────────────────────
-    shippingCharge: shippingInfo?.shippingCharge || 0,
-    couponCode: shippingPricing.couponCode || null,
-    couponDiscount: shippingPricing.couponDiscount || 0,
-    tax: shippingPricing.gstAmount || 0,
-    orderStatus: "confirmed",
-  },
-});
+          navigate(`/order-confirmation`, {
+            replace: true,
+            state: {
+              orderId: id,
+              selectedShippingAddr,
+              billingAddress: selectedBillingAddr,
+              paymentMethod,
+              cartItems: checkoutItems,
+              estimatedDays: shippingInfo?.estimatedDays || null,
+              shippingCharge: shippingInfo?.shippingCharge || 0,
+              couponCode: shippingPricing.couponCode || null,
+              couponDiscount: shippingPricing.couponDiscount || 0,
+              tax: shippingPricing.gstAmount || 0,
+              orderStatus: "confirmed",
+            },
+          });
         }, 1000);
       }
     } catch (err) {
-  const errorData = err.response?.data;
-  const message = errorData?.message || "Could not place order. Please try again.";
-
-  cogoToast.error(message, { position: "top-center" });
-
-  // ── OOS-specific handling ─────────────────────────────────────────────────
-  if (errorData?.outOfStock) {
-    // Refresh products in background so Buy Now button reflects OOS state
-    import("../../store/services/productService").then(({ refreshProductsSilently }) => {
-      refreshProductsSilently();
-    });
-
-    // Clear stale checkout session to prevent the empty checkout toast next time
-    dispatch(clearCheckout());
-
-    // Redirect to cart so user can remove the OOS item
-    setTimeout(() => {
-      navigate(`${process.env.PUBLIC_URL}/cart`);
-    }, 1500);
-}
+      const errorData = err.response?.data;
+      const message = errorData?.message || "Could not place order. Please try again.";
+      cogoToast.error(message, { position: "top-center" });
+      if (errorData?.outOfStock) {
+        import("../../store/services/productService").then(({ refreshProductsSilently }) => {
+          refreshProductsSilently();
+        });
+        dispatch(clearCheckout());
+        setTimeout(() => { navigate(`${process.env.PUBLIC_URL}/cart`); }, 1500);
+      }
     } finally {
       setPlacing(false);
     }
   };
 
-  /* ── Initialize Partial COD Payment (delivery charge only) ────────────── */
+  /* ── Initialize Partial COD Payment ── */
   const initPartialCodPayment = async (dbOrderId, deliveryCharge) => {
     if (!deliveryCharge || deliveryCharge <= 0) {
-      // No delivery charge to collect — treat as plain COD
       if (checkoutSource === "cart") dispatch(deleteAllFromCart());
       navigatingRef.current = true;
       dispatch(clearCheckout());
       setTimeout(() => {
-navigate(`/order-confirmation`, {
-  replace: true,
-  state: {
-    orderId: dbOrderId,
-    selectedShippingAddr,
-    billingAddress: selectedBillingAddr,
-    paymentMethod,
-    cartItems: checkoutItems,
-    estimatedDays: shippingInfo?.estimatedDays || null,
-    // ── FIXES ──────────────────────────────────────────────
-    shippingCharge: 0,
-    couponCode: shippingPricing.couponCode || null,
-    couponDiscount: shippingPricing.couponDiscount || 0,
-    tax: shippingPricing.gstAmount || 0,
-    orderStatus: "confirmed",
-  },
-});
+        navigate(`/order-confirmation`, {
+          replace: true,
+          state: {
+            orderId: dbOrderId,
+            selectedShippingAddr,
+            billingAddress: selectedBillingAddr,
+            paymentMethod,
+            cartItems: checkoutItems,
+            estimatedDays: shippingInfo?.estimatedDays || null,
+            shippingCharge: 0,
+            couponCode: shippingPricing.couponCode || null,
+            couponDiscount: shippingPricing.couponDiscount || 0,
+            tax: shippingPricing.gstAmount || 0,
+            orderStatus: "confirmed",
+          },
+        });
       }, 1000);
       return;
     }
 
     try {
       setProcessingRazorpay(true);
-
       const paymentRes = await api.post("/payment/create-delivery-charge-order", {
         deliveryCharge,
         currency: "INR",
-        dbOrderId,  // ← embed in Razorpay notes so webhook can resolve the DB order
+        dbOrderId,
       });
-
       const rzpOrderId = paymentRes.data.orderId;
-
       if (!window.Razorpay) {
         cogoToast.error("Razorpay SDK not loaded", { position: "top-center" });
         return;
       }
-
       const productCost = shippingPricing.grandTotal - deliveryCharge;
-
       const options = {
         key: process.env.REACT_APP_RAZORPAY_KEY_ID,
         order_id: rzpOrderId,
@@ -733,7 +748,6 @@ navigate(`/order-confirmation`, {
               dbOrderId,
               isDeliveryCharge: true,
             });
-
             if (verifyRes.data.success) {
               cogoToast.success(
                 `Delivery charge ₹${deliveryCharge} paid! Pay ₹${productCost.toFixed(2)} on delivery.`,
@@ -743,28 +757,27 @@ navigate(`/order-confirmation`, {
               navigatingRef.current = true;
               dispatch(clearCheckout());
               setTimeout(() => {
-navigate(`/order-confirmation`, {
-  replace: true,
-  state: {
-    orderId: dbOrderId,
-    selectedShippingAddr,
-    billingAddress: selectedBillingAddr,
-    paymentMethod: "partial_cod",
-    cartItems: checkoutItems,
-    estimatedDays: shippingInfo?.estimatedDays || null,
-    partialCod: {
-      deliveryChargePaid: deliveryCharge,
-      amountDueOnDelivery: productCost,
-      shippingCharge: deliveryCharge,      // ← add for OrderConfirmation compat
-    },
-    // ── FIXES ──────────────────────────────────────────────
-    shippingCharge: deliveryCharge,        // ← the actual shipping amount collected
-    couponCode: shippingPricing.couponCode || null,
-    couponDiscount: shippingPricing.couponDiscount || 0,
-    tax: shippingPricing.gstAmount || 0,
-    orderStatus: "confirmed",
-  },
-});
+                navigate(`/order-confirmation`, {
+                  replace: true,
+                  state: {
+                    orderId: dbOrderId,
+                    selectedShippingAddr,
+                    billingAddress: selectedBillingAddr,
+                    paymentMethod: "partial_cod",
+                    cartItems: checkoutItems,
+                    estimatedDays: shippingInfo?.estimatedDays || null,
+                    partialCod: {
+                      deliveryChargePaid: deliveryCharge,
+                      amountDueOnDelivery: productCost,
+                      shippingCharge: deliveryCharge,
+                    },
+                    shippingCharge: deliveryCharge,
+                    couponCode: shippingPricing.couponCode || null,
+                    couponDiscount: shippingPricing.couponDiscount || 0,
+                    tax: shippingPricing.gstAmount || 0,
+                    orderStatus: "confirmed",
+                  },
+                });
               }, 1500);
             }
           } catch (verifyErr) {
@@ -779,7 +792,6 @@ navigate(`/order-confirmation`, {
           },
         },
       };
-
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
@@ -790,25 +802,21 @@ navigate(`/order-confirmation`, {
     }
   };
 
-  /* ── Initialize Razorpay Payment ───────────────────────────────────────── */
+  /* ── Initialize Razorpay Payment ── */
   const initRazorpayPayment = async (dbOrderId) => {
     try {
       setProcessingRazorpay(true);
-
       const paymentRes = await api.post("/payment/create-order", {
         amount: shippingPricing.grandTotal,
         currency: "INR",
-        dbOrderId,  // ← embed in Razorpay notes so webhook can resolve the DB order
+        dbOrderId,
       });
-
       const rzpOrderId = paymentRes.data.orderId;
       setRazorpayOrderId(rzpOrderId);
-
       if (!window.Razorpay) {
         cogoToast.error("Razorpay SDK not loaded", { position: "top-center" });
         return;
       }
-
       const options = {
         key: process.env.REACT_APP_RAZORPAY_KEY_ID,
         order_id: rzpOrderId,
@@ -831,32 +839,28 @@ navigate(`/order-confirmation`, {
               razorpay_signature: response.razorpay_signature,
               dbOrderId,
             });
-
             if (verifyRes.data.success) {
               cogoToast.success("Payment successful!", { position: "top-center" });
-              if (checkoutSource === "cart") {
-                dispatch(deleteAllFromCart());
-              }
+              if (checkoutSource === "cart") dispatch(deleteAllFromCart());
               navigatingRef.current = true;
               dispatch(clearCheckout());
               setTimeout(() => {
-navigate(`/order-confirmation`, {
-  replace: true,
-  state: {
-    orderId: dbOrderId,
-    selectedShippingAddr,
-    billingAddress: selectedBillingAddr,
-    paymentMethod,
-    cartItems: checkoutItems,
-    estimatedDays: shippingInfo?.estimatedDays || null,
-    // ── FIXES ──────────────────────────────────────────────
-    shippingCharge: shippingInfo?.shippingCharge || 0,
-    couponCode: shippingPricing.couponCode || null,
-    couponDiscount: shippingPricing.couponDiscount || 0,
-    tax: shippingPricing.gstAmount || 0,
-    orderStatus: "confirmed",
-  },
-});
+                navigate(`/order-confirmation`, {
+                  replace: true,
+                  state: {
+                    orderId: dbOrderId,
+                    selectedShippingAddr,
+                    billingAddress: selectedBillingAddr,
+                    paymentMethod,
+                    cartItems: checkoutItems,
+                    estimatedDays: shippingInfo?.estimatedDays || null,
+                    shippingCharge: shippingInfo?.shippingCharge || 0,
+                    couponCode: shippingPricing.couponCode || null,
+                    couponDiscount: shippingPricing.couponDiscount || 0,
+                    tax: shippingPricing.gstAmount || 0,
+                    orderStatus: "confirmed",
+                  },
+                });
               }, 1500);
             }
           } catch (verifyErr) {
@@ -871,7 +875,6 @@ navigate(`/order-confirmation`, {
           },
         },
       };
-
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
@@ -883,7 +886,7 @@ navigate(`/order-confirmation`, {
   };
 
   /* ══════════════════════════════════════════════════════════════════════════
-     MAIN CHECKOUT RENDER
+     RENDER
   ══════════════════════════════════════════════════════════════════════════ */
   return (
     <Fragment>
@@ -903,7 +906,7 @@ navigate(`/order-confirmation`, {
         <div className="kco-page">
           <div className="kco-container">
 
-            {/* ── Step Indicator ─────────────────────────────────── */}
+            {/* ── Step Indicator ── */}
             <div className="kco-step-bar">
               {["Shipping & Billing", "Payment", "Review & Place"].map((label, i) => {
                 const n = i + 1;
@@ -943,13 +946,13 @@ navigate(`/order-confirmation`, {
               })}
             </div>
 
-            {/* ── Two-column layout ──────────────────────────────── */}
+            {/* ── Two-column layout ── */}
             <div className="kco-layout">
 
-              {/* ══ LEFT COLUMN ══════════════════════════════════════ */}
+              {/* ══ LEFT COLUMN ══ */}
               <div className="kco-left">
 
-                {/* ── STEP 1: Shipping & Billing Address ──────────────────── */}
+                {/* ── STEP 1: Shipping & Billing Address ── */}
                 {step === 1 && (
                   <div className="kco-card">
                     <div className="kco-card-header">
@@ -960,10 +963,7 @@ navigate(`/order-confirmation`, {
                           setShowNewAddrForm((p) => {
                             if (!p) {
                               setTimeout(() => {
-                                newAddrFormRef.current?.scrollIntoView({
-                                  behavior: "smooth",
-                                  block: "start",
-                                });
+                                newAddrFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                               }, 50);
                             }
                             return !p;
@@ -974,14 +974,12 @@ navigate(`/order-confirmation`, {
                       </button>
                     </div>
 
-                    {/* Loading */}
                     {addrLoading && (
                       <div style={{ color: "#aaa", fontSize: 13, padding: "20px 0", textAlign: "center" }}>
                         Loading your saved addresses...
                       </div>
                     )}
 
-                    {/* No addresses */}
                     {!addrLoading && addresses.length === 0 && !showNewAddrForm && (
                       <div className="kco-no-addr">
                         <div style={{ fontSize: 40 }}>📭</div>
@@ -992,7 +990,6 @@ navigate(`/order-confirmation`, {
                       </div>
                     )}
 
-                    {/* ── Shipping Panel ── */}
                     {addresses.length > 0 && (
                       <div className="kco-address-sections">
 
@@ -1042,7 +1039,7 @@ navigate(`/order-confirmation`, {
                           )}
                         </div>
 
-                        {/* ── Billing Divider ── */}
+                        {/* Billing Divider */}
                         <div className="kco-billing-divider">
                           <div className="kco-billing-divider-line" />
                           <label className="kco-same-billing-pill">
@@ -1073,9 +1070,7 @@ navigate(`/order-confirmation`, {
 
                           {billingSameAsShipping && (
                             <div className="kco-billing-disabled-overlay">
-                              <span className="kco-billing-disabled-msg">
-                                ✓ Same as shipping address
-                              </span>
+                              <span className="kco-billing-disabled-msg">✓ Same as shipping address</span>
                             </div>
                           )}
 
@@ -1120,7 +1115,6 @@ navigate(`/order-confirmation`, {
                     {showNewAddrForm && (
                       <div className="kco-new-addr-form" ref={newAddrFormRef}>
                         <h4 className="kco-new-addr-title">➕ New Address</h4>
-
                         <div className="kco-type-row">
                           {["Home", "Work", "Other"].map((t) => (
                             <button
@@ -1132,7 +1126,6 @@ navigate(`/order-confirmation`, {
                             </button>
                           ))}
                         </div>
-
                         <div className="kco-field-grid">
                           <FormField label="Full Name *" error={addrErrors.fullName}>
                             <input
@@ -1153,7 +1146,6 @@ navigate(`/order-confirmation`, {
                             />
                           </FormField>
                         </div>
-
                         <FormField label="Street / House No. *" error={addrErrors.street}>
                           <input
                             className={`kco-input ${addrErrors.street ? "error" : ""}`}
@@ -1162,7 +1154,6 @@ navigate(`/order-confirmation`, {
                             placeholder="House / flat no., road name"
                           />
                         </FormField>
-
                         <FormField label="Apartment / Landmark (optional)">
                           <input
                             className="kco-input"
@@ -1171,7 +1162,6 @@ navigate(`/order-confirmation`, {
                             placeholder="Building name, floor, landmark"
                           />
                         </FormField>
-
                         <div className="kco-field-grid">
                           <FormField label="City *" error={addrErrors.city}>
                             <input
@@ -1190,7 +1180,6 @@ navigate(`/order-confirmation`, {
                             />
                           </FormField>
                         </div>
-
                         <div className="kco-field-grid">
                           <FormField label="Pincode *" error={addrErrors.pincode}>
                             <input
@@ -1211,7 +1200,6 @@ navigate(`/order-confirmation`, {
                             />
                           </FormField>
                         </div>
-
                         <label className="kco-default-check-row" style={{ display: "flex" }}>
                           <input
                             type="checkbox"
@@ -1221,7 +1209,6 @@ navigate(`/order-confirmation`, {
                           />
                           Set as my default address
                         </label>
-
                         <div className="kco-form-actions">
                           <button className="kco-save-addr-btn btn-small" onClick={handleSaveNewAddr}>
                             Save Address
@@ -1240,27 +1227,6 @@ navigate(`/order-confirmation`, {
                       </div>
                     )}
 
-                    {/* Gift Message */}
-                    {/* <div className="kco-gift-section">
-                      <button
-                        className="kco-gift-toggle"
-                        onClick={() => setGiftNoteOpen((o) => !o)}
-                      >
-                        🎁 Add a gift message{" "}
-                        <span style={{ fontSize: 11, color: "#bbb" }}>{giftNoteOpen ? "▲" : "▼"}</span>
-                      </button>
-                      {giftNoteOpen && (
-                        <textarea
-                          className="kco-gift-textarea"
-                          value={giftNote}
-                          onChange={(e) => setGiftNote(e.target.value)}
-                          placeholder="Write a personal note for the recipient..."
-                          rows={3}
-                          maxLength={200}
-                        />
-                      )}
-                    </div> */}
-
                     {/* Continue button */}
                     <button
                       className="kco-next-btn"
@@ -1276,15 +1242,13 @@ navigate(`/order-confirmation`, {
                           (!billingSameAsShipping && !selectedBillingAddr) ||
                           checkingServiceability ||
                           (selectedShippingAddr && !shippingInfo)
-                            ? 0.5
-                            : 1,
+                            ? 0.5 : 1,
                         cursor:
                           !selectedShippingAddr ||
                           (!billingSameAsShipping && !selectedBillingAddr) ||
                           checkingServiceability ||
                           (selectedShippingAddr && !shippingInfo)
-                            ? "not-allowed"
-                            : "pointer",
+                            ? "not-allowed" : "pointer",
                       }}
                       onClick={() => {
                         if (!selectedShippingAddr) {
@@ -1307,11 +1271,10 @@ navigate(`/order-confirmation`, {
                   </div>
                 )}
 
-                {/* ── STEP 2: Payment Method ────────────────────── */}
+                {/* ── STEP 2: Payment Method ── */}
                 {step === 2 && (
                   <div className="kco-card">
                     <h3 className="kco-card-title">Payment Method</h3>
-
                     <div style={{ marginTop: 20 }}>
                       {availablePaymentMethods.map((pm) => (
                         <div
@@ -1330,13 +1293,11 @@ navigate(`/order-confirmation`, {
                         </div>
                       ))}
                     </div>
-
                     {paymentMethod !== "cod" && (
                       <p className="kco-pay-note">
                         🔒 You'll be redirected to our secure payment gateway after reviewing your order.
                       </p>
                     )}
-
                     <div className="kco-btn-row">
                       <button className="kco-back-btn" onClick={() => setStep(1)}>← Back</button>
                       <button
@@ -1350,7 +1311,7 @@ navigate(`/order-confirmation`, {
                   </div>
                 )}
 
-                {/* ── STEP 3: Review & Place ────────────────────── */}
+                {/* ── STEP 3: Review & Place ── */}
                 {step === 3 && (
                   <div className="kco-card">
                     <h3 className="kco-card-title">Review Your Order</h3>
@@ -1405,95 +1366,42 @@ navigate(`/order-confirmation`, {
                     </div>
 
                     {/* Items */}
-<div className="kco-review-section">
-  <div className="kco-review-section-title" style={{ marginBottom: 12 }}>
-    🛍 Items ({checkoutItems.length})
-  </div>
-  {checkoutItems.map((item) => {
-    const price = parseFloat(item.price || 0);
+                    <div className="kco-review-section">
+                      <div className="kco-review-section-title" style={{ marginBottom: 12 }}>
+                        🛍 Items ({checkoutItems.length})
+                      </div>
+                      {checkoutItems.map((item) => {
+                        const price = parseFloat(item.price || 0);
+                        const attrs = buildVariantAttrs(item);
 
-    // Build dynamic variant attrs
-    const attrs = [];
-    const v = Array.isArray(item.variation) ? item.variation[0] : null;
-const rawAttrs = v?.attributes;
-const attrsArray = Array.isArray(rawAttrs)
-  ? rawAttrs
-  : typeof rawAttrs === "string"
-  ? (() => { try { return JSON.parse(rawAttrs); } catch { return []; } })()
-  : [];
-
-if (attrsArray.length) {
-  attrsArray.forEach(a => attrs.push({ key: a.key, val: a.value }));
-} else if (item.selectedVariantName?.includes(":")) {
-      item.selectedVariantName.split("·").forEach(part => {
-        const [k, val] = part.split(":").map(s => s.trim());
-        if (k && val) attrs.push({ key: k, val });
-      });
-    } else if (item.selectedVariantName) {
-      attrs.push({ key: "Variant", val: item.selectedVariantName });
-    }
-
-    return (
-      <div key={item.cartItemId} className="kco-review-item">
-        <img
-          src={resolveCartImg(item.image)}
-          alt={item.name}
-          className="kco-review-item-img"
-          onError={(e) => { e.target.src = "/assets/img/products/products-1.jpeg"; }}
-        />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {item.name}
-          </div>
-          {attrs.length > 0 && (
-            <div style={{ marginTop: 3, display: "flex", flexWrap: "wrap", gap: 4 }}>
-              {attrs.map((a, i) => {
-                const isCol = isColourKey(a.key);
-                const hasPreview = isCol && isHexColor(a.val);
-                const displayVal = hasPreview ? a.val.toUpperCase() : a.val;
-                return (
-                  <span key={i} style={{
-                    fontSize: 10,
-                    color: "#666",
-                    background: "#f5f5f5",
-                    borderRadius: 4,
-                    padding: "2px 6px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                  }}>
-                    <span>{a.key}: </span>
-                    {hasPreview && (
-                      <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: '50%',
-                          border: '1px solid #dcdcdc',
-                          backgroundColor: displayVal,
-                          display: 'inline-block',
-                          marginLeft: 4,
-                          marginRight: 4,
-                          flexShrink: 0,
-                        }}
-                      />
-                    )}
-                    <span style={{ marginLeft: hasPreview ? 0 : 4 }}>{displayVal}</span>
-                  </span>
-                );
-              })}
-            </div>
-          )}
-          <div style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
-            Qty: {item.quantity}
-          </div>
-        </div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: "#db1a5d", flexShrink: 0 }}>
-          ₹{(price * currency.currencyRate * item.quantity).toFixed(2)}
-        </div>
-      </div>
-    );
-  })}
-</div>
+                        return (
+                          <div key={item.cartItemId} className="kco-review-item">
+                            <img
+                              src={resolveCartImg(item.image)}
+                              alt={item.name}
+                              className="kco-review-item-img"
+                              onError={(e) => { e.target.src = "/assets/img/products/products-1.jpeg"; }}
+                            />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {item.name}
+                              </div>
+                              {attrs.length > 0 && (
+                                <div style={{ marginTop: 3 }}>
+                                  <VariantChips attrs={attrs} fontSize={10} swatchSize={12} />
+                                </div>
+                              )}
+                              <div style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
+                                Qty: {item.quantity}
+                              </div>
+                            </div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: "#db1a5d", flexShrink: 0 }}>
+                              ₹{(price * currency.currencyRate * item.quantity).toFixed(2)}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
 
                     {/* Place Order */}
                     {paymentMethod === "partial_cod" && (
@@ -1511,7 +1419,6 @@ if (attrsArray.length) {
                       </div>
                     )}
                     <div className="kco-btn-row">
-                      
                       <button className="kco-back-btn" onClick={() => setStep(2)}>← Back</button>
                       <button
                         className="kco-place-order-btn"
@@ -1529,7 +1436,7 @@ if (attrsArray.length) {
                             : ""
                         }
                       >
-                        {placing ? "Placing Order..." : paymentMethod === "partial_cod" 
+                        {placing ? "Placing Order..." : paymentMethod === "partial_cod"
                           ? `Place Order · Pay ₹${(shippingInfo?.shippingCharge || 0).toFixed(2)} now`
                           : `Place Order · ₹${grandTotalWithCOD.toFixed(2)}`
                         }
@@ -1539,7 +1446,7 @@ if (attrsArray.length) {
                 )}
               </div>
 
-              {/* ══ RIGHT COLUMN — Order Summary ═════════════════════ */}
+              {/* ══ RIGHT COLUMN — Order Summary ══ */}
               <div className="kco-right">
                 <div className="kco-price-card">
                   <h3 className="kco-price-title">
@@ -1549,7 +1456,7 @@ if (attrsArray.length) {
                     </span>
                   </h3>
 
-                  {/* ── Item Cards ── */}
+                  {/* Item Cards */}
                   <div className="kco-item-list">
                     {checkoutItems.map((item) => {
                       const price = parseFloat(item.price || 0);
@@ -1557,18 +1464,8 @@ if (attrsArray.length) {
                       const hasMrp = mrp > 0 && mrp > price;
                       const discount = hasMrp ? Math.round((1 - price / mrp) * 100) : 0;
 
-                      const variantLabel = (() => {
-                        if (item.selectedVariantName) return item.selectedVariantName;
-                        const v = Array.isArray(item.variation) ? item.variation[0] : null;
-                        if (v?.variantName) return v.variantName;
-                        if (v?.attributes?.length) {
-                          return v.attributes.map(a => `${a.key}: ${a.value}`).join(" · ");
-                        }
-                        if (item.selectedProductColor || item.selectedProductSize) {
-                          return [item.selectedProductColor, item.selectedProductSize].filter(Boolean).join(" / ");
-                        }
-                        return null;
-                      })();
+                      // ── Build attrs with same priority chain as Cart ──
+                      const attrs = buildVariantAttrs(item);
 
                       return (
                         <div className="kco-item-card" key={item.cartItemId}>
@@ -1583,11 +1480,14 @@ if (attrsArray.length) {
                           </div>
                           <div className="kco-item-info">
                             <div className="kco-item-name">{item.name}</div>
-                            {variantLabel && (
-                              <div className="kco-item-variant" style={{ display: "inline-flex", alignItems: "center" }}>
-                                {renderVariantLabel(variantLabel, 10, 3)}
+
+                            {/* ── Colour swatch chips — matches Cart page exactly ── */}
+                            {attrs.length > 0 && (
+                              <div className="kco-item-variant" style={{ marginTop: 3 }}>
+                                <VariantChips attrs={attrs} fontSize={10} swatchSize={12} />
                               </div>
                             )}
+
                             <div className="kco-item-price-row">
                               <span className="kco-item-price">₹{(price * item.quantity).toFixed(2)}</span>
                               {hasMrp && (
@@ -1603,6 +1503,7 @@ if (attrsArray.length) {
                     })}
                   </div>
 
+                  {/* Coupon Panel */}
                   <div className="kco-coupon-panel">
                     <button
                       type="button"
@@ -1621,10 +1522,7 @@ if (attrsArray.length) {
                             role="button"
                             tabIndex={0}
                             className="kco-coupon-remove-inline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveCoupon();
-                            }}
+                            onClick={(e) => { e.stopPropagation(); handleRemoveCoupon(); }}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 e.preventDefault();
@@ -1633,7 +1531,7 @@ if (attrsArray.length) {
                               }
                             }}
                           >
-                           clear 
+                            clear
                           </span>
                         </span>
                       ) : (
@@ -1647,22 +1545,19 @@ if (attrsArray.length) {
                           <div className="kco-coupon-muted">Loading coupons...</div>
                         ) : activeCoupons.length > 0 ? (
                           <div className="kco-coupon-chip-row">
-                         {activeCoupons.map((coupon) => (
-                               <button
-                               type="button"
-                               key={coupon.id || coupon.code}
-                               className={`kco-coupon-chip ${shippingPricing.couponCode === coupon.code ? "active" : ""}`}
-                               onClick={() => {
-                                 setCouponInput(coupon.code);
-                                  setCouponError("");
-                               }}
-                               title={getCouponLabel(coupon)}
-                             >
+                            {activeCoupons.map((coupon) => (
+                              <button
+                                type="button"
+                                key={coupon.id || coupon.code}
+                                className={`kco-coupon-chip ${shippingPricing.couponCode === coupon.code ? "active" : ""}`}
+                                onClick={() => { setCouponInput(coupon.code); setCouponError(""); }}
+                                title={getCouponLabel(coupon)}
+                              >
                                 <span>{coupon.code}</span>
                                 <small>{getCouponLabel(coupon)}</small>
-                             </button>
-                           ))}
-                         </div>
+                              </button>
+                            ))}
+                          </div>
                         ) : (
                           <div className="kco-coupon-muted">No active coupons right now.</div>
                         )}
@@ -1672,13 +1567,8 @@ if (attrsArray.length) {
                             type="text"
                             className="kco-coupon-input"
                             value={couponInput}
-                            onChange={(e) => {
-                              setCouponInput(e.target.value.toUpperCase());
-                              setCouponError("");
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleApplyCoupon();
-                            }}
+                            onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
+                            onKeyDown={(e) => { if (e.key === "Enter") handleApplyCoupon(); }}
                             placeholder="Enter coupon code"
                             disabled={applyingCoupon}
                           />
@@ -1699,17 +1589,14 @@ if (attrsArray.length) {
                     )}
                   </div>
 
-                  {/* ── Price Breakdown ── */}
+                  {/* Price Breakdown */}
                   <div className="kco-sum-rows">
                     <div className="kco-sum-row">
                       <span>Subtotal (before GST)</span>
                       <span>₹{shippingPricing.subtotal.toFixed(2)}</span>
                     </div>
-
                     <div className="kco-sum-row">
-                      <span style={{ color: "#555" }}>
-                        GST (18%)
-                      </span>
+                      <span style={{ color: "#555" }}>GST (18%)</span>
                       <span style={{ color: "#555" }}>+ ₹{(shippingPricing.gstAmount || shippingPricing.subtotal * GST_RATE).toFixed(2)}</span>
                     </div>
 
@@ -1725,10 +1612,10 @@ if (attrsArray.length) {
                         <span>
                           Delivery
                           {shippingInfo.estimatedDays && (
-  <span style={{ fontSize: "0.85em", color: "#666" }}>
-    {" "}(Est. {shippingInfo.estimatedDays} {Number(shippingInfo.estimatedDays) === 1 ? "day" : "days"})
-  </span>
-)}
+                            <span style={{ fontSize: "0.85em", color: "#666" }}>
+                              {" "}(Est. {shippingInfo.estimatedDays} {Number(shippingInfo.estimatedDays) === 1 ? "day" : "days"})
+                            </span>
+                          )}
                         </span>
                         <span style={shippingInfo.shippingCharge === 0 ? { color: "#16a34a", fontWeight: 700 } : {}}>
                           {shippingInfo.shippingCharge === 0 ? "FREE" : `₹${shippingInfo.shippingCharge}`}
@@ -1776,7 +1663,7 @@ if (attrsArray.length) {
   );
 };
 
-/* ── Field Wrapper Component ─────────────────────────────────────────────── */
+/* ── Field Wrapper Component ── */
 const FormField = ({ label, error, children }) => (
   <div className="kco-field">
     <label className="kco-field-label">{label}</label>

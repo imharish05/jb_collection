@@ -380,7 +380,7 @@ const Cart = () => {
                                         }}
                                       />
                                     )}
-                                    <span>{displayVal}</span>
+                                    {/* <span>{displayVal}</span> */}
                                   </span>
                                 );
                               })}
