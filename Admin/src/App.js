@@ -18,7 +18,7 @@ import Stock from './components/Stock/Stock';
 import Customers from './components/Customers/Customers';
 import Reviews from './components/Reviews/Reviews';
 import Coupons from './components/Coupons/AddCoupon';
-import Orders from './components/orders/Orders';
+import Orders from './components/Orders/Orders';
 import AdminContactManager from './components/Admincontactmanager';
 import { fetchInventorySettings } from './redux/services/notificationsService';
 // ── Marketing pages ──────────────────────────────────────────
