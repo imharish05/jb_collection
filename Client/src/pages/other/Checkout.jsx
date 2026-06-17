@@ -97,7 +97,7 @@ const PAYMENT_METHODS = [
   },
   {
     id: "razorpay",
-    label: "Pay Online (Razorpay)",
+    label: "Pay Online",
     icon: "💳",
     desc: "UPI, Credit / Debit Card, Net Banking, Wallet — all accepted",
   },
@@ -1266,11 +1266,11 @@ const Checkout = () => {
                         </div>
                       ))}
                     </div>
-                    {paymentMethod !== "partial_cod" && (
+                    {/* {paymentMethod !== "partial_cod" && (
                       <p className="kco-pay-note">
-                        🔒 You'll be redirected to our secure Razorpay payment gateway after reviewing your order. Choose UPI, Card, or Net Banking inside the gateway.
-                      </p>
-                    )}
+  🔒 Secure payment. Pay using UPI, Cards, or Net Banking.
+</p>
+                    )} */}
                     <div className="kco-btn-row">
                       <button className="kco-back-btn" onClick={() => setStep(1)}>← Back</button>
                       <button

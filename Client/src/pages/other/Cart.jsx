@@ -815,7 +815,7 @@ const Cart = () => {
                     <span className="kg-info-icon">↩️</span>
                     <div>
                       <div className="kg-info-label">Return policy</div>
-                      <div className="kg-info-value">7-day hassle-free returns</div>
+                      <div className="kg-info-value">Hassle-free returns</div>
                     </div>
                   </div>
                 </div>
