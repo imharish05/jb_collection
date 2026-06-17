@@ -1,4 +1,5 @@
 import cogoToast from "cogo-toast";
+import Swal from "sweetalert2";
 import { Fragment, useState, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import SEO from "../../components/seo";
@@ -484,15 +485,49 @@ const toggleVisibility = (field) => {
                           const canCancel = hoursFromCreated < 24 && !nonCancellableStatuses.includes(orderStatusLow) && !isProductionCustom;
 
                           const handleCancelFromAccount = async () => {
-                            if (!window.confirm("Cancel this order?")) return;
-                            try {
-                              const axios = await import("../../api/axios");
-                              await axios.default.patch(`/returns/cancel-order/${order.referenceSlug || order.id}`);
-                              cogoToast.success("Order cancelled!");
-                              dispatch(fetchOrders());
-                            } catch (err) {
-                              cogoToast.error(err?.response?.data?.message || "Failed to cancel order");
-                            }
+                            const result = await Swal.fire({
+                              title: "Cancel this order?",
+                              text: "This action cannot be undone.",
+                              icon: "warning",
+                              showCancelButton: true,
+                              confirmButtonColor: "#db1a5d",
+                              cancelButtonColor: "#6c757d",
+                              confirmButtonText: "Yes, cancel order",
+                              cancelButtonText: "No, keep it",
+                              reverseButtons: true,
+                            });
+
+                            if (!result.isConfirmed) return;
+
+                            // Show loading state
+                            Swal.fire({
+                              title: "Cancelling order...",
+                              allowOutsideClick: false,
+                              allowEscapeKey: false,
+                              didOpen: async () => {
+                                Swal.showLoading();
+                                try {
+                                  const axios = await import("../../api/axios");
+                                  await axios.default.patch(`/returns/cancel-order/${order.referenceSlug || order.id}`);
+                                  dispatch(fetchOrders());
+                                  
+                                  Swal.fire({
+                                    title: "Success!",
+                                    text: "Order cancelled successfully!",
+                                    icon: "success",
+                                    confirmButtonColor: "#db1a5d",
+                                  });
+                                } catch (err) {
+                                  const errorMsg = err?.response?.data?.message || "Failed to cancel order";
+                                  Swal.fire({
+                                    title: "Error",
+                                    text: errorMsg,
+                                    icon: "error",
+                                    confirmButtonColor: "#db1a5d",
+                                  });
+                                }
+                              },
+                            });
                           };
 
                           return (

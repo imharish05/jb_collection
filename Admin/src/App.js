@@ -6,6 +6,7 @@ import Login from './components/Login/Login';
 import Sidebar from './components/Sidebar/Sidebar';
 import Topbar from './components/Topbar/Topbar';
 import Dashboard from './components/Dashboard/Dashboard';
+import Reports from './components/Reports/Reports';
 import Categories from './components/Categories/Categories';
 import SubCategories from './components/SubCategories/SubCategories';
 import EventCategories from './components/EventCategories/EventCategories';
@@ -35,6 +36,7 @@ import Swal from 'sweetalert2';
 
 const PAGE_CONFIG = {
   dashboard:           { title: 'Dashboard' },
+  reports:             { title: 'Reports' },
   categories:          { title: 'Categories' },
   sub_categories:      { title: 'Sub Categories' },
   event_categories:    { title: 'Event Categories' },
@@ -92,6 +94,7 @@ function AdminLayoutWrapper({ handleLogout }) {
         <div className="content">
           <Routes>
             <Route path="/dashboard"           element={<Dashboard          showToast={showToast} />} />
+            <Route path="/reports"             element={<Reports            showToast={showToast} />} />
             <Route path="/categories"          element={<Categories         showToast={showToast} />} />
             <Route path="/sub_categories"      element={<SubCategories      showToast={showToast} />} />
             <Route path="/event_categories"    element={<EventCategories    showToast={showToast} />} />

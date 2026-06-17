@@ -12,6 +12,11 @@ const NAV_ITEMS = [
         <rect x="3" y="14" width="7" height="7" rx="1"/>
         <rect x="14" y="14" width="7" height="7" rx="1"/>
       </svg>
+    )}, { id: 'reports', label: 'Reports', icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M3 3v18h18"/>
+        <path d="M18.4 8.6 13 14l-2.5-2.5L7 15"/>
+      </svg>
     )}],
   },
     {

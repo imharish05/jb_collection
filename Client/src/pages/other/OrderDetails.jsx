@@ -4,6 +4,7 @@ import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
+import Swal from "sweetalert2";
 import { getImgUrl } from "../../helpers/imageUrl";
 import { renderVariantLabel } from "../../helpers/product";
 
@@ -80,28 +81,63 @@ const OrderDetails = () => {
   const formatPaymentMethod = (method) => {
     if (!method) return "Pending";
     const normalized = method.toLowerCase();
-    if (normalized === "cod")         return "Cash on Delivery (COD)";
-    if (normalized === "upi")         return "UPI";
-    if (normalized === "card")        return "Credit / Debit Card";
-    if (normalized === "netbanking")  return "Net Banking";
-    if (normalized === "wallet")      return "Wallet";
-    if (normalized === "razorpay")    return "Online Payment (Razorpay)";
+    if (normalized === "cod" || normalized === "full_cod") return "Cash on Delivery (COD)";
+    if (normalized === "upi") return "UPI";
+    if (normalized === "card") return "Credit / Debit Card";
+    if (normalized === "netbanking") return "Net Banking";
+    if (normalized === "wallet") return "Wallet";
+    if (normalized === "razorpay") return "Online Payment (Razorpay)";
     if (normalized === "partial_cod") return "Partial Cash on Delivery";
+    if (normalized === "prepaid") return "Prepaid Online";
     return method;
   };
 
   const handleCancelOrder = async () => {
-    try {
-      cogoToast.loading("Cancelling order...", { position: "top-center" });
-      await api.patch(`/returns/cancel-order/${order.referenceSlug || order.id}`);
-      cogoToast.success("Order cancelled successfully!", { position: "top-center" });
-      // Reload order details
-      const res = await api.get(`/orders/${order.referenceSlug || order.id}`);
-      setOrder(res.data);
-    } catch (err) {
-      console.error(err);
-      cogoToast.error(err.response?.data?.message || "Failed to cancel order", { position: "top-center" });
-    }
+    const result = await Swal.fire({
+      title: "Cancel this order?",
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#db1a5d",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Yes, cancel order",
+      cancelButtonText: "No, keep it",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Show loading state
+    Swal.fire({
+      title: "Cancelling order...",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: async () => {
+        Swal.showLoading();
+        try {
+          await api.patch(`/returns/cancel-order/${order.referenceSlug || order.id}`);
+          // Reload order details
+          const res = await api.get(`/orders/${order.referenceSlug || order.id}`);
+          setOrder(res.data);
+          
+          Swal.fire({
+            title: "Success!",
+            text: "Order cancelled successfully!",
+            icon: "success",
+            confirmButtonColor: "#db1a5d",
+          });
+        } catch (err) {
+          console.error(err);
+          const errorMsg = err.response?.data?.message || "Failed to cancel order";
+          Swal.fire({
+            title: "Error",
+            text: errorMsg,
+            icon: "error",
+            confirmButtonColor: "#db1a5d",
+          });
+        }
+      },
+    });
   };
 
   const renderCancelButton = () => {
@@ -196,13 +232,13 @@ const OrderDetails = () => {
         </span>
         <div className="return-action-buttons">
           <Link
-            to={`/return-request?orderId=${order.id}&itemId=${item.id}`}
+            to={`/return-request?orderId=${order.referenceSlug || order.id}&itemId=${item.id}`}
             className="btn-return-action"
           >
             Return Product
           </Link>
           <Link
-            to={`/return-request?orderId=${order.id}&itemId=${item.id}&type=replacement`}
+            to={`/return-request?orderId=${order.referenceSlug || order.id}&itemId=${item.id}&type=replacement`}
             className="btn-replace-action"
           >
             Replace Product
@@ -344,13 +380,16 @@ const couponDiscount =
   // advancePaid = paid online (Razorpay). For PREPAID this equals totalAmount.
   // codAmount   = remaining amount to collect at delivery (0 for PREPAID).
   const paymentTypeNorm = String(order.paymentType || "").toUpperCase();
-  const isPrepaid = paymentTypeNorm === "PREPAID" || order.paymentStatus === "paid";
+  const paymentMethodNorm = String(order.paymentMethod || "").toLowerCase();
+  const isCodOrder = ["COD", "FULL_COD", "PARTIAL_COD"].includes(paymentTypeNorm) || ["cod", "partial_cod", "full_cod"].includes(paymentMethodNorm);
+  const isPrepaid = paymentTypeNorm === "PREPAID" || (paymentMethodNorm !== "cod" && paymentMethodNorm !== "partial_cod" && paymentMethodNorm !== "full_cod" && order.paymentStatus === "paid");
   const paidAmount = firstAmount(order.advancePaid) ?? (isPrepaid ? totalAmount : 0);
   const rawDueAmount = firstAmount(order.codAmount) ?? Math.max(0, totalAmount - paidAmount);
   const dueAmount = order.codCollected ? 0 : rawDueAmount;
   const isPartialCod = paymentTypeNorm === "PARTIAL_COD";
   const paidLabel = isPartialCod ? "Paid Online (Advance)" : "Amount Paid";
-  const dueLabel = dueAmount > 0 ? "Due at Delivery" : "Balance Due";
+  const showDueRow = dueAmount > 0 && (!isPrepaid || isCodOrder);
+  const dueLabel = dueAmount > 0 ? (isCodOrder ? "Due at Delivery" : "Amount Due") : "Balance Due";
 
   const paymentRows = [
     paidAmount > 0 && {
@@ -360,10 +399,7 @@ const couponDiscount =
       className: "breakdown-row--paid",
       footerClassName: "paid-line",
     },
-    // Only Partial COD orders ever have a balance left to collect — UPI/Card/full
-    // prepaid orders are always fully settled, so we skip this row for them
-    // entirely rather than showing a redundant "Balance Due ₹0.00".
-    isPartialCod && {
+    showDueRow && {
       key: "due",
       label: dueLabel,
       value: formatCurrency(dueAmount),
