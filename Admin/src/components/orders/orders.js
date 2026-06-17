@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 import DataTable from '../DataTable/DataTable';
 import { fetchOrders, changeOrderStatus, changeOrderItemStatus } from '../../redux/services/ordersService';
 import { renderVariantLabel } from '../Products/VariantBuilder';
@@ -147,16 +148,16 @@ export default function Orders({ status = null }) {
     if (!currentOrder || currentOrder.status === newStatus || updatingOrderId === orderId) return;
 
     setUpdatingOrderId(orderId);
-    const toastId = toast.loading(`Updating order to ${labelFor(newStatus)}…`);
-    try {
-      await dispatch(changeOrderStatus({ id: orderId, status: newStatus }));
-      toast.success(`Order status updated to ${labelFor(newStatus)}`, { id: toastId });
-    } catch (err) {
-      console.error('Failed to update status:', err);
-      toast.error(err?.response?.data?.message || 'Failed to update order status', { id: toastId });
-    } finally {
+    await toast.promise(
+      dispatch(changeOrderStatus({ id: orderId, status: newStatus })),
+      {
+        loading: `Updating to ${labelFor(newStatus)}…`,
+        success: `Order status updated to ${labelFor(newStatus)}`,
+        error: (err) => err?.response?.data?.message || 'Failed to update order status',
+      }
+    ).finally(() => {
       setUpdatingOrderId(current => current === orderId ? null : current);
-    }
+    });
   };
 
   const updateItemStatus = async (orderId, itemId, newStatus) => {
@@ -412,35 +413,26 @@ export default function Orders({ status = null }) {
                                       </div>
                                       {order.status !== 'cancelled' && order.status !== 'returned' && (
                                         <button
-                                          onClick={() => {
-                                            toast(
-                                              (t) => (
-                                                <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                  <strong>Mark COD as Collected?</strong>
-                                                  <span style={{ fontSize: 12, color: '#555' }}>This will mark the payment as paid and close the COD collection.</span>
-                                                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                                                    <button
-                                                      onClick={async () => {
-                                                        toast.dismiss(t.id);
-                                                        const tid = toast.loading('Marking COD as collected…');
-                                                        try {
-                                                          await dispatch(changeOrderStatus({ id: order.id, paymentStatus: 'paid', codCollected: true }));
-                                                          toast.success('COD cash marked as collected!', { id: tid });
-                                                        } catch (err) {
-                                                          toast.error(err?.response?.data?.message || 'Failed to update payment status', { id: tid });
-                                                        }
-                                                      }}
-                                                      style={{ padding: '5px 14px', background: '#db1a5d', color: '#fff', border: 'none', borderRadius: 5, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
-                                                    >Confirm</button>
-                                                    <button
-                                                      onClick={() => toast.dismiss(t.id)}
-                                                      style={{ padding: '5px 14px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 5, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
-                                                    >Cancel</button>
-                                                  </div>
-                                                </span>
-                                              ),
-                                              { duration: Infinity }
-                                            );
+                                          onClick={async () => {
+                                            const result = await Swal.fire({
+                                              title: 'Mark COD as Collected?',
+                                              html: `<p style="margin:0;font-size:14px;color:#555">Confirm that <strong>₹${codDueAmt?.toFixed(2) ?? order.codAmount?.toFixed(2)}</strong> cash has been collected at the door.</p>`,
+                                              icon: 'question',
+                                              showCancelButton: true,
+                                              confirmButtonColor: '#db1a5d',
+                                              cancelButtonColor: '#6b7280',
+                                              confirmButtonText: '💵 Yes, Mark Collected',
+                                              cancelButtonText: 'Cancel',
+                                              borderRadius: '16px',
+                                            });
+                                            if (!result.isConfirmed) return;
+                                            const tid = toast.loading('Marking COD as collected…');
+                                            try {
+                                              await dispatch(changeOrderStatus({ id: order.id, paymentStatus: 'paid', codCollected: true }));
+                                              toast.success('COD cash marked as collected!', { id: tid });
+                                            } catch (err) {
+                                              toast.error(err?.response?.data?.message || 'Failed to update payment status', { id: tid });
+                                            }
                                           }}
                                           style={{
                                             marginTop: 10,
@@ -517,35 +509,26 @@ export default function Orders({ status = null }) {
                                       </div>
                                       {order.status !== 'cancelled' && order.status !== 'returned' && (
                                         <button
-                                          onClick={() => {
-                                            toast(
-                                              (t) => (
-                                                <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                  <strong>Mark COD as Collected?</strong>
-                                                  <span style={{ fontSize: 12, color: '#555' }}>This will mark the payment as paid and close the COD collection.</span>
-                                                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                                                    <button
-                                                      onClick={async () => {
-                                                        toast.dismiss(t.id);
-                                                        const tid = toast.loading('Marking COD as collected…');
-                                                        try {
-                                                          await dispatch(changeOrderStatus({ id: order.id, paymentStatus: 'paid', codCollected: true }));
-                                                          toast.success('COD cash marked as collected!', { id: tid });
-                                                        } catch (err) {
-                                                          toast.error(err?.response?.data?.message || 'Failed to update payment status', { id: tid });
-                                                        }
-                                                      }}
-                                                      style={{ padding: '5px 14px', background: '#db1a5d', color: '#fff', border: 'none', borderRadius: 5, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
-                                                    >Confirm</button>
-                                                    <button
-                                                      onClick={() => toast.dismiss(t.id)}
-                                                      style={{ padding: '5px 14px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 5, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
-                                                    >Cancel</button>
-                                                  </div>
-                                                </span>
-                                              ),
-                                              { duration: Infinity }
-                                            );
+                                          onClick={async () => {
+                                            const result = await Swal.fire({
+                                              title: 'Mark COD as Collected?',
+                                              html: `<p style="margin:0;font-size:14px;color:#555">Confirm that <strong>₹${codDueAmt?.toFixed(2) ?? order.codAmount?.toFixed(2)}</strong> cash has been collected at the door.</p>`,
+                                              icon: 'question',
+                                              showCancelButton: true,
+                                              confirmButtonColor: '#db1a5d',
+                                              cancelButtonColor: '#6b7280',
+                                              confirmButtonText: '💵 Yes, Mark Collected',
+                                              cancelButtonText: 'Cancel',
+                                              borderRadius: '16px',
+                                            });
+                                            if (!result.isConfirmed) return;
+                                            const tid = toast.loading('Marking COD as collected…');
+                                            try {
+                                              await dispatch(changeOrderStatus({ id: order.id, paymentStatus: 'paid', codCollected: true }));
+                                              toast.success('COD cash marked as collected!', { id: tid });
+                                            } catch (err) {
+                                              toast.error(err?.response?.data?.message || 'Failed to update payment status', { id: tid });
+                                            }
                                           }}
                                           style={{
                                             marginTop: 10,

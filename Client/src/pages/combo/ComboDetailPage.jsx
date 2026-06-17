@@ -406,6 +406,14 @@ const ComboDetailPage = () => {
 
   const isInCart = isAuthenticated && comboCartQty > 0;
 
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const shareTitle = currentCombo?.name || child?.name || "this combo";
+  const shareMessage = `Check out ${shareTitle} on Kamali Gifts — a perfect choice for your next celebration.`;
+  const shareText = `${shareMessage}\n${shareUrl}`;
+  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareMessage)}`;
+  const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+
   // Rule 2: Combo purchasable qty = min(all child stocks) — "Lowest Stock Rule"
   const fixedMaxQty = useMemo(() => {
     if (!child || child.type !== "fixed" || !child.comboProducts?.length) return Infinity;
@@ -1000,21 +1008,21 @@ const ComboDetailPage = () => {
                     <span className="pdp-info__share-label">Share:</span>
                     <div className="pdp-info__share-links">
                       <a
-                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                        href={facebookShareUrl}
                         target="_blank" rel="noopener noreferrer" title="Facebook"
                         className="pdp-share-btn pdp-share-btn--fb"
                       >
                         <i className="fa fa-facebook" />
                       </a>
                       <a
-                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(child.name + " " + window.location.href)}`}
+                        href={twitterShareUrl}
                         target="_blank" rel="noopener noreferrer" title="X / Twitter"
                         className="pdp-share-btn pdp-share-btn--x"
                       >
                         <Icon icon="ri:twitter-x-fill" width="15" height="15" />
                       </a>
                       <a
-                        href={`https://wa.me/?text=${encodeURIComponent(child.name + " " + window.location.href)}`}
+                        href={whatsappShareUrl}
                         target="_blank" rel="noopener noreferrer" title="WhatsApp"
                         className="pdp-share-btn pdp-share-btn--wa"
                       >

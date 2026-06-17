@@ -426,6 +426,14 @@ const ProductDescriptionInfo = ({
   // Read current checkout session to support quantity merging on repeated Buy Now
   const checkoutSession = useSelector((state) => state.checkout);
 
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const shareTitle = localProduct?.name || product?.name || "this product";
+  const shareMessage = `Check out ${shareTitle} on Kamali Gifts — a perfect pick for every special moment.`;
+  const shareText = `${shareMessage}\n${shareUrl}`;
+  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareMessage)}`;
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+
   // Real-time inventory sync & polling
   const [localProduct, setLocalProduct] = useState(product);
 
@@ -1239,21 +1247,21 @@ const handleBuyNow = async () => {
         <span className="pdp-info__share-label">Share:</span>
         <div className="pdp-info__share-links">
           <a
-            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+            href={facebookShareUrl}
             target="_blank" rel="noopener noreferrer" title="Facebook"
             className="pdp-share-btn pdp-share-btn--fb"
           >
             <i className="fa fa-facebook" />
           </a>
           <a
-            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(product.name + " " + window.location.href)}`}
+            href={twitterShareUrl}
             target="_blank" rel="noopener noreferrer" title="X / Twitter"
             className="pdp-share-btn pdp-share-btn--x"
           >
             <Icon icon="ri:twitter-x-fill" width="15" height="15" />
           </a>
           <a
-            href={`https://wa.me/?text=${encodeURIComponent(product.name + " " + window.location.href)}`}
+            href={whatsappShareUrl}
             target="_blank" rel="noopener noreferrer" title="WhatsApp"
             className="pdp-share-btn pdp-share-btn--wa"
           >
