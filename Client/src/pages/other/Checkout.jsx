@@ -96,22 +96,10 @@ const PAYMENT_METHODS = [
     desc: "Pay delivery charge now · Product cost on delivery",
   },
   {
-    id: "upi",
-    label: "UPI / QR Pay",
-    icon: "📱",
-    desc: "GPay, PhonePe, Paytm or any UPI app",
-  },
-  {
-    id: "card",
-    label: "Credit / Debit Card",
+    id: "razorpay",
+    label: "Pay Online (Razorpay)",
     icon: "💳",
-    desc: "Visa, Mastercard, RuPay — all accepted",
-  },
-  {
-    id: "netbanking",
-    label: "Net Banking",
-    icon: "🏦",
-    desc: "All major Indian banks supported",
+    desc: "UPI, Credit / Debit Card, Net Banking, Wallet — all accepted",
   },
 ];
 
@@ -527,15 +515,17 @@ const Checkout = () => {
     (pm) => pm.id !== "partial_cod" || (shippingInfo?.codAvailable === true)
   );
 
+  // When Partial COD becomes unavailable, fall back to razorpay
   useEffect(() => {
     if (paymentMethod === "partial_cod" && !shippingInfo?.codAvailable) {
-      const fallback = availablePaymentMethods.length ? availablePaymentMethods[0].id : "upi";
+      const fallback = availablePaymentMethods.find(p => p.id !== "partial_cod")?.id || "razorpay";
       setPaymentMethod(fallback);
     }
   }, [shippingInfo?.codAvailable, paymentMethod, availablePaymentMethods]);
 
+  // When Partial COD becomes available again, switch to it
   useEffect(() => {
-    if (shippingInfo?.codAvailable && paymentMethod !== "partial_cod") {
+    if (shippingInfo?.codAvailable && paymentMethod === "razorpay") {
       setPaymentMethod("partial_cod");
     }
   }, [shippingInfo?.codAvailable]);
@@ -644,30 +634,9 @@ const Checkout = () => {
 
       if (paymentMethod === "partial_cod") {
         initPartialCodPayment(id, shippingInfo?.shippingCharge || 0);
-      } else if (paymentMethod !== "cod") {
-        initRazorpayPayment(id);
       } else {
-        if (checkoutSource === "cart") dispatch(deleteAllFromCart());
-        navigatingRef.current = true;
-        dispatch(clearCheckout());
-        setTimeout(() => {
-          navigate(`/order-confirmation`, {
-            replace: true,
-            state: {
-              orderId: id,
-              selectedShippingAddr,
-              billingAddress: selectedBillingAddr,
-              paymentMethod,
-              cartItems: checkoutItems,
-              estimatedDays: shippingInfo?.estimatedDays || null,
-              shippingCharge: shippingInfo?.shippingCharge || 0,
-              couponCode: shippingPricing.couponCode || null,
-              couponDiscount: shippingPricing.couponDiscount || 0,
-              tax: shippingPricing.gstAmount || 0,
-              orderStatus: "confirmed",
-            },
-          });
-        }, 1000);
+        // All non-partial_cod methods go through Razorpay
+        initRazorpayPayment(id);
       }
     } catch (err) {
       const errorData = err.response?.data;
@@ -840,6 +809,9 @@ const Checkout = () => {
               dbOrderId,
             });
             if (verifyRes.data.success) {
+              // Use the actual payment method returned by backend (fetched from Razorpay)
+              // e.g. user may have selected "card" but paid via UPI inside Razorpay modal
+              const resolvedMethod = verifyRes.data.actualPaymentMethod || paymentMethod;
               cogoToast.success("Payment successful!", { position: "top-center" });
               if (checkoutSource === "cart") dispatch(deleteAllFromCart());
               navigatingRef.current = true;
@@ -851,7 +823,7 @@ const Checkout = () => {
                     orderId: dbOrderId,
                     selectedShippingAddr,
                     billingAddress: selectedBillingAddr,
-                    paymentMethod,
+                    paymentMethod: resolvedMethod,
                     cartItems: checkoutItems,
                     estimatedDays: shippingInfo?.estimatedDays || null,
                     shippingCharge: shippingInfo?.shippingCharge || 0,
@@ -863,6 +835,7 @@ const Checkout = () => {
                 });
               }, 1500);
             }
+
           } catch (verifyErr) {
             cogoToast.error("Payment verification failed", { position: "top-center" });
             console.error("Verification error:", verifyErr);
@@ -1293,9 +1266,9 @@ const Checkout = () => {
                         </div>
                       ))}
                     </div>
-                    {paymentMethod !== "cod" && (
+                    {paymentMethod !== "partial_cod" && (
                       <p className="kco-pay-note">
-                        🔒 You'll be redirected to our secure payment gateway after reviewing your order.
+                        🔒 You'll be redirected to our secure Razorpay payment gateway after reviewing your order. Choose UPI, Card, or Net Banking inside the gateway.
                       </p>
                     )}
                     <div className="kco-btn-row">

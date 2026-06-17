@@ -4,7 +4,7 @@ const crypto   = require('crypto');
 const { Order, CartItem, User } = require('../models');
 const sequelize = require('../config/database');
 const inventoryService = require('../services/inventoryService');
-const { sendOrderConfirmationEmail } = require('../utils/mailer');
+const { sendOrderConfirmationEmail, sendAdminNewOrderEmail } = require('../utils/mailer');
 const { pushOrderToShiprocket } = require('./orderController');
 
 const razorpay = new Razorpay({
@@ -84,6 +84,18 @@ const createDeliveryChargeOrder = async (req, res, next) => {
 //   4. Shiprocket receives payment_method="COD", cod_amount=order.codAmount ← THE FIX
 //      (courier collects remaining balance at door)
 // ─────────────────────────────────────────────────────────────────────────────
+// ── Map Razorpay method string → our internal paymentMethod key ───────────────
+const mapRazorpayMethod = (rzpMethod) => {
+  if (!rzpMethod) return 'razorpay';
+  const m = rzpMethod.toLowerCase();
+  if (m === 'upi')        return 'upi';
+  if (m === 'card')       return 'card';
+  if (m === 'netbanking') return 'netbanking';
+  if (m === 'wallet')     return 'wallet';
+  if (m === 'emi')        return 'card'; // EMI is card-based
+  return 'razorpay';
+};
+
 const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDeliveryCharge = false) => {
   const transaction = await sequelize.transaction();
   let userEmail = '';
@@ -133,11 +145,18 @@ const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDel
         };
       }
     } else {
-      // Full prepaid payment
+      // Full prepaid payment — fetch actual method from Razorpay
+      let actualMethod = 'razorpay';
+      try {
+        const rzpPayment = await razorpay.payments.fetch(paymentId);
+        actualMethod = mapRazorpayMethod(rzpPayment.method);
+      } catch (fetchErr) {
+        console.warn('[Payment] Could not fetch Razorpay payment method, defaulting to razorpay:', fetchErr.message);
+      }
       order.razorpayPaymentId = paymentId;
       order.transactionId     = paymentId;
       order.paymentStatus     = 'paid';
-      order.paymentMethod     = 'razorpay';
+      order.paymentMethod     = actualMethod;  // e.g. 'upi', 'card', 'netbanking'
       order.paymentType       = 'PREPAID';
       order.codAmount         = 0;
     }
@@ -188,16 +207,23 @@ const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDel
         const userRecord = await User.findByPk(userId, { attributes: ['name', 'email'] });
         userEmail = userRecord?.email || '';
 
+        const freshOrder = await Order.findByPk(orderId, {
+          include: [
+            { model: require('../models').OrderItem, as: 'items' },
+            { model: require('../models').Address, as: 'shippingAddress' },
+            { model: require('../models').Address, as: 'billingAddress' },
+          ],
+        });
+
         if (userEmail) {
-          const freshOrder = await Order.findByPk(orderId, {
-            include: [
-              { model: require('../models').OrderItem, as: 'items' },
-              { model: require('../models').Address, as: 'shippingAddress' },
-              { model: require('../models').Address, as: 'billingAddress' },
-            ],
-          });
           await sendOrderConfirmationEmail(freshOrder, { name: userRecord.name, email: userEmail });
           console.log(`[Mailer] Confirmation sent to ${userEmail}`);
+        }
+
+        try {
+          await sendAdminNewOrderEmail(freshOrder, { name: userRecord?.name, email: userEmail });
+        } catch (adminEmailErr) {
+          console.error('[Mailer] Failed to send admin email notification:', adminEmailErr.message);
         }
 
         // Push to Shiprocket AFTER payment verified.
@@ -209,7 +235,7 @@ const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDel
       }
     });
 
-    return { success: true, message: 'Payment processed successfully', order };
+    return { success: true, message: 'Payment processed successfully', order, actualPaymentMethod: order.paymentMethod };
   } catch (err) {
     await transaction.rollback();
     throw err;
@@ -259,7 +285,12 @@ const verifyPayment = async (req, res, next) => {
       return res.status(409).json({ message: result.message, inventoryFailed: result.inventoryFailed });
     }
 
-    return res.json({ success: true, message: result.message, order: result.order });
+    return res.json({
+      success: true,
+      message: result.message,
+      order: result.order,
+      actualPaymentMethod: result.actualPaymentMethod || result.order?.paymentMethod || 'razorpay',
+    });
   } catch (err) {
     next(err);
   }

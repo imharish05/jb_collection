@@ -80,9 +80,12 @@ const OrderDetails = () => {
   const formatPaymentMethod = (method) => {
     if (!method) return "Pending";
     const normalized = method.toLowerCase();
-    if (normalized === "cod") return "Cash on Delivery";
-    if (normalized === "upi") return "UPI";
-    if (normalized === "razorpay") return "Razorpay";
+    if (normalized === "cod")         return "Cash on Delivery (COD)";
+    if (normalized === "upi")         return "UPI";
+    if (normalized === "card")        return "Credit / Debit Card";
+    if (normalized === "netbanking")  return "Net Banking";
+    if (normalized === "wallet")      return "Wallet";
+    if (normalized === "razorpay")    return "Online Payment (Razorpay)";
     if (normalized === "partial_cod") return "Partial Cash on Delivery";
     return method;
   };

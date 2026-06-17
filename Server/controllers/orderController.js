@@ -12,7 +12,7 @@ const {
 } = require("../models");
 const sequelize = require("../config/database");
 const { Op } = require("sequelize");
-const { sendOrderConfirmationEmail, sendOrderStatusEmail } = require("../utils/mailer");
+const { sendOrderConfirmationEmail, sendOrderStatusEmail, sendAdminNewOrderEmail } = require("../utils/mailer");
 const { shiprocketPost, resolveShiprocketPaymentMethod } = require("../utils/shiprocket");
 const inventoryService = require("../services/inventoryService");
 const { referenceWhere, getDisplayReference } = require("../utils/referenceSlugs");
@@ -552,6 +552,11 @@ const createOrder = async (req, res, next) => {
         const userRecord = await User.findByPk(req.user.id, { attributes: ["name", "email"] });
         if (userRecord?.email) {
           await sendOrderConfirmationEmail(createdOrder, { name: userRecord.name, email: userRecord.email });
+        }
+        try {
+          await sendAdminNewOrderEmail(createdOrder, { name: userRecord?.name, email: userRecord?.email || "" });
+        } catch (adminMailErr) {
+          console.error("[Mailer] Failed to send admin email notification:", adminMailErr.message);
         }
       } catch (emailErr) {
         console.error("[Mailer] Failed to send confirmation:", emailErr.message);

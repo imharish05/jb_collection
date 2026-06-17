@@ -153,6 +153,7 @@ const OrderConfirmation = () => {
     partial_cod: "Partial COD (Delivery paid online)",
   };
 
+
   const dispatch = useDispatch();
 
 useEffect(() => {

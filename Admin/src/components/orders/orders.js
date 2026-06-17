@@ -237,7 +237,21 @@ export default function Orders({ status = null }) {
                           <div>
                             <div className="km-form-header-title">Order #{order.id} — {order.customer_name}</div>
                             <div className="km-form-header-sub">
-                              Payment: {order.paymentMethod === 'partial_cod' ? '🔀 Partial COD' : (order.paymentMethod === 'cod' ? '💵 COD' : (order.paymentMethod || '—'))} ({order.paymentStatus || '—'})
+                              Payment: {
+                                (() => {
+                                  const ADMIN_PAYMENT_LABELS = {
+                                    partial_cod: '🔀 Partial COD',
+                                    cod:         '💵 Cash on Delivery',
+                                    upi:         '📱 UPI',
+                                    card:        '💳 Credit / Debit Card',
+                                    netbanking:  '🏦 Net Banking',
+                                    wallet:      '👛 Wallet',
+                                    razorpay:    '💳 Online (Razorpay)',
+                                  };
+                                  return ADMIN_PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod || '—';
+                                })()
+                              } ({order.paymentStatus || '—'})
+
                               {order.paymentMethod === 'partial_cod' && order.paymentStatus !== 'paid' && order.partialCodAmount && (
                                 <span style={{ marginLeft: 8, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '1px 6px', fontSize: 11, fontWeight: 700 }}>
                                   ₹{parseFloat(order.partialCodAmount).toFixed(2)} due on delivery

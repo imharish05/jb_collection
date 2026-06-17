@@ -78,6 +78,15 @@ const STATUS_EMAIL_CONFIG = {
     badgeStyle: BADGE_STYLES.purple,
     additionalSection: "return",
   },
+  admin_new_order: {
+    subject: (orderId) => `New Order Received 🛍️ — Order #${orderId} | Kamali Gifts`,
+    heroIcon: "🛍️",
+    heroTitle: "New Order Received",
+    heroMessage: "A new order has been placed on Kamali Gifts. Below are the order details.",
+    badgeText: "New Order",
+    badgeStyle: BADGE_STYLES.green,
+    headerSubtitle: "New Order Alert",
+  },
 };
 
 const RETURN_EMAIL_CONFIG = {
@@ -164,14 +173,15 @@ const RETURN_EMAIL_CONFIG = {
 };
 
 const PAYMENT_LABELS = {
-  card: "Credit / Debit Card",
-  upi: "UPI",
-  netbanking: "Net Banking",
-  wallet: "Wallet",
-  cod: "Cash on Delivery (COD)",
+  card:        "Credit / Debit Card",
+  upi:         "UPI",
+  netbanking:  "Net Banking",
+  wallet:      "Wallet",
+  cod:         "Cash on Delivery (COD)",
   partial_cod: "Partial Cash on Delivery",
-  razorpay: "Online Payment (Razorpay)",
+  razorpay:    "Online Payment (Razorpay)",
 };
+
 
 const escapeHtml = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -357,6 +367,8 @@ const buildOrderEmailHtml = ({ order, user, status, trackingDetails }) => {
     return null;
   }
 
+  const headerSubtitle = config.headerSubtitle || (statusKey === "confirmed" ? "Order Confirmation" : "Order Update");
+
   const items = (orderData.items || []).map(asPlain);
   const itemRows = buildItemRows(items);
 
@@ -439,7 +451,7 @@ const buildOrderEmailHtml = ({ order, user, status, trackingDetails }) => {
   <tr>
     <td style="background:linear-gradient(135deg,rgba(223,77,129,0.4) 0%,rgb(255,232,214) 100%);padding:36px 40px;text-align:center;">
       <h1 style="margin:0;color:#000;font-size:26px;font-weight:700;letter-spacing:0.5px;">🎁 Kamali Gifts</h1>
-      <p style="margin:8px 0 0;color:rgba(0,0,0,0.75);font-size:14px;">Order Confirmation</p>
+      <p style="margin:8px 0 0;color:rgba(0,0,0,0.75);font-size:14px;">${escapeHtml(headerSubtitle)}</p>
     </td>
   </tr>
 
@@ -554,10 +566,6 @@ const buildOrderEmailHtml = ({ order, user, status, trackingDetails }) => {
           <td style="padding:10px 16px;background:#fafafa;font-size:12px;color:#999;font-weight:600;border-bottom:1px solid #f0f0f0;">Address</td>
           <td style="padding:10px 16px;font-size:13px;color:#333;border-bottom:1px solid #f0f0f0;">${addrLine || "—"}</td>
         </tr>
-        // <tr>
-        //   <td style="padding:10px 16px;background:#fafafa;font-size:12px;color:#999;font-weight:600;">Est. Delivery</td>
-        //   <td style="padding:10px 16px;font-size:13px;color:#16a34a;font-weight:600;">🚚 ${estDeliveryText}</td>
-        // </tr>
       </table>
     </td>
   </tr>
@@ -646,6 +654,48 @@ const sendOrderStatusEmail = async ({ order, user, status, trackingDetails } = {
 
 const sendOrderConfirmationEmail = async (order, user) =>
   sendOrderStatusEmail({ order, user, status: "confirmed" });
+
+const sendAdminNewOrderEmail = async (order, user) => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.warn("[Mailer] ADMIN_EMAIL env var not set — skipping admin new order email");
+    return { sent: false, skipped: true, reason: "ADMIN_EMAIL not set" };
+  }
+
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    const reason = "EMAIL_USER or EMAIL_PASS not set";
+    console.warn(`[Mailer] ${reason} — skipping admin email`);
+    return { sent: false, skipped: true, reason };
+  }
+
+  const orderData = asPlain(order);
+  const statusKey = "admin_new_order";
+  const config = STATUS_EMAIL_CONFIG[statusKey];
+
+  if (!config) {
+    const reason = `No email template configured for order status "${statusKey}"`;
+    console.warn(`[Mailer] ${reason}`);
+    return { sent: false, skipped: true, reason };
+  }
+
+  const html = buildOrderEmailHtml({ order: orderData, user, status: statusKey });
+  if (!html) {
+    const reason = `Unable to render email for order status "${statusKey}"`;
+    console.warn(`[Mailer] ${reason}`);
+    return { sent: false, skipped: true, reason };
+  }
+
+  const sentAt = new Date();
+  await transporter.sendMail({
+    from: `"Kamali Gifts Alert" <${process.env.EMAIL_USER}>`,
+    to: adminEmail,
+    subject: config.subject(orderData.id),
+    html,
+  });
+
+  console.log(`[Mailer] Admin new order alert email sent to ${adminEmail} for Order #${orderData.id}`);
+  return { sent: true, sentAt };
+};
 
 const sendReturnNotificationEmail = async ({ returnRequest, user, order, orderItem, status, extra = {} } = {}) => {
   const retData = asPlain(returnRequest);
@@ -829,4 +879,4 @@ const sendReturnNotificationEmail = async ({ returnRequest, user, order, orderIt
   return { sent: true };
 };
 
-module.exports = { sendOrderConfirmationEmail, sendOrderStatusEmail, sendReturnNotificationEmail };
+module.exports = { sendOrderConfirmationEmail, sendOrderStatusEmail, sendReturnNotificationEmail, sendAdminNewOrderEmail };
