@@ -237,7 +237,7 @@ useEffect(() => {
           <div className="row" style={{ marginBottom: 32 }}>
 
             {/* ── Items (UNCHANGED) ──────────────────────────────────────── */}
-            <div className="col-lg-7">
+            <div className="col-lg-7 mb-3">
               <div style={cardStyle}>
                 <h4 style={cardTitle}>📦 Items Ordered</h4>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -293,7 +293,7 @@ useEffect(() => {
                                               }}
                                             />
                                           )}
-                                          <span>{displayVal}</span>
+                                          {/* <span>{displayVal}</span> */}
                                         </span>
                                       );
                                     })}

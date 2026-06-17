@@ -97,7 +97,7 @@ const startServer = async () => {
     console.log("✅ MySQL database connected");
 
     await sequelize.query("SET FOREIGN_KEY_CHECKS = 0;");
-    await sequelize.sync({alter : true});
+    await sequelize.sync();
     await models.backfillReferenceSlugs();
     console.log("✅ Models synced");
     await sequelize.query("SET FOREIGN_KEY_CHECKS = 1;");

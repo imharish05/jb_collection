@@ -3,7 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const dashboardSlice = createSlice({
     name: "dashboard",
     initialState: {
-        stats: { totalProducts: "-", totalCustomers: "-" },
+        stats: { totalProducts: "-", totalCustomers: "-", totalGST: "-", totalShipping: "-", remainAmount: "-" },
         recentProducts: [],
         recentVariants: [],
         thresholds: { high: 51, medium: 11, low: 1 },

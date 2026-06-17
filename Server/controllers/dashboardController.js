@@ -5,9 +5,13 @@ const { Product, Variant, Category, User, Order, InventorySettings } = require("
 // ─── GET /api/dashboard/stats ─────────────────────────────────────────────────
 const getStats = async (req, res) => {
   try {
-    const [totalProducts, totalCustomers, recentProducts] = await Promise.all([
+    const [totalProducts, totalCustomers, orderSums, recentProducts] = await Promise.all([
       Product.count({ where: { isActive: true } }),
       User.count({ where: { role: "user" } }),
+      Order.findAll({
+        where: { status: { [Op.notIn]: ["cancelled"] } },
+        attributes: ["totalAmount", "taxAmount", "shippingCharge", "couponDiscount", "advancePaid", "codAmount"],
+      }),
       Product.findAll({
         limit: 8,
         order: [["createdAt", "DESC"]],
@@ -40,7 +44,23 @@ const getStats = async (req, res) => {
       return row;
     });
 
-    return res.json({ stats: { totalProducts, totalCustomers }, recentProducts: shaped });
+    let totalGST = 0, totalShipping = 0, remainAmount = 0;
+    orderSums.forEach(o => {
+      totalGST      += parseFloat(o.taxAmount) || 0;
+      totalShipping += parseFloat(o.shippingCharge) || 0;
+      remainAmount  += parseFloat(o.codAmount) || 0;
+    });
+
+    return res.json({
+      stats: {
+        totalProducts,
+        totalCustomers,
+        totalGST: Math.round(totalGST),
+        totalShipping: Math.round(totalShipping),
+        remainAmount: Math.round(remainAmount),
+      },
+      recentProducts: shaped,
+    });
   } catch (err) {
     console.error("[Dashboard] getStats error:", err);
     return res.status(500).json({ message: err.message });

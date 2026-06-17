@@ -148,4 +148,140 @@ const productSalesReport = async (req, res) => {
   }
 };
 
-module.exports = { salesReport, productSalesReport };
+
+// ── 3. Reports Overview ───────────────────────────────────────────────────────
+const reportsOverview = async (req, res) => {
+  try {
+    const dateWhere = buildDateWhere(req.query);
+
+    const [allOrders, cancelledCount, returnedCount, itemsAgg] = await Promise.all([
+      Order.findAll({
+        where: { ...dateWhere, status: { [Op.notIn]: ['cancelled', 'returned'] } },
+        attributes: ['totalAmount'],
+        raw: true,
+      }),
+      Order.count({ where: { ...dateWhere, status: 'cancelled' } }),
+      Order.count({ where: { ...dateWhere, status: 'returned' } }),
+      OrderItem.findAll({
+        attributes: [[require('sequelize').fn('SUM', require('sequelize').col('quantity')), 'totalQty']],
+        include: [{
+          model: Order,
+          attributes: [],
+          where: { ...dateWhere, status: { [Op.notIn]: ['cancelled', 'returned'] } },
+          required: true,
+        }],
+        raw: true,
+      }),
+    ]);
+
+    const totalRevenue = allOrders.reduce((s, o) => s + parseFloat(o.totalAmount || 0), 0);
+    const totalOrders  = allOrders.length;
+    const productsSold = parseInt(itemsAgg[0]?.totalQty || 0);
+    const aov          = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    res.json({
+      totalRevenue:    Math.round(totalRevenue * 100) / 100,
+      totalOrders,
+      productsSold,
+      aov:             Math.round(aov * 100) / 100,
+      cancelledOrders: cancelledCount,
+      returnedOrders:  returnedCount,
+    });
+  } catch (e) {
+    console.error('reportsOverview error:', e);
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// ── 4. Top 10 Selling Variants ────────────────────────────────────────────────
+const topProducts = async (req, res) => {
+  try {
+    const { fn, col, literal, Op } = require('sequelize');
+    const dateWhere  = buildDateWhere(req.query);
+    const orderWhere = { status: { [Op.in]: ACTIVE_STATUSES }, ...dateWhere };
+
+    // optional product/variant filters
+    const itemWhere = {};
+    if (req.query.productId) itemWhere.productId = req.query.productId;
+    if (req.query.variantId) itemWhere.selected_variant_id = req.query.variantId;
+
+    // if category filter — get productIds first
+    if (req.query.categoryId) {
+      const { Product } = require('../models');
+      const products = await Product.findAll({
+        where: { category_id: req.query.categoryId },
+        attributes: ['id'],
+        raw: true,
+      });
+      itemWhere.productId = { [Op.in]: products.map(p => p.id) };
+    }
+
+    const rows = await OrderItem.findAll({
+      where: itemWhere,
+      attributes: [
+        'productId',
+        ['selected_variant_id', 'variantId'],
+        'productName',
+        [fn('SUM', col('OrderItem.quantity')),                              'qtySold'],
+        [fn('SUM', literal('OrderItem.quantity * OrderItem.sales_price')), 'revenue'],
+      ],
+      include: [{ model: Order, attributes: [], where: orderWhere, required: true }],
+      group: ['productId', 'selected_variant_id', 'productName'],
+      order: [[literal('qtySold'), 'DESC']],
+      limit: 10,
+      raw: true,
+    });
+
+    const variantIds = [...new Set(rows.map(r => r.variantId).filter(Boolean))];
+    const varMap = {};
+    if (variantIds.length) {
+      const vs = await Variant.findAll({
+        where: { id: variantIds },
+        attributes: ['id', 'variantName', 'sku', 'stock'],
+        raw: true,
+      });
+      vs.forEach(v => { varMap[String(v.id)] = v; });
+    }
+
+    const data = rows.map((r, i) => {
+      const v = varMap[String(r.variantId)] || {};
+      return {
+        rank:        i + 1,
+        productName: r.productName || '—',
+        variantName: v.variantName || 'Default',
+        sku:         v.sku        || '—',
+        qtySold:     parseInt(r.qtySold)  || 0,
+        revenue:     Math.round(parseFloat(r.revenue || 0) * 100) / 100,
+        currentStock: v.stock ?? '—',
+      };
+    });
+
+    res.json({ data });
+  } catch (e) {
+    console.error('topProducts error:', e);
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// ── 5. Filter options (categories + products + variants) ─────────────────────
+const reportFilters = async (req, res) => {
+  try {
+    const { Product, Variant } = require('../models');
+    const { Category } = require('../models');
+
+    const [categories, products, variants] = await Promise.all([
+      Category.findAll({ attributes: ['id', 'label'], where: { type: 'category' }, raw: true }).catch(() =>
+        Category.findAll({ attributes: ['id', 'label'], raw: true })
+      ),
+      Product.findAll({ attributes: ['id', 'name'], where: { isActive: true }, raw: true }),
+      Variant.findAll({ attributes: ['id', 'variantName', 'productId', 'sku'], raw: true }),
+    ]);
+
+    res.json({ categories, products, variants });
+  } catch (e) {
+    console.error('reportFilters error:', e);
+    res.status(500).json({ message: e.message });
+  }
+};
+
+module.exports = { salesReport, productSalesReport, reportsOverview, topProducts, reportFilters };
