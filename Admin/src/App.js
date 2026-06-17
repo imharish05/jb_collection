@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 import toast, { Toaster } from 'react-hot-toast';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './components/Login/Login';
@@ -19,6 +20,7 @@ import Reviews from './components/Reviews/Reviews';
 import Coupons from './components/Coupons/AddCoupon';
 import Orders from './components/orders/Orders';
 import AdminContactManager from './components/Admincontactmanager';
+import { fetchInventorySettings } from './redux/services/notificationsService';
 // ── Marketing pages ──────────────────────────────────────────
 import HeroSlider from './components/HeroSlider/HeroSlider';
 import TimelessTreasures from './components/TimelessTreasures/TimelessTreasures';
@@ -62,6 +64,11 @@ const PAGE_CONFIG = {
 };
 
 function AdminLayoutWrapper({ handleLogout }) {
+  const dispatch = useDispatch();
+
+  // Load inventory settings once on app mount so all pages have correct thresholds
+  useEffect(() => { dispatch(fetchInventorySettings()); }, []);
+
   const showToast = useCallback(Object.assign(
     (msg) => toast(msg),
     {

@@ -130,7 +130,7 @@ const submitBtn = { gridColumn: 'span 2', padding: 11, background: KM.orange, co
 const tag = (color, bg) => ({ fontSize: 10, fontWeight: 700, color, background: bg, padding: '2px 7px', borderRadius: 4, whiteSpace: 'nowrap' });
 const errorStyle = { fontSize: 11, color: '#dc2626', fontWeight: 600, marginTop: 2 };
 
-function stockColor(q) { return q === 0 ? '#dc2626' : q < 50 ? '#F59E0B' : '#39B54A'; }
+// stockColor is defined inside Products component using live inventory settings
 function totalStock(p) { return p.Variants?.reduce((a, v) => a + Number(v.stock || 0), 0) ?? 0; }
 
 // ── Blank variant (matches VariantBuilder's internal shape) ───────────────────
@@ -263,6 +263,17 @@ export default function Products({ showToast }) {
   const { items: allProducts, loading } = useSelector(s => s.products || {});
   const { items: rawCategories } = useSelector(s => s.categories || {});
   const { items: brands } = useSelector(s => s.brands || {});
+  const { settings: invSettings } = useSelector(s => s.notifications);
+  const stockColor = (q) => {
+    const high   = invSettings?.highStockThreshold   ?? 51;
+    const medium = invSettings?.mediumStockThreshold  ?? 11;
+    const low    = invSettings?.lowStockThreshold     ?? 1;
+    if (q === 0)    return '#dc2626';
+    if (q < low)    return '#dc2626';
+    if (q < medium) return '#EF4444';
+    if (q < high)   return '#F59E0B';
+    return '#39B54A';
+  };
 
   // Safe checks: ensure categories and brands are normalized arrays to prevent runtime crashes
   const categories = Array.isArray(rawCategories) ? rawCategories : [];

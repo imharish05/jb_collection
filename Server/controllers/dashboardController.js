@@ -62,12 +62,11 @@ const getRecentVariants = async (req, res) => {
       include: [
         {
           model: Product,
-          as: "Product",
-          attributes: [["name", "productName"]],
+          as: "product",
+          attributes: [["name", "productName"], "category_id"],
           include: [
             {
               model: Category,
-              foreignKey: "category_id",
               attributes: [["label", "name"]],
               required: false,
             },
@@ -79,6 +78,8 @@ const getRecentVariants = async (req, res) => {
 
     const shaped = variants.map(v => {
       const row = v.toJSON();
+      // Normalize: association alias is lowercase "product"
+      if (row.product && !row.Product) row.Product = row.product;
       const qty = Number(row.stock) || 0;
       let stockStatus;
       if (qty === 0)         stockStatus = "out";

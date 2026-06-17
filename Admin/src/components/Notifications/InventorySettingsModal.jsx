@@ -23,7 +23,6 @@ const FieldRow = ({ label, value, onChange, readOnly, hint }) => (
         cursor: readOnly ? "not-allowed" : "text",
       }}
     />
-    {hint && <p style={{ margin: "4px 0 0", fontSize: 11, color: "#6b7280" }}>{hint}</p>}
   </div>
 );
 
@@ -118,13 +117,10 @@ export default function InventorySettingsModal({ onClose }) {
 
         {/* Form */}
         <div style={{ padding: "16px 22px 0" }}>
-          <FieldRow label="High Stock Threshold" value={high} onChange={e => setHigh(e.target.value)}
-            hint={`Stock ≥ ${high} → High Stock`} />
-          <FieldRow label="Medium Stock Threshold" value={medium} onChange={e => setMedium(e.target.value)}
-            hint={`Stock ${medium} – ${highN - 1} → Medium Stock`} />
-          <FieldRow label="Low Stock Threshold" value={low} onChange={e => setLow(e.target.value)}
-            hint={`Stock ${low} – ${mediumN - 1} → Low Stock`} />
-          <FieldRow label="Out Of Stock" value={0} readOnly hint="Stock = 0 → Out Of Stock" />
+          <FieldRow label="High Stock Threshold" value={high} onChange={e => setHigh(e.target.value)} />
+          <FieldRow label="Medium Stock Threshold" value={medium} onChange={e => setMedium(e.target.value)} />
+          <FieldRow label="Low Stock Threshold" value={low} onChange={e => setLow(e.target.value)} />
+          <FieldRow label="Out Of Stock" value={0} readOnly />
 
           {error && (
             <div style={{ background: "#fee2e2", color: "#b91c1c", borderRadius: 8, padding: "8px 12px", fontSize: 12, fontWeight: 500, marginBottom: 12 }}>
