@@ -37,4 +37,14 @@ const markAllRead = async (req, res) => {
   }
 };
 
-module.exports = { getNotifications, markRead, markAllRead };
+// DELETE /api/notifications/clear-all — deletes all read notifications
+const clearAll = async (req, res) => {
+  try {
+    const deleted = await Notification.destroy({ where: { isRead: true } });
+    res.json({ success: true, deleted });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+module.exports = { getNotifications, markRead, markAllRead, clearAll };

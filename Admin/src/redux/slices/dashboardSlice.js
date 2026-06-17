@@ -5,11 +5,13 @@ const dashboardSlice = createSlice({
     initialState: {
         stats: { totalProducts: "-", totalCustomers: "-" },
         recentProducts: [],
+        recentVariants: [],
+        thresholds: { high: 51, medium: 11, low: 1 },
         totalStock: "-",
         orderCounts: { new: 0, confirmed: 0, shipped: 0, delivery: 0, delivered: 0, cancelled: 0 },
         monthlyData: [],
         monthlySalesData: [],
-        quarterlySalesData: [],   // { quarters: [...], yearly: 0 }
+        quarterlySalesData: [],
         quarterlyLoading: false,
         loading: false,
         graphLoading: false,
@@ -23,6 +25,10 @@ const dashboardSlice = createSlice({
             state.recentProducts = action.payload.recentProducts;
             state.totalStock     = action.payload.totalStock;
         },
+        setRecentVariants: (state, action) => {
+            state.recentVariants = action.payload.variants;
+            state.thresholds     = action.payload.thresholds;
+        },
         setError:          (state, action) => { state.loading = false; state.error = action.payload; },
         setOrderCounts:    (state, action) => { state.orderCounts = action.payload; },
         setGraphLoading:   (state) => { state.graphLoading = true; },
@@ -35,5 +41,9 @@ const dashboardSlice = createSlice({
     },
 });
 
-export const { setLoading, setDashboardData, setError, setOrderCounts, setGraphLoading, setMonthlyData, setMonthlySalesData, setGraphError, setQuarterlyLoading, setQuarterlySalesData, setQuarterlyError } = dashboardSlice.actions;
+export const {
+    setLoading, setDashboardData, setRecentVariants, setError, setOrderCounts,
+    setGraphLoading, setMonthlyData, setMonthlySalesData, setGraphError,
+    setQuarterlyLoading, setQuarterlySalesData, setQuarterlyError,
+} = dashboardSlice.actions;
 export default dashboardSlice.reducer;

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchNotifications,
   doMarkAllRead,
+  doClearAll,
   fetchInventorySummary,
   fetchInventorySettings,
 } from "../../redux/services/notificationsService";
@@ -49,16 +50,18 @@ export default function NotificationDropdown({ onClose }) {
     dispatch(fetchInventorySettings());
   }, []);
 
-  // Close on outside click
+  // Close on outside click — but not when the settings modal is open
   useEffect(() => {
     const handler = (e) => {
+      if (showSettings) return;
       if (ref.current && !ref.current.contains(e.target)) onClose();
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [onClose]);
+  }, [onClose, showSettings]);
 
   const handleMarkAllRead = () => dispatch(doMarkAllRead());
+  const handleClearAll = () => dispatch(doClearAll());
 
   const badgeStr = unreadCount > 99 ? "99+" : String(unreadCount);
 
@@ -87,7 +90,7 @@ export default function NotificationDropdown({ onClose }) {
                 </span>
               )}
             </div>
-            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 2 }}>
+            <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 2 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -99,7 +102,7 @@ export default function NotificationDropdown({ onClose }) {
         <div style={{ overflowY: "auto", flex: 1 }}>
 
           {/* Inventory Summary */}
-          <div style={{ padding: "12px 18px", borderBottom: "1px solid #f3f4f6" }}>
+          {/* <div style={{ padding: "12px 18px", borderBottom: "1px solid #f3f4f6" }}>
             <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Inventory Summary
             </p>
@@ -122,7 +125,7 @@ export default function NotificationDropdown({ onClose }) {
                 </div>
               </div>
             )}
-          </div>
+          </div> */}
 
           {/* Notifications List */}
           <div style={{ padding: "12px 18px 0" }}>
@@ -185,7 +188,7 @@ export default function NotificationDropdown({ onClose }) {
         {/* ── Footer ── */}
         <div style={{ borderTop: "1px solid #f3f4f6", padding: "10px 18px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 6 }}>
           <button
-            onClick={() => { setShowSettings(true); }}
+            onClick={(e) => { e.stopPropagation(); setShowSettings(true); }}
             style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -201,10 +204,10 @@ export default function NotificationDropdown({ onClose }) {
               Mark All Read
             </button>
             <button
-              style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#487fff,#486cea)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
-              onClick={onClose}
+              onClick={(e) => { e.stopPropagation(); handleClearAll(); }}
+              style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1px solid #fca5a5", background: "#fff", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
             >
-              View All
+              Clear Read
             </button>
           </div>
         </div>

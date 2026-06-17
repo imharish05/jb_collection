@@ -1,13 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
+import { renderVariantLabel } from '../Products/VariantBuilder';
 import { useDispatch, useSelector } from 'react-redux';
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import styles from './Dashboard.module.css';
 import { loadDashboard, loadChart } from '../../redux/services/dashboardService';
 import api from '../../api/axiosInstance';
 import toast from 'react-hot-toast';
-
-function stockColor(s) { return s > 200 ? '#45b369' : s > 50 ? '#ff9f29' : '#ef4444'; }
-function stockLabel(s) { return s > 200 ? 'In Stock' : s > 50 ? 'Low' : 'Out'; }
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -26,7 +24,23 @@ const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 2022 }, (_, i) => CURRE
 
 export default function Dashboard() {
   const dispatch = useDispatch();
-  const { stats, recentProducts, totalStock, orderCounts, monthlyData, monthlySalesData, quarterlySalesData, loading, graphLoading, quarterlyLoading } = useSelector(state => state.dashboard);
+  const { stats, recentProducts, recentVariants, thresholds, totalStock, orderCounts, monthlyData, monthlySalesData, quarterlySalesData, loading, graphLoading, quarterlyLoading } = useSelector(state => state.dashboard);
+
+  // Settings-aware stock helpers
+  const stockColor = (s) => {
+    if (s === 0) return '#ef4444';
+    if (s < thresholds.low) return '#ef4444';
+    if (s < thresholds.medium) return '#ef4444';
+    if (s < thresholds.high) return '#f97316';
+    return '#45b369';
+  };
+  const stockLabel = (s) => {
+    if (s === 0) return 'Out';
+    if (s < thresholds.low) return 'Out';
+    if (s < thresholds.medium) return 'Low Stock';
+    if (s < thresholds.high) return 'Medium';
+    return 'In Stock';
+  };
   const [mounted, setMounted] = useState(false);
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
   const [salesView, setSalesView] = useState('monthly'); // 'monthly' | 'quarterly'
@@ -441,11 +455,11 @@ export default function Dashboard() {
       <div className={styles.tableCard}>
         <div className={styles.cardHdr}>
           <div>
-            <h3 className={styles.cardTitle}>Recent Products</h3>
+            <h3 className={styles.cardTitle}>Recent Variants</h3>
             <p className={styles.cardSub}>Latest additions to the store</p>
           </div>
           <div className={styles.legend}>
-            {[['#45b369', 'In Stock'], ['#ff9f29', 'Low Stock'], ['#ef4444', 'Out']].map(([c, l]) => (
+            {[['#45b369', 'In Stock'], ['#f97316', 'Medium'], ['#ef4444', 'Low / Out']].map(([c, l]) => (
               <span key={l} className={styles.legendItem}>
                 <span className={styles.legendDot} style={{ background: c }} />{l}
               </span>
@@ -455,29 +469,27 @@ export default function Dashboard() {
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
-              <tr>{['No.', 'Product Name', 'Category', 'MRP', 'Sale Price', 'Stock', 'Status'].map(h => <th key={h}>{h}</th>)}</tr>
+              <tr>{['No.', 'Product Name', 'Category', 'Variant', 'MRP', 'Sale Price', 'Stock', 'Status'].map(h => <th key={h}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {loading ? (
-                [1, 2, 3].map(i => <tr key={i}>{[1, 2, 3, 4, 5, 6, 7].map(j => <td key={j}><div className={styles.skeleton} /></td>)}</tr>)
-              ) : recentProducts.length === 0 ? (
-                <tr><td colSpan={7} className={styles.emptyRow}>No products yet</td></tr>
+                [1, 2, 3].map(i => <tr key={i}>{[1,2,3,4,5,6,7,8].map(j => <td key={j}><div className={styles.skeleton} /></td>)}</tr>)
+              ) : recentVariants.length === 0 ? (
+                <tr><td colSpan={8} className={styles.emptyRow}>No variants yet</td></tr>
               ) : (
-                recentProducts.map((p, i) => {
-                  const ts = p.Variants?.reduce((a, v) => a + (Number(v.stock) || 0), 0) ?? 0;
-                  const fv = p.Variants?.[0];
-                  const mrp = fv?.mrp ?? p.mrp ?? 0;
-                  const sale = fv?.salesPrice ?? p.salesPrice ?? 0;
-                  const sc = stockColor(ts);
+                recentVariants.map((v, i) => {
+                  const qty = Number(v.stock) || 0;
+                  const sc = stockColor(qty);
                   return (
-                    <tr key={p.id} className={styles.tRow}>
+                    <tr key={v.id} className={styles.tRow}>
                       <td className={styles.tdIdx}>{i + 1}</td>
-                      <td className={styles.tdName}>{p.productName}</td>
-                      <td><span className={styles.catPill}>{p.Category?.name || '—'}</span></td>
-                      <td className={styles.tdMrp}>₹{mrp}</td>
-                      <td className={styles.tdSale}>₹{sale}</td>
-                      <td className={styles.tdStock}><span className={styles.stockNum} style={{ '--sc': sc }}>{ts}</span></td>
-                      <td><span className={styles.statusBadge} style={{ '--sc': sc, '--sbg': sc + '22' }}>{stockLabel(ts)}</span></td>
+                      <td className={styles.tdName}>{v.Product?.productName || '—'}</td>
+                      <td><span className={styles.catPill}>{v.Product?.Category?.name || '—'}</span></td>
+                      <td style={{ fontSize: 13 }}>{renderVariantLabel(v.variantName)}</td>
+                      <td className={styles.tdMrp}>₹{v.mrp ?? 0}</td>
+                      <td className={styles.tdSale}>₹{v.salesPrice ?? 0}</td>
+                      <td className={styles.tdStock}><span className={styles.stockNum} style={{ '--sc': sc }}>{qty}</span></td>
+                      <td><span className={styles.statusBadge} style={{ '--sc': sc, '--sbg': sc + '22' }}>{stockLabel(qty)}</span></td>
                     </tr>
                   );
                 })

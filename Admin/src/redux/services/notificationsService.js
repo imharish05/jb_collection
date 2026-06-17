@@ -2,7 +2,7 @@ import api from "../../api/axiosInstance";
 import toast from "react-hot-toast";
 import {
   setLoading, setNotifications, setUnreadCount,
-  markItemRead, markAllItemsRead,
+  markItemRead, markAllItemsRead, clearAllItems,
   setSettings, setSettingsLoading,
   setSummary, setSummaryLoading,
 } from "../slices/notificationsSlice";
@@ -36,6 +36,17 @@ export const doMarkAllRead = () => async (dispatch) => {
   }
 };
 
+export const doClearAll = () => async (dispatch) => {
+  try {
+    const res = await api.delete("/notifications/clear-all");
+    dispatch(clearAllItems());
+    toast.success(`Cleared ${res.data.deleted} read notification${res.data.deleted !== 1 ? "s" : ""}`);
+  } catch (e) {
+    console.error("[Notifications] clearAll error:", e);
+    toast.error("Failed to clear notifications");
+  }
+};
+
 export const fetchInventorySettings = () => async (dispatch) => {
   dispatch(setSettingsLoading());
   try {
@@ -51,7 +62,6 @@ export const saveInventorySettings = (payload) => async (dispatch) => {
     const res = await api.put("/inventory-settings", payload);
     dispatch(setSettings(res.data.settings));
     toast.success("Inventory alert settings saved!");
-    // Refresh summary after settings change
     dispatch(fetchInventorySummary());
     return true;
   } catch (e) {

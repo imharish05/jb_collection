@@ -1,6 +1,10 @@
 import api from "../../api/axiosInstance";
 import toast from "react-hot-toast";
-import { setLoading, setDashboardData, setError, setOrderCounts, setGraphLoading, setMonthlyData, setMonthlySalesData, setGraphError, setQuarterlyLoading, setQuarterlySalesData, setQuarterlyError } from "../slices/dashboardSlice";
+import {
+    setLoading, setDashboardData, setRecentVariants, setError, setOrderCounts,
+    setGraphLoading, setMonthlyData, setMonthlySalesData, setGraphError,
+    setQuarterlyLoading, setQuarterlySalesData, setQuarterlyError,
+} from "../slices/dashboardSlice";
 
 let dashboardLoaded = false;
 
@@ -22,6 +26,15 @@ export const fetchDashboardData = () => async (dispatch) => {
         const msg = err.response?.data?.message || "Failed to load dashboard";
         dispatch(setError(msg));
         throw err;
+    }
+};
+
+export const fetchRecentVariants = () => async (dispatch) => {
+    try {
+        const res = await api.get("/dashboard/recent-variants");
+        dispatch(setRecentVariants({ variants: res.data.variants, thresholds: res.data.thresholds }));
+    } catch (err) {
+        console.error("[Dashboard] fetchRecentVariants error:", err);
     }
 };
 
@@ -69,13 +82,12 @@ export const loadDashboard = (dispatch) => {
     toast.promise(
         Promise.all([
             dispatch(fetchDashboardData()),
+            dispatch(fetchRecentVariants()),
             dispatch(fetchOrderCounts()),
             dispatch(fetchMonthlyOrders(year)),
             dispatch(fetchQuarterlySales(year)),
         ]),
-        {
-            error: 'Failed to load dashboard',
-        },
+        { error: "Failed to load dashboard" },
         { id: 1 }
     );
 };

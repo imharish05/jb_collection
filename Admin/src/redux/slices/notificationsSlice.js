@@ -6,7 +6,6 @@ const notificationsSlice = createSlice({
     items: [],
     unreadCount: 0,
     loading: false,
-    // inventory settings cached here too
     settings: { highStockThreshold: 51, mediumStockThreshold: 11, lowStockThreshold: 1 },
     settingsLoading: false,
     summary: { total: 0, high: 0, medium: 0, low: 0, out_of_stock: 0 },
@@ -15,8 +14,8 @@ const notificationsSlice = createSlice({
   reducers: {
     setLoading:     (s) => { s.loading = true; },
     setNotifications: (s, a) => {
-      s.loading    = false;
-      s.items      = a.payload.notifications;
+      s.loading     = false;
+      s.items       = a.payload.notifications;
       s.unreadCount = a.payload.unreadCount;
     },
     setUnreadCount: (s, a) => { s.unreadCount = a.payload; },
@@ -28,16 +27,20 @@ const notificationsSlice = createSlice({
       s.items.forEach(i => { i.isRead = true; });
       s.unreadCount = 0;
     },
-    setSettings:    (s, a) => { s.settings = a.payload; s.settingsLoading = false; },
+    clearAllItems: (s) => {
+      // Remove all read items from local state after server clear
+      s.items = s.items.filter(i => !i.isRead);
+    },
+    setSettings:        (s, a) => { s.settings = a.payload; s.settingsLoading = false; },
     setSettingsLoading: (s) => { s.settingsLoading = true; },
-    setSummary:     (s, a) => { s.summary = a.payload; s.summaryLoading = false; },
-    setSummaryLoading: (s) => { s.summaryLoading = true; },
+    setSummary:         (s, a) => { s.summary = a.payload; s.summaryLoading = false; },
+    setSummaryLoading:  (s) => { s.summaryLoading = true; },
   },
 });
 
 export const {
   setLoading, setNotifications, setUnreadCount,
-  markItemRead, markAllItemsRead,
+  markItemRead, markAllItemsRead, clearAllItems,
   setSettings, setSettingsLoading,
   setSummary, setSummaryLoading,
 } = notificationsSlice.actions;

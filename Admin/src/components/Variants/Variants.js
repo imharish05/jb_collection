@@ -21,8 +21,10 @@ const KM = {
   red: '#EF4444', redLight: '#FEF2F2',
 };
 
-function stockColor(qty) {
-  return qty > 200 ? KM.green : qty > 50 ? '#F59E0B' : KM.red;
+// stockColor is now computed per-render using thresholds from Redux (see component)
+// This fallback is only used outside component scope
+function stockColorStatic(qty) {
+  return qty === 0 ? KM.red : qty < 11 ? KM.red : qty < 51 ? '#F59E0B' : KM.green;
 }
 
 function safeAttrs(raw) {
@@ -141,6 +143,17 @@ export default function Variants({ showToast }) {
   const dispatch = useDispatch();
   const { items: rows, loading } = useSelector(state => state.variants);
   const { items: products }      = useSelector(state => state.products);
+  const { settings: invSettings } = useSelector(state => state.notifications);
+  const stockColor = (qty) => {
+    const high   = invSettings?.highStockThreshold   ?? 51;
+    const medium = invSettings?.mediumStockThreshold  ?? 11;
+    const low    = invSettings?.lowStockThreshold     ?? 1;
+    if (qty === 0)        return KM.red;
+    if (qty < low)        return KM.red;
+    if (qty < medium)     return KM.red;
+    if (qty < high)       return '#F59E0B';
+    return KM.green;
+  };
 
   // mode: 'none' | 'add' | 'edit'
   const [mode,          setMode]          = useState('none');
