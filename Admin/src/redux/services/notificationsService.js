@@ -6,6 +6,7 @@ import {
   setSettings, setSettingsLoading,
   setSummary, setSummaryLoading,
 } from "../slices/notificationsSlice";
+import { fetchRecentVariants } from "./dashboardService";
 
 export const fetchNotifications = (limit = 5) => async (dispatch) => {
   dispatch(setLoading());
@@ -63,6 +64,10 @@ export const saveInventorySettings = (payload) => async (dispatch) => {
     dispatch(setSettings(res.data.settings));
     toast.success("Inventory alert settings saved!");
     dispatch(fetchInventorySummary());
+    // The Dashboard's Recent Variants table keeps its own copy of these
+    // thresholds (fetched once on mount) — refresh it now so stock colors
+    // there update immediately instead of only after a full page reload.
+    dispatch(fetchRecentVariants());
     return true;
   } catch (e) {
     const msg = e.response?.data?.message || "Failed to save settings";

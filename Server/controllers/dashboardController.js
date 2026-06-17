@@ -50,7 +50,7 @@ const getStats = async (req, res) => {
 // ─── GET /api/dashboard/recent-variants ──────────────────────────────────────
 const getRecentVariants = async (req, res) => {
   try {
-    const settings = await InventorySettings.findOne();
+    const settings = await InventorySettings.findOne({ order: [["id", "DESC"]] });
     const high   = settings?.highStockThreshold   ?? 51;
     const medium = settings?.mediumStockThreshold  ?? 11;
     const low    = settings?.lowStockThreshold     ?? 1;
