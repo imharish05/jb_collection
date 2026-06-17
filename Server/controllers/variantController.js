@@ -10,6 +10,10 @@ const ChildComboProduct = require("../models/ChildComboProduct");
 const generateSku = () =>
   `KMV-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
+const { refreshVariantStatus } = (() => {
+  try { return require("../services/inventoryService"); } catch(e) { return { refreshVariantStatus: async () => {} }; }
+})();
+
 const buildImagePath = (file) => {
   if (!file) return null;
   return file.path.replace(/\\/g, "/").replace(/^.*uploads\//, "uploads/");
@@ -255,6 +259,11 @@ const add = async (req, res) => {
 
     await syncProductVariants(productId);
 
+    // Recompute stock statuses for newly created variants
+    for (const r of created) {
+      refreshVariantStatus(r.id).catch(e => console.error("[Inventory] refreshVariantStatus:", e.message));
+    }
+
     // Return all created rows with product association
     const fresh = await Variant.findAll({
       where: { id: created.map(r => r.id) },
@@ -302,6 +311,9 @@ const update = async (req, res) => {
 
     await syncProductVariants(oldProductId);
     if (variant.productId !== oldProductId) await syncProductVariants(variant.productId);
+
+    // Recompute stock status + maybe fire notification
+    refreshVariantStatus(variant.id).catch(e => console.error("[Inventory] refreshVariantStatus:", e.message));
 
     const fresh = await Variant.findByPk(variant.id, {
       include: [{ model: Product, as: "product", attributes: ["id", "name"] }],

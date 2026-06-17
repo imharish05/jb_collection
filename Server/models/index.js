@@ -31,7 +31,10 @@ const ReferenceSequence = require("./ReferenceSequence");
 const { attachReferenceSlugs, backfillReferenceSlugs } = require("../utils/referenceSlugs");
 
 // ── Password Reset OTP ────────────────────────────────────────────────────────
-const PasswordResetOtp = require("./PasswordResetOtp");
+const PasswordResetOtp    = require("./PasswordResetOtp");
+const InventorySettings   = require("./InventorySettings");
+const Notification        = require("./Notification");
+const StockHistory        = require("./StockHistory");
 User.hasMany(PasswordResetOtp, { foreignKey: "user_id", as: "passwordResetOtps", onDelete: "CASCADE" });
 PasswordResetOtp.belongsTo(User, { foreignKey: "user_id", as: "user" });
 
@@ -158,6 +161,10 @@ const models = {
   ChildComboProduct,
   // Password reset
   PasswordResetOtp,
+  // Inventory settings + notifications
+  InventorySettings,
+  Notification,
+  StockHistory,
   // Inventory log
   InventoryLog,
   // Order status email audit

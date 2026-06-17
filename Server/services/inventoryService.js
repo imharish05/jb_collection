@@ -464,3 +464,139 @@ module.exports = {
   decrementOrderStock,
   restoreOrderStock,
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INVENTORY SETTINGS + NOTIFICATION LAYER
+// Appended — does NOT touch existing validateOrderStock / decrementOrderStock
+// ═══════════════════════════════════════════════════════════════════════════
+
+const InventorySettings = (() => { try { return require("../models/InventorySettings"); } catch(e){ return null; } })();
+const Notification      = (() => { try { return require("../models/Notification"); }      catch(e){ return null; } })();
+
+const DEFAULTS = { highStockThreshold: 51, mediumStockThreshold: 11, lowStockThreshold: 1 };
+let _settingsCache = null;
+
+const getInventorySettings = async () => {
+  if (!InventorySettings) return DEFAULTS;
+  if (_settingsCache) return _settingsCache;
+  let row = await InventorySettings.findOne({ order: [["id", "DESC"]] });
+  if (!row) row = await InventorySettings.create(DEFAULTS);
+  _settingsCache = row.toJSON();
+  return _settingsCache;
+};
+
+const invalidateSettingsCache = () => { _settingsCache = null; };
+
+const computeStockStatus = async (stock, settings) => {
+  const s = settings || (await getInventorySettings());
+  const qty = parseInt(stock) || 0;
+  if (qty === 0) return "out_of_stock";
+  if (qty >= s.highStockThreshold) return "high";
+  if (qty >= s.mediumStockThreshold) return "medium";
+  return "low";
+};
+
+const buildVariantLabel = (attributes) => {
+  if (!Array.isArray(attributes) || !attributes.length) return "Default";
+  return attributes.filter(a => a.key && a.value).map(a => `${a.key}: ${a.value}`).join(" · ");
+};
+
+const maybeCreateStockNotification = async (variant, newStatus, productName) => {
+  if (!Notification) return;
+  const { Op } = require("sequelize");
+  const typeMap = { high: "stock_high", medium: "stock_medium", low: "stock_low", out_of_stock: "stock_out" };
+  const newType = typeMap[newStatus];
+  if (!newType) return;
+
+  const last = await Notification.findOne({
+    where: { metadata: { [Op.like]: `%"variantId":${variant.id}%` }, type: { [Op.like]: "stock_%" } },
+    order: [["createdAt", "DESC"]],
+  });
+  if (last && last.type === newType) return;
+
+  const emojiMap = { high: "🟢", medium: "🔵", low: "🟠", out_of_stock: "🔴" };
+  const titleMap = { high: "High Stock", medium: "Medium Stock", low: "Low Stock Alert", out_of_stock: "Out Of Stock" };
+  const attrs = Array.isArray(variant.attributes) ? variant.attributes : [];
+  const variantLabel = buildVariantLabel(attrs) || variant.variantName || "Variant";
+  const stock = parseInt(variant.stock) || 0;
+  const msgMap = {
+    high:        `${productName} — ${variantLabel}\nStock is ${stock} units`,
+    medium:      `${productName} — ${variantLabel}\nMedium stock: ${stock} units`,
+    low:         `${productName} — ${variantLabel}\nOnly ${stock} remaining`,
+    out_of_stock: `${productName} — ${variantLabel}\nStock reached 0`,
+  };
+
+  await Notification.create({
+    type: newType,
+    title: `${emojiMap[newStatus]} ${titleMap[newStatus]}`,
+    message: msgMap[newStatus],
+    isRead: false,
+    metadata: { variantId: variant.id, productId: variant.productId, stock, variantLabel, productName },
+  });
+};
+
+const refreshVariantStatus = async (variantId, settings) => {
+  const { Variant: V, Product: P } = require("../models");
+  const s = settings || (await getInventorySettings());
+  const variant = await V.findByPk(variantId, { include: [{ model: P, as: "product", attributes: ["name"] }] });
+  if (!variant) return;
+  const newStatus = await computeStockStatus(variant.stock, s);
+  const oldStatus = variant.stockStatus;
+  await variant.update({ stockStatus: newStatus });
+  if (newStatus !== oldStatus) {
+    await maybeCreateStockNotification(variant, newStatus, variant.product?.name || "Unknown Product");
+  }
+  return newStatus;
+};
+
+const refreshAllVariantStatuses = async () => {
+  const { Variant: V, Product: P } = require("../models");
+  const s = await getInventorySettings();
+  const variants = await V.findAll({ include: [{ model: P, as: "product", attributes: ["name"] }] });
+  for (const v of variants) {
+    const newStatus = await computeStockStatus(v.stock, s);
+    if (newStatus !== v.stockStatus) {
+      await v.update({ stockStatus: newStatus });
+      await maybeCreateStockNotification(v, newStatus, v.product?.name || "Unknown Product");
+    }
+  }
+};
+
+const getInventorySummary = async () => {
+  const { Variant: V } = require("../models");
+  const { fn, col, literal } = require("sequelize");
+  const s = await getInventorySettings();
+  const rows = await V.findAll({ attributes: ["stock"], raw: true });
+  const summary = { total: rows.length, high: 0, medium: 0, low: 0, out_of_stock: 0 };
+  for (const r of rows) {
+    const st = await computeStockStatus(r.stock, s);
+    summary[st] = (summary[st] || 0) + 1;
+  }
+  return { ...summary, settings: s };
+};
+
+const createOrderNotification = async (order) => {
+  if (!Notification) return;
+  try {
+    const ref = order.referenceSlug || order.id?.toString().slice(-6)?.toUpperCase() || "NEW";
+    await Notification.create({
+      type: "order",
+      title: "🛒 New Order Received",
+      message: `Order #${ref} placed\n₹${Number(order.totalAmount || 0).toLocaleString("en-IN")}`,
+      isRead: false,
+      metadata: { orderId: order.id, reference: ref, totalAmount: order.totalAmount },
+    });
+  } catch (e) { console.error("[Notif] createOrderNotification error:", e.message); }
+};
+
+module.exports = Object.assign(module.exports, {
+  getInventorySettings,
+  invalidateSettingsCache,
+  computeStockStatus,
+  buildVariantLabel,
+  maybeCreateStockNotification,
+  refreshVariantStatus,
+  refreshAllVariantStatuses,
+  getInventorySummary,
+  createOrderNotification,
+});

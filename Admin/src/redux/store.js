@@ -17,6 +17,7 @@ import heroSliderReducer       from "./slices/heroSliderSlice";
 import timelessTreasuresReducer from "./slices/timelessTreasuresSlice";
 import marqueeReducer          from "./slices/marqueeSlice";
 import testimonialsReducer    from "./slices/testimonialsSlice";
+import notificationsReducer  from "./slices/notificationsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -38,5 +39,6 @@ export const store = configureStore({
     timelessTreasures: timelessTreasuresReducer,
     marquee:           marqueeReducer,
     testimonials:      testimonialsReducer,
+    notifications:     notificationsReducer,
   },
 });

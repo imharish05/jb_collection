@@ -16,6 +16,7 @@ const { sendOrderConfirmationEmail, sendOrderStatusEmail } = require("../utils/m
 const { shiprocketPost, resolveShiprocketPaymentMethod } = require("../utils/shiprocket");
 const inventoryService = require("../services/inventoryService");
 const { referenceWhere, getDisplayReference } = require("../utils/referenceSlugs");
+const { createOrderNotification } = require("../services/inventoryService");
 
 // ─── KGF Order Number Generator ──────────────────────────────────────────────
 // Generates a unique, sequential order number like KGF-000001.
@@ -561,6 +562,9 @@ const createOrder = async (req, res, next) => {
         console.error("[Shiprocket] Failed to push COD order:", srErr.message);
       }
     }
+
+    // Fire order notification (non-blocking)
+    createOrderNotification(createdOrder).catch(e => console.error("[Notif] order notif error:", e.message));
 
     return res.status(201).json(createdOrder);
   } catch (err) {

@@ -31,6 +31,8 @@ const testimonialRoutes = require("./routes/testimonials");
 const shippingRoutes = require("./routes/shipping");
 const newComboRoutes = require("./routes/combos");
 const returnRoutes = require("./routes/returns");
+const notificationRoutes    = require("./routes/notifications");
+const inventorySettingsRoutes = require("./routes/inventorySettings");
 
 const { protect } = require("./middleware/auth");
 const seed = require("./seeders/seed");
@@ -72,6 +74,8 @@ app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/combos", newComboRoutes);
 app.use("/api/returns", returnRoutes);
+app.use("/api/notifications",     notificationRoutes);
+app.use("/api/inventory-settings", inventorySettingsRoutes);
 
 app.get("/api/health", (req, res) =>
   res.json({ status: "ok", service: "Kamali Gifts API", db: "MySQL" })
