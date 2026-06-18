@@ -169,13 +169,6 @@ const ProductGridListSingle = ({
             </div>
           </div>
           <div className="product-details-premium">
-            {firstVariant ? (() => {
-              const attrs = Array.isArray(firstVariant.attributes) ? firstVariant.attributes : [];
-              const label = attrs.length
-                ? attrs.map(a => a.value).filter(Boolean).join(' / ')
-                : firstVariant.variantName || 'Default';
-              return <span className="product-cat-tag">{label}</span>;
-            })() : <span className="product-cat-tag">{product.Category?.name || 'Kamali Exclusive'}</span>}
             <h4>
               <Link to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}>
                 {product.name}
