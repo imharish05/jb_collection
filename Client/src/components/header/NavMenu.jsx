@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import clsx from "clsx";
 import { useSelector } from "react-redux";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -78,10 +78,19 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
   const { categories = [], events = [], rootCombos = [] } = useSelector(
     (state) => state.navMenu || {}
   );
+  const location = useLocation();
   const S = process.env.PUBLIC_URL + "/shop";
   const [catalogueOpen, setCatalogueOpen] = useState(false);
   const closeTimer = useRef(null);
   const anchorRef = useRef(null);
+
+  // Helper function to check if a path is active
+  const isActive = (path) => {
+    const basePath = process.env.PUBLIC_URL || "";
+    const currentPath = location.pathname.replace(basePath, "") || "/";
+    const targetPath = path.replace(basePath, "") || "/";
+    return currentPath === targetPath || currentPath === targetPath + "/";
+  };
 
   const openPanel = useCallback(() => {
     clearTimeout(closeTimer.current);
@@ -98,12 +107,20 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
     <div className={clsx(sidebarMenu ? "sidebar-menu" : `main-menu ${menuWhiteClass || ""}`, "kg-nav")}>
       <nav>
         <ul>
-          <li><Link to={process.env.PUBLIC_URL + "/"}>Home</Link></li>
-          <li><Link to={process.env.PUBLIC_URL + "/about"}>About</Link></li>
+          <li className={isActive(process.env.PUBLIC_URL + "/") ? "active" : ""}>
+            <Link to={process.env.PUBLIC_URL + "/"}>Home</Link>
+          </li>
+          <li className={isActive(process.env.PUBLIC_URL + "/about") ? "active" : ""}>
+            <Link to={process.env.PUBLIC_URL + "/about"}>About</Link>
+          </li>
 
           <li
             ref={anchorRef}
-            className={clsx("kg-catalogue-item", catalogueOpen && "kg-catalogue-item--open")}
+            className={clsx(
+              "kg-catalogue-item",
+              catalogueOpen && "kg-catalogue-item--open",
+              isActive(process.env.PUBLIC_URL + "/catalogue") ? "active" : ""
+            )}
             onMouseEnter={openPanel}
             onMouseLeave={scheduleClose}
           >
@@ -161,7 +178,13 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
             )}
           </li>
 
-          <li><Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link></li>
+          <li className={isActive(process.env.PUBLIC_URL + "/shop") ? "active" : ""}>
+            <Link to={process.env.PUBLIC_URL + "/shop"}>Shop</Link>
+          </li>
+
+          <li className={isActive(process.env.PUBLIC_URL + "/contact") ? "active" : ""}>
+            <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
+          </li>
         </ul>
       </nav>
     </div>

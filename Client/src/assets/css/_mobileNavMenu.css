@@ -33,6 +33,14 @@
 }
 .mob-nav__link:hover { color: #db1a5d; }
 
+.mob-nav__link.active {
+  color: #db1a5d;
+  font-weight: 700;
+  background: rgba(219, 26, 93, 0.04);
+  border-left: 3px solid #db1a5d;
+  padding-left: 17px;
+}
+
 .mob-nav__link--toggle { cursor: default; }
 .mob-nav__link--toggle:hover { color: #222; }
 

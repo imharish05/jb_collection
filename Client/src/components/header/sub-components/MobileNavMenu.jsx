@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { logoutAction } from "../../../store/slices/authSlice";
 import cogoToast from "cogo-toast";
 
@@ -96,8 +96,17 @@ const MobileNavMenu = () => {
   const { isAuthenticated } = useSelector((s) => s.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const [catalogueOpen, setCatalogueOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+
+  // Helper function to check if a path is active
+  const isActive = (path) => {
+    const basePath = process.env.PUBLIC_URL || "";
+    const currentPath = location.pathname.replace(basePath, "") || "/";
+    const targetPath = path.replace(basePath, "") || "/";
+    return currentPath === targetPath || currentPath === targetPath + "/";
+  };
 
   const closeMenu = () => {
     document.querySelector("#offcanvas-mobile-menu")?.classList.remove("active");
@@ -116,14 +125,14 @@ const MobileNavMenu = () => {
 
         {/* Home */}
         <li className="mob-nav__item">
-          <Link to={process.env.PUBLIC_URL + "/"} className="mob-nav__link" onClick={closeMenu}>
+          <Link to={process.env.PUBLIC_URL + "/"} className={`mob-nav__link${isActive(process.env.PUBLIC_URL + "/") ? " active" : ""}`} onClick={closeMenu}>
             Home
           </Link>
         </li>
 
         {/* About */}
         <li className="mob-nav__item">
-          <Link to={process.env.PUBLIC_URL + "/about"} className="mob-nav__link" onClick={closeMenu}>
+          <Link to={process.env.PUBLIC_URL + "/about"} className={`mob-nav__link${isActive(process.env.PUBLIC_URL + "/about") ? " active" : ""}`} onClick={closeMenu}>
             About
           </Link>
         </li>
@@ -131,7 +140,7 @@ const MobileNavMenu = () => {
         {/* Catalogue */}
         <li className={`mob-nav__item mob-nav__item--parent${catalogueOpen ? " mob-nav__item--open" : ""}`}>
           <div className="mob-nav__row">
-            <Link to={process.env.PUBLIC_URL + "/catalogue"} className="mob-nav__link" onClick={closeMenu}>
+            <Link to={process.env.PUBLIC_URL + "/catalogue"} className={`mob-nav__link${isActive(process.env.PUBLIC_URL + "/catalogue") ? " active" : ""}`} onClick={closeMenu}>
               Catalogue
             </Link>
             <button
@@ -213,6 +222,13 @@ const MobileNavMenu = () => {
           )}
         </li>
 
+        {/* Shop */}
+        <li className="mob-nav__item">
+          <Link to={process.env.PUBLIC_URL + "/shop"} className={`mob-nav__link${isActive(process.env.PUBLIC_URL + "/shop") ? " active" : ""}`} onClick={closeMenu}>
+            Shop
+          </Link>
+        </li>
+
         {/* My Account */}
         <li className={`mob-nav__item mob-nav__item--parent${accountOpen ? " mob-nav__item--open" : ""}`}>
           <div className="mob-nav__row">
@@ -260,7 +276,7 @@ const MobileNavMenu = () => {
 
         {/* Contact */}
         <li className="mob-nav__item">
-          <Link to={process.env.PUBLIC_URL + "/contact"} className="mob-nav__link" onClick={closeMenu}>
+          <Link to={process.env.PUBLIC_URL + "/contact"} className={`mob-nav__link${isActive(process.env.PUBLIC_URL + "/contact") ? " active" : ""}`} onClick={closeMenu}>
             Contact Us
           </Link>
         </li>

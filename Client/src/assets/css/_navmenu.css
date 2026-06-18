@@ -168,6 +168,27 @@
 .main-menu nav ul li.kg-catalogue-item {
   position: relative;
 }
+
+/* ── Active Navigation Link Styles ── */
+.main-menu nav ul li.active > a {
+  color: #db1a5d;
+  font-weight: 600;
+}
+
+.main-menu.menu-white nav ul li.active > a {
+  color: #db1a5d;
+}
+
+.stick .main-menu nav ul li.active > a {
+  color: #db1a5d;
+  font-weight: 600;
+}
+
+.sidebar-menu nav ul li.active > a {
+  color: #db1a5d;
+  font-weight: 600;
+}
+
 .sidebar-menu .kg-chevron {
   display: none;
 }
