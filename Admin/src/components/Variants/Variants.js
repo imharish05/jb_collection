@@ -530,13 +530,8 @@ export default function Variants({ showToast }) {
                 {/* Info banner — shown when product already has variants */}
                 {productId && existingOptions && existingOptions.length > 0 && (
                   <div style={{ marginTop: 8, padding: '12px 16px', background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 8, fontSize: 13, color: '#92400E', lineHeight: '1.5' }}>
-                    <strong>⚠️ Cartesian Synchronization Warning:</strong> This product already has <strong>{existingOptions.length}</strong> option dimension{existingOptions.length > 1 ? 's' : ''} ({existingOptions.map(o => o.key).join(', ')}).
-                    <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
-                      <li>To add new option values (e.g., a new color or size), add them to the existing option categories.</li>
-                      <li><strong>Adding or changing option categories</strong> will regenerate the matrix. Any existing variants that do not match the new categories will be <strong>permanently deleted</strong> upon saving.</li>
-                      <li>Check the <strong>📦 SKUs ({skus.length})</strong> tab to confirm the final list of variants before saving.</li>
-                    </ul>
-                  </div>
+  ⚠️ This product has {existingOptions.length} option dimension{existingOptions.length > 1 ? 's' : ''} ({existingOptions.map(o => o.key).join(', ')}). Adding or changing option categories will delete non-matching variants. Review the <strong>📦 SKUs ({skus.length})</strong> tab before saving.
+</div>
                 )}
               </div>
 

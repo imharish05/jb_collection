@@ -76,7 +76,7 @@ const STATUS_STEPS = [
 
 // ── Invoice helpers ───────────────────────────────────────────────────────────
 const generateReceiptText = (state) => {
-  const { orderId, cartItems = [], selectedAddr = {}, paymentMethod, partialCod, couponCode, couponDiscount, shippingCharge, tax } = state;
+  const { referenceSlug, orderId, cartItems = [], selectedAddr = {}, paymentMethod, partialCod, couponCode, couponDiscount, shippingCharge, tax } = state;
   const subtotal  = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
   const discount  = parseFloat(couponDiscount || 0);
   const shipping  = parseFloat(shippingCharge || partialCod?.shippingCharge || 0);
@@ -85,7 +85,7 @@ const generateReceiptText = (state) => {
 
   const lines = [
     "=== KAMALI GIFTS — ORDER RECEIPT ===",
-    `Order ID   : ${orderId}`,
+    `Order ID   : ${referenceSlug || orderId}`,
     `Date       : ${new Date().toLocaleDateString("en-IN")}`,
     "",
     "--- ITEMS ---",
@@ -116,7 +116,8 @@ const downloadReceipt = (state) => {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement("a");
   a.href     = url;
-  a.download = `KamaliGifts_Receipt_${state.orderId}.txt`;
+  const refSlug = state.referenceSlug || state.orderNumber || state.orderId;
+  a.download = `KamaliGifts_Receipt_${refSlug}.txt`;
   a.click();
   URL.revokeObjectURL(url);
 };
@@ -125,6 +126,7 @@ const downloadReceipt = (state) => {
 const OrderConfirmation = () => {
   const { state } = useLocation();
   const orderId       = state?.orderId       || "KG000000";
+  const referenceSlug = state?.referenceSlug || state?.orderNumber || orderId; // Use slug for display
   const selectedAddr  = state?.selectedShippingAddr || state?.selectedAddr || {};
   const paymentMethod = state?.paymentMethod || "partial_cod";
   const cartItems     = state?.cartItems     || [];
@@ -188,7 +190,7 @@ useEffect(() => {
 }, []); // run once on mount
 
   const stateForDownload = {
-    orderId, cartItems, selectedAddr, paymentMethod,
+    orderId, referenceSlug, cartItems, selectedAddr, paymentMethod,
     partialCod, couponCode, couponDiscount, shippingCharge, tax,
   };
 
@@ -227,7 +229,7 @@ useEffect(() => {
                 letterSpacing: 1,
               }}
             >
-              Order ID: {orderId}
+              Order ID: #{referenceSlug}
             </div>
           </div>
 
@@ -295,6 +297,7 @@ useEffect(() => {
                                             />
                                           )}
                                           {/* <span>{displayVal}</span> */}
+                                          <span>{displayVal}</span>
                                         </span>
                                       );
                                     })}

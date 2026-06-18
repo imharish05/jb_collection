@@ -1,7 +1,7 @@
 // controllers/paymentController.js
 const Razorpay = require('razorpay');
 const crypto   = require('crypto');
-const { Order, CartItem, User } = require('../models');
+const { Order, CartItem, User, Refund, Return } = require('../models');
 const sequelize = require('../config/database');
 const inventoryService = require('../services/inventoryService');
 const { sendOrderConfirmationEmail, sendAdminNewOrderEmail } = require('../utils/mailer');
@@ -328,6 +328,37 @@ const handlePaymentWebhook = async (req, res, next) => {
 
     const event   = req.body.event;
     const payload = req.body.payload;
+
+    if (event === 'refund.processed') {
+      const razorpayRefundId = payload?.refund?.entity?.id;
+      if (razorpayRefundId) {
+        const refundRecord = await Refund.findOne({ where: { razorpayRefundId } });
+        if (refundRecord) {
+          refundRecord.refundStatus = 'completed';
+          refundRecord.refundedAt   = new Date();
+          await refundRecord.save();
+          if (refundRecord.returnId) {
+            await Return.update(
+              { status: 'refund_completed' },
+              { where: { id: refundRecord.returnId } }
+            );
+          }
+        }
+      }
+      return res.status(200).json({ received: true });
+    }
+
+    if (event === 'refund.failed') {
+      const razorpayRefundId = payload?.refund?.entity?.id;
+      if (razorpayRefundId) {
+        const refundRecord = await Refund.findOne({ where: { razorpayRefundId } });
+        if (refundRecord) {
+          refundRecord.refundStatus = 'failed';
+          await refundRecord.save();
+        }
+      }
+      return res.status(200).json({ received: true });
+    }
 
     if (event !== 'payment.captured' && event !== 'order.paid') {
       return res.status(200).json({ message: `Event ${event} acknowledged, not processed` });

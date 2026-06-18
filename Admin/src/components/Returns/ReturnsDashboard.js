@@ -175,18 +175,18 @@ export default function ReturnsDashboard({ showToast }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
             <tr style={{ background: '#f1f5ff', borderBottom: '2px solid #d1d5db' }}>
-              {['ID','Order','Customer','Type','Reason','Status','Requested','Actions'].map(h => (
+              {['ID','Order','Customer','Type','Reason','Status','Refunded','Requested','Actions'].map(h => (
                 <th key={h} style={{ padding: '13px 16px', fontWeight: 700, fontSize: '11px', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: '60px', color: '#6b7280' }}>
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '60px', color: '#6b7280' }}>
                 <div style={{ display: 'inline-block', width: '36px', height: '36px', border: '3px solid #e5e7eb', borderTopColor: '#db1a5d', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               </td></tr>
             ) : returns.length === 0 ? (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: '60px', color: '#6b7280', fontSize: '14px' }}>No records found</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '60px', color: '#6b7280', fontSize: '14px' }}>No records found</td></tr>
             ) : returns.map((r, idx) => (
               <tr key={r.id}
                 style={{
@@ -203,7 +203,15 @@ export default function ReturnsDashboard({ showToast }) {
               >
                 <td style={{ padding: '12px 16px', color: '#6b7280', fontFamily: 'monospace', fontWeight: 600, borderLeft: idx > 0 ? 'none' : undefined }}>#{r.referenceSlug || r.id}</td>
                 <td style={{ padding: '12px 16px', color: '#111827', fontWeight: 700, borderLeft: '1px solid #e5e7eb' }}>
-                  {r.order?.referenceSlug || r.order?.id || '—'}
+                  {r.order
+                    ? (r.order.referenceSlug || r.order.id)
+                    : (
+                      <div style={{ color: '#dc2626', fontSize: '11px' }}>
+                        <div style={{ fontFamily: 'monospace', fontSize: '10px' }}>{r.orderId || '—'}</div>
+                        <span style={{ background: '#fee2e2', borderRadius: '4px', padding: '1px 4px', fontSize: '9px', fontWeight: 700 }}>Broken Link!</span>
+                      </div>
+                    )
+                  }
                 </td>
                 <td style={{ padding: '12px 16px', color: '#374151', borderLeft: '1px solid #e5e7eb' }}>
                   <div style={{ fontWeight: 600 }}>{r.user?.name || '—'}</div>
@@ -222,6 +230,9 @@ export default function ReturnsDashboard({ showToast }) {
                   {r.reason ? r.reason.replace(/_/g, ' ') : '—'}
                 </td>
                 <td style={{ padding: '12px 16px', borderLeft: '1px solid #e5e7eb' }}><StatusBadge status={r.status} /></td>
+                <td style={{ padding: '12px 16px', color: '#111827', fontWeight: 600, borderLeft: '1px solid #e5e7eb' }}>
+                  {r.refund?.refundAmount ? `₹${parseFloat(r.refund.refundAmount).toFixed(2)}` : '—'}
+                </td>
                 <td style={{ padding: '12px 16px', color: '#6b7280', whiteSpace: 'nowrap', borderLeft: '1px solid #e5e7eb' }}>
                   {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                 </td>

@@ -271,7 +271,22 @@ export default function ReturnDetail() {
                 <InfoRow label="Product"    value={r.orderItem?.productName} />
                 <InfoRow label="Quantity"   value={r.orderItem?.quantity} />
                 <InfoRow label="Price"      value={r.orderItem?.price ? `₹${r.orderItem.price}` : null} />
-                <InfoRow label="Order ID"   value={r.order?.referenceSlug || r.order?.id || r.orderItem?.orderId} />
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'8px 0', borderBottom:'1px solid #e5e7eb' }}>
+                  <span style={{ color:'#6b7280', fontSize:'13px', minWidth:'140px' }}>Order ID</span>
+                  <span style={{ fontSize:'13px', fontWeight:600, textAlign:'right', flex:1 }}>
+                    {r.order
+                      ? (r.order.referenceSlug || r.order.id)
+                      : (
+                        <>
+                          {r.orderItem?.orderId || '—'}
+                          <span style={{ marginLeft:'6px', background:'#fee2e2', color:'#dc2626', fontSize:'10px', borderRadius:'4px', padding:'2px 6px', fontWeight:700 }}>
+                            Order record missing — contact dev
+                          </span>
+                        </>
+                      )
+                    }
+                  </span>
+                </div>
               </div>
             </div>
           </Section>
@@ -281,8 +296,35 @@ export default function ReturnDetail() {
             <InfoRow label="Name"     value={r.user?.name} />
             <InfoRow label="Email"    value={r.user?.email} />
             <InfoRow label="Phone"    value={r.user?.phone} />
-            <InfoRow label="Payment"  value={r.order?.paymentMethod} />
           </Section>
+
+          {r.order && (
+            <Section title="Payment Summary">
+              <InfoRow label="Payment Method" value={r.order.paymentMethod} />
+              <InfoRow
+                label="Subtotal"
+                value={`₹${(parseFloat(r.orderItem?.salesPrice || r.orderItem?.price || 0) * (r.returnQuantity || 1)).toFixed(2)}`}
+              />
+              {parseFloat(r.order.couponDiscount || 0) > 0 && (
+                <InfoRow label="Discount" value={`-₹${parseFloat(r.order.couponDiscount).toFixed(2)}`} />
+              )}
+              <InfoRow label="GST / Tax"  value={`₹${parseFloat(r.order.taxAmount || 0).toFixed(2)}`} />
+              <InfoRow label="Shipping"   value={`₹${parseFloat(r.order.shippingCharge || 0).toFixed(2)}`} />
+              <InfoRow label="Grand Total" value={`₹${parseFloat(r.order.totalAmount || 0).toFixed(2)}`} />
+              <InfoRow
+                label={r.order.paymentType === 'PARTIAL_COD' ? 'Advance Paid' : 'Paid Online'}
+                value={`₹${parseFloat(r.order.advancePaid || 0).toFixed(2)}`}
+              />
+              <InfoRow
+                label="COD Due"
+                value={
+                  ['refund_initiated','refund_completed'].includes(r.status)
+                    ? '₹0.00'
+                    : `₹${parseFloat(r.order.codAmount || 0).toFixed(2)}`
+                }
+              />
+            </Section>
+          )}
 
           {/* Reverse shipment */}
           {reverseShipment && (
@@ -311,6 +353,7 @@ export default function ReturnDetail() {
                   <InfoRow label="Razorpay ID" value={rf.razorpayRefundId} />
                   <InfoRow label="Note"        value={rf.manualRefundNotes} />
                   <InfoRow label="Initiated"   value={fmt(rf.createdAt)} />
+                  {rf.refundedAt && <InfoRow label="Refunded On" value={fmt(rf.refundedAt)} />}
                 </div>
               ))}
             </Section>

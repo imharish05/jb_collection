@@ -385,11 +385,26 @@ const couponDiscount =
   const isPrepaid = paymentTypeNorm === "PREPAID" || (paymentMethodNorm !== "cod" && paymentMethodNorm !== "partial_cod" && paymentMethodNorm !== "full_cod" && order.paymentStatus === "paid");
   const paidAmount = firstAmount(order.advancePaid) ?? (isPrepaid ? totalAmount : 0);
   const rawDueAmount = firstAmount(order.codAmount) ?? Math.max(0, totalAmount - paidAmount);
-  const dueAmount = order.codCollected ? 0 : rawDueAmount;
+  const isCancelled = order.status?.toLowerCase() === "cancelled";
+  const dueAmount = (order.codCollected || isCancelled) ? 0 : rawDueAmount;
   const isPartialCod = paymentTypeNorm === "PARTIAL_COD";
   const paidLabel = isPartialCod ? "Paid Online (Advance)" : "Amount Paid";
-  const showDueRow = dueAmount > 0 && (!isPrepaid || isCodOrder);
-  const dueLabel = dueAmount > 0 ? (isCodOrder ? "Due at Delivery" : "Amount Due") : "Balance Due";
+  const showDueRow = (dueAmount > 0 || (isCancelled && isCodOrder)) && (!isPrepaid || isCodOrder);
+  const dueLabel = dueAmount > 0 ? (isCodOrder ? "Due at Delivery" : "Amount Due") : (isCodOrder ? "Due at Delivery" : "Balance Due");
+
+  const refund = order.refunds?.[0];
+  const getRefundLabel = (ref) => {
+    if (!ref) return null;
+    const status = (ref.refundStatus || "").toLowerCase();
+    const dateStr = ref.refundedAt
+      ? " on " + new Date(ref.refundedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : "";
+    if (status === "completed" || status === "manual_completed") return `Refunded ✓${dateStr}`;
+    if (status === "initiated") return "Refund Initiated";
+    if (status === "failed") return "Refund Failed";
+    if (status === "manual_pending") return "Manual Transfer Pending";
+    return ref.refundStatus;
+  };
 
   const paymentRows = [
     paidAmount > 0 && {
@@ -406,6 +421,14 @@ const couponDiscount =
       className: dueAmount > 0 ? "breakdown-row--due" : "breakdown-row--due-clear",
       footerClassName: dueAmount > 0 ? "due-line" : "due-line due-line--clear",
     },
+    refund && {
+      key: "refund-status",
+      label: "Refund",
+      value: getRefundLabel(refund),
+      className: "breakdown-row--refund",
+      footerClassName: "refund-line",
+      valueClassName: ["completed", "manual_completed"].includes(refund.refundStatus?.toLowerCase()) ? "text-success" : "text-warning",
+    }
   ].filter(Boolean);
   const priceRows = [
     discount > 0 && {

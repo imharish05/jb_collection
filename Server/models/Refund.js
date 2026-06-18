@@ -12,8 +12,13 @@ const Refund = sequelize.define(
     },
     returnId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
       field: "return_id",
+    },
+    orderId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "order_id",
     },
     razorpayRefundId: {
       type: DataTypes.STRING,

@@ -198,6 +198,7 @@ const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
               />
             )}
             {/* <span>{displayVal}</span> */}
+            <span>{displayVal}</span>
           </span>
         );
       })}

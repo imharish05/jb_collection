@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
@@ -6,14 +6,22 @@ import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
 
+const REFUND_STATUS_LABELS = {
+  initiated:        'Initiated — processing with Razorpay',
+  completed:        'Refunded ✓',
+  failed:           'Refund Failed — contact support',
+  manual_pending:   'Pending — will be transferred manually',
+  manual_completed: 'Transferred ✓',
+  pending:          'Pending',
+};
+
 const ReturnTracking = () => {
   const { id } = useParams();
   const [returnReq, setReturnReq] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadReturn = useCallback(() => {
     if (!id) return;
-
     setLoading(true);
     api.get(`/returns/${id}`)
       .then((res) => {
@@ -26,6 +34,10 @@ const ReturnTracking = () => {
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    loadReturn();
+  }, [loadReturn]);
+
   const stages = [
     { key: "pending_review", label: "Request Submitted", icon: "fa-send" },
     { key: "approved", label: "Under Review", icon: "fa-eye" },
@@ -33,7 +45,7 @@ const ReturnTracking = () => {
     { key: "picked_up", label: "Picked Up", icon: "fa-truck" },
     { key: "inspection_completed", label: "Inspection Done", icon: "fa-search" },
     { key: "refund_initiated", label: "Initiated", icon: "fa-refresh" },
-    { key: "completed", label: "Completed / Refunded", icon: "fa-check-circle" },
+    { key: "refund_completed", label: "Completed / Refunded", icon: "fa-check-circle" },
   ];
 
   const getActiveStageIndex = (status) => {
@@ -186,7 +198,7 @@ const ReturnTracking = () => {
                             </div>
                             <div className="return-stepper-content">
                               <p className="return-stepper-title">
-                                {stage.key === "completed"
+                                {stage.key === "refund_completed"
                                   ? returnReq.returnType === "replacement"
                                     ? "Replacement Delivered"
                                     : "Refund Completed"
@@ -203,6 +215,19 @@ const ReturnTracking = () => {
                           </div>
                         );
                       })}
+                    </div>
+                    <div style={{ textAlign:'center', marginTop:'12px' }}>
+                      <button
+                        onClick={loadReturn}
+                        disabled={loading}
+                        style={{
+                          background:'none', border:'1px solid #d1d5db', borderRadius:'6px',
+                          padding:'6px 16px', fontSize:'12px', color:'#6b7280',
+                          cursor:'pointer', fontWeight:600
+                        }}
+                      >
+                        {loading ? 'Refreshing...' : '↻ Refresh Status'}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -288,8 +313,29 @@ const ReturnTracking = () => {
                       Refunded Amount: <strong>₹{parseFloat(returnReq.refund.refundAmount).toFixed(2)}</strong>
                     </p>
                     <p style={{ margin: "0 0 6px 0", fontSize: "14px" }}>
-                      Refund Status: <span style={{ fontWeight: 700, textTransform: "uppercase" }}>{returnReq.refund.refundStatus}</span>
+                      Refund Status: <span style={{ fontWeight: 700 }}>{REFUND_STATUS_LABELS[returnReq.refund.refundStatus] || returnReq.refund.refundStatus}</span>
                     </p>
+                    {returnReq.refund.refundedAt && (
+                      <p style={{ margin:'0 0 6px 0', fontSize:'14px' }}>
+                        Refunded on:{' '}
+                        <strong>
+                          {new Date(returnReq.refund.refundedAt).toLocaleDateString('en-IN', {
+                            day:'numeric', month:'long', year:'numeric'
+                          })}
+                        </strong>
+                      </p>
+                    )}
+                    {returnReq.refund.refundStatus === 'failed' && (
+                      <div style={{ marginTop:'12px', padding:'12px 16px', background:'#fef2f2', border:'1px solid #fca5a5', borderRadius:'6px' }}>
+                        <p style={{ margin:0, fontSize:'13px', color:'#b91c1c', fontWeight:600 }}>
+                          Your refund could not be processed automatically. Please contact us at{' '}
+                          <a href="mailto:Kamalireturngifts@gmail.com" style={{ color:'#b91c1c' }}>
+                            Kamalireturngifts@gmail.com
+                          </a>{' '}
+                          with your Return ID and we will resolve this within 2 business days.
+                        </p>
+                      </div>
+                    )}
                     {returnReq.refund.razorpayRefundId && (
                       <p style={{ margin: "0 0 6px 0", fontSize: "13px" }}>
                         Razorpay Refund ID: <code>{returnReq.refund.razorpayRefundId}</code>

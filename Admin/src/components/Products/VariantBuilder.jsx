@@ -592,6 +592,10 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
   const tab = tabProp !== undefined ? tabProp : tabInternal;
   const setTab = (t) => { setTabInternal(t); if (onTabChange) onTabChange(t); };
 
+  // Keep a ref to variants so regenerate always reads the freshest value (avoids stale-closure bug)
+  const variantsRef = useRef(variants);
+  useEffect(() => { variantsRef.current = variants; }, [variants]);
+
   const addOption = () => setOptions(o => [...o, { id: `opt_${Date.now()}`, key: '', values: [] }]);
   const removeOption = (i) => {
     const next = options.filter((_, j) => j !== i);
@@ -604,10 +608,11 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
     regenerate(next);
   };
 
+  // Always reads the latest variants via ref — fixes stale-closure Cartesian generation bug
   const regenerate = useCallback((opts) => {
-    const next = buildSkus(opts, variants);
+    const next = buildSkus(opts, variantsRef.current);
     onChange(next);
-  }, [variants, onChange]);
+  }, [onChange]);
 
   const updateSku = (i, updated) => {
     const next = [...variants]; next[i] = updated;

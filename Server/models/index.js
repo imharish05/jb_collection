@@ -131,6 +131,8 @@ ReverseShipment.belongsTo(Return, { foreignKey: 'return_id',     as: 'return' })
 Order.hasMany(Return,             { foreignKey: 'order_id',      as: 'returns',         constraints: false });
 OrderItem.hasMany(Return,         { foreignKey: 'order_item_id', as: 'returns',         constraints: false });
 User.hasMany(Return,              { foreignKey: 'user_id',       as: 'returns',         constraints: false });
+Order.hasMany(Refund,             { foreignKey: 'order_id',      as: 'refunds',         constraints: false });
+Refund.belongsTo(Order,           { foreignKey: 'order_id',      as: 'order',           constraints: false });
 
 const models = {
   sequelize,

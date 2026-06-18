@@ -1,6 +1,5 @@
 // controllers/returnController.js
 const Razorpay = require("razorpay");
-const path = require("path");
 const {
   Return,
   ReturnMedia,
@@ -11,7 +10,6 @@ const {
   Product,
   User,
   Address,
-  Variant,
 } = require("../models");
 const { Op } = require("sequelize");
 const { shiprocketPost } = require("../utils/shiprocket");
@@ -35,7 +33,7 @@ const VALID_RETURN_STATUSES = [
 ];
 
 const returnInclude = [
-  { model: Order,           as: "order",           attributes: ["id","status","totalAmount","paymentType","paymentMethod","razorpayPaymentId","advancePaid","shippingCharge","createdAt","updatedAt","referenceSlug"] },
+  { model: Order,           as: "order",           attributes: ["id","status","totalAmount","paymentType","paymentMethod","razorpayPaymentId","advancePaid","codAmount","shippingCharge","couponDiscount","taxAmount","createdAt","updatedAt","referenceSlug"] },
   { model: OrderItem,       as: "orderItem",        attributes: ["id","productId","productName","image","quantity","price","salesPrice","selectedVariantName","variantAttributes"] },
   { model: User,            as: "user",             attributes: ["id","name","email","phone"] },
   { model: ReturnMedia,     as: "media" },
@@ -104,7 +102,7 @@ const createReturnRequest = async (req, res, next) => {
 
     // ── Create Return record ─────────────────────────────────────────────────
     const returnRequest = await Return.create({
-      orderId,
+      orderId: order.id,
       orderItemId,
       userId: req.user.id,
       returnType,
@@ -227,8 +225,6 @@ const cancelOrder = async (req, res, next) => {
 
     // ── Refund based on payment type ─────────────────────────────────────────
     const paymentType = (order.paymentType || "").toUpperCase();
-    const existingRefund = await Refund.findOne({ where: { returnId: null } }); // placeholder check
-
     if (paymentType === "PREPAID" && order.razorpayPaymentId) {
       try {
         const rzpRefund = await razorpay.payments.refund(order.razorpayPaymentId, {
@@ -236,6 +232,7 @@ const cancelOrder = async (req, res, next) => {
           notes: { reason: "Order Cancelled by Customer", orderId: order.id },
         });
         await Refund.create({
+          orderId:          order.id,
           returnId:         null, // order-level refund, no return record
           razorpayRefundId: rzpRefund.id,
           refundAmount:     parseFloat(order.totalAmount),
@@ -254,6 +251,7 @@ const cancelOrder = async (req, res, next) => {
           notes: { reason: "Order Cancelled — Advance Refund", orderId: order.id },
         });
         await Refund.create({
+          orderId:           order.id,
           returnId:          null,
           razorpayRefundId:  rzpRefund.id,
           refundAmount:      advancePaid,
@@ -267,6 +265,7 @@ const cancelOrder = async (req, res, next) => {
     } else {
       // FULL_COD — manual offline
       await Refund.create({
+        orderId:           order.id,
         returnId:          null,
         razorpayRefundId:  null,
         refundAmount:      parseFloat(order.totalAmount),
@@ -330,9 +329,11 @@ const getAllReturns = async (req, res, next) => {
     if (search) {
       const q = search.toLowerCase();
       filtered = rows.filter((r) =>
-        r.orderItem?.order?.id?.toString().includes(q) ||
+        r.order?.referenceSlug?.toLowerCase().includes(q) ||
+        r.order?.id?.toString().includes(q) ||
         r.user?.name?.toLowerCase().includes(q) ||
         r.user?.email?.toLowerCase().includes(q) ||
+        r.referenceSlug?.toLowerCase().includes(q) ||
         r.id?.toString().includes(q)
       );
     }
@@ -418,6 +419,9 @@ const updateReturnStatus = async (req, res, next) => {
   }
 };
 
+const resolveRefundStatus = (rzpRefund) =>
+  rzpRefund?.status === 'processed' ? 'completed' : 'initiated';
+
 // ── POST /api/returns/admin/:id/refund — Admin: approve refund ───────────────
 const approveRefund = async (req, res, next) => {
   try {
@@ -434,6 +438,11 @@ const approveRefund = async (req, res, next) => {
 
     const order     = returnRequest.order;
     const orderItem = returnRequest.orderItem;
+    if (!order) {
+      return res.status(409).json({
+        message: "This return's order record is missing or corrupted. Fix the order_id link before processing."
+      });
+    }
     const paymentType = (order.paymentType || "").toUpperCase();
 
     const productPrice = parseFloat(orderItem.salesPrice || orderItem.price || 0);
@@ -447,10 +456,12 @@ const approveRefund = async (req, res, next) => {
         notes:  { reason: "Return Approved", returnId: returnRequest.id },
       });
       refundRecord = await Refund.create({
+        orderId:          order.id,
         returnId:         returnRequest.id,
         razorpayRefundId: rzpRefund.id,
         refundAmount:     productValue,
-        refundStatus:     "initiated",
+        refundStatus:     resolveRefundStatus(rzpRefund),
+        refundedAt:       rzpRefund?.status === 'processed' ? new Date() : null,
         refundMode:       "razorpay",
       });
     } else if (paymentType === "PARTIAL_COD" && order.razorpayPaymentId) {
@@ -460,16 +471,19 @@ const approveRefund = async (req, res, next) => {
         notes:  { reason: "Return Approved — Advance Refund", returnId: returnRequest.id },
       });
       refundRecord = await Refund.create({
+        orderId:           order.id,
         returnId:          returnRequest.id,
         razorpayRefundId:  rzpRefund.id,
         refundAmount:      advancePaid,
-        refundStatus:      "initiated",
+        refundStatus:      resolveRefundStatus(rzpRefund),
+        refundedAt:        rzpRefund?.status === 'processed' ? new Date() : null,
         refundMode:        "razorpay",
         manualRefundNotes: `Product value ₹${productValue.toFixed(2)} to be refunded manually offline`,
       });
     } else {
       // FULL_COD or no payment ID
       refundRecord = await Refund.create({
+        orderId:           order.id,
         returnId:          returnRequest.id,
         razorpayRefundId:  null,
         refundAmount:      productValue,
@@ -479,7 +493,9 @@ const approveRefund = async (req, res, next) => {
       });
     }
 
-    returnRequest.status = "refund_initiated";
+    returnRequest.status = refundRecord.refundStatus === 'completed'
+      ? 'refund_completed'
+      : 'refund_initiated';
     await returnRequest.save();
 
     // Email
@@ -490,7 +506,7 @@ const approveRefund = async (req, res, next) => {
         user,
         order,
         orderItem,
-        status: "refund_initiated",
+        status: returnRequest.status,
         extra:  { refundAmount: refundRecord.refundAmount, refundMode: refundRecord.refundMode },
       });
     } catch (emailErr) {
@@ -523,6 +539,19 @@ const approveReplacement = async (req, res, next) => {
     const order     = returnRequest.order;
     const orderItem = returnRequest.orderItem;
     const user      = returnRequest.user;
+
+    if (!order) {
+      return res.status(409).json({
+        message: "This return's order record is missing or corrupted. Fix the order_id link before processing."
+      });
+    }
+    if (!orderItem) {
+      return res.status(409).json({ message: "Order item record is missing for this return." });
+    }
+    if (!user) {
+      return res.status(409).json({ message: "User record is missing for this return." });
+    }
+
     const address   = order.shippingAddress || {};
 
     const productPrice = parseFloat(orderItem.salesPrice || orderItem.price || 0);
@@ -690,6 +719,11 @@ const createReversePickup = async (req, res, next) => {
 
     const order     = returnRequest.order;
     const orderItem = returnRequest.orderItem;
+    if (!order) {
+      return res.status(409).json({
+        message: "This return's order record is missing or corrupted. Fix the order_id link before processing."
+      });
+    }
     const address   = order.shippingAddress || {};
 
     const productPrice = parseFloat(orderItem.salesPrice || orderItem.price || 0);
@@ -715,7 +749,8 @@ const createReversePickup = async (req, res, next) => {
       shipping_pincode:     process.env.WAREHOUSE_PINCODE   || "",
       shipping_state:       process.env.WAREHOUSE_STATE     || "",
       shipping_country:     "India",
-      payment_method:       "Prepaid",
+      payment_method:       "Prepaid", // Always Prepaid for reverse pickups — no COD collection
+                                    // happens on returns regardless of the original order payment type.
       sub_total:            productPrice * returnRequest.returnQuantity,
       order_items: [{
         name:          orderItem.productName,

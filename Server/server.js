@@ -105,6 +105,9 @@ const startServer = async () => {
     const { seedCoupons } = require("./controllers/couponController");
     await seedCoupons();
 
+    const { registerWebhooks } = require('./utils/registerWebhooks');
+    await registerWebhooks();
+
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });

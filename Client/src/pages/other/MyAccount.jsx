@@ -626,8 +626,39 @@ const toggleVisibility = (field) => {
                             <div className="order-card-footer">
                               <div className="footer-left"><p>Placed on: <strong>{new Date(order.createdAt).toLocaleDateString()}</strong></p></div>
                               <div className="footer-right w-100 d-flex align-items-center justify-content-between">
-                                <span className="order-total-price">Total: ₹{order.totalAmount}</span>
-                                <Link to={`/order-details/${order.referenceSlug || order.id}`} className="btn-view-order">Details</Link>
+                                 {order.status?.toLowerCase() === "cancelled" ? (() => {
+                                  const refund = order.refunds?.[0];
+                                  const refundAmt = refund ? parseFloat(refund.refundAmount) : parseFloat(order.totalAmount);
+                                  const refStatus = (refund?.refundStatus || "pending").toLowerCase();
+                                  
+                                  let statusText = "Pending";
+                                  let statusColor = "#9ca3af"; // grey
+                                  let tick = "";
+                                  
+                                  if (refStatus === "completed" || refStatus === "manual_completed" || refStatus === "refund_completed") {
+                                    statusText = "Refunded";
+                                    statusColor = "#22c55e"; // green
+                                    tick = " ✓";
+                                  } else if (refStatus === "initiated") {
+                                    statusText = "Initiated";
+                                    statusColor = "#f59e0b"; // amber
+                                  } else if (refStatus === "failed") {
+                                    statusText = "Failed";
+                                    statusColor = "#ef4444"; // red
+                                  } else if (refStatus === "manual_pending") {
+                                    statusText = "Pending";
+                                    statusColor = "#9ca3af"; // grey
+                                  }
+                                  
+                                  return (
+                                    <span className="order-total-price">
+                                      Refund: ₹{refundAmt.toFixed(2)} — <span style={{ color: statusColor, fontWeight: 700 }}>{statusText}{tick}</span>
+                                    </span>
+                                  );
+                                })() : (
+                                  <span className="order-total-price">Total: ₹{order.totalAmount}</span>
+                                )}
+                                 <Link to={`/order-details/${order.referenceSlug || order.id}`} className="btn-view-order">Details</Link>
                               </div>
                             </div>
                           </div>

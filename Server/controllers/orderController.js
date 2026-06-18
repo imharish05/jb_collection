@@ -214,6 +214,7 @@ const getMyOrders = async (req, res, next) => {
         },
         { model: Address, as: "shippingAddress" },
         { model: Address, as: "billingAddress" },
+        { model: require("../models").Refund, as: "refunds" }
       ],
       order: [["createdAt", "DESC"]],
     });
@@ -238,6 +239,7 @@ const getOrderById = async (req, res, next) => {
         },
         { model: Address, as: "shippingAddress" },
         { model: Address, as: "billingAddress" },
+        { model: require("../models").Refund, as: "refunds" }
       ],
     });
     if (!order) return res.status(404).json({ message: "Order not found" });
