@@ -12,8 +12,10 @@ const BlogNoSidebar = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="Blog - Kamali Gifts"
-        description="Read gift ideas, personalization tips, and inspiration from the Kamali Gifts blog. Your guide to meaningful gifting."
+        title="Blog & Gift Ideas"
+        titleTemplate="Personalized Gifts Guide & Gifting Tips - Kamali Gifts"
+        description="Read gift ideas, personalization tips, and inspiration from the Kamali Gifts blog. Your guide to meaningful gifting for weddings, corporate events, and special occasions."
+        keywords="gift ideas, personalized gifts blog, gifting tips, corporate gift ideas, return gift ideas, wedding gift ideas, customized gift suggestions"
       />
       <LayoutOne headerTop="visible">
         {/* breadcrumb */}

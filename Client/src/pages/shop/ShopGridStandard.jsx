@@ -198,7 +198,12 @@ const ShopGridStandard = () => {
 
   return (
     <Fragment>
-      <SEO titleTemplate={activeLabel ? `${activeLabel} — Kamali Gifts` : "Shop — Kamali Gifts"} description="Browse handcrafted gifts." />
+      <SEO 
+        title={activeLabel ? activeLabel : "Shop Customized Gifts"}
+        titleTemplate="Personalized & Customized Gifts for Every Occasion" 
+        description="Browse our collection of customized return gifts, personalized corporate gifts, laser engraved products, and bulk gifts for weddings, baby showers, festivals, and corporate events."
+        keywords="buy customized gifts online, personalized gifts shop, return gifts, corporate gifts online, engraved gifts, bulk gifts, keychains, bottles, pens, laser cut jewelry, wedding return gifts, baby shower gifts, corporate gifts"
+      />
       <LayoutOne headerTop="visible">
         <Breadcrumb pages={[
           { label: "Home", path: S.replace("/shop","") + "/" },

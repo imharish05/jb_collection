@@ -37,7 +37,7 @@ const CombosPage = () => {
 
   return (
     <Fragment>
-      <SEO titleTemplate="Combos" description="Browse all our combo offers." />
+      <SEO title="Gift Combos" titleTemplate="Pre-Curated Gift Bundles & Combo Offers - Kamali Gifts" description="Explore our curated gift combos and bundle offers for weddings, corporate events, festivals, and special occasions. Save more with combo deals on personalized and customized gifts." keywords="gift combos, combo offers, bundled gifts, gift bundles, wedding combo gifts, corporate combo gifts, festival gift combos, bulk combo deals" />
       <LayoutOne headerTop="visible">
         <Breadcrumb
           pages={[

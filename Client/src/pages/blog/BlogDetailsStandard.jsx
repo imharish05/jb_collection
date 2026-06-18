@@ -13,8 +13,10 @@ const BlogDetailsStandard = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="Blog - Kamali Gifts"
-        description="Read gift ideas, personalization tips, and inspiration from the Kamali Gifts blog. Your guide to meaningful gifting."
+        title="Blog Post"
+        titleTemplate="Gift Ideas & Tips - Kamali Gifts"
+        description="Explore our blog for personalization tips, gift ideas, and inspiration for meaningful gifting. Learn about corporate gifts, return gifts, and customized solutions."
+        keywords="gift ideas, personalized gifts blog, gifting tips, corporate gift ideas, return gift ideas, wedding gift ideas, customized gift suggestions, laser engraving, personalization"
       />
       <LayoutOne headerTop="visible">
         {/* breadcrumb */}

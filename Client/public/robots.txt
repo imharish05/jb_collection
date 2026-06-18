@@ -1,2 +1,10 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout
+Disallow: /account
+
+# Sitemap
+Sitemap: https://kamiligifts.com/sitemap.xml

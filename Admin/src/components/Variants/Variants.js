@@ -21,12 +21,6 @@ const KM = {
   red: '#EF4444', redLight: '#FEF2F2',
 };
 
-// stockColor is now computed per-render using thresholds from Redux (see component)
-// This fallback is only used outside component scope
-function stockColorStatic(qty) {
-  return qty === 0 ? KM.red : qty < 11 ? KM.red : qty < 51 ? '#F59E0B' : KM.green;
-}
-
 function safeAttrs(raw) {
   if (Array.isArray(raw)) return raw;
   if (typeof raw === 'string') {
@@ -35,39 +29,26 @@ function safeAttrs(raw) {
   return [];
 }
 
-const KEY_ALIASES = { color: 'Colour', colour: 'Colour', size: 'Size', material: 'Material', finish: 'Finish', capacity: 'Capacity' };
-function normalKey(k) { return KEY_ALIASES[k?.toLowerCase()] || k; }
-
 // Product Image Dimension Validator (800×960px 5:6 portrait)
 const PRODUCT_IMAGE_DIMENSIONS = {
   recommended: { width: 800, height: 960 },
   minimum: { width: 400, height: 480 },
   aspectRatio: 5 / 6,
   tolerance: 0.05,
-  maxFileSize: 3 * 1024 * 1024, // 3MB
-  formats: ['image/jpeg', 'image/webp',,'image/png'],
+  maxFileSize: 3 * 1024 * 1024,
+  formats: ['image/jpeg', 'image/webp', 'image/png'],
 };
 
 const validateProductImageDimensions = (file) => {
   return new Promise((resolve) => {
-    // Check file size
     if (file.size > PRODUCT_IMAGE_DIMENSIONS.maxFileSize) {
-      resolve({
-        valid: false,
-        error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
-      });
+      resolve({ valid: false, error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB` });
       return;
     }
-
-    // Check file format
     if (!PRODUCT_IMAGE_DIMENSIONS.formats.includes(file.type)) {
-      resolve({
-        valid: false,
-        error: `Invalid format. Use JPG or WebP. You have: ${file.type || 'unknown'}`,
-      });
+      resolve({ valid: false, error: `Invalid format. Use JPG or WebP. You have: ${file.type || 'unknown'}` });
       return;
     }
-
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -76,8 +57,6 @@ const validateProductImageDimensions = (file) => {
         const actualRatio = width / height;
         const expectedRatio = PRODUCT_IMAGE_DIMENSIONS.aspectRatio;
         const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
-
-        // Check minimum dimensions
         if (width < PRODUCT_IMAGE_DIMENSIONS.minimum.width || height < PRODUCT_IMAGE_DIMENSIONS.minimum.height) {
           resolve({
             valid: false,
@@ -86,8 +65,6 @@ const validateProductImageDimensions = (file) => {
           });
           return;
         }
-
-        // Check aspect ratio (5:6)
         if (ratioDiff > PRODUCT_IMAGE_DIMENSIONS.tolerance) {
           const recommendedHeight = Math.round(width / expectedRatio);
           resolve({
@@ -97,7 +74,6 @@ const validateProductImageDimensions = (file) => {
           });
           return;
         }
-
         resolve({
           valid: true,
           dimensions: { width, height },
@@ -144,12 +120,13 @@ export default function Variants({ showToast }) {
   const { items: rows, loading } = useSelector(state => state.variants);
   const { items: products }      = useSelector(state => state.products);
   const { settings: invSettings } = useSelector(state => state.notifications);
+
   const stockColor = (qty) => {
     const high   = invSettings?.highStockThreshold   ?? 51;
     const medium = invSettings?.mediumStockThreshold  ?? 11;
-    if (qty === 0)        return KM.red;
-    if (qty < medium)     return KM.red;
-    if (qty < high)       return '#F59E0B';
+    if (qty === 0)    return KM.red;
+    if (qty < medium) return KM.red;
+    if (qty < high)   return '#F59E0B';
     return KM.green;
   };
 
@@ -161,54 +138,24 @@ export default function Variants({ showToast }) {
   const [errors,        setErrors]        = useState({});
   const [variantTab,    setVariantTab]    = useState('options');
 
-  // For ADD — use VariantBuilder (option matrix → cartesian SKUs)
-  const [skus,            setSkus]            = useState([]);
-  // Pre-seeded option matrix built from the selected product's existing variants
-  const [existingOptions, setExistingOptions] = useState(null);
+  // For ADD — always starts blank, no pre-seeding
+  const [skus, setSkus] = useState([]);
 
-  // For EDIT — use VariantBuilder (same as Products page) — single SKU in builder
-  const [editSku,  setEditSku]  = useState(null); // kept for handleEdit compat
-  const [editSkus, setEditSkus] = useState([]);   // VariantBuilder array (always 1 item)
+  // For EDIT — single SKU loaded from the row being edited
+  const [editSku,  setEditSku]  = useState(null);
+  const [editSkus, setEditSkus] = useState([]);
 
   useEffect(() => {
     dispatch(fetchVariants());
     dispatch(fetchProducts());
   }, []);
 
-  // ── Derive existing option matrix whenever productId changes in ADD mode ──
+  // ── Reset skus when productId changes in add mode ─────────────────────────
+  // No pre-seeding — always blank builder regardless of existing variants
   useEffect(() => {
-    if (mode !== 'add' || !productId) {
-      setExistingOptions(null);
-      setSkus([]);
-      return;
-    }
-    const productVariants = rows.filter(r => String(r.productId) === String(productId));
-    if (!productVariants.length) {
-      setExistingOptions(null);
-      setSkus([]);
-      return;
-    }
-    const optionMap = {};
-    productVariants.forEach(v => {
-      safeAttrs(v.attributes).forEach(a => {
-        if (!a.key || !a.value || a.key === 'Custom Note') return;
-        const k = normalKey(a.key);
-        if (!optionMap[k]) optionMap[k] = new Set();
-        optionMap[k].add(a.value);
-      });
-    });
-    const keys = Object.keys(optionMap);
-    if (!keys.length) {
-      setExistingOptions(null);
-      setSkus([]);
-      return;
-    }
-    setExistingOptions(
-      keys.map(k => ({ id: k, key: k, values: [...optionMap[k]] }))
-    );
-    // Pre-seed skus with mapped existing variants so the VariantBuilder preserves their data
-    setSkus(productVariants.map(variantToSku));
-  }, [productId, mode, rows]);
+    if (mode !== 'add') return;
+    setSkus([]);
+  }, [productId, mode]);
 
   // ── Open ADD form ─────────────────────────────────────────────────────────
   const openAdd = () => {
@@ -216,7 +163,6 @@ export default function Variants({ showToast }) {
     setEditingId(null);
     setProductId('');
     setSkus([]);
-    setExistingOptions(null);
     setErrors({});
     setVariantTab('options');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -241,11 +187,10 @@ export default function Variants({ showToast }) {
     setSkus([]);
     setEditSku(null);
     setEditSkus([]);
-    setExistingOptions(null);
     setErrors({});
   };
 
-  // ── Validate (identical logic to Products.js validateProduct) ────────────
+  // ── Validate SKU rows ─────────────────────────────────────────────────────
   const validateSkuRows = (skuList) => {
     return skuList.map((v) => {
       const messages = [];
@@ -308,10 +253,7 @@ export default function Variants({ showToast }) {
       if (s.imageFile) {
         const result = await validateProductImageDimensions(s.imageFile);
         if (!result.valid) {
-          setErrors(prev => ({
-            ...prev,
-            [`sku_${i}`]: `Image: ${result.error}`,
-          }));
+          setErrors(prev => ({ ...prev, [`sku_${i}`]: `Image: ${result.error}` }));
           return false;
         }
       }
@@ -319,56 +261,20 @@ export default function Variants({ showToast }) {
     return true;
   };
 
-  // ── Submit ADD (differential sync) ────────────────────────────────────────
+  // ── Submit ADD ────────────────────────────────────────────────────────────
+  // Simple create-only — no differential sync since add mode is always blank.
+  // All skus in the builder are new (new_ prefix), just POST each one.
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!validateAdd()) return;
-    
-    // Validate image dimensions
     if (!(await validateImageDimensions(skus))) {
       showToast.error('One or more variant images have invalid dimensions');
       return;
     }
 
-    // Retrieve existing variants of this product in database
-    const existingDbVariants = rows.filter(r => String(r.productId) === String(productId));
-
-    // Perform differential sync
-    const toUpdate = skus.filter(s => s.id && !String(s.id).startsWith('new_'));
-    const toCreate = skus.filter(s => !s.id || String(s.id).startsWith('new_'));
-    const toDelete = existingDbVariants.filter(ev => !skus.some(s => String(s.id) === String(ev.id)));
-
-    const totalOps = toUpdate.length + toCreate.length + toDelete.length;
-    const tid = showToast.loading(`Syncing ${totalOps} variant operations…`);
+    const tid = showToast.loading(`Creating ${skus.length} variant${skus.length > 1 ? 's' : ''}…`);
     try {
-      // 1. Delete removed combinations
-      for (const v of toDelete) {
-        await dispatch(removeVariant(v.id));
-      }
-
-      // 2. Update existing ones
-      for (const s of toUpdate) {
-        const attrs = s.combo?.length
-          ? s.combo.map(c => ({ key: c.key, value: c.value }))
-          : (s.attributes || []).filter(a => a.key && a.value);
-
-        await dispatch(editVariant({
-          id: s.id,
-          data: {
-            productId,
-            variantName: s.variantName,
-            mrp:         s.mrp,
-            salesPrice:  s.salesPrice,
-            stock:       s.stock,
-            status:      s.status || 'Active',
-            attributes:  attrs,
-            imageFile:   s.imageFile || undefined,
-          },
-        }));
-      }
-
-      // 3. Create newly generated combinations
-      for (const s of toCreate) {
+      for (const s of skus) {
         const attrs = s.combo?.length
           ? s.combo.map(c => ({ key: c.key, value: c.value }))
           : (s.attributes || []).filter(a => a.key && a.value);
@@ -396,8 +302,6 @@ export default function Variants({ showToast }) {
   const handleEdit = async (e) => {
     e.preventDefault();
     if (!validateEdit()) return;
-    
-    // Validate image dimensions
     if (!(await validateImageDimensions(editSkus))) {
       showToast.error('One or more variant images have invalid dimensions');
       return;
@@ -429,7 +333,7 @@ export default function Variants({ showToast }) {
         },
       }));
 
-      // If adding new option values created extra SKUs, save them as new variants
+      // If the user added a new option value in the Options tab, extra SKUs were generated
       if (editSkus.length > 1) {
         for (const newSku of editSkus.slice(1)) {
           const newAttrs = newSku.combo?.length
@@ -438,12 +342,12 @@ export default function Variants({ showToast }) {
           await dispatch(createVariant({
             productId,
             variantName: newSku.variantName,
-            mrp:         newSku.mrp         || s.mrp,
-            salesPrice:  newSku.salesPrice  || s.salesPrice,
-            stock:       newSku.stock       ?? 0,
-            status:      newSku.status      || 'Active',
+            mrp:         newSku.mrp        || s.mrp,
+            salesPrice:  newSku.salesPrice || s.salesPrice,
+            stock:       newSku.stock      ?? 0,
+            status:      newSku.status     || 'Active',
             attributes:  newAttrs,
-            imageFile:   newSku.imageFile   || undefined,
+            imageFile:   newSku.imageFile  || undefined,
           }));
         }
       }
@@ -499,7 +403,7 @@ export default function Variants({ showToast }) {
         </div>
       </div>
 
-      {/* ── ADD form — full VariantBuilder (option matrix) ─────────────────── */}
+      {/* ── ADD form ──────────────────────────────────────────────────────── */}
       {mode === 'add' && (
         <div style={formCard}>
           <div style={formHeader}>
@@ -520,33 +424,22 @@ export default function Variants({ showToast }) {
                 <label style={labelStyle}>Product *</label>
                 <select required style={inputStyle} value={productId} onChange={e => {
                   setProductId(e.target.value);
-                  setSkus([]);          // reset SKUs when product changes
-                  setExistingOptions(null); // useEffect will recompute
+                  setSkus([]);
                 }}>
                   <option value="">Select Product</option>
                   {products.map(p => <option key={p.id} value={p.id}>{p.name || p.productName}</option>)}
                 </select>
                 <ErrorMsg field="productId" />
-                {/* Info banner — shown when product already has variants */}
-                {productId && existingOptions && existingOptions.length > 0 && (
-                  <div style={{ marginTop: 8, padding: '12px 16px', background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 8, fontSize: 13, color: '#92400E', lineHeight: '1.5' }}>
-  ⚠️ This product has {existingOptions.length} option dimension{existingOptions.length > 1 ? 's' : ''} ({existingOptions.map(o => o.key).join(', ')}). Adding or changing option categories will delete non-matching variants. Review the <strong>📦 SKUs ({skus.length})</strong> tab before saving.
-</div>
-                )}
               </div>
 
-              {/* VariantBuilder — same component used in Products */}
-              {/* existingOptions seeds the option matrix with current product dimensions */}
+              {/* VariantBuilder — blank matrix, no existingOptions seeding */}
               <VariantBuilder
                 key={productId || 'no-product'}
                 variants={skus}
-                errors={errors.variantErrors ||
-                  skus.map(() => [])
-                }
+                errors={errors.variantErrors || skus.map(() => [])}
                 tab={variantTab}
                 onTabChange={setVariantTab}
                 onChange={setSkus}
-                existingOptions={existingOptions || undefined}
               />
               <ErrorMsg field="skus" />
               {errors.variantErrors && (
@@ -563,7 +456,7 @@ export default function Variants({ showToast }) {
         </div>
       )}
 
-      {/* ── EDIT form — VariantBuilder (matches Products page) ───────────────── */}
+      {/* ── EDIT form ─────────────────────────────────────────────────────── */}
       {mode === 'edit' && editSkus.length > 0 && (
         <div style={formCard}>
           <div style={formHeader}>
@@ -589,13 +482,11 @@ export default function Variants({ showToast }) {
                 <ErrorMsg field="productId" />
               </div>
 
-              {/* VariantBuilder in SKUs tab — shows the single variant card */}
+              {/* VariantBuilder — opens on SKUs tab, shows the single variant card */}
               <VariantBuilder
                 key={`edit-${editingId}`}
                 variants={editSkus}
-                errors={errors.variantErrors ||
-                  editSkus.map(() => [])
-                }
+                errors={errors.variantErrors || editSkus.map(() => [])}
                 tab={variantTab}
                 onTabChange={setVariantTab}
                 onChange={(updated) => {
@@ -615,7 +506,7 @@ export default function Variants({ showToast }) {
         </div>
       )}
 
-      {/* Table */}
+      {/* ── Table ─────────────────────────────────────────────────────────── */}
       {loading ? (
         <p style={{ color: KM.muted, fontSize: 13 }}>Loading…</p>
       ) : (

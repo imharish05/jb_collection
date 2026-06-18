@@ -13,8 +13,9 @@ const HomeFashion = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="Handcrafted Gifts for Every Celebration"
-        description="Shop handcrafted and customised gifts for weddings, baby showers, birthdays and all South Indian celebrations."
+        titleTemplate="Personalized Return Gifts & Corporate Gifts Crafted for Every Occasion"
+        description="Kamali Gifts Factory offers customized corporate gifts and return gifts for weddings, engagements, baby showers, birthdays, housewarming ceremonies, puberty ceremonies, upanayanam, festivals, Navaratri, Varalakshmi Pooja, corporate events, school functions, retirement functions and special occasions. Personalized gifts, engraved products, keychains, fridge magnets, jewellery, bags, bottles, pens, and bulk return gifts are available."
+        keywords="Return gifts, customized gifts, personalized gifts, corporate gifts, wedding return gifts, bulk return gifts, custom gifts Chennai, personalized corporate gifts, laser engraving, laser etching, wedding return gifts in bulk, customized wedding return gifts, return gifts for baby shower, seemantham return gifts, housewarming return gifts, navaratri golu return gifts, varalakshmi pooja return gifts, corporate gifts with logo, personalized gifts for employees, customized pens with name, name engraved bottles, customized keychains in bulk, personalized fridge magnets, laser cut name jewellery, custom brass name pendants, teacher appreciation gifts, diwali corporate gifts, christmas corporate gifts"
         />
       <LayoutOne
         headerContainerClass="container-fluid"
@@ -27,12 +28,11 @@ const HomeFashion = () => {
         {/* feature icons */}
 
 
-{/* Categories */}
-<Category/>
+
+        {/* Categories */}
+        <Category/>
 
         {/* tab product */}
-        <TabProduct spaceBottomClass="pb-60" spaceTopClass="pt-60" />
-        <OfferBanner/>
 
         {/* Shop by Event */}
         <FeatureIcon spaceTopClass="pt-100" spaceBottomClass="pb-60" />

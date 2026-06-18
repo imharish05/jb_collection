@@ -150,7 +150,7 @@ const Cart = () => {
   if (!cartItems || cartItems.length === 0) {
     return (
       <Fragment>
-        <SEO titleTemplate="Cart — Kamali Gifts" description="Your shopping cart." />
+        <SEO title="Shopping Cart" titleTemplate="Your Cart - Kamali Gifts" description="View and manage your shopping cart. Review your selected personalized and customized gifts before checkout." keywords="shopping cart, cart items, gift cart" />
         <LayoutOne headerTop="visible">
           <Breadcrumb
             pages={[
@@ -366,22 +366,24 @@ const Cart = () => {
                                     <span style={{ color: "#888", fontSize: 10, marginRight: 2 }}>
                                       {attr.key}:
                                     </span>
-                                    {hasPreview && (
+                                    {hasPreview ? (
+                                      // Color: show swatch only, no hex text
                                       <span
                                         style={{
-                                          width: 12,
-                                          height: 12,
+                                          width: 14,
+                                          height: 14,
                                           borderRadius: '50%',
                                           border: '1px solid #dcdcdc',
                                           backgroundColor: displayVal,
                                           display: 'inline-block',
-                                          marginRight: 4,
                                           flexShrink: 0,
                                         }}
+                                        title={displayVal}
                                       />
+                                    ) : (
+                                      // Non-color: show value text
+                                      <span>{displayVal}</span>
                                     )}
-                                    {/* <span>{displayVal}</span> */}
-                                    <span>{displayVal}</span>
                                   </span>
                                 );
                               })}

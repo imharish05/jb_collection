@@ -754,8 +754,10 @@ const ComboDetailPage = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate={`${child.name} — ${currentCombo.name}`}
-        description={comboShortDescription || `${child.name} combo — ₹${comboPrice}`}
+        title={`${child.name} — ${currentCombo.name}`}
+        titleTemplate="Customized Combo Gift Sets - Kamali Gifts"
+        description={comboShortDescription || `${child.name} combo gift set — ₹${comboPrice}. Personalized bundle with laser engraving and customization options.`}
+        keywords="combo gift set, customized combo, personalized bundle, gift bundle, bulk combo gifts, corporate combo gifts, wedding combo gifts"
       />
       <LayoutOne headerTop="visible">
         <Breadcrumb pages={[

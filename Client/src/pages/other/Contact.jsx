@@ -83,7 +83,7 @@ const Contact = () => {
 
   return (
     <Fragment>
-      <SEO titleTemplate="Contact Us" description="Customer Support & Inquiries" />
+      <SEO title="Contact Kamali Gifts" titleTemplate="Get in Touch for Customized Gifts" description="Contact Kamali Gifts for bulk orders, corporate gifts, customized return gifts, wedding gifts, personalized solutions, and gift consultations. Serving Chennai and all of India." keywords="contact kamali gifts, bulk orders, corporate gifts inquiry, customized gifts contact, return gifts supplier contact, personalized gifts consultation" />
 
       <LayoutOne headerTop="visible">
         {/* breadcrumb */}
