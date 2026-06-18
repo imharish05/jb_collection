@@ -32,6 +32,9 @@ const HomeFashion = () => {
         {/* Categories */}
         <Category/>
 
+        {/* Timeless Treasure - Offer Banners */}
+        <OfferBanner />
+
         {/* tab product */}
 
         {/* Shop by Event */}

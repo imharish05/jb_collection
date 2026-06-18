@@ -28,18 +28,18 @@ const LIMITS = {
 };
 
 const TESTIMONIAL_IMAGE_CONFIG = {
-  recommended: { width: 300, height: 300 },
-  minimum:     { width: 120, height: 120 },
+  width: 300,
+  height: 300,
   aspectRatio: 1 / 1,
-  tolerance:   0.05,
-  maxFileSize: 2 * 1024 * 1024, // 2 MB
-  formats:     ['image/jpeg', 'image/png', 'image/webp'],
+  tolerance: 0.05,
+  maxFileSize: 3 * 1024 * 1024,
+  formats: ['image/jpeg', 'image/png', 'image/webp'],
 };
 
 const validateImageDimensions = (file) =>
   new Promise((resolve) => {
     if (file.size > TESTIMONIAL_IMAGE_CONFIG.maxFileSize) {
-      resolve({ valid: false, error: `File too large. Max: 2MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB` });
+      resolve({ valid: false, error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB` });
       return;
     }
     if (!TESTIMONIAL_IMAGE_CONFIG.formats.includes(file.type)) {
@@ -51,16 +51,12 @@ const validateImageDimensions = (file) =>
       const img = new Image();
       img.onload = () => {
         const { width, height } = img;
-        if (width < TESTIMONIAL_IMAGE_CONFIG.minimum.width || height < TESTIMONIAL_IMAGE_CONFIG.minimum.height) {
-          resolve({ valid: false, error: `Image too small. Minimum: ${TESTIMONIAL_IMAGE_CONFIG.minimum.width}×${TESTIMONIAL_IMAGE_CONFIG.minimum.height}px. You have: ${width}×${height}px`, dimensions: { width, height } });
-          return;
-        }
         const ratioDiff = Math.abs(width / height - TESTIMONIAL_IMAGE_CONFIG.aspectRatio) / TESTIMONIAL_IMAGE_CONFIG.aspectRatio;
         if (ratioDiff > TESTIMONIAL_IMAGE_CONFIG.tolerance) {
-          resolve({ valid: false, error: `Incorrect aspect ratio. Use 1:1 square (e.g., ${width}×${width}px or ${TESTIMONIAL_IMAGE_CONFIG.recommended.width}×${TESTIMONIAL_IMAGE_CONFIG.recommended.height}px). Yours: ${width}×${height}px`, dimensions: { width, height } });
+          resolve({ valid: false, error: `Incorrect aspect ratio. Use 1:1 square (${TESTIMONIAL_IMAGE_CONFIG.width}×${TESTIMONIAL_IMAGE_CONFIG.height}px). Yours: ${width}×${height}px`, dimensions: { width, height } });
           return;
         }
-        resolve({ valid: true, dimensions: { width, height }, isRecommended: width === TESTIMONIAL_IMAGE_CONFIG.recommended.width && height === TESTIMONIAL_IMAGE_CONFIG.recommended.height });
+        resolve({ valid: true, dimensions: { width, height } });
       };
       img.src = e.target.result;
     };
@@ -236,7 +232,7 @@ export default function Testimonials({ showToast }) {
                 }}
                 onClear={handleClearImage}
                 validation={imageDimensions}
-                requirements="Recommended: 300×300px (1:1) • Min: 120×120px • Max: 2MB (JPG / PNG / WebP)"
+                requirements="300×300px (1:1) • Max: 3MB (JPG / PNG / WebP)"
                 accept="image/jpeg,image/png,image/webp"
               />
 

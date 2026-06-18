@@ -164,7 +164,7 @@ const buildVariantAttrs = (item) => {
 const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
   if (!attrs || attrs.length === 0) return null;
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
       {attrs.map((a, i) => {
         const isCol = isColourKey(a.key);
         const hasPreview = isCol && isHexColor(a.val);
@@ -174,17 +174,20 @@ const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
             key={i}
             style={{
               fontSize,
-              color: "#666",
-              background: "#f5f5f5",
-              borderRadius: 4,
-              padding: "2px 6px",
+              color: "#555",
+              background: "#f5f5f7",
+              border: "1px solid #e8e8e8",
+              borderRadius: 5,
+              padding: "3px 9px",
               display: "inline-flex",
               alignItems: "center",
               gap: 4,
+              fontWeight: 500,
             }}
           >
             <span>{a.key}:</span>
-            {hasPreview && (
+            {hasPreview ? (
+              // Color: show swatch only, no hex text
               <span
                 style={{
                   width: swatchSize,
@@ -195,10 +198,12 @@ const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
                   display: "inline-block",
                   flexShrink: 0,
                 }}
+                title={displayVal}
               />
+            ) : (
+              // Non-color: show value text
+              <span>{displayVal}</span>
             )}
-            {/* <span>{displayVal}</span> */}
-            <span>{displayVal}</span>
           </span>
         );
       })}

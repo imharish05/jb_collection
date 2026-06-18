@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const { Op } = require("sequelize");
 const { HeroSlide, OfferBanner, MarqueeMessage } = require("../models");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -133,12 +134,22 @@ const deleteHeroSlide = async (req, res, next) => {
 const getOfferBanners = async (req, res, next) => {
   try {
     const { all } = req.query;
-    const where = all === "true" ? {} : { isActive: true };
-
-    const banners = await OfferBanner.findAll({
-      where,
-      order: [["sortOrder", "ASC"]],
-    });
+    
+    let banners;
+    if (all === "true") {
+      // Fetch all banners
+      banners = await OfferBanner.findAll({
+        order: [["sortOrder", "ASC"]],
+      });
+    } else {
+      // Fetch only active banners (isActive = true or null)
+      banners = await OfferBanner.findAll({
+        where: {
+          isActive: { [Op.ne]: false }, // Include true and null values
+        },
+        order: [["sortOrder", "ASC"]],
+      });
+    }
     return res.json(banners);
   } catch (err) {
     next(err);

@@ -381,6 +381,7 @@ const createOrder = async (req, res, next) => {
       itemData.comboName    = item.comboName || item.name || null;
       itemData.comboType    = item.comboType || null;
       itemData.selectedProducts = item.selectedProducts || null;
+      itemData.customerChoices = item.customerChoices || null;
       itemData.comboSnapshot = isComboItem ? {
         comboId: item.childComboId,
         comboName: item.comboName || item.name || null,
@@ -525,6 +526,7 @@ const createOrder = async (req, res, next) => {
           status:      order.status        || "pending",
           selectedProducts: itemData.selectedProducts || null,
           comboSnapshot:    itemData.comboSnapshot    || null,
+          customerChoices:  itemData.customerChoices  || null,
         },
         { transaction }
       );

@@ -263,7 +263,7 @@ export default function Stock({ showToast }) {
         <p className="km-loading">Loading...</p>
       ) : (
         <DataTable
-          columns={['No.', 'Product', 'Variant', 'Stock', 'Status', 'Actions']}
+          columns={['No.', 'Product', 'Variant', 'Stock', 'Sold Qty', 'Status', 'Actions']}
           initialRows={rows}
           renderRow={(row,i) => {
             const lowStock = row.stock <= 5;
@@ -286,6 +286,17 @@ export default function Stock({ showToast }) {
                       <span style={{ fontSize: 10, fontWeight: 700, background: '#fff7ed', color: '#ea580c', padding: '2px 6px', borderRadius: 20, whiteSpace: 'nowrap' }}>Low</span>
                     )}
                   </div>
+                </td>
+                <td>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    minWidth: 28, padding: '2px 8px',
+                    background: (row.soldQuantity || 0) > 0 ? '#EDE9FE' : '#F3F4F6',
+                    color:      (row.soldQuantity || 0) > 0 ? '#6D28D9'  : KM.muted,
+                    borderRadius: 20, fontSize: 12, fontWeight: 700,
+                  }}>
+                    {row.soldQuantity || 0}
+                  </span>
                 </td>
                 <td><span className={`status-pill ${pillClass[row.status] || 'pill-inactive'}`}>{row.status}</span></td>
                 <td>

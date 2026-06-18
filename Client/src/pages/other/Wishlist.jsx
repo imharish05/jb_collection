@@ -7,6 +7,7 @@ import {
 } from "../../store/services";
 import { Link, useLocation } from "react-router-dom";
 import { getImgUrl } from "../../helpers/imageUrl";
+import { isColourKey, isHexColor } from "../../helpers/product";
 import SEO from "../../components/seo";
 import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
@@ -59,6 +60,53 @@ const safeAttrs = (raw) => {
 const getVariantAttrs = (variant) => {
   if (!variant) return [];
   return safeAttrs(variant.attributes).filter(a => a.key && a.value && a.key !== "Custom Note");
+};
+
+/* ── Variant chip with color swatch support ── */
+const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
+  if (!attrs || attrs.length === 0) return null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+      {attrs.map((a, i) => {
+        const isCol = isColourKey(a.key);
+        const hasPreview = isCol && isHexColor(a.value);
+        const displayVal = hasPreview ? a.value.toUpperCase() : a.value;
+        return (
+          <span
+            key={i}
+            style={{
+              fontSize,
+              color: "#666",
+              background: "#f5f5f5",
+              borderRadius: 4,
+              padding: "2px 6px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <span>{a.key}:</span>
+            {hasPreview ? (
+              <span
+                style={{
+                  width: swatchSize,
+                  height: swatchSize,
+                  borderRadius: "50%",
+                  border: "1px solid #dcdcdc",
+                  backgroundColor: displayVal,
+                  display: "inline-block",
+                  flexShrink: 0,
+                }}
+                title={displayVal}
+              />
+            ) : (
+              <span>{displayVal}</span>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
 };
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -250,11 +298,7 @@ const Wishlist = () => {
                             {/* Variant attribute chips */}
                             {attrs.length > 0 && (
                               <div className="wl-variant-chips">
-                                {attrs.map((a, i) => (
-                                  <span key={i} className="wl-variant-chip">
-                                    <span className="k">{a.key}: </span>{a.value}
-                                  </span>
-                                ))}
+                                <VariantChips attrs={attrs} fontSize={10} swatchSize={12} />
                               </div>
                             )}
 

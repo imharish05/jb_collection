@@ -16,15 +16,15 @@ import { confirmDelete } from "../../utils/sweetalert";
 const IMG_URL = process.env.REACT_APP_IMG_URL || "";
 
 const COMBO_IMAGE_DIMENSIONS = {
-  recommended: { width: 800, height: 960 },
-  minimum: { width: 400, height: 480 },
+  width: 800,
+  height: 960,
   aspectRatio: 5 / 6,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024,
   formats: ["image/jpeg", "image/webp",'image/png'],
 };
 
-const COMBO_IMAGE_REQUIREMENTS = "Recommended: 800×960px (5:6) • Min: 400×480px • Max: 3MB (JPG/WebP)";
+const COMBO_IMAGE_REQUIREMENTS = "800×960px (5:6) • Max: 3MB (JPG/WebP)";
 
 const countWords = (text) => {
   return text ? text.trim().split(/\s+/).filter(Boolean).length : 0;
@@ -60,20 +60,10 @@ const validateComboImageDimensions = (file) => new Promise((resolve) => {
       const expectedRatio = COMBO_IMAGE_DIMENSIONS.aspectRatio;
       const ratioDiff = Math.abs((width / height) - expectedRatio) / expectedRatio;
 
-      if (width < COMBO_IMAGE_DIMENSIONS.minimum.width || height < COMBO_IMAGE_DIMENSIONS.minimum.height) {
-        resolve({
-          valid: false,
-          error: `Image too small. Minimum: ${COMBO_IMAGE_DIMENSIONS.minimum.width}×${COMBO_IMAGE_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
-          dimensions: { width, height },
-        });
-        return;
-      }
-
       if (ratioDiff > COMBO_IMAGE_DIMENSIONS.tolerance) {
-        const recommendedHeight = Math.round(width / expectedRatio);
         resolve({
           valid: false,
-          error: `Incorrect aspect ratio. Use 5:6 portrait (e.g., ${width}×${recommendedHeight}px or ${COMBO_IMAGE_DIMENSIONS.recommended.width}×${COMBO_IMAGE_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+          error: `Incorrect aspect ratio. Use 5:6 portrait (${COMBO_IMAGE_DIMENSIONS.width}×${COMBO_IMAGE_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
           dimensions: { width, height },
         });
         return;
@@ -82,7 +72,6 @@ const validateComboImageDimensions = (file) => new Promise((resolve) => {
       resolve({
         valid: true,
         dimensions: { width, height },
-        isRecommended: width === COMBO_IMAGE_DIMENSIONS.recommended.width && height === COMBO_IMAGE_DIMENSIONS.recommended.height,
       });
     };
     img.onerror = () => resolve({ valid: false, error: "Could not read image dimensions." });
@@ -1024,7 +1013,7 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
             onClear={handleClearImage}
             validation={imageValidation}
             requirements={COMBO_IMAGE_REQUIREMENTS}
-            accept="image/jpeg,image/webp"
+            accept="image/jpeg,image/png,image/webp"
           />
 
           {/* Product picker — overflow visible so dropdown doesn't clip */}
@@ -1172,7 +1161,7 @@ function RootComboForm({ initial, onSave, onCancel, showToast }) {
             onClear={handleClearImage}
             validation={imageValidation}
             requirements={COMBO_IMAGE_REQUIREMENTS}
-            accept="image/jpeg,image/webp"
+            accept="image/jpeg,image/png,image/webp"
           />
 
           <div className="km-form-actions">

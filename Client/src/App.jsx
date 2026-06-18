@@ -86,7 +86,7 @@ useEffect(() => {
       getNavCategories(dispatch),
       getAllProducts(),
       getMarqueeMessages(),
-      getOfferBanners(),
+      getOfferBanners(dispatch),
       getHeroSlides(),
     ]);
   }, []);

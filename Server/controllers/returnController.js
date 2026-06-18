@@ -34,7 +34,7 @@ const VALID_RETURN_STATUSES = [
 
 const returnInclude = [
   { model: Order,           as: "order",           attributes: ["id","status","totalAmount","paymentType","paymentMethod","razorpayPaymentId","advancePaid","codAmount","shippingCharge","couponDiscount","taxAmount","createdAt","updatedAt","referenceSlug"] },
-  { model: OrderItem,       as: "orderItem",        attributes: ["id","productId","productName","image","quantity","price","salesPrice","selectedVariantName","variantAttributes"] },
+  { model: OrderItem,       as: "orderItem",        attributes: ["id","productId","productName","image","quantity","price","salesPrice","selectedVariantName","variantAttributes","customerChoices"] },
   { model: User,            as: "user",             attributes: ["id","name","email","phone"] },
   { model: ReturnMedia,     as: "media" },
   { model: Refund,          as: "refund" },

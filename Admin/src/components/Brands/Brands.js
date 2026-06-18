@@ -9,9 +9,9 @@ const BASE_URL = process.env.REACT_APP_IMG_URL;
 
 // ── Brand Logo Image Validator ───────────────────────────────────────────────
 const BRAND_LOGO_CONFIG = {
-  recommended: { width: 300, height: 120 },
-  minimum: { width: 80, height: 40 },
-  maxFileSize: 2 * 1024 * 1024, // 2MB
+  width: 300,
+  height: 120,
+  maxFileSize: 3 * 1024 * 1024,
   formats: ['image/jpeg', 'image/png', 'image/webp'],
 };
 
@@ -21,7 +21,7 @@ const validateBrandLogo = (file) => {
     if (file.size > BRAND_LOGO_CONFIG.maxFileSize) {
       resolve({
         valid: false,
-        error: `File too large. Max: 2MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
       });
       return;
     }
@@ -41,22 +41,9 @@ const validateBrandLogo = (file) => {
       img.onload = () => {
         const { width, height } = img;
 
-        // Check minimum dimensions
-        if (width < BRAND_LOGO_CONFIG.minimum.width || height < BRAND_LOGO_CONFIG.minimum.height) {
-          resolve({
-            valid: false,
-            error: `Image too small. Minimum: ${BRAND_LOGO_CONFIG.minimum.width}×${BRAND_LOGO_CONFIG.minimum.height}px. You have: ${width}×${height}px`,
-            dimensions: { width, height },
-          });
-          return;
-        }
-
         resolve({
           valid: true,
           dimensions: { width, height },
-          isRecommended:
-            width === BRAND_LOGO_CONFIG.recommended.width &&
-            height === BRAND_LOGO_CONFIG.recommended.height,
         });
       };
       img.src = e.target.result;
@@ -247,7 +234,7 @@ export default function Brands({ showToast }) {
                 }}
                 onClear={handleClearImage}
                 validation={logoDimensions}
-                requirements="Recommended: 300×120px • Min: 80×40px • Max: 2MB (JPG / PNG / WebP)"
+                requirements="300×120px • Max: 3MB (JPG / PNG / WebP)"
                 accept="image/jpeg,image/png,image/webp"
               />
 

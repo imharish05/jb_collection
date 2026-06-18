@@ -1,4 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { confirmDelete } from '../../utils/sweetalert';
+import { removeVariant } from '../../redux/services/variantsService';
+import { useDispatch } from 'react-redux';
 
 const KM = {
   orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B',
@@ -9,8 +12,8 @@ const KM = {
 
 // ── Variant Image Dimension Validator (same rules as product gallery) ─────────
 const VARIANT_IMAGE_RULES = {
-  recommended: { width: 800, height: 960 },
-  minimum: { width: 400, height: 480 },
+  width: 800,
+  height: 960,
   aspectRatio: 5 / 6,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024,
@@ -32,15 +35,10 @@ const validateVariantImage = (file) => {
       const img = new Image();
       img.onload = () => {
         const { width, height } = img;
-        if (width < VARIANT_IMAGE_RULES.minimum.width || height < VARIANT_IMAGE_RULES.minimum.height) {
-          resolve({ valid: false, error: `Too small. Min: ${VARIANT_IMAGE_RULES.minimum.width}×${VARIANT_IMAGE_RULES.minimum.height}px. Yours: ${width}×${height}px` });
-          return;
-        }
         const ratio = width / height;
         const diff = Math.abs(ratio - VARIANT_IMAGE_RULES.aspectRatio) / VARIANT_IMAGE_RULES.aspectRatio;
         if (diff > VARIANT_IMAGE_RULES.tolerance) {
-          const rh = Math.round(width / VARIANT_IMAGE_RULES.aspectRatio);
-          resolve({ valid: false, error: `Wrong ratio. Use 5:6 (e.g. ${width}×${rh}px). Yours: ${width}×${height}px` });
+          resolve({ valid: false, error: `Wrong ratio. Use 5:6 (${VARIANT_IMAGE_RULES.width}×${VARIANT_IMAGE_RULES.height}px). Yours: ${width}×${height}px` });
           return;
         }
         resolve({ valid: true });
@@ -63,9 +61,33 @@ export const OPTION_PRESETS = {
   'Capacity':  ['50ml','100ml','250ml','500ml','1L','1.5L','2L'],
   'Weight':    ['Light','Standard','Heavy'],
   'Design':    ['Cow','Cow and calf','Peacock','Lotus','Flowers','Elephant','Mandala','Standard','Heavy','Plain','Kolam','Wavey lines','Painted'],
+  // Dead keys from Products.js mappedVariants — added so they appear in the searchable dropdown
+  // and can be toggled as open-choice (inputType: text) for personalized product dimensions
+  'Engraving': [],
+  'Print Text': [],
+  'Dimensions': [],
+  'Sub-type':   [],
 };
 
 const OPTION_KEYS = Object.keys(OPTION_PRESETS);
+
+// ── Input Type presets (seed list — admin can add custom names freely via the same
+//    searchable-dropdown pattern used for Option Type). These are session-local only,
+//    matching the behavior of custom Option Type keys today (not persisted globally).
+export const INPUT_TYPE_PRESETS = ['Color', 'Size', 'Text', 'Custom List'];
+
+// ── renderAs mapping — the ONE place where infinite admin-typed inputType names
+//    collapse to 3 finite client rendering buckets (color / select / text).
+//    'Color' (case-insensitive) → color picker widget
+//    'Custom List' (case-insensitive) → dropdown from customListValues
+//    everything else → plain text input (Size, Text, Engraving, Pincode, Date, …)
+export const getRenderAs = (inputType) => {
+  if (!inputType) return 'text';
+  const t = inputType.trim().toLowerCase();
+  if (t === 'color') return 'color';
+  if (t === 'custom list') return 'select';
+  return 'text';
+};
 
 // ── Normalize value for duplicate detection ───────────────────────────────────
 const norm = (v) => v.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -135,7 +157,7 @@ export const renderVariantLabel = (str, circleSize = 12, spacing = 4) => {
 
 // ── Cartesian product ─────────────────────────────────────────────────────────
 function cartesian(arrays) {
-  if (!arrays.length) return [];
+  if (!arrays.length) return [[]];
   return arrays.reduce(
     (acc, arr) => acc.flatMap(combo => arr.map(v => [...combo, v])),
     [[]]
@@ -144,7 +166,28 @@ function cartesian(arrays) {
 
 // ── Build variant name from option combo ─────────────────────────────────────
 function comboName(combo) {
-  return combo.map(({ key, value }) => `${key}: ${value}`).join(' · ') || 'Default';
+  return combo
+    .map(({ key, value, isOpenChoice, label }) =>
+      isOpenChoice ? `${label || key}: (customer's choice)` : `${key}: ${value}`
+    )
+    .join(' · ') || 'Default';
+}
+
+// ── Prune option values no longer referenced by any remaining SKU ─────────────
+// Runs synchronously as part of the delete update — eliminates stale-options risk
+// where a later unrelated option edit could resurrect a deleted combo via regenerate().
+export function pruneOrphanedOptionValues(options, remainingVariants) {
+  return options.map(opt => {
+    if (opt.isOpenChoice) return opt; // open-choice options have no discrete values to prune
+    const usedValues = new Set();
+    remainingVariants.forEach(sku => {
+      (sku.attributes || sku.combo || []).forEach(a => {
+        if (a.key === opt.key && a.value && !a.isOpenChoice) usedValues.add(a.value);
+      });
+    });
+    const nextValues = opt.values.filter(v => usedValues.has(v));
+    return { ...opt, values: nextValues };
+  });
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -167,22 +210,83 @@ const pill = (active) => ({
   border: `1px solid ${active ? '#B8C9EE' : KM.border}`,
 });
 
+// ── Reusable searchable dropdown (used for both Option Type and Input Type) ────
+function SearchableDropdown({ value, options, placeholder, onChange, customLabel = 'Use', allOtherSelected = [] }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const filtered = options.filter(k =>
+    k.toLowerCase().includes(search.toLowerCase()) &&
+    !allOtherSelected.includes(k)
+  );
+  return (
+    <div style={{ position: 'relative' }}>
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{ ...inp, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: value ? KM.blueFaint : '#fff', borderColor: value ? '#B8C9EE' : KM.border }}
+      >
+        <span style={{ color: value ? KM.blue : KM.muted, fontWeight: value ? 600 : 400 }}>
+          {value || placeholder}
+        </span>
+        <span style={{ fontSize: 10, color: KM.muted }}>▾</span>
+      </div>
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 200, width: 220, background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', marginTop: 4, overflow: 'hidden' }}>
+          <input
+            autoFocus
+            style={{ ...inp, borderRadius: 0, borderWidth: '0 0 1px 0' }}
+            placeholder="Search or type custom…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && search.trim()) {
+                onChange(search.trim());
+                setOpen(false); setSearch('');
+              }
+              if (e.key === 'Escape') setOpen(false);
+            }}
+          />
+          <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+            {filtered.map(k => (
+              <div key={k} onClick={() => { onChange(k); setOpen(false); setSearch(''); }}
+                style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, background: value === k ? KM.blueFaint : 'transparent', color: value === k ? KM.blue : KM.text }}
+                onMouseEnter={e => { if (value !== k) e.currentTarget.style.background = KM.bg; }}
+                onMouseLeave={e => { if (value !== k) e.currentTarget.style.background = 'transparent'; }}
+              >
+                {k}
+              </div>
+            ))}
+            {search && !filtered.includes(search.trim()) && (
+              <div onClick={() => { onChange(search.trim()); setOpen(false); setSearch(''); }}
+                style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: KM.orange, borderTop: `1px solid ${KM.border}` }}>
+                + {customLabel} "{search.trim()}" as custom
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── OptionRow — one option type with its values ───────────────────────────────
 function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
   const [valueInput, setValueInput] = useState('');
-  const [keyOpen, setKeyOpen] = useState(false);
-  const [keySearch, setKeySearch] = useState('');
+  const [inputTypeSearch, setInputTypeSearch] = useState('');
+  const [inputTypeOpen, setInputTypeOpen] = useState(false);
+  const [customInputTypes, setCustomInputTypes] = useState([]);
   const inputRef = useRef();
   const isColour = isColourKey(option.key);
 
+  const allInputTypes = [...INPUT_TYPE_PRESETS, ...customInputTypes.filter(t => !INPUT_TYPE_PRESETS.includes(t))];
+  const renderAs = getRenderAs(option.inputType);
+
   const addValue = (raw) => {
     let v = raw.trim();
-    if (isColour) {
+    if (isColour && !option.isOpenChoice) {
       if (!isHexColor(v)) return;
       v = v.toUpperCase();
     }
     if (!v) return;
-    // Duplicate detection (case/space insensitive)
     if (option.values.some(existing => norm(existing) === norm(v))) return;
     onChange({ ...option, values: [...option.values, v] });
     setValueInput('');
@@ -191,155 +295,241 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
 
   const removeValue = (idx) => onChange({ ...option, values: option.values.filter((_, i) => i !== idx) });
 
-  const filteredKeys = OPTION_KEYS.filter(k =>
-    k.toLowerCase().includes(keySearch.toLowerCase()) &&
-    !allOtherKeys.includes(k)
-  );
+  const toggleOpenChoice = (checked) => {
+    // Default inputType: 'Text' for known text-type keys, 'Color' for colour-like keys, else 'Text'
+    const defaultInputType = isColourKey(option.key) ? 'Color' : 'Text';
+    onChange({
+      ...option,
+      isOpenChoice: checked,
+      inputType: option.inputType || defaultInputType,
+      renderAs: getRenderAs(option.inputType || defaultInputType),
+      label: option.label || '',
+      hint: option.hint || '',
+      customListValues: option.customListValues || [],
+      values: checked ? [] : option.values,
+    });
+  };
+
+  const updateOpenChoiceField = (field, val) => {
+    const updated = { ...option, [field]: val };
+    if (field === 'inputType') {
+      updated.renderAs = getRenderAs(val);
+    }
+    onChange(updated);
+  };
+
+  const addCustomListValue = (raw) => {
+    const v = raw.trim();
+    if (!v) return;
+    const existing = option.customListValues || [];
+    if (existing.some(e => norm(e) === norm(v))) return;
+    onChange({ ...option, customListValues: [...existing, v] });
+    setValueInput('');
+    inputRef.current?.focus();
+  };
+
+  const removeCustomListValue = (idx) => {
+    const next = (option.customListValues || []).filter((_, i) => i !== idx);
+    onChange({ ...option, customListValues: next });
+  };
 
   return (
-    <div style={{ background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 10, padding: 14, marginBottom: 10 }}>
+    <div style={{ background: '#fff', border: `1px solid ${option.isOpenChoice ? '#B8C9EE' : KM.border}`, borderRadius: 10, padding: 14, marginBottom: 10 }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
 
         {/* Option type selector */}
         <div style={{ flex: '0 0 170px', position: 'relative' }}>
           <label style={lbl}>Option Type</label>
-          <div
-            onClick={() => setKeyOpen(o => !o)}
-            style={{ ...inp, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: option.key ? KM.blueFaint : '#fff', borderColor: option.key ? '#B8C9EE' : KM.border }}
-          >
-            <span style={{ color: option.key ? KM.blue : KM.muted, fontWeight: option.key ? 600 : 400 }}>
-              {option.key || 'Select type…'}
-            </span>
-            <span style={{ fontSize: 10, color: KM.muted }}>▾</span>
-          </div>
-          {keyOpen && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 200, width: 220, background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', marginTop: 4, overflow: 'hidden' }}>
-              <input
-                autoFocus
-                style={{ ...inp, borderRadius: 0, borderWidth: '0 0 1px 0' }}
-                placeholder="Search or type custom…"
-                value={keySearch}
-                onChange={e => setKeySearch(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && keySearch.trim()) {
-                    onChange({ ...option, key: keySearch.trim(), values: [] });
-                    setKeyOpen(false); setKeySearch('');
-                  }
-                  if (e.key === 'Escape') setKeyOpen(false);
-                }}
-              />
-              <div style={{ maxHeight: 180, overflowY: 'auto' }}>
-                {filteredKeys.map(k => (
-                  <div key={k} onClick={() => { onChange({ ...option, key: k, values: [] }); setKeyOpen(false); setKeySearch(''); }}
-                    style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', justifyContent: 'space-between', background: option.key === k ? KM.blueFaint : 'transparent', color: option.key === k ? KM.blue : KM.text }}
-                    onMouseEnter={e => { if (option.key !== k) e.currentTarget.style.background = KM.bg; }}
-                    onMouseLeave={e => { if (option.key !== k) e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <span>{k}</span>
-                    <span style={{ fontSize: 10, color: KM.muted }}>{(OPTION_PRESETS[k] || []).length} presets</span>
-                  </div>
-                ))}
-                {keySearch && !filteredKeys.includes(keySearch.trim()) && (
-                  <div onClick={() => { onChange({ ...option, key: keySearch.trim(), values: [] }); setKeyOpen(false); setKeySearch(''); }}
-                    style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: KM.orange, borderTop: `1px solid ${KM.border}` }}>
-                    + Use "{keySearch.trim()}" as custom
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          <SearchableDropdown
+            value={option.key}
+            options={OPTION_KEYS}
+            placeholder="Select type…"
+            allOtherSelected={allOtherKeys}
+            onChange={(k) => onChange({ ...option, key: k, values: [], isOpenChoice: false })}
+          />
         </div>
 
-        {/* Values area */}
+        {/* Values area OR open-choice config panel */}
         <div style={{ flex: 1 }}>
-          <label style={lbl}>Values</label>
+          {option.isOpenChoice ? (
+            /* ── Open-choice config panel ── */
+            <div style={{ background: KM.blueFaint, borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: KM.blue, marginBottom: 2 }}>
+                🔓 Customer's choice configuration
+              </div>
 
-          {/* Preset suggestions */}
-          {option.key && OPTION_PRESETS[option.key]?.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
-              {OPTION_PRESETS[option.key].map(preset => {
-                const already = option.values.some(v => norm(v) === norm(preset));
-                return (
-                  <button key={preset} type="button"
-                    onClick={() => !already && addValue(preset)}
-                    style={{ fontSize: 11, padding: '3px 9px', borderRadius: 5, border: `1px solid ${already ? KM.green : KM.border}`, background: already ? '#F0FFF4' : '#fff', color: already ? KM.green : KM.muted, cursor: already ? 'default' : 'pointer', fontWeight: 500 }}>
-                    {already ? '✓ ' : '+'}{preset}
-                  </button>
-                );
-              })}
+              {/* Input Type — searchable, same pattern as Option Type key */}
+              <div>
+                <label style={lbl}>Input Type</label>
+                <SearchableDropdown
+                  value={option.inputType || 'Text'}
+                  options={allInputTypes}
+                  placeholder="Select input type…"
+                  customLabel="Use"
+                  onChange={(t) => {
+                    if (!INPUT_TYPE_PRESETS.includes(t)) {
+                      setCustomInputTypes(prev => [...new Set([...prev, t])]);
+                    }
+                    updateOpenChoiceField('inputType', t);
+                  }}
+                />
+                <div style={{ fontSize: 10, color: KM.muted, marginTop: 3 }}>
+                  {renderAs === 'color' && 'Renders as: colour picker on storefront'}
+                  {renderAs === 'select' && 'Renders as: dropdown on storefront'}
+                  {renderAs === 'text' && 'Renders as: text input on storefront'}
+                </div>
+              </div>
+
+              {/* Label override */}
+              <div>
+                <label style={lbl}>Label (optional)</label>
+                <input
+                  style={inp}
+                  placeholder={option.key || 'Label shown to customer'}
+                  value={option.label || ''}
+                  onChange={e => updateOpenChoiceField('label', e.target.value)}
+                />
+              </div>
+
+              {/* Hint text */}
+              <div>
+                <label style={lbl}>Hint text (optional)</label>
+                <input
+                  style={inp}
+                  placeholder="Helper text shown to customer"
+                  value={option.hint || ''}
+                  onChange={e => updateOpenChoiceField('hint', e.target.value)}
+                />
+              </div>
+
+              {/* Custom list values — only shown for renderAs === 'select' */}
+              {renderAs === 'select' && (
+                <div>
+                  <label style={lbl}>Dropdown options</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {(option.customListValues || []).map((v, i) => (
+                      <span key={i} style={{ ...pill(true) }}>
+                        <span>{v}</span>
+                        <button type="button" onClick={() => removeCustomListValue(i)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.muted, fontSize: 14, padding: '0 0 0 2px', lineHeight: 1 }}>×</button>
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input
+                      ref={inputRef}
+                      style={{ ...inp, flex: 1 }}
+                      placeholder="Add option…"
+                      value={valueInput}
+                      onChange={e => setValueInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomListValue(valueInput); } }}
+                    />
+                    <button type="button" onClick={() => addCustomListValue(valueInput)}
+                      disabled={!valueInput.trim()}
+                      style={{ padding: '8px 14px', background: KM.teal, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: !valueInput.trim() ? 0.4 : 1 }}>
+                      Add
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          ) : (
+            /* ── Normal fixed-values UI ── */
+            <>
+              <label style={lbl}>Values</label>
 
-          {/* Selected values as pills */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8, minHeight: option.values.length ? 'auto' : 0 }}>
-            {option.values.map((v, i) => (
-              <span key={i} style={{ ...pill(true), display: 'inline-flex', alignItems: 'center' }}>
-                {isColour && isHexColor(v) && (
-                  <span
-                    style={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: '50%',
-                      border: '1px solid #dcdcdc',
-                      backgroundColor: v,
-                      display: 'inline-block',
-                      marginRight: 6,
-                      flexShrink: 0,
-                    }}
+              {/* Preset suggestions */}
+              {option.key && OPTION_PRESETS[option.key]?.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+                  {OPTION_PRESETS[option.key].map(preset => {
+                    const already = option.values.some(v => norm(v) === norm(preset));
+                    return (
+                      <button key={preset} type="button"
+                        onClick={() => !already && addValue(preset)}
+                        style={{ fontSize: 11, padding: '3px 9px', borderRadius: 5, border: `1px solid ${already ? KM.green : KM.border}`, background: already ? '#F0FFF4' : '#fff', color: already ? KM.green : KM.muted, cursor: already ? 'default' : 'pointer', fontWeight: 500 }}>
+                        {already ? '✓ ' : '+'}{preset}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Selected values as pills */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8, minHeight: option.values.length ? 'auto' : 0 }}>
+                {option.values.map((v, i) => (
+                  <span key={i} style={{ ...pill(true), display: 'inline-flex', alignItems: 'center' }}>
+                    {isColour && isHexColor(v) && (
+                      <span
+                        style={{ width: 14, height: 14, borderRadius: '50%', border: '1px solid #dcdcdc', backgroundColor: v, display: 'inline-block', marginRight: 6, flexShrink: 0 }}
+                      />
+                    )}
+                    <span>{v}</span>
+                    <button type="button" onClick={() => removeValue(i)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.muted, fontSize: 14, padding: '0 0 0 2px', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>×</button>
+                  </span>
+                ))}
+              </div>
+
+              {/* Custom value input */}
+              <div style={{ display: 'flex', gap: 6 }}>
+                {isColour ? (
+                  <input
+                    ref={inputRef}
+                    type="color"
+                    style={{ width: 52, height: 36, padding: 2, border: `1px solid ${KM.border}`, borderRadius: 7, background: '#fff', cursor: option.key ? 'pointer' : 'not-allowed' }}
+                    value={isHexColor(valueInput) ? valueInput : '#000000'}
+                    disabled={!option.key}
+                    onChange={e => setValueInput(e.target.value.toUpperCase())}
+                  />
+                ) : (
+                  <input
+                    ref={inputRef}
+                    style={{ ...inp, flex: 1 }}
+                    placeholder={option.key ? `Add ${option.key.toLowerCase()} value…` : 'Select option type first'}
+                    value={valueInput}
+                    disabled={!option.key}
+                    onChange={e => setValueInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addValue(valueInput); } }}
                   />
                 )}
-                <span>{v}</span>
-                <button type="button" onClick={() => removeValue(i)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.muted, fontSize: 14, padding: '0 0 0 2px', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>×</button>
-              </span>
-            ))}
-          </div>
-
-          {/* Custom value input */}
-          <div style={{ display: 'flex', gap: 6 }}>
-            {isColour ? (
-              <input
-                ref={inputRef}
-                type="color"
-                style={{ width: 52, height: 36, padding: 2, border: `1px solid ${KM.border}`, borderRadius: 7, background: '#fff', cursor: option.key ? 'pointer' : 'not-allowed' }}
-                value={isHexColor(valueInput) ? valueInput : '#000000'}
-                disabled={!option.key}
-                onChange={e => setValueInput(e.target.value.toUpperCase())}
-              />
-            ) : (
-              <input
-                ref={inputRef}
-                style={{ ...inp, flex: 1 }}
-                placeholder={option.key ? `Add ${option.key.toLowerCase()} value…` : 'Select option type first'}
-                value={valueInput}
-                disabled={!option.key}
-                onChange={e => setValueInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addValue(valueInput); } }}
-              />
-            )}
-            <button type="button" onClick={() => addValue(isColour && !valueInput ? '#000000' : valueInput)}
-              disabled={!option.key || (!isColour && !valueInput.trim())}
-              style={{ padding: '8px 14px', background: KM.teal, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: (!option.key || (!isColour && !valueInput.trim())) ? 0.4 : 1 }}>
-              {isColour ? 'Add Colour' : 'Add'}
-            </button>
-          </div>
+                <button type="button" onClick={() => addValue(isColour && !valueInput ? '#000000' : valueInput)}
+                  disabled={!option.key || (!isColour && !valueInput.trim())}
+                  style={{ padding: '8px 14px', background: KM.teal, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: (!option.key || (!isColour && !valueInput.trim())) ? 0.4 : 1 }}>
+                  {isColour ? 'Add Colour' : 'Add'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Remove option */}
-        {canRemove && (
-          <button type="button" onClick={onRemove}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.red, fontSize: 18, padding: '4px 6px', marginTop: 20, alignSelf: 'flex-start' }}
-            title="Remove option">
-            ✕
-          </button>
-        )}
+        {/* Right-side controls: open-choice toggle + remove */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, marginTop: 20 }}>
+          {option.key && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: option.isOpenChoice ? KM.blue : KM.muted, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <input
+                type="checkbox"
+                checked={!!option.isOpenChoice}
+                onChange={e => toggleOpenChoice(e.target.checked)}
+                style={{ accentColor: KM.blue }}
+              />
+              Let customer choose
+            </label>
+          )}
+          {canRemove && (
+            <button type="button" onClick={onRemove}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.red, fontSize: 18, padding: '4px 6px', alignSelf: 'flex-start' }}
+              title="Remove option">
+              ✕
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 // ── SKU Row — card layout with big image upload ───────────────────────────────
-function SkuRow({ sku, index, onChange, errors = [] }) {
+function SkuRow({ sku, index, onChange, onDelete, errors = [] }) {
   const imgRef = useRef();
   const [imgError, setImgError] = useState('');
 
@@ -377,8 +567,8 @@ function SkuRow({ sku, index, onChange, errors = [] }) {
 
       {/* Image upload — big zone */}
       <div style={{ flexShrink: 0 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Image • 800×960px (5:6) • Min: 400×480px</div>
-        <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImg} />
+        <div style={{ fontSize: 10, fontWeight: 700, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Image • 800×960px (5:6) • Max: 3MB</div>
+        <input ref={imgRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handleImg} />
         {sku.imagePreview ? (
           <div style={{ position: 'relative', width: 90, height: 90 }}>
             <img src={sku.imagePreview} alt="variant"
@@ -404,12 +594,22 @@ function SkuRow({ sku, index, onChange, errors = [] }) {
       {/* Right side — name + fields */}
       <div style={{ flex: 1, minWidth: 0 }}>
 
-        {/* Name + status */}
+        {/* Name + status + delete */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: KM.blue }}>{sku.variantName}</div>
             <div style={{ fontSize: 11, color: KM.muted, marginTop: 2 }}>
               {sku.combo?.map((c, cIdx) => {
+                if (c.isOpenChoice) {
+                  return (
+                    <span key={cIdx} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                      {cIdx > 0 && <span style={{ margin: '0 10px', color: KM.border }}>·</span>}
+                      <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: '#EEF2FB', color: KM.blue, fontWeight: 700 }}>
+                        🔓 Customer picks {c.label || c.key}
+                      </span>
+                    </span>
+                  );
+                }
                 const isCol = isColourKey(c.key);
                 const hasPreview = isCol && isHexColor(c.value);
                 return (
@@ -417,17 +617,7 @@ function SkuRow({ sku, index, onChange, errors = [] }) {
                     <span>{c.key}: </span>
                     {hasPreview && (
                       <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: '50%',
-                          border: '1px solid #dcdcdc',
-                          backgroundColor: c.value,
-                          display: 'inline-block',
-                          marginLeft: 4,
-                          marginRight: 4,
-                          flexShrink: 0,
-                        }}
+                        style={{ width: 12, height: 12, borderRadius: '50%', border: '1px solid #dcdcdc', backgroundColor: c.value, display: 'inline-block', marginLeft: 4, marginRight: 4, flexShrink: 0 }}
                       />
                     )}
                     <span style={{ marginLeft: hasPreview ? 0 : 4 }}>{c.value}</span>
@@ -438,11 +628,19 @@ function SkuRow({ sku, index, onChange, errors = [] }) {
             </div>
             {hasErr && <div style={{ fontSize: 11, color: KM.red, fontWeight: 600, marginTop: 3 }}>{errors.join(' · ')}</div>}
           </div>
-          <button type="button"
-            onClick={() => onChange({ ...sku, status: sku.status === 'Active' ? 'Inactive' : 'Active' })}
-            style={{ flexShrink: 0, fontSize: 11, padding: '4px 10px', borderRadius: 6, border: `1px solid ${sku.status === 'Active' ? KM.green : KM.border}`, background: sku.status === 'Active' ? '#F0FFF4' : KM.bg, color: sku.status === 'Active' ? KM.green : KM.muted, cursor: 'pointer', fontWeight: 700 }}>
-            {sku.status === 'Active' ? '● Active' : '○ Inactive'}
-          </button>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+            <button type="button"
+              onClick={() => onChange({ ...sku, status: sku.status === 'Active' ? 'Inactive' : 'Active' })}
+              style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: `1px solid ${sku.status === 'Active' ? KM.green : KM.border}`, background: sku.status === 'Active' ? '#F0FFF4' : KM.bg, color: sku.status === 'Active' ? KM.green : KM.muted, cursor: 'pointer', fontWeight: 700 }}>
+              {sku.status === 'Active' ? '● Active' : '○ Inactive'}
+            </button>
+            {/* 🗑 Delete button — same visual style as image remove */}
+            <button type="button" onClick={() => onDelete(index)}
+              title="Delete this SKU"
+              style={{ width: 26, height: 26, borderRadius: '50%', background: KM.red, color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+              🗑
+            </button>
+          </div>
         </div>
 
         {/* Price + stock row */}
@@ -501,20 +699,47 @@ function attributesMatch(attrs1, attrs2) {
 
 // ── Build SKU rows from option matrix ────────────────────────────────────────
 function buildSkus(options, existingSkus = []) {
-  const validOptions = options.filter(o => o.key && o.values.length > 0);
-  if (!validOptions.length) return [];
+  // Separate fixed options (need cartesian) from open-choice options (always 1 slot)
+  const fixedOptions = options.filter(o => o.key && o.values.length > 0 && !o.isOpenChoice);
+  const openChoiceOptions = options.filter(o => o.key && o.isOpenChoice);
 
-  const combos = cartesian(validOptions.map(o => o.values.map(v => ({ key: o.key, value: v }))));
+  if (!fixedOptions.length && !openChoiceOptions.length) return [];
 
-  return combos.map(combo => {
+  // Generate cartesian product only over fixed dimensions
+  const combos = fixedOptions.length
+    ? cartesian(fixedOptions.map(o => o.values.map(v => ({ key: o.key, value: v }))))
+    : [[]]; // single empty combo when only open-choice dims exist
+
+  return combos.map(fixedCombo => {
+    // Append open-choice entries (each one contributes exactly 1 slot, not multiplied)
+    const openChoiceEntries = openChoiceOptions.map(o => ({
+      key: o.key,
+      value: 'Any',
+      isOpenChoice: true,
+      inputType: o.inputType,
+      renderAs: o.renderAs || getRenderAs(o.inputType),
+      label: o.label || o.key,
+      hint: o.hint || '',
+      customListValues: o.customListValues || [],
+    }));
+
+    const combo = [...fixedCombo, ...openChoiceEntries];
     const variantName = comboName(combo);
-    // Preserve existing sku data if combo already existed (order-independent match)
+
+    // Preserve existing sku data if combo already existed (order-independent match for fixed dims only)
     const existing = existingSkus.find(s => {
       const sAttrs = s.attributes || s.combo || [];
-      return attributesMatch(sAttrs, combo);
+      // Match only on fixed (non-open-choice) attributes
+      const sFixed = sAttrs.filter(a => !a.isOpenChoice);
+      return attributesMatch(sFixed, fixedCombo);
     });
-    // attributes must always be present — Products.js validation + submit both read it
-    const attributesFromCombo = combo.map(c => ({ key: c.key, value: c.value, customValue: '' }));
+
+    // attributes for API: fixed attrs + open-choice passthrough objects
+    const attributesFromCombo = combo.map(c => c.isOpenChoice
+      ? { key: c.key, value: c.value, isOpenChoice: true, inputType: c.inputType, renderAs: c.renderAs, label: c.label, hint: c.hint, customListValues: c.customListValues }
+      : { key: c.key, value: c.value, customValue: '' }
+    );
+
     return existing
       ? { ...existing, combo, variantName, attributes: attributesFromCombo }
       : {
@@ -560,23 +785,51 @@ function BulkEditBar({ onApply }) {
 //   onChange     — (newVariants) => void
 //   errors       — { [index]: string[] }
 //   existingOptions — pre-populated option matrix when editing
+//   onDeleteSku  — optional async (sku, index) => Promise<boolean>
+//                  Parent handles confirm dialog + dispatch + toast.
+//                  If not passed, SKU-delete is local-only (no API call).
 // ═══════════════════════════════════════════════════════════════════════════════
-export default function VariantBuilder({ variants = [], onChange, errors = {}, existingOptions, tab: tabProp, onTabChange }) {
+export default function VariantBuilder({ variants = [], onChange, errors = {}, existingOptions, tab: tabProp, onTabChange, onDeleteSku }) {
   // Options = the matrix rows (Colour: [Red, Blue], Size: [S, M, L])
   const [options, setOptions] = useState(() => {
     if (existingOptions?.length) return existingOptions;
     // Reconstruct option matrix from existing variants
     if (variants.length > 0) {
       const optionMap = {};
+      const openChoiceMap = {}; // key → open-choice config
       variants.forEach(v => {
         (v.attributes || []).forEach(a => {
-          if (!a.key || !a.value || a.key === 'Custom Note') return;
+          if (!a.key || a.key === 'Custom Note') return;
+          if (a.isOpenChoice) {
+            // Carry open-choice config through
+            if (!openChoiceMap[a.key]) openChoiceMap[a.key] = a;
+            return;
+          }
+          if (!a.value) return;
           if (!optionMap[a.key]) optionMap[a.key] = new Set();
           optionMap[a.key].add(a.value);
         });
       });
-      const keys = Object.keys(optionMap);
-      if (keys.length) return keys.map(k => ({ id: k, key: k, values: [...optionMap[k]] }));
+      const fixedKeys = Object.keys(optionMap);
+      const openChoiceKeys = Object.keys(openChoiceMap);
+      const allKeys = [...fixedKeys, ...openChoiceKeys.filter(k => !fixedKeys.includes(k))];
+      if (allKeys.length) {
+        return allKeys.map(k => {
+          if (openChoiceMap[k]) {
+            const a = openChoiceMap[k];
+            return {
+              id: k, key: k, values: [],
+              isOpenChoice: true,
+              inputType: a.inputType || 'Text',
+              renderAs: a.renderAs || getRenderAs(a.inputType),
+              label: a.label || '',
+              hint: a.hint || '',
+              customListValues: a.customListValues || [],
+            };
+          }
+          return { id: k, key: k, values: [...optionMap[k]] };
+        });
+      }
     }
     return [{ id: 'opt_0', key: '', values: [] }];
   });
@@ -619,6 +872,28 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
     onChange(next);
   };
 
+  // ── SKU deletion — VariantBuilder stays Redux-free, actual API call delegated to onDeleteSku prop ──
+  const requestDeleteSku = async (i) => {
+    const sku = variants[i];
+    const isNewSku = String(sku.id).startsWith('new_');
+
+    if (!isNewSku && onDeleteSku) {
+      // Parent (Products.js / Variants.js) handles confirm dialog + dispatch(removeVariant) + toast
+      const ok = await onDeleteSku(sku, i);
+      if (!ok) return; // User declined or API failed — do not remove from local state
+    }
+
+    // Splice variant from array
+    const nextVariants = variants.filter((_, j) => j !== i);
+
+    // Prune any option values now orphaned — runs synchronously in the same update
+    // so a later unrelated option edit cannot resurrect the deleted combo via regenerate()
+    const nextOptions = pruneOrphanedOptionValues(options, nextVariants);
+    setOptions(nextOptions);
+
+    onChange(nextVariants);
+  };
+
   const bulkApply = ({ mrp, salesPrice, stock }) => {
     onChange(variants.map(v => ({
       ...v,
@@ -628,15 +903,17 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
     })));
   };
 
+  // totalCombos: only multiply over fixed options (open-choice contributes 1x multiplier)
   const totalCombos = (() => {
-    const valid = options.filter(o => o.key && o.values.length);
-    if (!valid.length) return 0;
-    return valid.reduce((acc, o) => acc * o.values.length, 1);
+    const fixedValid = options.filter(o => o.key && o.values.length && !o.isOpenChoice);
+    const hasAnyOpen = options.some(o => o.key && o.isOpenChoice);
+    if (!fixedValid.length && !hasAnyOpen) return 0;
+    const fixedCount = fixedValid.length ? fixedValid.reduce((acc, o) => acc * o.values.length, 1) : 1;
+    return hasAnyOpen || fixedValid.length ? fixedCount : 0;
   })();
 
   const allOtherKeys = (idx) => options.filter((_, i) => i !== idx).map(o => o.key).filter(Boolean);
 
-  // ── AttributeRow export (for Variants.js standalone use) ──────────────────
   const errorCount = Object.values(errors).filter(e => Array.isArray(e) && e.length > 0).length;
   const hasErrors = errorCount > 0;
 
@@ -714,6 +991,7 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
           )}
           <div style={{ marginBottom: 12, fontSize: 12, color: KM.muted }}>
             Add option types (Colour, Size, Material…) with their values. SKUs are auto-generated as a cartesian product.
+            Toggle "Let customer choose" to let shoppers specify a dimension (e.g. engraving text, custom colour).
           </div>
 
           {options.map((opt, i) => (
@@ -776,6 +1054,7 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
                     sku={sku}
                     index={i}
                     onChange={updated => updateSku(i, updated)}
+                    onDelete={requestDeleteSku}
                     errors={errors[i] || []}
                   />
                 ))}
@@ -810,15 +1089,34 @@ export function AttributeRow({ attr, onChange, onRemove, isOnly }) {
   const [keyOpen, setKeyOpen] = useState(false);
   const [keySearch, setKeySearch] = useState('');
 
+  // If this attribute is open-choice, render a read-only badge instead of an editable row.
+  // This prevents crashes from preset.map on keys with no preset entry, and prevents
+  // accidental editing of open-choice configuration in the standalone Variants.js modal.
+  if (attr.isOpenChoice) {
+    const displayLabel = attr.label || attr.key;
+    const displayType = attr.inputType || 'text';
+    return (
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%' }}>
+        <div style={{ flex: 1, padding: '8px 12px', background: '#EEF2FB', borderRadius: 8, border: '1px solid #B8C9EE', fontSize: 12, color: '#1A3A6B', fontWeight: 600 }}>
+          🔓 Customer picks {displayLabel} ({displayType})
+        </div>
+        <button type="button" onClick={onRemove} disabled={isOnly}
+          style={{ background: 'none', border: 'none', cursor: isOnly ? 'default' : 'pointer', color: isOnly ? '#D1D5DB' : '#EF4444', fontSize: 16, padding: '4px 6px' }}>
+          ✕
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', width: '100%' }}>
       <div style={{ flex: '0 0 160px', position: 'relative' }}>
         <div onClick={() => setKeyOpen(o => !o)}
-          style={{ ...inp, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: attr.key ? KM.blueFaint : '#fff', borderColor: attr.key ? '#B8C9EE' : KM.border }}>
-          <span style={{ color: attr.key ? KM.blue : KM.muted, fontWeight: attr.key ? 600 : 400 }}>
+          style={{ ...inp, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: attr.key ? '#EEF2FB' : '#fff', borderColor: attr.key ? '#B8C9EE' : '#E5E7EB' }}>
+          <span style={{ color: attr.key ? '#1A3A6B' : '#6B7280', fontWeight: attr.key ? 600 : 400 }}>
             {attr.key || 'Select / type…'}
           </span>
-          <span style={{ fontSize: 10, color: KM.muted }}>▾</span>
+          <span style={{ fontSize: 10, color: '#6B7280' }}>▾</span>
         </div>
         {keyOpen && (
           <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, width: 220, background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', marginTop: 4, overflow: 'hidden' }}>

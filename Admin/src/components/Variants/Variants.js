@@ -31,8 +31,8 @@ function safeAttrs(raw) {
 
 // Product Image Dimension Validator (800×960px 5:6 portrait)
 const PRODUCT_IMAGE_DIMENSIONS = {
-  recommended: { width: 800, height: 960 },
-  minimum: { width: 400, height: 480 },
+  width: 800,
+  height: 960,
   aspectRatio: 5 / 6,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024,
@@ -57,19 +57,10 @@ const validateProductImageDimensions = (file) => {
         const actualRatio = width / height;
         const expectedRatio = PRODUCT_IMAGE_DIMENSIONS.aspectRatio;
         const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
-        if (width < PRODUCT_IMAGE_DIMENSIONS.minimum.width || height < PRODUCT_IMAGE_DIMENSIONS.minimum.height) {
-          resolve({
-            valid: false,
-            error: `Image too small. Minimum: ${PRODUCT_IMAGE_DIMENSIONS.minimum.width}×${PRODUCT_IMAGE_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
-            dimensions: { width, height },
-          });
-          return;
-        }
         if (ratioDiff > PRODUCT_IMAGE_DIMENSIONS.tolerance) {
-          const recommendedHeight = Math.round(width / expectedRatio);
           resolve({
             valid: false,
-            error: `Incorrect aspect ratio. Use 5:6 portrait (e.g., ${width}×${recommendedHeight}px or ${PRODUCT_IMAGE_DIMENSIONS.recommended.width}×${PRODUCT_IMAGE_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            error: `Incorrect aspect ratio. Use 5:6 (${PRODUCT_IMAGE_DIMENSIONS.width}×${PRODUCT_IMAGE_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
             dimensions: { width, height },
           });
           return;
@@ -77,7 +68,6 @@ const validateProductImageDimensions = (file) => {
         resolve({
           valid: true,
           dimensions: { width, height },
-          isRecommended: width === PRODUCT_IMAGE_DIMENSIONS.recommended.width && height === PRODUCT_IMAGE_DIMENSIONS.recommended.height,
         });
       };
       img.src = e.target.result;
@@ -511,7 +501,7 @@ export default function Variants({ showToast }) {
         <p style={{ color: KM.muted, fontSize: 13 }}>Loading…</p>
       ) : (
         <DataTable
-          columns={['No.', 'Image', 'Product', 'Variant', 'MRP', 'Sale Price', 'Stock', 'Sold Qty', 'SKU', 'Status', 'Actions']}
+          columns={['No.', 'Image', 'Product', 'Variant', 'MRP', 'Sale Price', 'Stock', 'SKU', 'Status', 'Actions']}
           initialRows={filtered}
           renderRow={(row, i) => (
             <tr key={row.id}>
@@ -534,17 +524,6 @@ export default function Variants({ showToast }) {
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: stockColor(row.stock) }} />
                   {row.stock ?? 0}
                 </div>
-              </td>
-              <td>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  minWidth: 28, padding: '2px 8px',
-                  background: (row.soldQuantity || 0) > 0 ? '#EDE9FE' : '#F3F4F6',
-                  color:      (row.soldQuantity || 0) > 0 ? '#6D28D9'  : KM.muted,
-                  borderRadius: 20, fontSize: 12, fontWeight: 700,
-                }}>
-                  {row.soldQuantity || 0}
-                </span>
               </td>
               <td style={{ fontSize: 11, color: KM.muted, fontFamily: 'monospace' }}>{row.sku || '—'}</td>
               <td>

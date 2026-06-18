@@ -18,7 +18,7 @@ function ImageUploadField({ label = 'Image', imageFile, preview, fileInputRef, o
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             style={{ display: 'none' }}
             onChange={onFileChange}
           />

@@ -13,7 +13,7 @@ function CustomTooltip({ active, payload, label }) {
     <div style={{ background: '#1b2431', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px 14px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
       <p style={{ margin: 0, fontSize: 11, color: '#9ca3af', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{label}</p>
       <p style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 700, color: '#fff' }}>
-        {payload[0].value} <span style={{ fontSize: 12, color: '#9ca3af' }}>orders</span>
+        {payload[0].value} <span style={{ fontSize: 12, color: '#9ca3af' }}>Orders</span>
       </p>
     </div>
   );

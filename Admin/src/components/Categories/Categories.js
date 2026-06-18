@@ -11,11 +11,11 @@ const BASE_URL = process.env.REACT_APP_IMG_URL;
 
 // Category Image Dimension Validator (400×400px square)
 const CATEGORY_IMAGE_DIMENSIONS = {
-  recommended: { width: 400, height: 400 },
-  minimum: { width: 200, height: 200 },
+  width: 400,
+  height: 400,
   aspectRatio: 1 / 1,
   tolerance: 0.05,
-  maxFileSize: 3 * 1024 * 1024, // 3MB
+  maxFileSize: 3 * 1024 * 1024,
   formats: ['image/jpeg', 'image/webp','image/png'],
 };
 
@@ -48,21 +48,11 @@ const validateCategoryImageDimensions = (file) => {
         const expectedRatio = CATEGORY_IMAGE_DIMENSIONS.aspectRatio;
         const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
 
-        // Check minimum dimensions
-        if (width < CATEGORY_IMAGE_DIMENSIONS.minimum.width || height < CATEGORY_IMAGE_DIMENSIONS.minimum.height) {
-          resolve({
-            valid: false,
-            error: `Image too small. Minimum: ${CATEGORY_IMAGE_DIMENSIONS.minimum.width}×${CATEGORY_IMAGE_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
-            dimensions: { width, height },
-          });
-          return;
-        }
-
         // Check aspect ratio (1:1 square)
         if (ratioDiff > CATEGORY_IMAGE_DIMENSIONS.tolerance) {
           resolve({
             valid: false,
-            error: `Incorrect aspect ratio. Use 1:1 square (e.g., ${width}×${width}px or ${CATEGORY_IMAGE_DIMENSIONS.recommended.width}×${CATEGORY_IMAGE_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            error: `Incorrect aspect ratio. Use 1:1 square (${CATEGORY_IMAGE_DIMENSIONS.width}×${CATEGORY_IMAGE_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
             dimensions: { width, height },
           });
           return;
@@ -71,7 +61,6 @@ const validateCategoryImageDimensions = (file) => {
         resolve({
           valid: true,
           dimensions: { width, height },
-          isRecommended: width === CATEGORY_IMAGE_DIMENSIONS.recommended.width && height === CATEGORY_IMAGE_DIMENSIONS.recommended.height,
         });
       };
       img.src = e.target.result;
@@ -265,7 +254,7 @@ const handleDelete = async (catId) => {
                 }}
                 onClear={handleClearImage}
                 validation={imageDimensions}
-                requirements="Recommended: 400×400px (1:1) • Min: 200×200px • Max: 3MB (JPG/WebP)"
+                requirements="400×400px (1:1) • Max: 3MB (JPG/WebP)"
               />
 
               {/* Properly Aligned Form Actions */}

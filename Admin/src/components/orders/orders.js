@@ -6,7 +6,8 @@ import DataTable from '../DataTable/DataTable';
 import { fetchOrders, changeOrderStatus, changeOrderItemStatus } from '../../redux/services/ordersService';
 import { renderVariantLabel } from '../Products/VariantBuilder';
 
-const STATUS_OPTIONS = ['confirmed','shipped','processing', 'delivered', 'cancelled', 'returned'];
+// ✅ Removed 'returned' from STATUS_OPTIONS
+const STATUS_OPTIONS = ['confirmed','shipped','processing', 'delivered', 'cancelled'];
 const labelFor = s => ({
   confirmed: 'Confirmed',
   shipped: 'Shipped',
@@ -148,16 +149,13 @@ export default function Orders({ status = null }) {
     if (!currentOrder || currentOrder.status === newStatus || updatingOrderId === orderId) return;
 
     setUpdatingOrderId(orderId);
-    await toast.promise(
-      dispatch(changeOrderStatus({ id: orderId, status: newStatus })),
-      {
-        loading: `Updating to ${labelFor(newStatus)}…`,
-        success: `Order status updated to ${labelFor(newStatus)}`,
-        error: (err) => err?.response?.data?.message || 'Failed to update order status',
-      }
-    ).finally(() => {
+    try {
+      await dispatch(changeOrderStatus({ id: orderId, status: newStatus }));
+    } catch (error) {
+      console.error('Failed to update order status:', error);
+    } finally {
       setUpdatingOrderId(current => current === orderId ? null : current);
-    });
+    }
   };
 
   const updateItemStatus = async (orderId, itemId, newStatus) => {
@@ -220,6 +218,14 @@ export default function Orders({ status = null }) {
                         ))}
                       </select>
                       <span className="km-status-chevron">▾</span>
+                      {isUpdatingStatus && (
+                        <span className="km-status-spinner">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="2" opacity="0.2" />
+                            <path d="M 8 1.5 A 6.5 6.5 0 0 1 13.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          </svg>
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="td-muted">

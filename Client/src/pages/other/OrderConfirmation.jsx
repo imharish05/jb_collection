@@ -59,7 +59,7 @@ const resolveVariantTags = (item) => {
 // ── Status Tracker ────────────────────────────────────────────────────────────
 const STATUSES = ["confirmed", "processing", "shipped", "processing", "delivered"];
 const STATUS_LABELS = {
-  pending:    "Order Confirmed",
+  pending:    "Order Pending",
   confirmed:  "Order Confirmed",
   processing: "Out for Delivery",
   shipped:    "Shipped",
@@ -267,42 +267,43 @@ useEffect(() => {
                                 <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: variantTags.length ? 6 : 0 }}>
                                   {item.name}
                                 </div>
-                                {variantTags.length > 0 && (
-                                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                                    {variantTags.map((tag, ti) => {
-                                      const isCol = isColourKey(tag.key);
-                                      const hasPreview = isCol && isHexColor(tag.val);
-                                      const displayVal = hasPreview ? tag.val.toUpperCase() : tag.val;
-                                      return (
-                                        <span key={ti} style={{
-                                          display: "inline-flex", alignItems: "center", gap: 3,
-                                          fontSize: 11, fontWeight: 500, color: "#555",
-                                          background: "#f4f4f6", border: "1px solid #e4e4e8",
-                                          borderRadius: 20, padding: "2px 9px", lineHeight: 1.6,
-                                        }}>
-                                          <span style={{ color: "#999", fontWeight: 400 }}>{tag.key}:</span>
-                                          {hasPreview && (
-                                            <span
-                                              style={{
-                                                width: 12,
-                                                height: 12,
-                                                borderRadius: '50%',
-                                                border: '1px solid #dcdcdc',
-                                                backgroundColor: displayVal,
-                                                display: 'inline-block',
-                                                marginLeft: 2,
-                                                marginRight: 2,
-                                                flexShrink: 0,
-                                              }}
-                                            />
-                                          )}
-                                          {/* <span>{displayVal}</span> */}
-                                          <span>{displayVal}</span>
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                )}
+{variantTags.length > 0 && (
+  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+    {variantTags.map((tag, ti) => {
+      const isCol = isColourKey(tag.key);
+      const hasPreview = isCol && isHexColor(tag.val);
+      const displayVal = hasPreview ? tag.val.toUpperCase() : tag.val;
+      return (
+        <span key={ti} style={{
+          display: "inline-flex", alignItems: "center", gap: 3,
+          fontSize: 11, fontWeight: 500, color: "#555",
+          background: "#f4f4f6", border: "1px solid #e4e4e8",
+          borderRadius: 20, padding: "2px 9px", lineHeight: 1.6,
+        }}>
+          <span style={{ color: "#999", fontWeight: 400 }}>{tag.key}:</span>
+          {hasPreview ? (
+            // Color: show only swatch, no hex text
+            <span
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                border: '1px solid #dcdcdc',
+                backgroundColor: displayVal,
+                display: 'inline-block',
+                flexShrink: 0,
+              }}
+              title={displayVal}
+            />
+          ) : (
+            // Non-color: show value text
+            <span>{displayVal}</span>
+          )}
+        </span>
+      );
+    })}
+  </div>
+)}
                               </div>
                             </div>
                           </td>

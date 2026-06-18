@@ -8,11 +8,11 @@ const BASE_URL = process.env.REACT_APP_IMG_URL;
 
 // Event Image Dimension Validator (400×400px square)
 const EVENT_IMAGE_DIMENSIONS = {
-  recommended: { width: 400, height: 400 },
-  minimum: { width: 200, height: 200 },
+  width: 400,
+  height: 400,
   aspectRatio: 1 / 1,
   tolerance: 0.05,
-  maxFileSize: 3 * 1024 * 1024, // 3MB
+  maxFileSize: 3 * 1024 * 1024,
   formats: ['image/jpeg', 'image/webp','image/png'],
 };
 
@@ -45,21 +45,11 @@ const validateEventImageDimensions = (file) => {
         const expectedRatio = EVENT_IMAGE_DIMENSIONS.aspectRatio;
         const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
 
-        // Check minimum dimensions
-        if (width < EVENT_IMAGE_DIMENSIONS.minimum.width || height < EVENT_IMAGE_DIMENSIONS.minimum.height) {
-          resolve({
-            valid: false,
-            error: `Image too small. Minimum: ${EVENT_IMAGE_DIMENSIONS.minimum.width}×${EVENT_IMAGE_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
-            dimensions: { width, height },
-          });
-          return;
-        }
-
         // Check aspect ratio (1:1 square)
         if (ratioDiff > EVENT_IMAGE_DIMENSIONS.tolerance) {
           resolve({
             valid: false,
-            error: `Incorrect aspect ratio. Use 1:1 square (e.g., ${width}×${width}px or ${EVENT_IMAGE_DIMENSIONS.recommended.width}×${EVENT_IMAGE_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            error: `Incorrect aspect ratio. Use 1:1 square (${EVENT_IMAGE_DIMENSIONS.width}×${EVENT_IMAGE_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
             dimensions: { width, height },
           });
           return;
@@ -68,7 +58,6 @@ const validateEventImageDimensions = (file) => {
         resolve({
           valid: true,
           dimensions: { width, height },
-          isRecommended: width === EVENT_IMAGE_DIMENSIONS.recommended.width && height === EVENT_IMAGE_DIMENSIONS.recommended.height,
         });
       };
       img.src = e.target.result;
@@ -263,7 +252,7 @@ export default function EventCategories({ showToast }) {
               </div>
 
               <div className="km-field km-field-full">
-                <label className="km-label">Event Image • Recommended: 400×400px (1:1) • Min: 200×200px • Max: 3MB (JPG/WebP)</label>
+                <label className="km-label">Event Image • 400×400px (1:1) • Max: 3MB (JPG/WebP)</label>
                 <div className="upload-grid-wrapper">
                   <div
                     className={`drop-zone-area ${imageFile ? 'active-file' : ''} ${dragActive ? 'drag-active' : ''}`}
@@ -281,7 +270,7 @@ export default function EventCategories({ showToast }) {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp"
                       style={{ display: 'none' }}
                       onChange={e => {
                         const f = e.target.files[0];

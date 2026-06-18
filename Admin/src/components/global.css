@@ -826,6 +826,26 @@ body {
   opacity: 0.6;
 }
 
+.km-status-spinner {
+  position: absolute;
+  right: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: currentColor;
+  pointer-events: none;
+}
+
+.km-status-spinner svg {
+  animation: km-spin 0.8s linear infinite;
+}
+
+@keyframes km-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Per-status colours */
 .km-status-pending  { background: #fff8e1; color: #b45309; border-color: #fde68a; }
 .km-status-confirmed { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }

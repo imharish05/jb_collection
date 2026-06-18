@@ -30,14 +30,24 @@ const LIMITS = {
 
 // Banner Image Dimension Validator
 const BANNER_DIMENSIONS = {
-  recommended: { width: 1920, height: 1080 },
-  minimum: { width: 1280, height: 720 },
+  width: 1920,
+  height: 1080,
   aspectRatio: 16 / 9,
-  tolerance: 0.05, // 5% tolerance for aspect ratio
+  tolerance: 0.05,
+  maxFileSize: 3 * 1024 * 1024,
+  formats: ['image/jpeg', 'image/webp', 'image/png'],
 };
 
 const validateImageDimensions = (file) => {
   return new Promise((resolve) => {
+    if (file.size > BANNER_DIMENSIONS.maxFileSize) {
+      resolve({ valid: false, error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB` });
+      return;
+    }
+    if (!BANNER_DIMENSIONS.formats.includes(file.type)) {
+      resolve({ valid: false, error: `Invalid format. Use JPG, PNG or WebP. You uploaded: ${file.type || 'unknown'}` });
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -47,22 +57,12 @@ const validateImageDimensions = (file) => {
         const expectedRatio = BANNER_DIMENSIONS.aspectRatio;
         const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
 
-        // Check minimum dimensions
-        if (width < BANNER_DIMENSIONS.minimum.width || height < BANNER_DIMENSIONS.minimum.height) {
-          resolve({
-            valid: false,
-            error: `Image too small. Minimum: ${BANNER_DIMENSIONS.minimum.width}×${BANNER_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
-            dimensions: { width, height },
-          });
-          return;
-        }
-
         // Check aspect ratio
         if (ratioDiff > BANNER_DIMENSIONS.tolerance) {
           const recommendedHeight = Math.round(width / expectedRatio);
           resolve({
             valid: false,
-            error: `Incorrect aspect ratio. Use 16:9 (e.g., ${width}×${recommendedHeight}px or ${BANNER_DIMENSIONS.recommended.width}×${BANNER_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            error: `Incorrect aspect ratio. Use 16:9 (${BANNER_DIMENSIONS.width}×${BANNER_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
             dimensions: { width, height },
           });
           return;
@@ -71,7 +71,6 @@ const validateImageDimensions = (file) => {
         resolve({
           valid: true,
           dimensions: { width, height },
-          isRecommended: width === BANNER_DIMENSIONS.recommended.width && height === BANNER_DIMENSIONS.recommended.height,
         });
       };
       img.src = e.target.result;
@@ -276,7 +275,7 @@ export default function HeroSlider({ showToast }) {
                 }}
                 onClear={handleClearImage}
                 validation={imageDimensions}
-                requirements={`${BANNER_DIMENSIONS.recommended.width}×${BANNER_DIMENSIONS.recommended.height}px (16:9) • Min: ${BANNER_DIMENSIONS.minimum.width}×${BANNER_DIMENSIONS.minimum.height}px • Max: 3MB`}
+                requirements={`${BANNER_DIMENSIONS.width}×${BANNER_DIMENSIONS.height}px (16:9) • Max: 3MB`}
               />
 
               {/* Title */}

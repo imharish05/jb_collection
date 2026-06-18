@@ -14,11 +14,11 @@ const IMG_URL = process.env.REACT_APP_IMG_URL;
 
 // Product Image Dimension Validator (800×960px 5:6 portrait)
 const PRODUCT_IMAGE_DIMENSIONS = {
-  recommended: { width: 800, height: 960 },
-  minimum: { width: 400, height: 480 },
+  width: 800,
+  height: 960,
   aspectRatio: 5 / 6,
   tolerance: 0.05,
-  maxFileSize: 3 * 1024 * 1024, // 3MB
+  maxFileSize: 3 * 1024 * 1024,
   formats: ['image/jpeg', 'image/webp','image/png'],
 };
 
@@ -51,22 +51,11 @@ const validateProductImageDimensions = (file) => {
         const expectedRatio = PRODUCT_IMAGE_DIMENSIONS.aspectRatio;
         const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
 
-        // Check minimum dimensions
-        if (width < PRODUCT_IMAGE_DIMENSIONS.minimum.width || height < PRODUCT_IMAGE_DIMENSIONS.minimum.height) {
-          resolve({
-            valid: false,
-            error: `Image too small. Minimum: ${PRODUCT_IMAGE_DIMENSIONS.minimum.width}×${PRODUCT_IMAGE_DIMENSIONS.minimum.height}px. You have: ${width}×${height}px`,
-            dimensions: { width, height },
-          });
-          return;
-        }
-
         // Check aspect ratio (5:6)
         if (ratioDiff > PRODUCT_IMAGE_DIMENSIONS.tolerance) {
-          const recommendedHeight = Math.round(width / expectedRatio);
           resolve({
             valid: false,
-            error: `Incorrect aspect ratio. Use 5:6 portrait (e.g., ${width}×${recommendedHeight}px or ${PRODUCT_IMAGE_DIMENSIONS.recommended.width}×${PRODUCT_IMAGE_DIMENSIONS.recommended.height}px). Yours: ${width}×${height}px`,
+            error: `Incorrect aspect ratio. Use 5:6 portrait (${PRODUCT_IMAGE_DIMENSIONS.width}×${PRODUCT_IMAGE_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
             dimensions: { width, height },
           });
           return;
@@ -75,7 +64,6 @@ const validateProductImageDimensions = (file) => {
         resolve({
           valid: true,
           dimensions: { width, height },
-          isRecommended: width === PRODUCT_IMAGE_DIMENSIONS.recommended.width && height === PRODUCT_IMAGE_DIMENSIONS.recommended.height,
         });
       };
       img.src = e.target.result;
@@ -954,7 +942,7 @@ export default function Products({ showToast }) {
               </div>
 
               {/* Hidden file input - product images handled per-variant */}
-              <input ref={fileInputRef} type="file" multiple accept="image/*"
+              <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp"
                 style={{ display: 'none' }} onChange={handleFileChange} />
 
               <div className="km-form-actions km-field-full" style={{display : "flex",gap : "10px"}}>
