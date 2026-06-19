@@ -1,6 +1,15 @@
 const { Op, fn, col, literal } = require("sequelize");
 const XLSX = require("xlsx");
 const { Order, OrderItem, Product, Variant, User } = require("../models");
+const {
+  getRazorpay,
+  buildRazorpayDateRange,
+  fetchAllRazorpayPayments,
+  paymentAmount,
+  getDbOrderId,
+  summarizeRazorpayPayments,
+  resolveDbOrderIds,
+} = require("../utils/razorpayReports");
 
 function buildDateWhere(query) {
   const { dateRange, from, to } = query;
@@ -73,19 +82,28 @@ const salesReport = async (req, res) => {
       order: [["createdAt","DESC"]],
     });
 
-    const rows = orders.map(o => ({
-      "Order ID":         o.id,
-      "Customer Name":    o.User?.name  || "Guest",
-      "Customer Email":   o.User?.email || "—",
-      "Order Date":       fmtDate(o.createdAt),
-      "Payment Method":   o.paymentMethod || "—",
-      "Order Status":     o.status || "—",
-      "Subtotal (₹)":    parseFloat(o.subtotal      || 0).toFixed(2),
-      "Discount (₹)":    parseFloat(o.discount      || 0).toFixed(2),
-      "Tax (₹)":          parseFloat(o.tax           || 0).toFixed(2),
-      "Shipping (₹)":    parseFloat(o.shippingCharge || o.shippingCost || 0).toFixed(2),
-      "Final Amount (₹)": parseFloat(o.totalAmount   || o.total || 0).toFixed(2),
-    }));
+    const rows = orders.map(o => {
+      let subtotal = 0;
+      if (o.items && o.items.length) {
+        subtotal = o.items.reduce((sum, item) => sum + parseFloat(item.price || 0) * item.quantity, 0);
+      } else {
+        subtotal = parseFloat(o.totalAmount || 0) - parseFloat(o.shippingCharge || 0) + parseFloat(o.couponDiscount || 0) - parseFloat(o.taxAmount || 0);
+      }
+
+      return {
+        "Order ID":         o.id,
+        "Customer Name":    o.User?.name  || "Guest",
+        "Customer Email":   o.User?.email || "—",
+        "Order Date":       fmtDate(o.createdAt),
+        "Payment Method":   o.paymentMethod || "—",
+        "Order Status":     o.status || "—",
+        "Subtotal (₹)":    parseFloat(subtotal).toFixed(2),
+        "Discount (₹)":    parseFloat(o.couponDiscount || 0).toFixed(2),
+        "Tax (₹)":          parseFloat(o.taxAmount || 0).toFixed(2),
+        "Shipping (₹)":    parseFloat(o.shippingCharge || 0).toFixed(2),
+        "Final Amount (₹)": parseFloat(o.totalAmount || 0).toFixed(2),
+      };
+    });
 
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
@@ -109,12 +127,13 @@ const productSalesReport = async (req, res) => {
         "productId",
         ["selected_variant_id", "variantId"],
         "productName",
+        "isCombo",
         [fn("SUM", col("OrderItem.quantity")),                               "qtySold"],
         [fn("COUNT", fn("DISTINCT", col("OrderItem.order_id"))),             "totalOrders"],
-        [fn("SUM", literal("OrderItem.quantity * OrderItem.sales_price")),   "revenue"],
+        [fn("SUM", literal("OrderItem.quantity * COALESCE(OrderItem.sales_price, OrderItem.price, 0)")), "revenue"],
       ],
       include: [{ model: Order, attributes: [], where: orderWhere, required: true }],
-      group: ["productId","selected_variant_id","productName"],
+      group: ["productId","selected_variant_id","productName","isCombo"],
       order: [[literal("revenue"),"DESC"]],
       raw: true,
     });
@@ -126,15 +145,31 @@ const productSalesReport = async (req, res) => {
       vs.forEach(v => { varMap[String(v.id)] = v; });
     }
 
+    const productIds = [...new Set(rows.map(r => r.productId).filter(Boolean))];
+    const prodMap = {};
+    if (productIds.length) {
+      const ps = await Product.findAll({ where: { id: productIds }, attributes: ["id","stock"], raw: true });
+      ps.forEach(p => { prodMap[String(p.id)] = p; });
+    }
+
     const data = rows.map(r => {
       const v = varMap[String(r.variantId)] || {};
+      const p = prodMap[String(r.productId)] || {};
+      
+      let currentStock = "—";
+      if (r.variantId) {
+        currentStock = v.stock ?? "—";
+      } else if (!r.isCombo) {
+        currentStock = p.stock ?? "—";
+      }
+
       return {
         "Product Name":    r.productName || "—",
-        "Variant":         v.variantName || "Default",
+        "Variant":         r.isCombo ? "Combo" : (v.variantName || "Default"),
         "Qty Sold":        parseInt(r.qtySold)     || 0,
         "Total Orders":    parseInt(r.totalOrders) || 0,
         "Revenue (₹)":    parseFloat(r.revenue     || 0).toFixed(2),
-        "Current Stock":   v.stock ?? "—",
+        "Current Stock":   currentStock,
       };
     });
 
@@ -284,4 +319,287 @@ const reportFilters = async (req, res) => {
   }
 };
 
-module.exports = { salesReport, productSalesReport, reportsOverview, topProducts, reportFilters };
+
+// ── 5. Successful Payments Report (Razorpay) ─────────────────────────────────
+const successfulPayments = async (req, res) => {
+  try {
+    const { format = "xlsx" } = req.query;
+    const razorpay = getRazorpay();
+    if (!razorpay) {
+      return res.status(503).json({ message: "Razorpay is not configured" });
+    }
+
+    const range = buildRazorpayDateRange(req.query);
+    const payments = await fetchAllRazorpayPayments(razorpay, range);
+    const captured = payments.filter(p => p.status === "captured");
+    const orderNotesMap = await resolveDbOrderIds(razorpay, captured);
+
+    const orderIds = [...new Set(captured.map(p => getDbOrderId(p, orderNotesMap)).filter(Boolean))];
+    const orderMap = {};
+    if (orderIds.length) {
+      const orders = await Order.findAll({
+        where: { id: orderIds },
+        include: [{ model: User, attributes: ["id", "name", "email", "phone"], required: false }],
+      });
+      orders.forEach(o => { orderMap[o.id] = o; });
+    }
+
+    const rows = captured.map(p => {
+      const dbOrderId = getDbOrderId(p, orderNotesMap);
+      const o = dbOrderId ? orderMap[dbOrderId] : null;
+      return {
+        "Payment ID":       p.id,
+        "Order ID":         dbOrderId || "—",
+        "Customer Name":    o?.User?.name  || "Guest",
+        "Customer Email":   o?.User?.email || "—",
+        "Customer Phone":   o?.User?.phone || "—",
+        "Payment Date":     fmtDate(p.created_at ? p.created_at * 1000 : null),
+        "Payment Method":   p.method || "—",
+        "Order Status":     o?.status || "—",
+        "Amount (₹)":      paymentAmount(p).toFixed(2),
+        "Payment Status":   "Successful",
+        "Razorpay Order ID": p.order_id || "—",
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Successful Payments");
+    sendWorkbook(res, wb, "Successful Payments", `Successful_Payments_${Date.now()}`, format);
+  } catch (e) {
+    console.error("successfulPayments error:", e);
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// ── 6. Failed Payments Report (Razorpay) ─────────────────────────────────────
+const failedPayments = async (req, res) => {
+  try {
+    const { format = "xlsx" } = req.query;
+    const razorpay = getRazorpay();
+    if (!razorpay) {
+      return res.status(503).json({ message: "Razorpay is not configured" });
+    }
+
+    const range = buildRazorpayDateRange(req.query);
+    const payments = await fetchAllRazorpayPayments(razorpay, range);
+    const failed = payments.filter(p => p.status === "failed");
+    const orderNotesMap = await resolveDbOrderIds(razorpay, failed);
+
+    const orderIds = [...new Set(failed.map(p => getDbOrderId(p, orderNotesMap)).filter(Boolean))];
+    const orderMap = {};
+    if (orderIds.length) {
+      const orders = await Order.findAll({
+        where: { id: orderIds },
+        include: [{ model: User, attributes: ["id", "name", "email", "phone"], required: false }],
+      });
+      orders.forEach(o => { orderMap[o.id] = o; });
+    }
+
+    const rows = failed.map(p => {
+      const dbOrderId = getDbOrderId(p, orderNotesMap);
+      const o = dbOrderId ? orderMap[dbOrderId] : null;
+      const reason = p.error_description || p.error_reason || p.description || "Payment failed";
+      return {
+        "Payment ID":       p.id,
+        "Order ID":         dbOrderId || "—",
+        "Customer Name":    o?.User?.name  || "Guest",
+        "Customer Email":   o?.User?.email || "—",
+        "Customer Phone":   o?.User?.phone || "—",
+        "Payment Date":     fmtDate(p.created_at ? p.created_at * 1000 : null),
+        "Payment Method":   p.method || "—",
+        "Order Status":     o?.status || "—",
+        "Amount (₹)":      paymentAmount(p).toFixed(2),
+        "Payment Status":   "Failed",
+        "Razorpay Order ID": p.order_id || "—",
+        "Failure Reason":   reason,
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Failed Payments");
+    sendWorkbook(res, wb, "Failed Payments", `Failed_Payments_${Date.now()}`, format);
+  } catch (e) {
+    console.error("failedPayments error:", e);
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// ── 7. Financial Summary Report (Razorpay) ─────────────────────────────────────
+const financialSummary = async (req, res) => {
+  try {
+    const { format = "xlsx" } = req.query;
+    const razorpay = getRazorpay();
+    if (!razorpay) {
+      return res.status(503).json({ message: "Razorpay is not configured" });
+    }
+
+    const range = buildRazorpayDateRange(req.query);
+    const payments = await fetchAllRazorpayPayments(razorpay, range);
+    const { successCount, failedCount, successAmount, failedAmount } = summarizeRazorpayPayments(payments);
+
+    const rows = [
+      { "Metric": "Successful Payments", "Count": successCount, "Amount (₹)": successAmount.toFixed(2) },
+      { "Metric": "Failed Payments",     "Count": failedCount,  "Amount (₹)": failedAmount.toFixed(2) },
+      { "Metric": "Net Collected",       "Count": successCount, "Amount (₹)": successAmount.toFixed(2) },
+      { "Metric": "Total Attempts",      "Count": successCount + failedCount, "Amount (₹)": (successAmount + failedAmount).toFixed(2) },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Financial Summary");
+    sendWorkbook(res, wb, "Financial Summary", `Financial_Summary_${Date.now()}`, format);
+  } catch (e) {
+    console.error("financialSummary error:", e);
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// ── 8. Payment Report ─────────────────────────────────────────
+const paymentReport = async (req, res) => {
+  try {
+    const { format = "xlsx", status } = req.query;
+    const dateWhere   = buildDateWhere(req.query);
+    const statusWhere = status && status !== "all" ? { paymentStatus: status } : {};
+
+    const orders = await Order.findAll({
+      where: { ...dateWhere, ...statusWhere },
+      include: [
+        { model: User, attributes: ["id","name","email"], required: false },
+      ],
+      order: [["createdAt","DESC"]],
+    });
+
+    const rows = orders.map(o => {
+      const isPrepaid = (o.paymentType || '').toUpperCase() === 'PREPAID' || o.paymentMethod !== 'partial_cod';
+      const rzpPaid = o.advancePaid ? parseFloat(o.advancePaid) : (isPrepaid && o.paymentStatus === 'paid' ? parseFloat(o.totalAmount || 0) : 0);
+      const codDue = o.codAmount ? parseFloat(o.codAmount) : (!isPrepaid ? parseFloat(o.totalAmount || 0) - rzpPaid : 0);
+
+      return {
+        "Order ID":         o.id,
+        "Customer Name":    o.User?.name  || "Guest",
+        "Customer Email":   o.User?.email || "—",
+        "Payment ID (Razorpay)": o.razorpayPaymentId || "—",
+        "Order Date":       fmtDate(o.createdAt),
+        "Payment Method":   o.paymentMethod || "—",
+        "Payment Status":   o.paymentStatus || "—",
+        "Total Amount (₹)":  parseFloat(o.totalAmount || 0).toFixed(2),
+        "Razorpay Paid (₹)": parseFloat(rzpPaid).toFixed(2),
+        "Due on Delivery (₹)": parseFloat(Math.max(0, codDue)).toFixed(2),
+        "COD Collected?":   o.codCollected ? "Yes" : "No",
+        "Failure Reason":   o.paymentFailureReason || "—",
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Payments");
+
+    // Add separate summary sheet (xlsx only)
+    if (format === "xlsx") {
+      let totalSuccessfulAmount = 0;
+      let totalSuccessfulCount = 0;
+      let totalFailedCount = 0;
+      let totalFailedAmount = 0;
+      const methodStats = {};
+
+      orders.forEach(o => {
+        const amt = parseFloat(o.totalAmount || 0);
+        const adv = parseFloat(o.advancePaid || 0);
+        const cod = parseFloat(o.codAmount || 0);
+        const isPartialCod = o.paymentType === 'PARTIAL_COD';
+        const statusVal = o.paymentStatus;
+        const method = o.paymentMethod || "Unknown";
+
+        if (!methodStats[method]) {
+          methodStats[method] = { successfulAmount: 0, successfulCount: 0, failedAmount: 0, failedCount: 0 };
+        }
+
+        if (statusVal === 'paid') {
+          totalSuccessfulAmount += amt;
+          totalSuccessfulCount++;
+          methodStats[method].successfulAmount += amt;
+          methodStats[method].successfulCount++;
+        } else if (statusVal === 'partial') {
+          // Online advance payment successful, remaining COD is pending
+          totalSuccessfulAmount += adv;
+          totalSuccessfulCount++;
+          methodStats[method].successfulAmount += adv;
+          methodStats[method].successfulCount++;
+        } else if (statusVal === 'failed') {
+          if (isPartialCod && adv > 0) {
+            // Online advance was successfully captured, but the cash delivery part failed
+            totalSuccessfulAmount += adv;
+            totalSuccessfulCount++;
+            methodStats[method].successfulAmount += adv;
+            methodStats[method].successfulCount++;
+
+            totalFailedAmount += cod;
+            totalFailedCount++;
+            methodStats[method].failedAmount += cod;
+            methodStats[method].failedCount++;
+          } else {
+            totalFailedAmount += amt;
+            totalFailedCount++;
+            methodStats[method].failedAmount += amt;
+            methodStats[method].failedCount++;
+          }
+        }
+      });
+
+      const totalAttempts = totalSuccessfulCount + totalFailedCount;
+      const successRate = totalAttempts > 0 ? (totalSuccessfulCount / totalAttempts) * 100 : 0;
+
+      const summaryRows = [
+        { "Metric": "Total Successful Amount (₹)", "Value": totalSuccessfulAmount.toFixed(2) },
+        { "Metric": "Total Successful Count",     "Value": totalSuccessfulCount },
+        { "Metric": "Total Failed Amount (₹)",     "Value": totalFailedAmount.toFixed(2) },
+        { "Metric": "Total Failed Count",         "Value": totalFailedCount },
+        { "Metric": "Success Rate (%)",           "Value": successRate.toFixed(2) + "%" },
+        { "Metric": "", "Value": "" },
+        { "Metric": "Breakdown by Payment Method", "Value": "" }
+      ];
+
+      Object.entries(methodStats).forEach(([method, stats]) => {
+        summaryRows.push({
+          "Metric": `  Method: ${method} - Success Count`,
+          "Value": stats.successfulCount
+        });
+        summaryRows.push({
+          "Metric": `  Method: ${method} - Success Amount (₹)`,
+          "Value": stats.successfulAmount.toFixed(2)
+        });
+        summaryRows.push({
+          "Metric": `  Method: ${method} - Failed Count`,
+          "Value": stats.failedCount
+        });
+        summaryRows.push({
+          "Metric": `  Method: ${method} - Failed Amount (₹)`,
+          "Value": stats.failedAmount.toFixed(2)
+        });
+      });
+
+      const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+    }
+
+    sendWorkbook(res, wb, "Payments", `Payments_Report_${Date.now()}`, format);
+  } catch (e) {
+    console.error("paymentReport error:", e);
+    res.status(500).json({ message: e.message });
+  }
+};
+
+module.exports = {
+  buildDateWhere,
+  salesReport,
+  productSalesReport,
+  reportsOverview,
+  topProducts,
+  reportFilters,
+  successfulPayments,
+  failedPayments,
+  financialSummary,
+  paymentReport,
+};

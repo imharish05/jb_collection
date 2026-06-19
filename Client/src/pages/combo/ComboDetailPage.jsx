@@ -21,6 +21,7 @@ import { addToCart, addToCartSilent, replaceCart } from "../../store/slices/cart
 import api from "../../api/axios";
 import cogoToast from "cogo-toast";
 import ProductImageGallerySideThumb from "../../components/product/ProductImageGallerySideThumb";
+import { isColourKey, isHexColor } from "../../helpers/product"; // Add this import
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -74,7 +75,86 @@ function isOutOfStock(cp) {
   return Number(stock) === 0;
 }
 
-// ComboImageGallery removed in favor of ProductImageGallerySideThumb
+// ── Variant display component (matches cart/checkout) ──────────────────────
+const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
+  if (!attrs || attrs.length === 0) return null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+      {attrs.map((a, i) => {
+        const isCol = isColourKey(a.key);
+        const hasPreview = isCol && isHexColor(a.val);
+        const displayVal = hasPreview ? a.val.toUpperCase() : a.val;
+        return (
+          <span
+            key={i}
+            style={{
+              fontSize,
+              color: "#555",
+              background: "#f5f5f7",
+              border: "1px solid #e8e8e8",
+              borderRadius: 5,
+              padding: "2px 8px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              fontWeight: 500,
+            }}
+          >
+            <span>{a.key}:</span>
+            {hasPreview ? (
+              <span
+                style={{
+                  width: swatchSize,
+                  height: swatchSize,
+                  borderRadius: "50%",
+                  border: "1px solid #dcdcdc",
+                  backgroundColor: displayVal,
+                  display: "inline-block",
+                  flexShrink: 0,
+                }}
+                title={displayVal}
+              />
+            ) : (
+              <span>{displayVal}</span>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
+};
+
+// ── Helper to get variant attributes (matches cart/checkout) ──────────────
+const getVariantAttributes = (variant) => {
+  if (!variant) return [];
+  
+  // If variant has attributes array
+  if (Array.isArray(variant.attributes) && variant.attributes.length > 0) {
+    return variant.attributes.filter(a => a.key && a.value).map(a => ({ key: a.key, val: a.value }));
+  }
+  
+  // If variant has variantName with colon format
+  if (variant.variantName && variant.variantName.includes(":")) {
+    const seen = new Set();
+    return variant.variantName.split("·").map(part => {
+      const [k, ...rest] = part.split(":").map(s => s.trim());
+      return { key: k, val: rest.join(":").trim() };
+    }).filter(a => {
+      if (!a.key || !a.val) return false;
+      const k = a.key.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }
+  
+  // If variant has single name
+  if (variant.variantName) {
+    return [{ key: "Variant", val: variant.variantName }];
+  }
+  
+  return [];
+};
 
 // ── Fixed combo: included products list
 // Both desktop & mobile: native horizontal scroll, no arrows, equal-height cards
@@ -139,6 +219,10 @@ function FixedProductCard({ cp }) {
   const low = isLowStock(cp);
   const oos = isOutOfStock(cp);
   const qty = cp.quantity || 1;
+  
+  // Get variant attributes for display
+  const variantAttrs = variant ? getVariantAttributes(variant) : [];
+  
   return (
     <div style={{
       border: `2px solid ${oos ? "#fecaca" : "#E5E7EB"}`,
@@ -165,9 +249,10 @@ function FixedProductCard({ cp }) {
         <div style={{ fontSize: 12, fontWeight: 600, color: "#1A1A2E", lineHeight: 1.3, marginBottom: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {prod?.name}
         </div>
-        {variant && (
-          <div style={{ fontSize: 9, color: "#db1a5d", fontWeight: 600, lineHeight: 1.4 }}>
-            {variant.variantName}
+        {/* Display variant attributes like cart/checkout */}
+        {variantAttrs.length > 0 && (
+          <div style={{ marginTop: 2 }}>
+            <VariantChips attrs={variantAttrs} fontSize={9} swatchSize={10} />
           </div>
         )}
         {oos && <div style={{ fontSize: 10, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>Out of stock</div>}
@@ -341,8 +426,10 @@ function MixMatchCard({ cp, selected, onToggle }) {
       : null);
   
   const variantId = cp.variantId || null;
-  
   const oos = isOutOfStock(cp);
+  
+  // Get variant attributes for display
+  const variantAttrs = variant ? getVariantAttributes(variant) : [];
 
   return (
     <div
@@ -369,9 +456,10 @@ function MixMatchCard({ cp, selected, onToggle }) {
         <div style={{ fontSize: 12, fontWeight: 600, color: "#1A1A2E", lineHeight: 1.3, marginBottom: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {prod?.name}
         </div>
-        {variant && (
-          <div style={{ fontSize: 9, color: "#db1a5d", fontWeight: 600, marginBottom: 4, lineHeight: 1.4 }}>
-            {variant.variantName}
+        {/* Display variant attributes like cart/checkout */}
+        {variantAttrs.length > 0 && (
+          <div style={{ marginTop: 2 }}>
+            <VariantChips attrs={variantAttrs} fontSize={9} swatchSize={10} />
           </div>
         )}
         {oos && <div style={{ fontSize: 10, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>Out of stock</div>}
@@ -829,8 +917,6 @@ const ComboDetailPage = () => {
                       {child.comboProducts && child.comboProducts.length > 0 && (
                         <FixedProductsList comboProducts={child.comboProducts} />
                       )}
-
-
 
                       {/* Rule 2 — Low stock warning: remaining qty limited */}
                       {!fixedOos && comboMaxQty < Infinity && comboMaxQty <= 5 && lowStockProducts.length > 0 && (

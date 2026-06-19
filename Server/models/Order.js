@@ -105,6 +105,24 @@ const Order = sequelize.define(
     },
 
     /**
+     * razorpayOrderId: the Razorpay order ID (order_xxx)
+     */
+    razorpayOrderId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "razorpay_order_id",
+    },
+
+    /**
+     * paymentFailureReason: reason for failed payment (if failed)
+     */
+    paymentFailureReason: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "payment_failure_reason",
+    },
+
+    /**
      * codCollected: set true by admin when delivery agent confirms COD collection
      */
     codCollected: {

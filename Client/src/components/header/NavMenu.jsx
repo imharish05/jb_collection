@@ -178,10 +178,6 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
             )}
           </li>
 
-          <li className={isActive(process.env.PUBLIC_URL + "/shop") ? "active" : ""}>
-            <Link to={process.env.PUBLIC_URL + "/shop"}>Shop</Link>
-          </li>
-
           <li className={isActive(process.env.PUBLIC_URL + "/contact") ? "active" : ""}>
             <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
           </li>

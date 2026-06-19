@@ -6,9 +6,10 @@ import DataTable from '../DataTable/DataTable';
 import { fetchOrders, changeOrderStatus, changeOrderItemStatus } from '../../redux/services/ordersService';
 import { renderVariantLabel } from '../Products/VariantBuilder';
 
-// ✅ Removed 'returned' from STATUS_OPTIONS
-const STATUS_OPTIONS = ['confirmed','shipped','processing', 'delivered', 'cancelled'];
+// ✅ Removed 'returned' from STATUS_OPTIONS, added 'pending'
+const STATUS_OPTIONS = ['pending', 'confirmed', 'shipped', 'processing', 'delivered', 'cancelled'];
 const labelFor = s => ({
+  pending: 'Pending',
   confirmed: 'Confirmed',
   shipped: 'Shipped',
   processing: 'Out for Delivery',
@@ -77,6 +78,24 @@ const AddressBlock = ({ addr, fallbackPhone, email }) => {
       {email && <div className="td-muted">{email}</div>}
     </div>
   );
+};
+
+const renderPaymentStatus = (order) => {
+  if (order.status === 'cancelled') {
+    return <span className="status-pill" style={{ background: '#ffebee', color: '#c62828', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>Cancelled</span>;
+  }
+  
+  const status = order.paymentStatus;
+  if (status === 'paid') {
+    return <span className="status-pill" style={{ background: '#e8f5e9', color: '#2e7d32', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>Paid</span>;
+  }
+  if (status === 'failed') {
+    return <span className="status-pill" style={{ background: '#ffebee', color: '#dc2626', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>Failed</span>;
+  }
+  if (status === 'refunded') {
+    return <span className="status-pill" style={{ background: '#f3f4f6', color: '#4b5563', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>Refunded</span>;
+  }
+  return <span className="status-pill" style={{ background: '#fff3e0', color: '#e65100', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>Pending</span>;
 };
 
 export default function Orders({ status = null }) {
@@ -179,7 +198,7 @@ export default function Orders({ status = null }) {
         <p className="km-empty">No orders found.</p>
       ) : (
         <DataTable
-          columns={['#ID', 'Customer', 'Items', 'Total', 'Coupon', 'Status', 'Date', 'Details']}
+          columns={['#ID', 'Customer', 'Items', 'Total', 'Payment Status', 'Coupon', 'Status', 'Date', 'Details']}
           initialRows={rows}
           renderRow={(order) => {
             const billing = order.billingAddress;
@@ -199,6 +218,9 @@ export default function Orders({ status = null }) {
                   </td>
                   <td><span className="km-count-badge">{order.items?.length || 0} items</span></td>
                   <td className="td-price">₹{safeNumber(order.totalAmount).toFixed(2)}</td>
+                  <td>
+                    {renderPaymentStatus(order)}
+                  </td>
                   <td>
                     {order.couponCode
                       ? <span className="status-pill pill-approved">{order.couponCode}</span>
@@ -241,7 +263,7 @@ export default function Orders({ status = null }) {
                 </tr>
                 {isOpen && (
                   <tr key={`${order.id}-detail`}>
-                    <td colSpan={8} className="km-order-detail-cell">
+                    <td colSpan={9} className="km-order-detail-cell">
                       <div className="km-form-card">
                         <div className="km-form-header">
                           <div className="km-form-header-icon">📦</div>
@@ -286,17 +308,50 @@ export default function Orders({ status = null }) {
                             <div className="km-detail-section-title">Items Ordered</div>
                             {order.items?.length > 0
                               ? order.items.map((item, i) => (
-                                <div key={i} className="km-order-item-row">
-                                  <span>
-                                    {item.productName}
-                                    {item.selectedVariantName && (
-                                      <span style={{ marginLeft: 5, fontSize: 10, fontWeight: 700, background: '#e8f0ff', color: '#1A52A8', padding: '1px 6px', borderRadius: 10, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}>
-                                        {renderVariantLabel(item.selectedVariantName, 10, 3)}
-                                      </span>
-                                    )}
-                                    <span className="td-muted"> × {item.quantity}</span>
-                                  </span>
-                                  <span className="td-price-sm">₹{(safeNumber(item.price) * safeNumber(item.quantity, 1)).toFixed(2)}</span>
+                                <div key={i} className="km-order-item-row" style={{ display: 'block', paddingBottom: '10px', borderBottom: '1px solid #f0f0f0', marginBottom: '10px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>
+                                      <strong>{item.productName}</strong>
+                                      {item.selectedVariantName && (
+                                        <span style={{ marginLeft: 5, fontSize: 10, fontWeight: 700, background: '#e8f0ff', color: '#1A52A8', padding: '1px 6px', borderRadius: 10, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}>
+                                          {renderVariantLabel(item.selectedVariantName, 10, 3)}
+                                        </span>
+                                      )}
+                                      <span className="td-muted"> × {item.quantity}</span>
+                                    </span>
+                                    <span className="td-price-sm">₹{(safeNumber(item.price) * safeNumber(item.quantity, 1)).toFixed(2)}</span>
+                                  </div>
+                                  
+                                  {/* Combo products */}
+                                  {(() => {
+                                    let selectedProducts = item.selectedProducts;
+                                    if (typeof selectedProducts === 'string') {
+                                      try { selectedProducts = JSON.parse(selectedProducts); } catch { selectedProducts = null; }
+                                    }
+                                    if (Array.isArray(selectedProducts) && selectedProducts.length > 0) {
+                                      return (
+                                        <div style={{ marginTop: 8, paddingLeft: 12, borderLeft: '2px solid #db1a5d', background: '#fafafa', borderRadius: 4, padding: '6px 10px' }}>
+                                          <div style={{ fontSize: 10, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+                                            Combo Included Products:
+                                          </div>
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                            {selectedProducts.map((p, idx) => (
+                                              <div key={idx} style={{ fontSize: 11, color: '#333', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <span style={{ fontWeight: 600 }}>• {p.name}</span>
+                                                {p.variantName && (
+                                                  <span style={{ fontSize: 9, background: '#fff0f6', color: '#db1a5d', border: '1px solid #ffd6e7', borderRadius: 3, padding: '0px 4px', fontWeight: 600 }}>
+                                                    {p.variantName}
+                                                  </span>
+                                                )}
+                                                <span style={{ color: '#666' }}>×{p.quantity}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
                               ))
                               : <p className="td-muted">No items found</p>}

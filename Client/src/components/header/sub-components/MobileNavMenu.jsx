@@ -222,13 +222,6 @@ const MobileNavMenu = () => {
           )}
         </li>
 
-        {/* Shop */}
-        <li className="mob-nav__item">
-          <Link to={process.env.PUBLIC_URL + "/shop"} className={`mob-nav__link${isActive(process.env.PUBLIC_URL + "/shop") ? " active" : ""}`} onClick={closeMenu}>
-            Shop
-          </Link>
-        </li>
-
         {/* My Account */}
         <li className={`mob-nav__item mob-nav__item--parent${accountOpen ? " mob-nav__item--open" : ""}`}>
           <div className="mob-nav__row">

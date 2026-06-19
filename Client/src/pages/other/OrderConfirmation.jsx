@@ -88,8 +88,19 @@ const generateReceiptText = (state) => {
     `Order ID   : ${referenceSlug || orderId}`,
     `Date       : ${new Date().toLocaleDateString("en-IN")}`,
     "",
-    "--- ITEMS ---",
-    ...cartItems.map(i => `${i.name} x${i.quantity}  ₹${(i.price * i.quantity).toFixed(2)}`),
+    ...cartItems.flatMap(i => {
+      const itemLines = [`${i.name} x${i.quantity}  ₹${(i.price * i.quantity).toFixed(2)}`        ];
+      const selectedProducts = i.selectedProducts ? (typeof i.selectedProducts === 'string' ? parseJson(i.selectedProducts) : i.selectedProducts) : null;
+      if (Array.isArray(selectedProducts) && selectedProducts.length > 0) {
+        selectedProducts.forEach(p => {
+          const pName = p.name || "Product";
+          const pVar = p.variantName ? ` (${p.variantName})` : "";
+          const pQty = p.quantity ? ` x${p.quantity}` : "";
+          itemLines.push(`  - Included: ${pName}${pVar}${pQty}`);
+        });
+      }
+      return itemLines;
+    }),
     "",
     "--- PAYMENT BREAKDOWN ---",
     `Subtotal   : ₹${subtotal.toFixed(2)}`,
@@ -304,6 +315,90 @@ useEffect(() => {
     })}
   </div>
 )}
+                                {(() => {
+                                  const selectedProducts = item.selectedProducts ? (typeof item.selectedProducts === 'string' ? parseJson(item.selectedProducts) : item.selectedProducts) : null;
+                                  if (Array.isArray(selectedProducts) && selectedProducts.length > 0) {
+                                    return (
+                                      <div style={{
+                                        marginTop: "10px",
+                                        paddingLeft: "12px",
+                                        borderLeft: "2px solid #db1a5d"
+                                      }}>
+                                        <div style={{
+                                          fontSize: "10px",
+                                          fontWeight: 700,
+                                          color: "#6b7280",
+                                          marginBottom: "6px",
+                                          textTransform: "uppercase",
+                                          letterSpacing: "0.06em",
+                                          textAlign: "left"
+                                        }}>
+                                          Included Products
+                                        </div>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                          {selectedProducts.map((p, idx) => (
+                                            <div key={idx} style={{
+                                              display: "flex",
+                                              alignItems: "center",
+                                              gap: "8px",
+                                              padding: "4px 8px",
+                                              background: "#f9fafb",
+                                              border: "1px solid #f3f4f6",
+                                              borderRadius: "6px",
+                                              marginTop: "4px"
+                                            }}>
+                                              <img
+                                                src={p.image ? getImgUrl(p.image) : "/assets/img/products/products-1.jpeg"}
+                                                alt={p.name}
+                                                style={{
+                                                  width: "30px",
+                                                  height: "30px",
+                                                  borderRadius: "4px",
+                                                  objectFit: "cover"
+                                                }}
+                                                onError={(e) => e.target.src = "/assets/img/products/products-1.jpeg"}
+                                              />
+                                              <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{
+                                                  fontSize: "11px",
+                                                  fontWeight: 600,
+                                                  color: "#374151",
+                                                  textAlign: "left"
+                                                }}>
+                                                  {p.name}
+                                                </div>
+                                                <div style={{ display: "flex", gap: "4px", marginTop: "2px", alignItems: "center" }}>
+                                                  {p.variantName && (
+                                                    <span style={{
+                                                      fontSize: "9px",
+                                                      background: "#fff0f6",
+                                                      color: "#db1a5d",
+                                                      border: "1px solid #ffd6e7",
+                                                      borderRadius: "3px",
+                                                      padding: "0px 4px",
+                                                      fontWeight: 600
+                                                    }}>{p.variantName}</span>
+                                                  )}
+                                                  {p.quantity >= 1 && (
+                                                    <span style={{
+                                                      fontSize: "9px",
+                                                      background: "#e5e7eb",
+                                                      color: "#4b5563",
+                                                      borderRadius: "3px",
+                                                      padding: "0px 4px",
+                                                      fontWeight: 600
+                                                    }}>×{p.quantity}</span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                               </div>
                             </div>
                           </td>

@@ -12,6 +12,7 @@ import contactsReducer        from "./slices/contactsSlice";
 import eventsReducer          from "./slices/eventSlice";
 import combosReducer          from "./slices/comboSlice";
 import newCombosReducer       from "./slices/newComboSlice";   // ← new
+import paymentsReducer        from "./slices/paymentsSlice";
 // ── Marketing ────────────────────────────────────────────────
 import heroSliderReducer       from "./slices/heroSliderSlice";
 import timelessTreasuresReducer from "./slices/timelessTreasuresSlice";
@@ -34,6 +35,7 @@ export const store = configureStore({
     events:            eventsReducer,
     combos:            combosReducer,
     newCombos:         newCombosReducer,           // ← new
+    payments:          paymentsReducer,
     // Marketing
     heroSlider:        heroSliderReducer,
     timelessTreasures: timelessTreasuresReducer,

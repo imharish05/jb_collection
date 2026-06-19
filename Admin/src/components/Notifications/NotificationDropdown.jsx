@@ -1,6 +1,7 @@
 // NotificationDropdown.jsx
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   fetchNotifications,
   doMarkAllRead,
@@ -8,6 +9,7 @@ import {
   fetchInventorySummary,
   fetchInventorySettings,
 } from "../../redux/services/notificationsService";
+import { markItemRead } from "../../redux/slices/notificationsSlice";
 import { STOCK_STATUS_CONFIG } from "./StockStatusBadge";
 import InventorySettingsModal from "./InventorySettingsModal";
 
@@ -38,10 +40,32 @@ const SUMMARY_ROWS = [
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function NotificationDropdown({ onClose }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { items, unreadCount, loading, summary, summaryLoading } =
     useSelector(s => s.notifications);
   const [showSettings, setShowSettings] = useState(false);
   const ref = useRef(null);
+
+  // Handle notification click - redirect based on type
+  const handleNotificationClick = (notification) => {
+    // Mark as read
+    dispatch(markItemRead(notification.id));
+
+    // Redirect based on notification type
+    if (notification.type === "order") {
+      navigate("/orders_confirmed");
+    } else if (
+      notification.type === "stock_high" ||
+      notification.type === "stock_medium" ||
+      notification.type === "stock_low" ||
+      notification.type === "stock_out"
+    ) {
+      navigate("/stock");
+    }
+
+    // Close the notification dropdown
+    onClose();
+  };
 
   // Load on mount
   useEffect(() => {
@@ -146,10 +170,21 @@ export default function NotificationDropdown({ onClose }) {
                 const { icon, color } = TYPE_ICONS[n.type] || { icon: "📣", color: "#6b7280" };
                 const lines = n.message.split("\n");
                 return (
-                  <div key={n.id} style={{
-                    display: "flex", gap: 10, padding: "10px 0",
-                    borderBottom: "1px solid #f9fafb", position: "relative",
-                  }}>
+                  <div
+                    key={n.id}
+                    onClick={() => handleNotificationClick(n)}
+                    style={{
+                      display: "flex", gap: 10, padding: "10px 0",
+                      borderBottom: "1px solid #f9fafb", position: "relative",
+                      cursor: "pointer", transition: "background-color 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f9fafb";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
                     {/* Unread dot */}
                     {!n.isRead && (
                       <span style={{

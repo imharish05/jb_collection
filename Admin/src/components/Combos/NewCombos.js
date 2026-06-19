@@ -641,6 +641,14 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
       return;
     }
 
+    // 1.5 Original Price >= Combo Price
+    const originalPrice = parseFloat(form.originalPrice) || 0;
+    const comboPrice = parseFloat(form.comboPrice) || 0;
+    if (originalPrice > 0 && comboPrice > 0 && originalPrice < comboPrice) {
+      showToast.error("Original Price must be equal to or greater than Combo Price.");
+      return;
+    }
+
     // 2. Image
     if (!imgFile && !imgPreview) {
       showToast.error('Image is required');
@@ -831,13 +839,13 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
     if (isEdit) {
       const tid = showToast.loading("Adding product…");
       try {
-        await dispatch(addChildProduct({ childId: initial.id, data: { ...data, isEligible: form.type === "mix_match" } }));
+        await dispatch(addChildProduct({ childId: initial.id, data: { ...data, isEligible: true } }));  // Always eligible in mix_match
         showToast.success("Product added", tid);
       } catch (err) {
         showToast.error(err?.response?.data?.message || "Failed to add product", tid);
       }
     } else {
-      setPendingProducts(prev => [...prev, { ...data, isEligible: form.type === "mix_match", _tempId: Date.now() }]);
+      setPendingProducts(prev => [...prev, { ...data, isEligible: true, _tempId: Date.now() }]);  // Always eligible in mix_match
     }
   };
 

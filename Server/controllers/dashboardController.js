@@ -1,17 +1,19 @@
 // controllers/dashboardController.js
 const { Op } = require("sequelize");
 const { Product, Variant, Category, User, Order, InventorySettings } = require("../models");
+const { fetchRazorpayPaymentSummary } = require("../utils/razorpayReports");
 
 // ─── GET /api/dashboard/stats ─────────────────────────────────────────────────
 const getStats = async (req, res) => {
   try {
-    const [totalProducts, totalCustomers, orderSums, recentProducts] = await Promise.all([
+    const [totalProducts, totalCustomers, orderSums, razorpayPayments, recentProducts] = await Promise.all([
       Product.count({ where: { isActive: true } }),
       User.count({ where: { role: "user" } }),
       Order.findAll({
         where: { status: { [Op.notIn]: ["cancelled"] } },
         attributes: ["totalAmount", "taxAmount", "shippingCharge", "couponDiscount", "advancePaid", "codAmount"],
       }),
+      fetchRazorpayPaymentSummary(),
       Product.findAll({
         limit: 8,
         order: [["createdAt", "DESC"]],
@@ -51,6 +53,12 @@ const getStats = async (req, res) => {
       remainAmount  += parseFloat(o.codAmount) || 0;
     });
 
+    // ── Razorpay Payment Stats (all-time) ──
+    const successfulPaymentCount  = razorpayPayments.successCount;
+    const successfulPaymentAmount = razorpayPayments.successAmount;
+    const failedPaymentCount      = razorpayPayments.failedCount;
+    const failedPaymentAmount     = razorpayPayments.failedAmount;
+
     return res.json({
       stats: {
         totalProducts,
@@ -58,6 +66,10 @@ const getStats = async (req, res) => {
         totalGST: Math.round(totalGST),
         totalShipping: Math.round(totalShipping),
         remainAmount: Math.round(remainAmount),
+        successfulPaymentCount,
+        successfulPaymentAmount: Math.round(successfulPaymentAmount),
+        failedPaymentCount,
+        failedPaymentAmount: Math.round(failedPaymentAmount),
       },
       recentProducts: shaped,
     });

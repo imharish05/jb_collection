@@ -17,7 +17,14 @@ const NAV_ITEMS = [
         <path d="M3 3v18h18"/>
         <path d="M18.4 8.6 13 14l-2.5-2.5L7 15"/>
       </svg>
-    )}],
+    )}, 
+    // { id: 'payments', label: 'Payments', icon: (
+    //   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    //     <rect x="2" y="5" width="20" height="14" rx="2"/>
+    //     <line x1="2" y1="10" x2="22" y2="10"/>
+    //   </svg>
+    // )}
+  ],
   },
     {
     section: 'Marketing',
@@ -109,6 +116,12 @@ const NAV_ITEMS = [
   {
     section: 'Orders',
     items: [
+      { id: 'orders_pending', label: 'Pending Orders', icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      )},
       { id: 'orders_confirmed', label: 'Confirmed Orders', icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>

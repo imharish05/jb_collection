@@ -493,7 +493,7 @@ const createOrder = async (req, res, next) => {
         shippingCharge:    parseFloat(shippingCharge || 0),
         estimatedDeliveryDays: estimatedDeliveryDays || null,
         partialCodAmount:  isPartialCod ? resolvedCodAmount : null, // legacy
-        status:            isCod ? "confirmed" : "pending",
+        status:            "pending",
         inventoryProcessed: false,
         inventoryRestored:  false,
       },
@@ -550,26 +550,6 @@ const createOrder = async (req, res, next) => {
       ],
     });
 
-    // Post-commit for pure COD only
-    if (isCod) {
-      try {
-        const userRecord = await User.findByPk(req.user.id, { attributes: ["name", "email"] });
-        if (userRecord?.email) {
-          await sendOrderConfirmationEmail(createdOrder, { name: userRecord.name, email: userRecord.email });
-        }
-        try {
-          await sendAdminNewOrderEmail(createdOrder, { name: userRecord?.name, email: userRecord?.email || "" });
-        } catch (adminMailErr) {
-          console.error("[Mailer] Failed to send admin email notification:", adminMailErr.message);
-        }
-      } catch (emailErr) {
-        console.error("[Mailer] Failed to send confirmation:", emailErr.message);
-      }
-      try {
-        await pushOrderToShiprocket(createdOrder.id, req.user.email);
-      } catch (srErr) {
-        console.error("[Shiprocket] Failed to push COD order:", srErr.message);
-      }
     }
 
     // Fire order notification (non-blocking)
@@ -648,6 +628,9 @@ const updateOrderStatus = async (req, res, next) => {
       order.status = newStatus;
     }
     if (paymentStatus) order.paymentStatus = paymentStatus;
+    if (req.body.paymentFailureReason !== undefined) {
+      order.paymentFailureReason = req.body.paymentFailureReason;
+    }
     if (codCollected !== undefined) {
       order.codCollected = Boolean(codCollected);
       if (order.codCollected && !paymentStatus) {
@@ -736,6 +719,21 @@ const updateOrderStatus = async (req, res, next) => {
       }
 
       await recordOrderStatusEmailAudit(audit);
+
+      // Push to Shiprocket if confirming for the first time
+      if (newStatus === "confirmed" && !updatedOrder.shiprocketOrderId) {
+        try {
+          const userRecord = await User.findByPk(order.userId, { attributes: ["email"] });
+          await pushOrderToShiprocket(order.id, userRecord?.email || "");
+          const freshOrder = await Order.findByPk(order.id, { attributes: ["shiprocketOrderId", "shiprocketShipmentId"] });
+          if (freshOrder) {
+            updatedOrder.shiprocketOrderId = freshOrder.shiprocketOrderId;
+            updatedOrder.shiprocketShipmentId = freshOrder.shiprocketShipmentId;
+          }
+        } catch (srErr) {
+          console.error("[Shiprocket] Failed to push order on status confirmation:", srErr.message);
+        }
+      }
     }
 
     return res.json(updatedOrder);

@@ -251,7 +251,7 @@ const OrderDetails = () => {
   const statusMap = {
     pending: "Placed",
     confirmed: "Processing",
-    processing: "Processing",
+    processing: "Out for Delivery",
     shipped: "Shipped",
     delivery: "Out for Delivery",
     delivered: "Delivered",
@@ -549,24 +549,104 @@ const couponDiscount =
                     <div className="items-container-card">
                       <h5>Items in this shipment</h5>
                       {orderItems.length > 0 ? (
-                        orderItems.map((item, index) => (
-                          <div className="premium-product-row" key={index}>
-                            <div className="prod-img">
-                              <img
-                                src={getOrderItemImage(item.image)}
-                                alt={cleanProductName(item.productName)}
-                                onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_IMG; }}
-                              />
-                              <span className="qty-badge">{item.quantity}</span>
+                        orderItems.map((item, index) => {
+                          const selectedProducts = item.selectedProducts ? (typeof item.selectedProducts === 'string' ? deepParse(item.selectedProducts) : item.selectedProducts) : null;
+                          return (
+                            <div className="premium-product-row" key={index}>
+                              <div className="prod-img">
+                                <img
+                                  src={getOrderItemImage(item.image)}
+                                  alt={cleanProductName(item.productName)}
+                                  onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_IMG; }}
+                                />
+                                <span className="qty-badge">{item.quantity}</span>
+                              </div>
+                              <div className="prod-info">
+                                <h6>{cleanProductName(item.productName)}</h6>
+                                <p>{getVariantLabel(item)}</p>
+
+                                {Array.isArray(selectedProducts) && selectedProducts.length > 0 && (
+                                  <div style={{
+                                    marginTop: "10px",
+                                    paddingLeft: "12px",
+                                    borderLeft: "2px solid #db1a5d"
+                                  }}>
+                                    <div style={{
+                                      fontSize: "10px",
+                                      fontWeight: 700,
+                                      color: "#6b7280",
+                                      marginBottom: "6px",
+                                      textTransform: "uppercase",
+                                      letterSpacing: "0.06em"
+                                    }}>
+                                      Included Products
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                      {selectedProducts.map((p, idx) => (
+                                        <div key={idx} style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: "8px",
+                                          padding: "4px 8px",
+                                          background: "#f9fafb",
+                                          border: "1px solid #f3f4f6",
+                                          borderRadius: "6px"
+                                        }}>
+                                          <img
+                                            src={p.image ? getImgUrl(p.image) : FALLBACK_IMG}
+                                            alt={p.name}
+                                            style={{
+                                              width: "30px",
+                                              height: "30px",
+                                              borderRadius: "4px",
+                                              objectFit: "cover"
+                                            }}
+                                            onError={(e) => e.target.src = FALLBACK_IMG}
+                                          />
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{
+                                              fontSize: "11px",
+                                              fontWeight: 600,
+                                              color: "#374151"
+                                            }}>
+                                              {p.name}
+                                            </div>
+                                            <div style={{ display: "flex", gap: "4px", marginTop: "2px", alignItems: "center" }}>
+                                              {p.variantName && (
+                                                <span style={{
+                                                  fontSize: "9px",
+                                                  background: "#fff0f6",
+                                                  color: "#db1a5d",
+                                                  border: "1px solid #ffd6e7",
+                                                  borderRadius: "3px",
+                                                  padding: "0px 4px",
+                                                  fontWeight: 600
+                                                }}>{p.variantName}</span>
+                                              )}
+                                              {p.quantity >= 1 && (
+                                                <span style={{
+                                                  fontSize: "9px",
+                                                  background: "#e5e7eb",
+                                                  color: "#4b5563",
+                                                  borderRadius: "3px",
+                                                  padding: "0px 4px",
+                                                  fontWeight: 600
+                                                }}>×{p.quantity}</span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {renderItemActions(item)}
+                              </div>
+                              <div className="prod-price">₹{itemPrice(item).toFixed(2)}</div>
                             </div>
-                            <div className="prod-info">
-                              <h6>{cleanProductName(item.productName)}</h6>
-                              <p>{getVariantLabel(item)}</p>
-                              {renderItemActions(item)}
-                            </div>
-                            <div className="prod-price">₹{itemPrice(item).toFixed(2)}</div>
-                          </div>
-                        ))
+                          );
+                        })
                       ) : (
                         <p style={{ color: "#999" }}>No order items found</p>
                       )}

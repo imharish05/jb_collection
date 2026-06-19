@@ -246,6 +246,33 @@ const buildItemRows = (items) => {
     const variant = row.selectedVariantName
       ? `<div style="font-size:11px;color:#999;margin-top:3px;">${escapeHtml(row.selectedVariantName)}</div>`
       : "";
+
+    let selectedProducts = row.selectedProducts;
+    if (typeof selectedProducts === "string") {
+      try {
+        selectedProducts = JSON.parse(selectedProducts);
+      } catch (e) {
+        selectedProducts = null;
+      }
+    }
+
+    let comboProductsHtml = "";
+    if (row.isCombo && Array.isArray(selectedProducts) && selectedProducts.length > 0) {
+      const productItemsHtml = selectedProducts.map(p => {
+        const pName = escapeHtml(p.name || "Product");
+        const pQty = p.quantity ? ` x${p.quantity}` : "";
+        const pVar = p.variantName ? ` (${escapeHtml(p.variantName)})` : "";
+        return `<li style="margin-top:4px;">• ${pName}${pVar}${pQty}</li>`;
+      }).join("");
+      comboProductsHtml = `
+        <div style="margin-top:8px;padding-left:12px;border-left:2px solid #db1a5d;">
+          <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Included Products:</div>
+          <ul style="margin:4px 0 0;padding:0;list-style:none;font-size:12px;color:#555;line-height:1.4;">
+            ${productItemsHtml}
+          </ul>
+        </div>`;
+    }
+
     const qty = safeNumber(row.quantity, 1) || 1;
     const price = safeNumber(row.salesPrice || row.price);
     const mrp = safeNumber(row.mrp);
@@ -256,7 +283,7 @@ const buildItemRows = (items) => {
     return `
       <tr>
         <td style="padding:12px;border-bottom:1px solid #f5f5f5;font-size:14px;color:#333;">
-          ${name}${variant}
+          ${name}${variant}${comboProductsHtml}
         </td>
         <td style="padding:12px;border-bottom:1px solid #f5f5f5;font-size:14px;text-align:center;color:#555;">${qty}</td>
         <td style="padding:12px;border-bottom:1px solid #f5f5f5;font-size:14px;text-align:right;">

@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar/Sidebar';
 import Topbar from './components/Topbar/Topbar';
 import Dashboard from './components/Dashboard/Dashboard';
 import Reports from './components/Reports/Reports';
+import Payments from './components/Payments/Payments';
 import Categories from './components/Categories/Categories';
 import SubCategories from './components/SubCategories/SubCategories';
 import EventCategories from './components/EventCategories/EventCategories';
@@ -37,6 +38,7 @@ import Swal from 'sweetalert2';
 const PAGE_CONFIG = {
   dashboard:           { title: 'Dashboard' },
   reports:             { title: 'Reports' },
+  payments:            { title: 'Payments & Transactions' },
   categories:          { title: 'Categories' },
   sub_categories:      { title: 'Sub Categories' },
   event_categories:    { title: 'Event Categories' },
@@ -50,6 +52,7 @@ const PAGE_CONFIG = {
   coupons:             { title: 'Coupon Management' },
   orders:              { title: 'All Orders' },
   orders_new:          { title: 'New Orders' },
+  orders_pending:      { title: 'Pending Orders' },
   orders_confirmed:    { title: 'Confirmed Orders' },
   orders_shipped:      { title: 'Shipped Orders' },
   orders_delivery:     { title: 'Out for Delivery' },
@@ -95,6 +98,7 @@ function AdminLayoutWrapper({ handleLogout }) {
           <Routes>
             <Route path="/dashboard"           element={<Dashboard          showToast={showToast} />} />
             <Route path="/reports"             element={<Reports            showToast={showToast} />} />
+            {/* <Route path="/payments"            element={<Payments           showToast={showToast} />} /> */}
             <Route path="/categories"          element={<Categories         showToast={showToast} />} />
             <Route path="/sub_categories"      element={<SubCategories      showToast={showToast} />} />
             <Route path="/event_categories"    element={<EventCategories    showToast={showToast} />} />
@@ -108,6 +112,7 @@ function AdminLayoutWrapper({ handleLogout }) {
             <Route path="/coupons"             element={<Coupons            showToast={showToast} />} />
             <Route path="/orders"              element={<Orders             status={null} />} />
             <Route path="/orders_new"          element={<Orders             status="pending" />} />
+            <Route path="/orders_pending"      element={<Orders             status="pending" />} />
             <Route path="/orders_confirmed"    element={<Orders             status="confirmed" />} />
             <Route path="/orders_shipped"      element={<Orders             status="shipped" />} />
             <Route path="/orders_delivery"     element={<Orders             status="processing" />} />

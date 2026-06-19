@@ -96,7 +96,7 @@ const mapRazorpayMethod = (rzpMethod) => {
   return 'razorpay';
 };
 
-const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDeliveryCharge = false) => {
+const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDeliveryCharge = false, razorpayOrderId = null) => {
   const transaction = await sequelize.transaction();
   let userEmail = '';
   let userId    = null;
@@ -116,6 +116,11 @@ const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDel
 
     userId = order.userId;
     const paymentType = (order.paymentType || '').toUpperCase();
+
+    // Save Razorpay Order ID if provided
+    if (razorpayOrderId) {
+      order.razorpayOrderId = razorpayOrderId;
+    }
 
     // ── Update payment identifiers ───────────────────────────────────────────
     if (paymentType === 'PARTIAL_COD' || isDeliveryCharge) {
@@ -150,6 +155,9 @@ const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDel
       try {
         const rzpPayment = await razorpay.payments.fetch(paymentId);
         actualMethod = mapRazorpayMethod(rzpPayment.method);
+        if (rzpPayment.order_id && !order.razorpayOrderId) {
+          order.razorpayOrderId = rzpPayment.order_id;
+        }
       } catch (fetchErr) {
         console.warn('[Payment] Could not fetch Razorpay payment method, defaulting to razorpay:', fetchErr.message);
       }
@@ -194,11 +202,11 @@ const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDel
     }
 
     order.inventoryProcessed = true;
-    order.status = 'confirmed';
+    order.status = 'pending';
     await order.save({ transaction });
     await transaction.commit();
 
-    // ── Post-commit: cart clear, confirmation email, Shiprocket ─────────────
+    // ── Post-commit: cart clear, confirmation email ──────────────────────────
     setImmediate(async () => {
       try {
         await CartItem.destroy({ where: { userId } });
@@ -225,11 +233,6 @@ const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDel
         } catch (adminEmailErr) {
           console.error('[Mailer] Failed to send admin email notification:', adminEmailErr.message);
         }
-
-        // Push to Shiprocket AFTER payment verified.
-        // For PARTIAL_COD: order.codAmount is set → Shiprocket gets payment_method="COD", cod_amount=codAmount
-        // For PREPAID: order.codAmount=0 → Shiprocket gets payment_method="Prepaid"
-        await pushOrderToShiprocket(orderId, userEmail);
       } catch (postErr) {
         console.error('[Post-Payment] Error in post-commit operations:', postErr.message);
       }
@@ -276,7 +279,8 @@ const verifyPayment = async (req, res, next) => {
       dbOrderId,
       razorpay_payment_id,
       'frontend_verify',
-      isDeliveryCharge === true || isDeliveryCharge === 'true'
+      isDeliveryCharge === true || isDeliveryCharge === 'true',
+      razorpay_order_id
     );
 
     if (!result.success && result.status === 404) return res.status(404).json({ message: result.message });
@@ -328,6 +332,65 @@ const handlePaymentWebhook = async (req, res, next) => {
 
     const event   = req.body.event;
     const payload = req.body.payload;
+
+    if (event === 'payment.failed') {
+      const razorpayOrderId = payload?.payment?.entity?.order_id;
+      const razorpayPaymentId = payload?.payment?.entity?.id;
+      const failureReason = payload?.payment?.entity?.error_description || 'Payment failed';
+
+      if (!razorpayOrderId) {
+        console.error('[Webhook] Missing order_id in payment.failed payload');
+        return res.status(400).json({ message: 'Missing order_id' });
+      }
+
+      let rzpOrder;
+      try {
+        rzpOrder = await razorpay.orders.fetch(razorpayOrderId);
+      } catch (fetchErr) {
+        console.error('[Webhook] Failed to fetch Razorpay order for failed payment:', fetchErr.message);
+        return res.status(200).json({ message: 'Could not fetch Razorpay order' });
+      }
+
+      const dbOrderId = rzpOrder?.notes?.dbOrderId || null;
+      if (!dbOrderId) {
+        console.warn('[Webhook] dbOrderId not in Razorpay notes for failed payment:', razorpayOrderId);
+        return res.status(200).json({ message: 'dbOrderId not in notes. Skipping.' });
+      }
+
+      const transaction = await sequelize.transaction();
+      try {
+        const order = await Order.findByPk(dbOrderId, { transaction, lock: true });
+        if (!order) {
+          await transaction.rollback();
+          console.warn(`[Webhook] Order ${dbOrderId} not found for failed payment`);
+          return res.status(404).json({ message: 'Order not found' });
+        }
+
+        if (order.inventoryProcessed) {
+          await transaction.rollback();
+          console.log(`[Webhook] Order ${dbOrderId} already processed successfully. Ignoring failure event.`);
+          return res.status(200).json({ message: 'Order already processed successfully' });
+        }
+
+        order.paymentStatus = 'failed';
+        order.paymentFailureReason = failureReason;
+        if (razorpayPaymentId) {
+          order.razorpayPaymentId = razorpayPaymentId;
+          order.transactionId = razorpayPaymentId;
+        }
+        if (razorpayOrderId) {
+          order.razorpayOrderId = razorpayOrderId;
+        }
+        await order.save({ transaction });
+        await transaction.commit();
+
+        console.log(`[Webhook] Recorded failed payment for order ${dbOrderId}. Reason: ${failureReason}`);
+        return res.status(200).json({ received: true, success: true, message: 'Failed payment recorded' });
+      } catch (err) {
+        await transaction.rollback();
+        throw err;
+      }
+    }
 
     if (event === 'refund.processed') {
       const razorpayRefundId = payload?.refund?.entity?.id;
@@ -387,7 +450,7 @@ const handlePaymentWebhook = async (req, res, next) => {
     }
 
     const isDeliveryCharge = rzpOrder?.notes?.type === 'delivery_charge_only';
-    const result = await processSuccessfulPayment(dbOrderId, razorpayPaymentId, 'webhook', isDeliveryCharge);
+    const result = await processSuccessfulPayment(dbOrderId, razorpayPaymentId, 'webhook', isDeliveryCharge, razorpayOrderId);
 
     console.log(`[Webhook] Processed order ${dbOrderId}: success=${result.success}`);
     return res.status(200).json({ received: true, success: result.success, message: result.message });
@@ -397,10 +460,139 @@ const handlePaymentWebhook = async (req, res, next) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/payment/transactions
+// Fetches a paginated list of transaction logs and overall summary metrics.
+// ─────────────────────────────────────────────────────────────────────────────
+const getPaymentTransactions = async (req, res, next) => {
+  try {
+    const { status, dateRange, from, to, page = 1, limit = 10, search } = req.query;
+    const limitVal = parseInt(limit, 10);
+    const offsetVal = (parseInt(page, 10) - 1) * limitVal;
+
+    const { buildDateWhere } = require('./reportController');
+    const dateWhere = buildDateWhere({ dateRange, from, to });
+    const whereClause = { ...dateWhere };
+
+    if (status && status !== 'all') {
+      whereClause.paymentStatus = status;
+    }
+
+    const { Op } = require('sequelize');
+    const includeUser = {
+      model: User,
+      attributes: ['name', 'email'],
+      required: false,
+    };
+
+    if (search) {
+      whereClause[Op.or] = [
+        { id: { [Op.like]: `%${search}%` } },
+        { razorpayPaymentId: { [Op.like]: `%${search}%` } },
+        { razorpayOrderId: { [Op.like]: `%${search}%` } },
+        { '$User.email$': { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    // Get paginated rows and total count
+    const { count, rows } = await Order.findAndCountAll({
+      where: whereClause,
+      include: [includeUser],
+      order: [['createdAt', 'DESC']],
+      limit: limitVal,
+      offset: offsetVal,
+      distinct: true,
+    });
+
+    // Get all matching rows without pagination for calculating overall stats
+    // We ignore the paymentStatus filter for overall metrics so filters on the table do not distort KPIs.
+    const statsWhereClause = { ...whereClause };
+    delete statsWhereClause.paymentStatus;
+
+    const allFilteredOrders = await Order.findAll({
+      where: statsWhereClause,
+      include: [includeUser],
+      attributes: ['totalAmount', 'paymentStatus', 'advancePaid', 'codAmount', 'paymentType'],
+      raw: true,
+    });
+
+    let totalSuccessfulAmount = 0;
+    let totalSuccessfulCount = 0;
+    let totalFailedCount = 0;
+    let totalFailedAmount = 0;
+
+    allFilteredOrders.forEach(o => {
+      const amt = parseFloat(o.totalAmount || 0);
+      const adv = parseFloat(o.advancePaid || 0);
+      const cod = parseFloat(o.codAmount || 0);
+      const isPartialCod = o.paymentType === 'PARTIAL_COD';
+
+      if (o.paymentStatus === 'paid') {
+        totalSuccessfulAmount += amt;
+        totalSuccessfulCount++;
+      } else if (o.paymentStatus === 'partial') {
+        // Online advance payment successful, remaining COD is pending
+        totalSuccessfulAmount += adv;
+        totalSuccessfulCount++;
+      } else if (o.paymentStatus === 'failed') {
+        if (isPartialCod && adv > 0) {
+          // Online advance was successfully captured, but the cash delivery part failed
+          totalSuccessfulAmount += adv;
+          totalSuccessfulCount++;
+          totalFailedAmount += cod;
+          totalFailedCount++;
+        } else {
+          totalFailedAmount += amt;
+          totalFailedCount++;
+        }
+      }
+    });
+
+    const totalAttempts = totalSuccessfulCount + totalFailedCount;
+    const successRate = totalAttempts > 0 ? (totalSuccessfulCount / totalAttempts) * 100 : 0;
+
+    const transactions = rows.map(order => ({
+      orderId: order.id,
+      razorpayPaymentId: order.razorpayPaymentId || '—',
+      razorpayOrderId: order.razorpayOrderId || '—',
+      customerName: order.User?.name || 'Guest',
+      customerEmail: order.User?.email || '—',
+      amount: parseFloat(order.totalAmount || 0),
+      paymentMethod: order.paymentMethod || '—',
+      paymentStatus: order.paymentStatus || '—',
+      paymentType: order.paymentType || 'PREPAID',
+      advancePaid: order.advancePaid ? parseFloat(order.advancePaid) : 0,
+      codAmount: order.codAmount ? parseFloat(order.codAmount) : 0,
+      codCollected: order.codCollected || false,
+      paymentFailureReason: order.paymentFailureReason || null,
+      createdAt: order.createdAt,
+    }));
+
+    res.json({
+      success: true,
+      total: count,
+      page: parseInt(page, 10),
+      limit: limitVal,
+      totalPages: Math.ceil(count / limitVal),
+      stats: {
+        totalSuccessfulAmount: Math.round(totalSuccessfulAmount * 100) / 100,
+        totalSuccessfulCount,
+        totalFailedCount,
+        totalFailedAmount: Math.round(totalFailedAmount * 100) / 100,
+        successRate: Math.round(successRate * 100) / 100,
+      },
+      data: transactions,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createRazorpayOrder,
   createDeliveryChargeOrder,
   verifyPayment,
   handlePaymentWebhook,
   processSuccessfulPayment,
+  getPaymentTransactions,
 };
