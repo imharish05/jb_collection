@@ -8,6 +8,7 @@ import {
   editOfferBanner,
   removeOfferBanner,
 } from '../../redux/services/timelesstreasuresservice';
+import { hasPermission } from '../../utils/authHelper';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -289,12 +290,14 @@ export default function TimelessTreasures({ showToast }) {
       {/* ── Section Header ── */}
       <div className="section-header">
         <div className="section-title">Timeless Treasures Banners</div>
-        <button
-          className="action-btn btn-edit"
-          onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
-        >
-          {showForm ? 'Close' : '+ Add Banner'}
-        </button>
+        {hasPermission('timeless_create') && (
+          <button
+            className="action-btn btn-edit"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
+          >
+            {showForm ? 'Close' : '+ Add Banner'}
+          </button>
+        )}
       </div>
 
       {/* ── Add / Edit Form ── */}
@@ -504,7 +507,11 @@ export default function TimelessTreasures({ showToast }) {
         <p className="km-loading">Loading banners...</p>
       ) : (
         <DataTable
-          columns={['No.', 'Image', 'Title', 'Badge/Tag', 'Link', 'Order', 'Status', 'Actions']}
+          columns={(() => {
+            const cols = ['No.', 'Image', 'Title', 'Badge/Tag', 'Link', 'Order', 'Status'];
+            if (hasPermission('timeless_edit') || hasPermission('timeless_delete')) cols.push('Actions');
+            return cols;
+          })()}
           initialRows={rows}
           renderRow={(row, i) => (
             <tr key={row.id}>
@@ -538,12 +545,18 @@ export default function TimelessTreasures({ showToast }) {
                   {row.isActive ? 'Active' : 'Inactive'}
                 </span>
               </td>
-              <td>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
-                  <button className="action-btn btn-del" onClick={() => handleDelete(row.id, row.title)}>Delete</button>
-                </div>
-              </td>
+              {(hasPermission('timeless_edit') || hasPermission('timeless_delete')) && (
+                <td>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {hasPermission('timeless_edit') && (
+                      <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
+                    )}
+                    {hasPermission('timeless_delete') && (
+                      <button className="action-btn btn-del" onClick={() => handleDelete(row.id, row.title)}>Delete</button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           )}
         />

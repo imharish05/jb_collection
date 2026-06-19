@@ -690,7 +690,7 @@ const ComboDetailPage = () => {
               variantId: cp.variantId,
               quantity: cp.quantity || 1,
               name: cp.product?.name || null,
-              image: getProductImg(cp.product) || null,
+              image: resolvedVariant?.image || getProductImg(cp.product) || null,
               variantName: resolvedVariant?.variantName || null,
             };
           })
@@ -704,7 +704,7 @@ const ComboDetailPage = () => {
               variantId: sel.variantId,
               quantity: sel.quantity || 1,
               name: cp?.product?.name || null,
-              image: getProductImg(cp?.product) || null,
+              image: matchedVariant?.image || getProductImg(cp?.product) || null,
               variantName: matchedVariant?.variantName || null,
             };
           });
@@ -772,7 +772,7 @@ const ComboDetailPage = () => {
               variantId: cp.variantId,
               quantity: cp.quantity || 1,
               name: cp.product?.name || null,
-              image: getProductImg(cp.product) || null,
+              image: resolvedVariant?.image || getProductImg(cp.product) || null,
               variantName: resolvedVariant?.variantName || null,
             };
           })
@@ -785,7 +785,7 @@ const ComboDetailPage = () => {
               variantId: sel.variantId,
               quantity: sel.quantity || 1,
               name: cp?.product?.name || null,
-              image: getProductImg(cp?.product) || null,
+              image: matchedVariant?.image || getProductImg(cp?.product) || null,
               variantName: matchedVariant?.variantName || null,
             };
           });

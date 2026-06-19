@@ -35,6 +35,11 @@ const PasswordResetOtp    = require("./PasswordResetOtp");
 const InventorySettings   = require("./InventorySettings");
 const Notification        = require("./Notification");
 const StockHistory        = require("./StockHistory");
+const Role                = require("./Role");
+
+User.belongsTo(Role, { foreignKey: "roleId", as: "roleRecord" });
+Role.hasMany(User, { foreignKey: "roleId", as: "users" });
+
 User.hasMany(PasswordResetOtp, { foreignKey: "user_id", as: "passwordResetOtps", onDelete: "CASCADE" });
 PasswordResetOtp.belongsTo(User, { foreignKey: "user_id", as: "user" });
 
@@ -166,6 +171,7 @@ const models = {
   // Inventory settings + notifications
   InventorySettings,
   Notification,
+  Role,
   StockHistory,
   // Inventory log
   InventoryLog,

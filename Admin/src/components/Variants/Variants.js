@@ -6,6 +6,7 @@ import { fetchVariants, createVariant, editVariant, removeVariant } from '../../
 import { fetchProducts } from '../../redux/services/productsService';
 import VariantBuilder, { renderVariantLabel } from '../Products/VariantBuilder';
 import { confirmDelete } from '../../utils/sweetalert';
+import { hasPermission } from '../../utils/authHelper';
 
 const IMG_URL = process.env.REACT_APP_IMG_URL || '';
 const getImgSrc = (p) => {
@@ -386,10 +387,12 @@ export default function Variants({ showToast }) {
             <option value="">All Products</option>
             {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <button className="action-btn btn-edit" style={{ padding: '7px 16px', fontSize: 13 }}
-            onClick={mode !== 'none' ? closeForm : openAdd}>
-            {mode !== 'none' ? '✕ Close' : '+ Add Variant'}
-          </button>
+          {(hasPermission('variants_create') || mode !== 'none') && (
+            <button className="action-btn btn-edit" style={{ padding: '7px 16px', fontSize: 13 }}
+              onClick={mode !== 'none' ? closeForm : openAdd}>
+              {mode !== 'none' ? '✕ Close' : '+ Add Variant'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -501,7 +504,11 @@ export default function Variants({ showToast }) {
         <p style={{ color: KM.muted, fontSize: 13 }}>Loading…</p>
       ) : (
         <DataTable
-          columns={['No.', 'Image', 'Product', 'Variant', 'MRP', 'Sale Price', 'Stock', 'SKU', 'Status', 'Actions']}
+          columns={(() => {
+            const cols = ['No.', 'Image', 'Product', 'Variant', 'MRP', 'Sale Price', 'Stock', 'SKU', 'Status'];
+            if (hasPermission('variants_edit') || hasPermission('variants_delete')) cols.push('Actions');
+            return cols;
+          })()}
           initialRows={filtered}
           renderRow={(row, i) => (
             <tr key={row.id}>
@@ -531,12 +538,18 @@ export default function Variants({ showToast }) {
                   {row.status}
                 </span>
               </td>
-              <td>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="action-btn btn-edit" onClick={() => openEdit(row)}>Edit</button>
-                  <button className="action-btn btn-del"  onClick={() => handleDelete(row.id)}>Delete</button>
-                </div>
-              </td>
+              {(hasPermission('variants_edit') || hasPermission('variants_delete')) && (
+                <td>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {hasPermission('variants_edit') && (
+                      <button className="action-btn btn-edit" onClick={() => openEdit(row)}>Edit</button>
+                    )}
+                    {hasPermission('variants_delete') && (
+                      <button className="action-btn btn-del"  onClick={() => handleDelete(row.id)}>Delete</button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           )}
         />

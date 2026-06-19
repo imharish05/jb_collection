@@ -62,7 +62,7 @@ const addToCartBaseService = async (dispatchOrProduct, optionalProduct, silent =
       name: cartItem.productSnapshot?.name || cartItem.product?.name || product.name,
       price: typeof resolvedPrice === "string" ? parseFloat(resolvedPrice) : resolvedPrice,
       discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
-      image: cartItem.productSnapshot?.image || cartItem.product?.image || product.image || [],
+      image: matchedVariant?.image || cartItem.productSnapshot?.image || cartItem.product?.image || product.image || [],
       variation: cartItem.product?.variation || product.variation || [],
       stock: resolvedStock,
       Variants: variants,

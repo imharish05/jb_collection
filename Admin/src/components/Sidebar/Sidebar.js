@@ -197,11 +197,101 @@ const NAV_ITEMS = [
       )},
     ],
   },
+  {
+    section: 'Settings',
+    items: [
+      { id: 'roles', label: 'Roles & Permissions', icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      )},
+      { id: 'users', label: 'Admin Users', icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      )}
+    ]
+  }
 ];
 
 export default function Sidebar({ onLogout }) {
   const location = useLocation();
   const activePage = location.pathname.split('/')[1] || 'dashboard';
+
+  let permissions = [];
+  try {
+    const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+    permissions = adminUser?.permissions || [];
+  } catch (e) {
+    permissions = [];
+  }
+
+  const hasPermission = (id) => {
+    if (!permissions) return false;
+    if (permissions.includes('*') || permissions.includes('super_admin')) return true;
+
+    switch (id) {
+      case 'dashboard':
+        return true;
+      case 'reports':
+        return permissions.includes('reports_view');
+      case 'marquee':
+        return permissions.includes('marquee_view');
+      case 'banners':
+        return permissions.includes('banners_view');
+      case 'timeless_treasures':
+        return permissions.includes('timeless_view');
+      case 'testimonials':
+        return permissions.includes('testimonials_view');
+      case 'coupons':
+        return permissions.includes('coupons_view');
+      case 'categories':
+        return permissions.includes('categories_view');
+      case 'sub_categories':
+        return permissions.includes('subcategories_view');
+      case 'event_categories':
+        return permissions.includes('categories_view');
+      case 'brands':
+        return permissions.includes('brands_view');
+      case 'products':
+        return permissions.includes('products_view');
+      case 'combos':
+        return permissions.includes('combos_view');
+      case 'variants':
+        return permissions.includes('variants_view');
+      case 'stock':
+        return permissions.includes('stock_view');
+      case 'orders_pending':
+      case 'orders_confirmed':
+      case 'orders_shipped':
+      case 'orders_delivery':
+      case 'orders_delivered':
+      case 'orders_cancelled':
+        return permissions.includes('orders_view');
+      case 'returns':
+        return permissions.includes('returns_view');
+      case 'reviews':
+        return permissions.includes('reviews_view');
+      case 'customers':
+        return permissions.includes('customers_view');
+      case 'contacts':
+        return permissions.includes('contacts_view');
+      case 'roles':
+        return permissions.includes('roles_view');
+      case 'users':
+        return permissions.includes('users_view');
+      default:
+        return false;
+    }
+  };
+
+  const filteredNavItems = NAV_ITEMS.map((group) => {
+    const items = group.items.filter((item) => hasPermission(item.id));
+    return { ...group, items };
+  }).filter((group) => group.items.length > 0);
 
   return (
     <aside className={styles.sidebar}>
@@ -211,13 +301,12 @@ export default function Sidebar({ onLogout }) {
           <div>
             <div className={styles.logoName}></div>
             <div className={styles.logoSub}>ADMIN PANEL</div>
-            
           </div>
         </div>
       </div>
 
       <nav className={styles.nav}>
-        {NAV_ITEMS.map((group) => (
+        {filteredNavItems.map((group) => (
           <div key={group.section}>
             <div className={styles.navSection}>{group.section}</div>
             {group.items.map((item) => (

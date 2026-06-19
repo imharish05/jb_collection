@@ -4,6 +4,7 @@ import DataTable from '../DataTable/DataTable';
 import { fetchProducts } from '../../redux/services/productsService';
 import { editVariant } from '../../redux/services/variantsService';
 import { isHexColor } from '../Products/VariantBuilder';
+import { hasPermission } from '../../utils/authHelper';
 
 const isColourKey = (key) => /colou?r/i.test(key || '');
 
@@ -263,7 +264,11 @@ export default function Stock({ showToast }) {
         <p className="km-loading">Loading...</p>
       ) : (
         <DataTable
-          columns={['No.', 'Product', 'Variant', 'Stock', 'Sold Qty', 'Status', 'Actions']}
+          columns={(() => {
+            const cols = ['No.', 'Product', 'Variant', 'Stock', 'Sold Qty', 'Status'];
+            if (hasPermission('stock_edit')) cols.push('Actions');
+            return cols;
+          })()}
           initialRows={rows}
           renderRow={(row,i) => {
             const lowStock = row.stock <= 5;
@@ -299,12 +304,14 @@ export default function Stock({ showToast }) {
                   </span>
                 </td>
                 <td><span className={`status-pill ${pillClass[row.status] || 'pill-inactive'}`}>{row.status}</span></td>
-                <td>
-                  <button onClick={() => setStockModal(row)}
-                    style={{ padding: '5px 10px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, color: KM.green, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    ± Stock
-                  </button>
-                </td>
+                {hasPermission('stock_edit') && (
+                  <td>
+                    <button onClick={() => setStockModal(row)}
+                      style={{ padding: '5px 10px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, color: KM.green, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      ± Stock
+                    </button>
+                  </td>
+                )}
               </tr>
             );
           }}

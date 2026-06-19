@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../api/axiosInstance';
 import DataTable from '../DataTable/DataTable';
 import { confirmDelete } from '../../utils/sweetalert';
+import { hasPermission } from '../../utils/authHelper';
 
 export default function SubCategories({ showToast }) {
   const [subcategories, setSubcategories] = useState([]);
@@ -111,12 +112,14 @@ export default function SubCategories({ showToast }) {
     <div className="categories-container">
       <div className="section-header">
         <div className="section-title">Sub Categories</div>
-        <button
-          className="action-btn btn-edit"
-          onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
-        >
-          {showForm ? 'Close' : '+ Add Sub Category'}
-        </button>
+        {hasPermission('subcategories_create') && (
+          <button
+            className="action-btn btn-edit"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
+          >
+            {showForm ? 'Close' : '+ Add Sub Category'}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -183,7 +186,11 @@ export default function SubCategories({ showToast }) {
         <p className="km-loading">Loading subcategories...</p>
       ) : (
         <DataTable
-          columns={['No.', 'Parent Category', 'Sub Category Name', 'Slug', 'Status', 'Actions']}
+          columns={(() => {
+            const cols = ['No.', 'Parent Category', 'Sub Category Name', 'Slug', 'Status'];
+            if (hasPermission('subcategories_edit') || hasPermission('subcategories_delete')) cols.push('Actions');
+            return cols;
+          })()}
           initialRows={subcategories}
           renderRow={(row, i) => (
             <tr key={row.id}>
@@ -214,12 +221,18 @@ export default function SubCategories({ showToast }) {
                   {row.isActive ? 'Active' : 'Inactive'}
                 </span>
               </td>
-              <td>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
-                  <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
-                </div>
-              </td>
+              {(hasPermission('subcategories_edit') || hasPermission('subcategories_delete')) && (
+                <td>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {hasPermission('subcategories_edit') && (
+                      <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
+                    )}
+                    {hasPermission('subcategories_delete') && (
+                      <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           )}
         />

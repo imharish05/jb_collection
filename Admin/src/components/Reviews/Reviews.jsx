@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchReviews, approveReview, rejectReview, removeReview } from '../../redux/services/reviewsService';
 import { confirmDelete } from '../../utils/sweetalert';
+import { hasPermission } from '../../utils/authHelper';
 
 const pillClass = { Approved: 'pill-approved', Pending: 'pill-pending', Rejected: 'pill-rejected' };
 
@@ -63,7 +64,11 @@ export default function Reviews() {
         </div>
       ) : (
         <DataTable
-          columns={['ID', 'Customer', 'Item', 'Feedback', 'Rating', 'Status', 'Actions']}
+          columns={(() => {
+            const cols = ['ID', 'Customer', 'Item', 'Feedback', 'Rating', 'Status'];
+            if (hasPermission('reviews_edit') || hasPermission('reviews_delete')) cols.push('Actions');
+            return cols;
+          })()}
           initialRows={rows}
           renderRow={(row) => (
             <tr key={row.id}>
@@ -85,20 +90,24 @@ export default function Reviews() {
               <td style={{ maxWidth: 300, color: '#374151', fontSize: 13 }}>{row.feedback}</td>
               <td style={{ color: '#F59E0B', fontWeight: 700, fontSize: 15, whiteSpace: 'nowrap' }}>{renderStars(row.rating)}</td>
               <td><span className={`status-pill ${pillClass[row.status]}`}>{row.status}</span></td>
-              <td>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {row.status !== 'Approved' && (
-                    <button className="action-btn btn-approve" onClick={() => handleApprove(row.id)}>Approve</button>
-                  )}
-                  {row.status !== 'Rejected' && (
-                    <button onClick={() => handleReject(row.id)}
-                      style={{ padding: '5px 10px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 6, color: '#EA580C', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                      Reject
-                    </button>
-                  )}
-                  <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
-                </div>
-              </td>
+              {(hasPermission('reviews_edit') || hasPermission('reviews_delete')) && (
+                <td>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {hasPermission('reviews_edit') && row.status !== 'Approved' && (
+                      <button className="action-btn btn-approve" onClick={() => handleApprove(row.id)}>Approve</button>
+                    )}
+                    {hasPermission('reviews_edit') && row.status !== 'Rejected' && (
+                      <button onClick={() => handleReject(row.id)}
+                        style={{ padding: '5px 10px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 6, color: '#EA580C', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                        Reject
+                      </button>
+                    )}
+                    {hasPermission('reviews_delete') && (
+                      <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           )}
         />

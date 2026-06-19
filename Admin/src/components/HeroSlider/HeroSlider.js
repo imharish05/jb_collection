@@ -9,6 +9,7 @@ import {
   removeHeroSlide,
 } from '../../redux/services/herosliderservice';
 import { confirmDelete } from '../../utils/sweetalert';
+import { hasPermission } from '../../utils/authHelper';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -224,12 +225,14 @@ export default function HeroSlider({ showToast }) {
       {/* ── Section Header ── */}
       <div className="section-header">
         <div className="section-title">Hero Slider</div>
-        <button
-          className="action-btn btn-edit"
-          onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
-        >
-          {showForm ? 'Close' : '+ Add Slide'}
-        </button>
+        {hasPermission('banners_create') && (
+          <button
+            className="action-btn btn-edit"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
+          >
+            {showForm ? 'Close' : '+ Add Slide'}
+          </button>
+        )}
       </div>
 
       {/* ── Add / Edit Form ── */}
@@ -389,46 +392,59 @@ export default function HeroSlider({ showToast }) {
       {loading ? (
         <p className="km-loading">Loading slides...</p>
       ) : (
-        <DataTable
-          columns={['No.', 'Image', 'Title', 'Subtitle', 'URL', 'Order', 'Status', 'Actions']}
-          initialRows={rows}
-          renderRow={(row, i) => (
-            <tr key={row.id}>
-              <td className="td-id">{i + 1}</td>
-              <td>
-                <div className="img-thumb">
-                  {row.image ? (
-                    <img
-                      src={getImageUrl(row.image)}
-                      alt={row.title}
-                      width="90" height="54"
-                      style={{ borderRadius: 6, objectFit: 'cover' }}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='54'%3E%3Crect width='90' height='54' fill='%23eee'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='8' fill='%23999'%3ENo Img%3C/text%3E%3C/svg%3E";
-                      }}
-                    />
-                  ) : '🖼️'}
-                </div>
-              </td>
-              <td>{row.title}</td>
-              <td>{row.subtitle || <span style={{ color: '#9ca3af' }}>—</span>}</td>
-              <td><code style={{ fontSize: 12, opacity: 0.7 }}>{row.url}</code></td>
-              <td>{row.sortOrder}</td>
-              <td>
-                <span style={{ color: row.isActive ? '#45b369' : '#ef4444', fontWeight: 600 }}>
-                  {row.isActive ? 'Active' : 'Inactive'}
-                </span>
-              </td>
-              <td>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
-                  <button className="action-btn btn-del" onClick={() => handleDelete(row.id, row.title)}>Delete</button>
-                </div>
-              </td>
-            </tr>
-          )}
-        />
+        (() => {
+          const showActions = hasPermission('banners_edit') || hasPermission('banners_delete');
+          const cols = ['No.', 'Image', 'Title', 'Subtitle', 'URL', 'Order', 'Status'];
+          if (showActions) cols.push('Actions');
+          return (
+            <DataTable
+              columns={cols}
+              initialRows={rows}
+              renderRow={(row, i) => (
+                <tr key={row.id}>
+                  <td className="td-id">{i + 1}</td>
+                  <td>
+                    <div className="img-thumb">
+                      {row.image ? (
+                        <img
+                          src={getImageUrl(row.image)}
+                          alt={row.title}
+                          width="90" height="54"
+                          style={{ borderRadius: 6, objectFit: 'cover' }}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='54'%3E%3Crect width='90' height='54' fill='%23eee'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='8' fill='%23999'%3ENo Img%3C/text%3E%3C/svg%3E";
+                          }}
+                        />
+                      ) : '🖼️'}
+                    </div>
+                  </td>
+                  <td>{row.title}</td>
+                  <td>{row.subtitle || <span style={{ color: '#9ca3af' }}>—</span>}</td>
+                  <td><code style={{ fontSize: 12, opacity: 0.7 }}>{row.url}</code></td>
+                  <td>{row.sortOrder}</td>
+                  <td>
+                    <span style={{ color: row.isActive ? '#45b369' : '#ef4444', fontWeight: 600 }}>
+                      {row.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  {showActions && (
+                    <td>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {hasPermission('banners_edit') && (
+                          <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
+                        )}
+                        {hasPermission('banners_delete') && (
+                          <button className="action-btn btn-del" onClick={() => handleDelete(row.id, row.title)}>Delete</button>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              )}
+            />
+          );
+        })()
       )}
 
       <style>{`

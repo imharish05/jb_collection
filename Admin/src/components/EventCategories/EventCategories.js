@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchEvents, createEvent, editEvent, removeEvent } from '../../redux/services/eventService';
 import { confirmDelete } from '../../utils/sweetalert';
+import { hasPermission } from '../../utils/authHelper';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -227,10 +228,12 @@ export default function EventCategories({ showToast }) {
     <div className="categories-container">
       <div className="section-header">
         <div className="section-title">Events</div>
-        <button className="action-btn btn-edit"
-          onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}>
-          {showForm ? 'Close' : '+ Add Event'}
-        </button>
+        {hasPermission('categories_create') && (
+          <button className="action-btn btn-edit"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}>
+            {showForm ? 'Close' : '+ Add Event'}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -345,7 +348,11 @@ export default function EventCategories({ showToast }) {
         <p className="km-loading">Loading events...</p>
       ) : (
         <DataTable
-          columns={['No.', 'Image', 'Event Name', 'Slug', 'Status', 'Actions']}
+          columns={(() => {
+            const cols = ['No.', 'Image', 'Event Name', 'Slug', 'Status'];
+            if (hasPermission('categories_edit') || hasPermission('categories_delete')) cols.push('Actions');
+            return cols;
+          })()}
           initialRows={rows}
           renderRow={(row, i) => (
             <tr key={row.id}>
@@ -373,12 +380,18 @@ export default function EventCategories({ showToast }) {
                   {row.isActive ? 'Active' : 'Inactive'}
                 </span>
               </td>
-              <td>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
-                  <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
-                </div>
-              </td>
+              {(hasPermission('categories_edit') || hasPermission('categories_delete')) && (
+                <td>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {hasPermission('categories_edit') && (
+                      <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
+                    )}
+                    {hasPermission('categories_delete') && (
+                      <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           )}
         />

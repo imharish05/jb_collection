@@ -12,6 +12,7 @@ import {
 } from "../../redux/services/newComboService";
 import { fetchProducts } from "../../redux/services/productsService";
 import { confirmDelete } from "../../utils/sweetalert";
+import { hasPermission } from "../../utils/authHelper";
 
 const IMG_URL = process.env.REACT_APP_IMG_URL || "";
 
@@ -1237,7 +1238,7 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
             </span>
           )}
         </div>
-        {!editingChild && (
+        {!editingChild && hasPermission('combos_edit') && (
           <div style={{ display: "flex", gap: 8 }}>
             <button className="action-btn btn-edit"
               onClick={() => { setEditingRoot(r => !r); setShowChildForm(false); setEditingChild(null); }}>
@@ -1289,7 +1290,11 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
         </div>
       ) : !editingChild && (
         <DataTable
-          columns={["No.", "Image", "Name", "Type", "Price", "Products", "Status", "Actions"]}
+          columns={(() => {
+            const cols = ["No.", "Image", "Name", "Type", "Price", "Products", "Status"];
+            if (hasPermission('combos_edit') || hasPermission('combos_delete')) cols.push("Actions");
+            return cols;
+          })()}
           initialRows={currentRoot.children || []}
           renderRow={(child, i) => (
             <tr key={child.id}>
@@ -1344,15 +1349,21 @@ function RootComboDetail({ rootId, allProducts, showToast, onBack }) {
                   {child.isActive ? "Active" : "Inactive"}
                 </span>
               </td>
-              <td>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button className="action-btn btn-edit"
-                    onClick={() => { setEditingChild(child); setShowChildForm(false); setEditingRoot(false); }}>
-                    Edit
-                  </button>
-                  <button className="action-btn btn-del" onClick={() => handleDeleteChild(child)}>Delete</button>
-                </div>
-              </td>
+              {(hasPermission('combos_edit') || hasPermission('combos_delete')) && (
+                <td>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {hasPermission('combos_edit') && (
+                      <button className="action-btn btn-edit"
+                        onClick={() => { setEditingChild(child); setShowChildForm(false); setEditingRoot(false); }}>
+                        Edit
+                      </button>
+                    )}
+                    {hasPermission('combos_delete') && (
+                      <button className="action-btn btn-del" onClick={() => handleDeleteChild(child)}>Delete</button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           )}
         />
@@ -1406,9 +1417,11 @@ export default function NewCombos({ showToast }) {
     <div className="categories-container">
       <div className="section-header">
         <div className="section-title">Combo Manager</div>
-        <button className="action-btn btn-edit" onClick={() => setShowRootForm(f => !f)}>
-          {showRootForm ? "Close" : "+ Add Root Combo"}
-        </button>
+        {hasPermission('combos_create') && (
+          <button className="action-btn btn-edit" onClick={() => setShowRootForm(f => !f)}>
+            {showRootForm ? "Close" : "+ Add Root Combo"}
+          </button>
+        )}
       </div>
 
       {showRootForm && (
@@ -1423,7 +1436,11 @@ export default function NewCombos({ showToast }) {
         <p className="km-loading">Loading combos…</p>
       ) : (
         <DataTable
-          columns={["No.", "Image", "Name", "Child Combos", "Status", "Actions"]}
+          columns={(() => {
+            const cols = ["No.", "Image", "Name", "Child Combos", "Status"];
+            if (hasPermission('combos_edit') || hasPermission('combos_delete')) cols.push("Actions");
+            return cols;
+          })()}
           initialRows={rootCombos}
           
           renderRow={(root, i) => {
@@ -1453,12 +1470,18 @@ export default function NewCombos({ showToast }) {
                   {root.isActive ? "Active" : "Inactive"}
                 </span>
               </td>
-              <td>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button className="action-btn btn-edit" onClick={() => setSelectedRootId(root.id)}>Manage</button>
-                  <button className="action-btn btn-del" onClick={() => handleDeleteRoot(root)}>Delete</button>
-                </div>
-              </td>
+              {(hasPermission('combos_edit') || hasPermission('combos_delete')) && (
+                <td>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {hasPermission('combos_edit') && (
+                      <button className="action-btn btn-edit" onClick={() => setSelectedRootId(root.id)}>Manage</button>
+                    )}
+                    {hasPermission('combos_delete') && (
+                      <button className="action-btn btn-del" onClick={() => handleDeleteRoot(root)}>Delete</button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
             );
           }}

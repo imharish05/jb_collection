@@ -44,6 +44,20 @@ export default function Dashboard() {
   const [salesView, setSalesView] = useState('monthly'); // 'monthly' | 'quarterly'
   const isFirstChartLoad = useRef(true);
 
+  let permissions = [];
+  try {
+    const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+    permissions = adminUser?.permissions || [];
+  } catch (e) {
+    permissions = [];
+  }
+
+  const hasPermission = (reqPerm) => {
+    if (!permissions) return false;
+    if (permissions.includes('*') || permissions.includes('super_admin')) return true;
+    return permissions.includes(reqPerm);
+  };
+
   // ── Export Reports State ──
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -157,6 +171,16 @@ export default function Dashboard() {
     { label: 'Remain Amount', value: typeof stats.remainAmount === 'number' ? `₹${stats.remainAmount.toLocaleString('en-IN')}` : stats.remainAmount, bg: 'linear-gradient(135deg,#ef4444 0%,#c92f2f 100%)', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>) },
   ];
 
+  const filteredStatCards = STAT_CARDS.filter(card => {
+    if (card.label === 'Total Products') return hasPermission('products_view');
+    if (card.label === 'Total Customers') return hasPermission('customers_view');
+    if (card.label === 'Stock Items') return hasPermission('stock_view');
+    if (card.label === 'Total GST') return hasPermission('reports_view');
+    if (card.label === 'Total Shipping') return hasPermission('reports_view');
+    if (card.label === 'Remain Amount') return hasPermission('reports_view');
+    return false;
+  });
+
   const ORDER_ROWS = [
     { label: 'New Orders',       count: orderCounts.new,       color: '#487fff', bg: '#e4f1ff' },
     { label: 'Confirmed',        count: orderCounts.confirmed,  color: '#45b369', bg: '#daf0e1' },
@@ -175,330 +199,340 @@ export default function Dashboard() {
         </div>
         
         {/* Export Reports Dropdown */}
-        <div className={styles.exportReportsWrap} ref={dropdownRef}>
-          <button 
-            className={styles.exportBtn} 
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            aria-expanded={dropdownOpen}
-          >
-            Export Reports 
-            <svg 
-              width="12" 
-              height="12" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="3" 
-              style={{ marginLeft: 8, transition: 'transform 0.2s', transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}
+        {(hasPermission('reports_view') || hasPermission('reports_export')) && (
+          <div className={styles.exportReportsWrap} ref={dropdownRef}>
+            <button 
+              className={styles.exportBtn} 
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              aria-expanded={dropdownOpen}
             >
-              <path d="M6 9l6 6 6-6"/>
-            </svg>
-          </button>
-          
-          {dropdownOpen && (
-            <div className={styles.dropdownMenu}>
-              <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('sales'); setShowExportModal(true); setDropdownOpen(false); }}>
-                Sales Report
-              </button>
-              <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('product-sales'); setShowExportModal(true); setDropdownOpen(false); }}>
-                Product-wise Sales Report
-              </button>
-            </div>
-          )}
-        </div>
+              Export Reports 
+              <svg 
+                width="12" 
+                height="12" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="3" 
+                style={{ marginLeft: 8, transition: 'transform 0.2s', transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}
+              >
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+            
+            {dropdownOpen && (
+              <div className={styles.dropdownMenu}>
+                <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('sales'); setShowExportModal(true); setDropdownOpen(false); }}>
+                  Sales Report
+                </button>
+                <button type="button" className={styles.dropdownItem} onClick={() => { setSelectedReport('product-sales'); setShowExportModal(true); setDropdownOpen(false); }}>
+                  Product-wise Sales Report
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className={styles.statsRow}>
-        {STAT_CARDS.map((s, i) => (
-          <div key={s.label} className={styles.statCard} style={{ '--bg': s.bg, '--delay': `${i * 80}ms` }}>
-            <div className={styles.scTop}>
-              <div className={styles.scMeta}>
-                <div className={styles.scIcon}>{s.icon}</div>
-                <div>
-                  <p className={styles.scLabel}>{s.label}</p>
-                  <p className={styles.scVal}>{loading && s.label !== 'Stock Items' ? '—' : s.value}</p>
+      {filteredStatCards.length > 0 && (
+        <div className={styles.statsRow}>
+          {filteredStatCards.map((s, i) => (
+            <div key={s.label} className={styles.statCard} style={{ '--bg': s.bg, '--delay': `${i * 80}ms` }}>
+              <div className={styles.scTop}>
+                <div className={styles.scMeta}>
+                  <div className={styles.scIcon}>{s.icon}</div>
+                  <div>
+                    <p className={styles.scLabel}>{s.label}</p>
+                    <p className={styles.scVal}>{loading && s.label !== 'Stock Items' ? '—' : s.value}</p>
+                  </div>
                 </div>
               </div>
+              <div className={styles.scCircle1} />
+              <div className={styles.scCircle2} />
             </div>
-            <div className={styles.scCircle1} />
-            <div className={styles.scCircle2} />
-          </div>
-        ))}
-      </div>
-
-      <div className={styles.midRow}>
-        <div className={styles.chartCard}>
-          <div className={styles.cardHdr}>
-            <div>
-              <h3 className={styles.cardTitle}>Monthly Orders</h3>
-              <p className={styles.cardSub}>Order volume across {selectedYear}</p>
-            </div>
-            <div className={styles.yearSelectWrap}>
-              <select className={styles.yearSelect} value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
-                {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-              <span className={styles.yearSelectIcon}>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </span>
-            </div>
-          </div>
-          {graphLoading ? (
-            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, fontWeight: 500 }}>
-              Loading chart…
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={360}>
-              <BarChart data={monthlyData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={22}>
-                <CartesianGrid Dasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-                <XAxis dataKey="m" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(72,127,255,0.06)', radius: 6 }} />
-                <Bar dataKey="sales" fill="url(#barGrad)" radius={[6, 6, 0, 0]}>
-                  <defs>
-                    <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#487fff" stopOpacity={1} />
-                      <stop offset="100%" stopColor="#486cea" stopOpacity={0.7} />
-                    </linearGradient>
-                  </defs>
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          ))}
         </div>
+      )}
 
-        <div className={styles.ordersPanel}>
-          <div className={styles.cardHdr}>
-            <div>
-              <h3 className={styles.cardTitle}>Order Status</h3>
-              <p className={styles.cardSub}>Live counts by stage</p>
-            </div>
-          </div>
-          <div className={styles.orderGrid}>
-            {ORDER_ROWS.map(o => (
-              <div key={o.label} className={styles.orderChip} style={{ '--oc': o.color, '--obg': o.bg }}>
-                <span className={styles.orderDot} />
-                <span className={styles.orderLabel}>{o.label}</span>
-                <span className={styles.orderCount}>{o.count}</span>
+      {hasPermission('orders_view') && (
+        <div className={styles.midRow}>
+          <div className={styles.chartCard}>
+            <div className={styles.cardHdr}>
+              <div>
+                <h3 className={styles.cardTitle}>Monthly Orders</h3>
+                <p className={styles.cardSub}>Order volume across {selectedYear}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className={styles.chartCard} style={{ marginTop: 20 , marginBottom : 20}}>
-        <div className={styles.cardHdr}>
-          <div>
-            <h3 className={styles.cardTitle}>Sales Overview</h3>
-            <p className={styles.cardSub}>
-              {salesView === 'quarterly'
-                ? `Quarterly revenue breakdown for ${selectedYear}`
-                : `Monthly revenue trend for ${selectedYear}`}
-            </p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            {/* View toggle */}
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: 3, gap: 2 }}>
-              {['monthly', 'quarterly'].map(v => (
-                <button
-                  key={v}
-                  onClick={() => setSalesView(v)}
-                  style={{
-                    padding: '5px 14px',
-                    borderRadius: 6,
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    letterSpacing: '0.04em',
-                    textTransform: 'capitalize',
-                    background: salesView === v ? '#487fff' : 'transparent',
-                    color: salesView === v ? '#fff' : '#9ca3af',
-                    transition: 'all 0.18s ease',
-                  }}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-            {/* Year picker */}
-            <div className={styles.yearSelectWrap}>
-              <select className={styles.yearSelect} value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
-                {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-              <span className={styles.yearSelectIcon}>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {salesView === 'monthly' ? (
-          graphLoading ? (
-            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, fontWeight: 500 }}>
-              Loading sales chart…
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={monthlySalesData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#45b369" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="#45b369" stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-                <XAxis dataKey="m" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  formatter={(v) => [`₹${Number(v || 0).toLocaleString('en-IN')}`, 'Revenue']}
-                  labelStyle={{ color: '#9ca3af', fontSize: 11, fontWeight: 600 }}
-                  contentStyle={{ background: '#1b2431', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#fff' }}
-                />
-                <Area type="monotone" dataKey="amount" stroke="#45b369" strokeWidth={3} fill="url(#salesGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          )
-        ) : (
-          /* ── Quarterly view ── */
-          quarterlyLoading ? (
-            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, fontWeight: 500 }}>
-              Loading quarterly data…
-            </div>
-          ) : (
-            <>
-              {/* Yearly summary banner */}
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: 8, margin: '8px 0 18px',
-                background: 'linear-gradient(135deg,rgba(69,179,105,0.12) 0%,rgba(72,127,255,0.12) 100%)',
-                border: '1px solid rgba(69,179,105,0.2)', borderRadius: 10, padding: '10px 20px',
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#45b369" strokeWidth="2">
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
-                </svg>
-                <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: 500 }}>Yearly Total {selectedYear}:</span>
-                <span style={{ fontSize: 18, fontWeight: 700, color: '#45b369' }}>
-                  ₹{Number(quarterlySalesData?.yearly || 0).toLocaleString('en-IN')}
+              <div className={styles.yearSelectWrap}>
+                <select className={styles.yearSelect} value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
+                  {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+                <span className={styles.yearSelectIcon}>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </span>
               </div>
-
-              {/* Quarter cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14, marginBottom: 20 }}>
-                {(['Q1 (Jan–Mar)','Q2 (Apr–Jun)','Q3 (Jul–Sep)','Q4 (Oct–Dec)']).map((label, i) => {
-                  const qData = quarterlySalesData?.quarters?.[i];
-                  const amount = qData?.amount || 0;
-                  const yearly = quarterlySalesData?.yearly || 1;
-                  const pct = yearly > 0 ? Math.round((amount / yearly) * 100) : 0;
-                  const colors = ['#487fff','#45b369','#ff9f29','#8252e9'];
-                  const color = colors[i];
-                  return (
-                    <div key={label} style={{
-                      background: 'rgba(255,255,255,0.03)', border: `1px solid ${color}33`,
-                      borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden',
-                    }}>
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: color, borderRadius: '12px 12px 0 0' }} />
-                      <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                        {label}
-                      </p>
-                      <p style={{ margin: '8px 0 4px', fontSize: 20, fontWeight: 700, color: '#fff' }}>
-                        ₹{Number(amount).toLocaleString('en-IN')}
-                      </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-                        <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 4 }}>
-                          <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 4, transition: 'width 0.6s ease' }} />
-                        </div>
-                        <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, minWidth: 30 }}>{pct}%</span>
-                      </div>
-                    </div>
-                  );
-                })}
+            </div>
+            {graphLoading ? (
+              <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, fontWeight: 500 }}>
+                Loading chart…
               </div>
-
-              {/* Quarterly bar chart */}
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={quarterlySalesData?.quarters || []} margin={{ top: 4, right: 4, left: -16, bottom: 0 }} barSize={40}>
-                  <defs>
-                    {['#487fff','#45b369','#ff9f29','#8252e9'].map((c, i) => (
-                      <linearGradient key={i} id={`qGrad${i}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={c} stopOpacity={1} />
-                        <stop offset="100%" stopColor={c} stopOpacity={0.6} />
+            ) : (
+              <ResponsiveContainer width="100%" height={360}>
+                <BarChart data={monthlyData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={22}>
+                  <CartesianGrid dasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                  <XAxis dataKey="m" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(72,127,255,0.06)', radius: 6 }} />
+                  <Bar dataKey="sales" fill="url(#barGrad)" radius={[6, 6, 0, 0]}>
+                    <defs>
+                      <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#487fff" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#486cea" stopOpacity={0.7} />
                       </linearGradient>
-                    ))}
+                    </defs>
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          <div className={styles.ordersPanel}>
+            <div className={styles.cardHdr}>
+              <div>
+                <h3 className={styles.cardTitle}>Order Status</h3>
+                <p className={styles.cardSub}>Live counts by stage</p>
+              </div>
+            </div>
+            <div className={styles.orderGrid}>
+              {ORDER_ROWS.map(o => (
+                <div key={o.label} className={styles.orderChip} style={{ '--oc': o.color, '--obg': o.bg }}>
+                  <span className={styles.orderDot} />
+                  <span className={styles.orderLabel}>{o.label}</span>
+                  <span className={styles.orderCount}>{o.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hasPermission('reports_view') && (
+        <div className={styles.chartCard} style={{ marginTop: 20 , marginBottom : 20}}>
+          <div className={styles.cardHdr}>
+            <div>
+              <h3 className={styles.cardTitle}>Sales Overview</h3>
+              <p className={styles.cardSub}>
+                {salesView === 'quarterly'
+                  ? `Quarterly revenue breakdown for ${selectedYear}`
+                  : `Monthly revenue trend for ${selectedYear}`}
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              {/* View toggle */}
+              <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: 3, gap: 2 }}>
+                {['monthly', 'quarterly'].map(v => (
+                  <button
+                    key={v}
+                    onClick={() => setSalesView(v)}
+                    style={{
+                      padding: '5px 14px',
+                      borderRadius: 6,
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      letterSpacing: '0.04em',
+                      textTransform: 'capitalize',
+                      background: salesView === v ? '#487fff' : 'transparent',
+                      color: salesView === v ? '#fff' : '#9ca3af',
+                      transition: 'all 0.18s ease',
+                    }}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+              {/* Year picker */}
+              <div className={styles.yearSelectWrap}>
+                <select className={styles.yearSelect} value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
+                  {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+                <span className={styles.yearSelectIcon}>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {salesView === 'monthly' ? (
+            graphLoading ? (
+              <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, fontWeight: 500 }}>
+                Loading sales chart…
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={monthlySalesData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#45b369" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="#45b369" stopOpacity={0.05} />
+                    </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-                  <XAxis dataKey="q" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="m" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                   <Tooltip
                     formatter={(v) => [`₹${Number(v || 0).toLocaleString('en-IN')}`, 'Revenue']}
                     labelStyle={{ color: '#9ca3af', fontSize: 11, fontWeight: 600 }}
                     contentStyle={{ background: '#1b2431', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#fff' }}
                   />
-                  <Bar dataKey="amount" radius={[6, 6, 0, 0]}
-                    fill="url(#qGrad0)"
-                    label={false}
-                    shape={(props) => {
-                      const { x, y, width, height, index } = props;
-                      const gradIds = ['qGrad0','qGrad1','qGrad2','qGrad3'];
-                      return <rect x={x} y={y} width={width} height={height} fill={`url(#${gradIds[index % 4]})`} rx={6} ry={6} />;
-                    }}
-                  />
-                </BarChart>
+                  <Area type="monotone" dataKey="amount" stroke="#45b369" strokeWidth={3} fill="url(#salesGrad)" />
+                </AreaChart>
               </ResponsiveContainer>
-            </>
-          )
-        )}
-      </div>
+            )
+          ) : (
+            /* ── Quarterly view ── */
+            quarterlyLoading ? (
+              <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, fontWeight: 500 }}>
+                Loading quarterly data…
+              </div>
+            ) : (
+              <>
+                {/* Yearly summary banner */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: 8, margin: '8px 0 18px',
+                  background: 'linear-gradient(135deg,rgba(69,179,105,0.12) 0%,rgba(72,127,255,0.12) 100%)',
+                  border: '1px solid rgba(69,179,105,0.2)', borderRadius: 10, padding: '10px 20px',
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#45b369" strokeWidth="2">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+                  </svg>
+                  <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: 500 }}>Yearly Total {selectedYear}:</span>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: '#45b369' }}>
+                    ₹{Number(quarterlySalesData?.yearly || 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
 
-      <div className={styles.tableCard}>
-        <div className={styles.cardHdr}>
-          <div>
-            <h3 className={styles.cardTitle}>Recent Variants</h3>
-            <p className={styles.cardSub}>Latest additions to the store</p>
+                {/* Quarter cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14, marginBottom: 20 }}>
+                  {(['Q1 (Jan–Mar)','Q2 (Apr–Jun)','Q3 (Jul–Sep)','Q4 (Oct–Dec)']).map((label, i) => {
+                    const qData = quarterlySalesData?.quarters?.[i];
+                    const amount = qData?.amount || 0;
+                    const yearly = quarterlySalesData?.yearly || 1;
+                    const pct = yearly > 0 ? Math.round((amount / yearly) * 100) : 0;
+                    const colors = ['#487fff','#45b369','#ff9f29','#8252e9'];
+                    const color = colors[i];
+                    return (
+                      <div key={label} style={{
+                        background: 'rgba(255,255,255,0.03)', border: `1px solid ${color}33`,
+                        borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden',
+                      }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: color, borderRadius: '12px 12px 0 0' }} />
+                        <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                          {label}
+                        </p>
+                        <p style={{ margin: '8px 0 4px', fontSize: 20, fontWeight: 700, color: '#fff' }}>
+                          ₹{Number(amount).toLocaleString('en-IN')}
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                          <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 4 }}>
+                            <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 4, transition: 'width 0.6s ease' }} />
+                          </div>
+                          <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, minWidth: 30 }}>{pct}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Quarterly bar chart */}
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={quarterlySalesData?.quarters || []} margin={{ top: 4, right: 4, left: -16, bottom: 0 }} barSize={40}>
+                    <defs>
+                      {['#487fff','#45b369','#ff9f29','#8252e9'].map((c, i) => (
+                        <linearGradient key={i} id={`qGrad${i}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={c} stopOpacity={1} />
+                          <stop offset="100%" stopColor={c} stopOpacity={0.6} />
+                        </linearGradient>
+                      ))}
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                    <XAxis dataKey="q" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      formatter={(v) => [`₹${Number(v || 0).toLocaleString('en-IN')}`, 'Revenue']}
+                      labelStyle={{ color: '#9ca3af', fontSize: 11, fontWeight: 600 }}
+                      contentStyle={{ background: '#1b2431', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#fff' }}
+                    />
+                    <Bar dataKey="amount" radius={[6, 6, 0, 0]}
+                      fill="url(#qGrad0)"
+                      label={false}
+                      shape={(props) => {
+                        const { x, y, width, height, index } = props;
+                        const gradIds = ['qGrad0','qGrad1','qGrad2','qGrad3'];
+                        return <rect x={x} y={y} width={width} height={height} fill={`url(#${gradIds[index % 4]})`} rx={6} ry={6} />;
+                      }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </>
+            )
+          )}
+        </div>
+      )}
+
+      {hasPermission('variants_view') && (
+        <div className={styles.tableCard}>
+          <div className={styles.cardHdr}>
+            <div>
+              <h3 className={styles.cardTitle}>Recent Variants</h3>
+              <p className={styles.cardSub}>Latest additions to the store</p>
+            </div>
+            <div className={styles.legend}>
+              {[['#45b369', 'In Stock'], ['#f97316', 'Medium'], ['#ef4444', 'Low / Out']].map(([c, l]) => (
+                <span key={l} className={styles.legendItem}>
+                  <span className={styles.legendDot} style={{ background: c }} />{l}
+                </span>
+              ))}
+            </div>
           </div>
-          <div className={styles.legend}>
-            {[['#45b369', 'In Stock'], ['#f97316', 'Medium'], ['#ef4444', 'Low / Out']].map(([c, l]) => (
-              <span key={l} className={styles.legendItem}>
-                <span className={styles.legendDot} style={{ background: c }} />{l}
-              </span>
-            ))}
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>{['No.', 'Product Name', 'Category', 'Variant', 'MRP', 'Sale Price', 'Stock', 'Status'].map(h => <th key={h}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  [1, 2, 3].map(i => <tr key={i}>{[1,2,3,4,5,6,7,8].map(j => <td key={j}><div className={styles.skeleton} /></td>)}</tr>)
+                ) : recentVariants.length === 0 ? (
+                  <tr><td colSpan={8} className={styles.emptyRow}>No variants yet</td></tr>
+                ) : (
+                  recentVariants.map((v, i) => {
+                    const qty = Number(v.stock) || 0;
+                    const sc = stockColor(qty);
+                    return (
+                      <tr key={v.id} className={styles.tRow}>
+                        <td className={styles.tdIdx}>{i + 1}</td>
+                        <td className={styles.tdName}>{v.Product?.productName || '—'}</td>
+                        <td><span className={styles.catPill}>{v.Product?.Category?.name || '—'}</span></td>
+                        <td style={{ fontSize: 13 }}>{renderVariantLabel(v.variantName)}</td>
+                        <td className={styles.tdMrp}>₹{v.mrp ?? 0}</td>
+                        <td className={styles.tdSale}>₹{v.salesPrice ?? 0}</td>
+                        <td className={styles.tdStock}><span className={styles.stockNum} style={{ '--sc': sc }}>{qty}</span></td>
+                        <td><span className={styles.statusBadge} style={{ '--sc': sc, '--sbg': sc + '22' }}>{stockLabel(qty)}</span></td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>{['No.', 'Product Name', 'Category', 'Variant', 'MRP', 'Sale Price', 'Stock', 'Status'].map(h => <th key={h}>{h}</th>)}</tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                [1, 2, 3].map(i => <tr key={i}>{[1,2,3,4,5,6,7,8].map(j => <td key={j}><div className={styles.skeleton} /></td>)}</tr>)
-              ) : recentVariants.length === 0 ? (
-                <tr><td colSpan={8} className={styles.emptyRow}>No variants yet</td></tr>
-              ) : (
-                recentVariants.map((v, i) => {
-                  const qty = Number(v.stock) || 0;
-                  const sc = stockColor(qty);
-                  return (
-                    <tr key={v.id} className={styles.tRow}>
-                      <td className={styles.tdIdx}>{i + 1}</td>
-                      <td className={styles.tdName}>{v.Product?.productName || '—'}</td>
-                      <td><span className={styles.catPill}>{v.Product?.Category?.name || '—'}</span></td>
-                      <td style={{ fontSize: 13 }}>{renderVariantLabel(v.variantName)}</td>
-                      <td className={styles.tdMrp}>₹{v.mrp ?? 0}</td>
-                      <td className={styles.tdSale}>₹{v.salesPrice ?? 0}</td>
-                      <td className={styles.tdStock}><span className={styles.stockNum} style={{ '--sc': sc }}>{qty}</span></td>
-                      <td><span className={styles.statusBadge} style={{ '--sc': sc, '--sbg': sc + '22' }}>{stockLabel(qty)}</span></td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
 
       {/* Export Options Modal */}
       {showExportModal && (

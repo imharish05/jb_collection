@@ -9,6 +9,7 @@ import {
   removeTestimonial,
 } from '../../redux/services/testimonialsService';
 import { confirmDelete } from '../../utils/sweetalert';
+import { hasPermission } from '../../utils/authHelper';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -186,12 +187,14 @@ export default function Testimonials({ showToast }) {
       {/* ── Section Header ── */}
       <div className="section-header">
         <div className="section-title">Testimonials</div>
-        <button
-          className="action-btn btn-edit"
-          onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
-        >
-          {showForm ? 'Close' : '+ Add Testimonial'}
-        </button>
+        {hasPermission('testimonials_create') && (
+          <button
+            className="action-btn btn-edit"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
+          >
+            {showForm ? 'Close' : '+ Add Testimonial'}
+          </button>
+        )}
       </div>
 
       {/* ── Add / Edit Form ── */}
@@ -354,7 +357,11 @@ export default function Testimonials({ showToast }) {
         <p className="km-loading">Loading testimonials...</p>
       ) : (
         <DataTable
-          columns={['No.', 'Image', 'Name', 'Designation', 'Testimonial', 'Order', 'Status', 'Actions']}
+          columns={(() => {
+            const cols = ['No.', 'Image', 'Name', 'Designation', 'Testimonial', 'Order', 'Status'];
+            if (hasPermission('testimonials_edit') || hasPermission('testimonials_delete')) cols.push('Actions');
+            return cols;
+          })()}
           initialRows={rows}
           renderRow={(row, i) => (
             <tr key={row.id}>
@@ -388,12 +395,18 @@ export default function Testimonials({ showToast }) {
                   {row.isActive ? 'Active' : 'Inactive'}
                 </span>
               </td>
-              <td>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
-                  <button className="action-btn btn-del" onClick={() => handleDelete(row.id, row.name)}>Delete</button>
-                </div>
-              </td>
+              {(hasPermission('testimonials_edit') || hasPermission('testimonials_delete')) && (
+                <td>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {hasPermission('testimonials_edit') && (
+                      <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
+                    )}
+                    {hasPermission('testimonials_delete') && (
+                      <button className="action-btn btn-del" onClick={() => handleDelete(row.id, row.name)}>Delete</button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           )}
         />

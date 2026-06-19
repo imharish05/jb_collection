@@ -2,10 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import ImageUploadField from '../ImageUploadField';
-import {
-  fetchCategories, createCategory, editCategory, removeCategory
-} from '../../redux/services/categoriesService';
+import { fetchCategories, createCategory, editCategory, removeCategory } from '../../redux/services/categoriesService';
 import { confirmDelete } from '../../utils/sweetalert';
+import { hasPermission } from '../../utils/authHelper';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -200,12 +199,14 @@ const handleDelete = async (catId) => {
     <div className="categories-container">
       <div className="section-header">
         <div className="section-title">Categories</div>
-        <button
-          className="action-btn btn-edit"
-          onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
-        >
-          {showForm ? 'Close' : '+ Add Category'}
-        </button>
+        {hasPermission('categories_create') && (
+          <button
+            className="action-btn btn-edit"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
+          >
+            {showForm ? 'Close' : '+ Add Category'}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -275,7 +276,11 @@ const handleDelete = async (catId) => {
         <p className="km-loading">Loading categories...</p>
       ) : (
         <DataTable
-          columns={['No.', 'Image', 'Category Name', 'Slug', 'Actions']}
+          columns={(() => {
+            const cols = ['No.', 'Image', 'Category Name', 'Slug'];
+            if (hasPermission('categories_edit') || hasPermission('categories_delete')) cols.push('Actions');
+            return cols;
+          })()}
           initialRows={rows}
           renderRow={(row, i) => (
             
@@ -304,12 +309,18 @@ const handleDelete = async (catId) => {
               </td>
               <td>{row.label}</td>
               <td><code style={{ fontSize: '12px', opacity: 0.7 }}>{row.value || '-'}</code></td>
-              <td>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
-                  <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
-                </div>
-              </td>
+              {(hasPermission('categories_edit') || hasPermission('categories_delete')) && (
+                <td>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {hasPermission('categories_edit') && (
+                      <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
+                    )}
+                    {hasPermission('categories_delete') && (
+                      <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           )}
         />

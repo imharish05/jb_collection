@@ -31,6 +31,8 @@ import Testimonials from './components/Testimonials/Testimonials';
 // ── Returns / Refunds ────────────────────────────────────────
 import ReturnsDashboard from './components/Returns/ReturnsDashboard';
 import ReturnDetail from './components/Returns/ReturnDetail';
+import Roles from './components/Roles/Roles';
+import Users from './components/Users/Users';
 
 import './components/global.css';
 import Swal from 'sweetalert2';
@@ -66,6 +68,8 @@ const PAGE_CONFIG = {
   testimonials:        { title: 'Testimonials' },
   // ── Returns ─────────────────────────────────────────────────
   returns:             { title: 'Returns & Refunds' },
+  roles:               { title: 'Roles & Permissions' },
+  users:               { title: 'User Management' },
 };
 
 function AdminLayoutWrapper({ handleLogout }) {
@@ -127,6 +131,8 @@ function AdminLayoutWrapper({ handleLogout }) {
             {/* ── Returns & Refunds ──────────────────────────── */}
             <Route path="/returns"             element={<ReturnsDashboard   showToast={showToast} />} />
             <Route path="/returns/:id"         element={<ReturnDetail />} />
+            <Route path="/roles"               element={<Roles              showToast={showToast} />} />
+            <Route path="/users"               element={<Users              showToast={showToast} />} />
             <Route path="/"                    element={<Navigate to="/dashboard" />} />
           </Routes>
         </div>
@@ -157,6 +163,7 @@ export default function App() {
     }).then((result) => {
       if (result.isConfirmed) {
         localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
         setIsAdminLoggedIn(false);
       }
     });

@@ -837,7 +837,7 @@ const handleBuyNow = async () => {
         name: localProduct.name,
         price: resolvedPrice,
         discount: selectedVariant ? 0 : (localProduct.discount || 0),
-        image: localProduct.image || [],
+        image: selectedVariant?.image || localProduct.image || [],
         variation: localProduct.variation || [],
         stock: resolvedStock,
         Variants: localProduct.Variants || [],

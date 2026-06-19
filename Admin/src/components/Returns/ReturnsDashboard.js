@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from '../../api.js';
 import toast from 'react-hot-toast';
+import { hasPermission } from '../../utils/authHelper';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const TYPE_LABELS  = { refund: 'Return (Refund)', replacement: 'Replacement' };
@@ -247,7 +248,7 @@ export default function ReturnsDashboard({ showToast }) {
                       onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-100)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'var(--primary-50)'; }}
                     >View</Link>
-                    {r.status === 'pending_review' && (
+                    {r.status === 'pending_review' && hasPermission('returns_edit') && (
                       <>
                         <button onClick={() => handleQuickStatus(r.id, 'approved')}
                           style={{ background: 'var(--success-50)', color: 'var(--success-600)', border: '1px solid var(--success-border)', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}

@@ -17,6 +17,7 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
       if (!window.location.pathname.includes('/login')) {
         window.location.replace('/login');
       }

@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getImgUrl } from "../../helpers/imageUrl";
 import SEO from "../../components/seo";
@@ -17,7 +17,9 @@ const parseJson = (val) => {
   try { return JSON.parse(val); } catch { return val; }
 };
 
-const getOrderItemImage = (img) => {
+const getOrderItemImage = (img, selectedVariant) => {
+  const variantImg = selectedVariant?.image;
+  if (variantImg) return getImgUrl(variantImg);
   const arr = Array.isArray(img) ? img : parseJson(img);
   const raw = Array.isArray(arr) ? arr[0] : (typeof img === "string" ? img : null);
   return raw ? getImgUrl(raw) : "/assets/img/products/products-1.jpeg";
@@ -135,6 +137,8 @@ const downloadReceipt = (state) => {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 const OrderConfirmation = () => {
+  const [openIncluded, setOpenIncluded] = useState({});
+  const toggleIncluded = (idx) => setOpenIncluded(prev => ({ ...prev, [idx]: !prev[idx] }));
   const { state } = useLocation();
   const orderId       = state?.orderId       || "KG000000";
   const referenceSlug = state?.referenceSlug || state?.orderNumber || orderId; // Use slug for display
@@ -254,27 +258,38 @@ useEffect(() => {
             <div className="col-lg-7 mb-3">
               <div style={cardStyle}>
                 <h4 style={cardTitle}>📦 Items Ordered</h4>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ background: "#f9f9f9" }}>
-                      <th style={thStyle}>Product</th>
-                      <th style={{ ...thStyle, textAlign: "center" }}>Qty</th>
-                      <th style={{ ...thStyle, textAlign: "right" }}>Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cartItems.map((item, i) => {
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "10px 12px",
+                  background: "#f9f9f9",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#6b7280",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em"
+                }}>
+                  <span>Product</span>
+                  <span style={{ display: "flex", gap: 40 }}>
+                    <span>Qty</span>
+                    <span>Price</span>
+                  </span>
+                </div>
+                <div>
+                  {cartItems.map((item, i) => {
                       const variantTags = resolveVariantTags(item);
                       return (
-                        <tr key={i} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                          <td style={tdStyle}>
-                            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                        <div key={i} style={{ borderBottom: "1px solid #f0f0f0", padding: "14px 0" }}>
+                          {/* ── Item main row: img + name + qty + price (single div) ── */}
+                          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, minWidth: 0 }}>
                               <img
-                                src={getOrderItemImage(item.image)}
+                                src={getOrderItemImage(item.image, item.selectedVariant)}
                                 alt=""
                                 style={{ width: 52, height: 52, objectFit: "cover", borderRadius: 10, flexShrink: 0 }}
                               />
-                              <div>
+                              <div style={{ minWidth: 0 }}>
                                 <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: variantTags.length ? 6 : 0 }}>
                                   {item.name}
                                 </div>
@@ -315,102 +330,158 @@ useEffect(() => {
     })}
   </div>
 )}
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", gap: 40, flexShrink: 0, paddingTop: 2 }}>
+                              <span style={{ fontSize: 14, color: "#374151", minWidth: 18, textAlign: "center" }}>{item.quantity}</span>
+                              <span style={{ fontSize: 14, fontWeight: 600, color: "#111", minWidth: 64, textAlign: "right" }}>
+                                ₹{(item.price * item.quantity).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* ── Included Products: separate div, below the main row ── */}
+                          <div>
                                 {(() => {
                                   const selectedProducts = item.selectedProducts ? (typeof item.selectedProducts === 'string' ? parseJson(item.selectedProducts) : item.selectedProducts) : null;
                                   if (Array.isArray(selectedProducts) && selectedProducts.length > 0) {
+                                    const isOpen = !!openIncluded[i];
                                     return (
-                                      <div style={{
-                                        marginTop: "10px",
-                                        paddingLeft: "12px",
-                                        borderLeft: "2px solid #db1a5d"
-                                      }}>
-                                        <div style={{
-                                          fontSize: "10px",
-                                          fontWeight: 700,
-                                          color: "#6b7280",
-                                          marginBottom: "6px",
-                                          textTransform: "uppercase",
-                                          letterSpacing: "0.06em",
-                                          textAlign: "left"
-                                        }}>
-                                          Included Products
-                                        </div>
-                                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                          {selectedProducts.map((p, idx) => (
-                                            <div key={idx} style={{
-                                              display: "flex",
-                                              alignItems: "center",
-                                              gap: "8px",
-                                              padding: "4px 8px",
-                                              background: "#f9fafb",
-                                              border: "1px solid #f3f4f6",
-                                              borderRadius: "6px",
-                                              marginTop: "4px"
-                                            }}>
-                                              <img
-                                                src={p.image ? getImgUrl(p.image) : "/assets/img/products/products-1.jpeg"}
-                                                alt={p.name}
-                                                style={{
-                                                  width: "30px",
-                                                  height: "30px",
-                                                  borderRadius: "4px",
-                                                  objectFit: "cover"
-                                                }}
-                                                onError={(e) => e.target.src = "/assets/img/products/products-1.jpeg"}
-                                              />
-                                              <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div style={{
-                                                  fontSize: "11px",
-                                                  fontWeight: 600,
-                                                  color: "#374151",
-                                                  textAlign: "left"
+                                      <div style={{ marginTop: "10px" }}>
+                                        <button
+                                          type="button"
+                                          onClick={() => toggleIncluded(i)}
+                                          style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "6px",
+                                            background: "none",
+                                            border: "none",
+                                            padding: 0,
+                                            cursor: "pointer",
+                                            fontSize: "10px",
+                                            fontWeight: 700,
+                                            color: "#6b7280",
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.06em"
+                                          }}
+                                        >
+                                          <span>Included Products ({selectedProducts.length})</span>
+                                          <span style={{
+                                            display: "inline-block",
+                                            transition: "transform 0.15s ease",
+                                            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                                            fontSize: "9px"
+                                          }}>▼</span>
+                                        </button>
+
+                                        {isOpen && (
+                                          <div style={{
+                                            marginTop: "8px",
+                                            border: "1px solid #e5e7eb",
+                                            borderRadius: "8px",
+                                            overflow: "hidden"
+                                          }}>
+                                            {selectedProducts.map((p, idx) => {
+                                              const pTags = (p.variantName || "")
+                                                .split(/·|,/)
+                                                .map(s => s.trim())
+                                                .filter(Boolean)
+                                                .map(part => {
+                                                  if (part.includes(":")) {
+                                                    const [k, ...rest] = part.split(":");
+                                                    return { key: k.trim(), val: rest.join(":").trim() };
+                                                  }
+                                                  return { key: "Variant", val: part };
+                                                });
+                                              return (
+                                                <div key={idx} style={{
+                                                  padding: "8px 10px",
+                                                  borderBottom: idx < selectedProducts.length - 1 ? "1px solid #f0f0f0" : "none",
+                                                  background: "#fff"
                                                 }}>
-                                                  {p.name}
-                                                </div>
-                                                <div style={{ display: "flex", gap: "4px", marginTop: "2px", alignItems: "center" }}>
-                                                  {p.variantName && (
-                                                    <span style={{
-                                                      fontSize: "9px",
-                                                      background: "#fff0f6",
-                                                      color: "#db1a5d",
-                                                      border: "1px solid #ffd6e7",
-                                                      borderRadius: "3px",
-                                                      padding: "0px 4px",
-                                                      fontWeight: 600
-                                                    }}>{p.variantName}</span>
+                                                  <div style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "space-between",
+                                                    gap: "8px"
+                                                  }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                                                      <img
+                                                        src={p.image ? getImgUrl(p.image) : "/assets/img/products/products-1.jpeg"}
+                                                        alt={p.name}
+                                                        style={{ width: 30, height: 30, objectFit: "cover", borderRadius: 6, flexShrink: 0 }}
+                                                        onError={(e) => e.target.src = "/assets/img/products/products-1.jpeg"}
+                                                      />
+                                                      <span style={{
+                                                        fontSize: "12px",
+                                                        fontWeight: 600,
+                                                        color: "#111",
+                                                        whiteSpace: "nowrap",
+                                                        overflow: "hidden",
+                                                        textOverflow: "ellipsis"
+                                                      }}>
+                                                        {p.name}
+                                                      </span>
+                                                    </div>
+                                                    {p.quantity >= 1 && (
+                                                      <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 600, flexShrink: 0 }}>
+                                                        × {p.quantity}
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                  {pTags.length > 0 && (
+                                                    <div style={{
+                                                      display: "flex",
+                                                      flexWrap: "wrap",
+                                                      alignItems: "center",
+                                                      gap: "5px",
+                                                      marginTop: "4px",
+                                                      fontSize: "11px",
+                                                      color: "#6b7280"
+                                                    }}>
+                                                      {pTags.map((tag, ti) => {
+                                                        const isCol = isColourKey(tag.key);
+                                                        const hasPreview = isCol && isHexColor(tag.val);
+                                                        return (
+                                                          <span key={ti} style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                                            <span>{tag.key}:</span>
+                                                            {hasPreview ? (
+                                                              <span
+                                                                title={tag.val.toUpperCase()}
+                                                                style={{
+                                                                  width: 10,
+                                                                  height: 10,
+                                                                  borderRadius: "50%",
+                                                                  border: "1px solid #dcdcdc",
+                                                                  backgroundColor: tag.val,
+                                                                  display: "inline-block"
+                                                                }}
+                                                              />
+                                                            ) : (
+                                                              <span>{tag.val}</span>
+                                                            )}
+                                                            {ti < pTags.length - 1 && <span style={{ color: "#d1d5db" }}>,</span>}
+                                                          </span>
+                                                        );
+                                                      })}
+                                                    </div>
                                                   )}
-                                                  {p.quantity >= 1 && (
-                                                    <span style={{
-                                                      fontSize: "9px",
-                                                      background: "#e5e7eb",
-                                                      color: "#4b5563",
-                                                      borderRadius: "3px",
-                                                      padding: "0px 4px",
-                                                      fontWeight: 600
-                                                    }}>×{p.quantity}</span>
-                                                  )}
                                                 </div>
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   }
                                   return null;
                                 })()}
-                              </div>
-                            </div>
-                          </td>
-                          <td style={{ ...tdStyle, textAlign: "center" }}>{item.quantity}</td>
-                          <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>
-                            ₹{(item.price * item.quantity).toFixed(2)}
-                          </td>
-                        </tr>
+                          </div>
+                        </div>
                       );
                     })}
-                  </tbody>
-                </table>
+                </div>
 
                 {/* ── NEW: Payment Breakdown (replaces simple Grand Total) ── */}
                 <div style={{ marginTop: 12, paddingTop: 12 }}>

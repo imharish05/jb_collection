@@ -550,6 +550,21 @@ const createOrder = async (req, res, next) => {
       ],
     });
 
+    // Post-commit for pure COD only
+    if (isCod) {
+      try {
+        const userRecord = await User.findByPk(req.user.id, { attributes: ["name", "email"] });
+        if (userRecord?.email) {
+          await sendOrderConfirmationEmail(createdOrder, { name: userRecord.name, email: userRecord.email });
+        }
+        try {
+          await sendAdminNewOrderEmail(createdOrder, { name: userRecord?.name, email: userRecord?.email || "" });
+        } catch (adminMailErr) {
+          console.error("[Mailer] Failed to send admin email notification:", adminMailErr.message);
+        }
+      } catch (emailErr) {
+        console.error("[Mailer] Failed to send confirmation:", emailErr.message);
+      }
     }
 
     // Fire order notification (non-blocking)

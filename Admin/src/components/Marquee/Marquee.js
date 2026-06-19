@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchMarquees, createMarquee, editMarquee, removeMarquee } from '../../redux/services/marqueeService';
 import { confirmDelete } from '../../utils/sweetalert';
+import { hasPermission } from '../../utils/authHelper';
 
 const KM = {
   orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B',
@@ -123,12 +124,14 @@ export default function Marquee({ showToast }) {
       
       <div className="section-header">
         <div className="section-title">Marquee Messages</div>
-        <button
-          className="action-btn btn-edit"
-          onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
-        >
-          {showForm ? 'Close' : '+ Add Message'}
-        </button>
+        {hasPermission('marquee_create') && (
+          <button
+            className="action-btn btn-edit"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
+          >
+            {showForm ? 'Close' : '+ Add Message'}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -196,7 +199,11 @@ export default function Marquee({ showToast }) {
         <p className="km-loading">Loading marquee messages...</p>
       ) : (
         <DataTable
-          columns={['No.', 'Message', 'Status', 'Actions']}
+          columns={(() => {
+            const cols = ['No.', 'Message', 'Status'];
+            if (hasPermission('marquee_edit') || hasPermission('marquee_delete')) cols.push('Actions');
+            return cols;
+          })()}
           initialRows={rows}
           renderRow={(row, i) => (
             <tr key={row.id}>
@@ -211,12 +218,18 @@ export default function Marquee({ showToast }) {
                   {row.isActive ? 'Active' : 'Inactive'}
                 </span>
               </td>
-              <td>
-                <div style={{ display: 'flex', gap: '8px'}}>
-                  <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
-                  <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
-                </div>
-              </td>
+              {(hasPermission('marquee_edit') || hasPermission('marquee_delete')) && (
+                <td>
+                  <div style={{ display: 'flex', gap: '8px'}}>
+                    {hasPermission('marquee_edit') && (
+                      <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
+                    )}
+                    {hasPermission('marquee_delete') && (
+                      <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           )}
         />

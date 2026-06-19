@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from '../../api.js';
 import toast from 'react-hot-toast';
+import { hasPermission } from '../../utils/authHelper';
 
 // ─────────────────────────────────────────────────────────────────────────────
 const STATUS_FLOW = {
@@ -364,96 +365,102 @@ export default function ReturnDetail() {
         <div>
           {/* Status update panel */}
           <Section title="Update Status">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <select value={newStatus} onChange={e => setNewStatus(e.target.value)}
-                style={{
-                  background: '#ffffff', border: '1px solid #d1d5db', color: '#111827',
-                  borderRadius: '8px', padding: '10px 12px', fontSize: '13px', width: '100%',
-                  outline: 'none', cursor: 'pointer',
-                }}>
-                <option value="">— Select next status —</option>
-                {Object.entries(STATUS_LABELS)
-                  .filter(([k]) => {
-                    if (['pending_review', 'approved', 'rejected', 'cancelled'].includes(k)) return true;
-                    if (r?.returnType === 'refund') {
-                      return ['pickup_scheduled', 'picked_up', 'inspection_completed', 'refund_initiated', 'refund_completed'].includes(k);
-                    }
-                    if (r?.returnType === 'replacement') {
-                      return ['pickup_scheduled', 'picked_up', 'inspection_completed', 'replacement_shipped', 'replacement_delivered'].includes(k);
-                    }
-                    return true;
-                  })
-                  .map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
-              </select>
-              <textarea
-                rows={3}
-                placeholder="Admin note (optional, sent to customer email)…"
-                value={adminNote} onChange={e => setAdminNote(e.target.value)}
-                style={{
-                  background: '#ffffff', border: '1px solid #d1d5db', color: '#111827',
-                  borderRadius: '8px', padding: '10px 12px', fontSize: '13px', resize: 'vertical',
-                  fontFamily: 'Inter, sans-serif', outline: 'none',
-                }}
-              />
-              <button
-                onClick={handleStatusUpdate} disabled={submitting || !newStatus}
-                style={{
-                  background: submitting || !newStatus ? '#e5e7eb' : '#db1a5d',
-                  color: submitting || !newStatus ? '#9ca3af' : '#fff', border: 'none', borderRadius: '8px', padding: '11px',
-                  fontWeight: 700, cursor: submitting || !newStatus ? 'not-allowed' : 'pointer',
-                  fontSize: '14px', transition: 'background .2s',
-                }}>
-                {submitting ? 'Updating…' : 'Update Status'}
-              </button>
-
-              {/* Quick reject */}
-              {r.status === 'pending_review' && (
-                <button
-                    onClick={() => {
-                      toast(
-                        (t) => (
-                          <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            <strong>Reject this return request?</strong>
-                            <span style={{ fontSize: 12, color: '#aaa' }}>The customer will be notified of the rejection.</span>
-                            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                              <button
-                                onClick={async () => {
-                                  toast.dismiss(t.id);
-                                  setSubmitting(true);
-                                  const tid = toast.loading('Rejecting…');
-                                  try {
-                                    await axios.patch(`/returns/admin/${id}/status`, { status: 'rejected', adminNote }, { headers });
-                                    toast.success('Return request rejected', { id: tid });
-                                    fetchDetail();
-                                  } catch { toast.error('Failed to reject', { id: tid }); }
-                                  finally { setSubmitting(false); }
-                                }}
-                                style={{ padding: '5px 14px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 5, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
-                              >Reject</button>
-                              <button
-                                onClick={() => toast.dismiss(t.id)}
-                                style={{ padding: '5px 14px', background: '#374151', color: '#d1d5db', border: 'none', borderRadius: 5, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
-                              >Cancel</button>
-                            </div>
-                          </span>
-                        ),
-                        { duration: Infinity }
-                      );
-                    }}
+            {hasPermission('returns_edit') ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <select value={newStatus} onChange={e => setNewStatus(e.target.value)}
                   style={{
-                    background: 'var(--danger-50)', color: 'var(--danger-600)', border: '1px solid var(--danger-border)',
-                    borderRadius: '8px', padding: '10px', fontWeight: 700, cursor: 'pointer',
-                    fontSize: '13px', transition: 'background .15s',
+                    background: '#ffffff', border: '1px solid #d1d5db', color: '#111827',
+                    borderRadius: '8px', padding: '10px 12px', fontSize: '13px', width: '100%',
+                    outline: 'none', cursor: 'pointer',
+                  }}>
+                  <option value="">— Select next status —</option>
+                  {Object.entries(STATUS_LABELS)
+                    .filter(([k]) => {
+                      if (['pending_review', 'approved', 'rejected', 'cancelled'].includes(k)) return true;
+                      if (r?.returnType === 'refund') {
+                        return ['pickup_scheduled', 'picked_up', 'inspection_completed', 'refund_initiated', 'refund_completed'].includes(k);
+                      }
+                      if (r?.returnType === 'replacement') {
+                        return ['pickup_scheduled', 'picked_up', 'inspection_completed', 'replacement_shipped', 'replacement_delivered'].includes(k);
+                      }
+                      return true;
+                    })
+                    .map(([k, v]) => (
+                      <option key={k} value={k}>{v}</option>
+                    ))}
+                </select>
+                <textarea
+                  rows={3}
+                  placeholder="Admin note (optional, sent to customer email)…"
+                  value={adminNote} onChange={e => setAdminNote(e.target.value)}
+                  style={{
+                    background: '#ffffff', border: '1px solid #d1d5db', color: '#111827',
+                    borderRadius: '8px', padding: '10px 12px', fontSize: '13px', resize: 'vertical',
+                    fontFamily: 'Inter, sans-serif', outline: 'none',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--danger-50)'; }}
-                >
-                  ✕ Reject Request
+                />
+                <button
+                  onClick={handleStatusUpdate} disabled={submitting || !newStatus}
+                  style={{
+                    background: submitting || !newStatus ? '#e5e7eb' : '#db1a5d',
+                    color: submitting || !newStatus ? '#9ca3af' : '#fff', border: 'none', borderRadius: '8px', padding: '11px',
+                    fontWeight: 700, cursor: submitting || !newStatus ? 'not-allowed' : 'pointer',
+                    fontSize: '14px', transition: 'background .2s',
+                  }}>
+                  {submitting ? 'Updating…' : 'Update Status'}
                 </button>
-              )}
-            </div>
+
+                {/* Quick reject */}
+                {r.status === 'pending_review' && (
+                  <button
+                      onClick={() => {
+                        toast(
+                          (t) => (
+                            <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              <strong>Reject this return request?</strong>
+                              <span style={{ fontSize: 12, color: '#aaa' }}>The customer will be notified of the rejection.</span>
+                              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                                <button
+                                  onClick={async () => {
+                                    toast.dismiss(t.id);
+                                    setSubmitting(true);
+                                    const tid = toast.loading('Rejecting…');
+                                    try {
+                                      await axios.patch(`/returns/admin/${id}/status`, { status: 'rejected', adminNote }, { headers });
+                                      toast.success('Return request rejected', { id: tid });
+                                      fetchDetail();
+                                    } catch { toast.error('Failed to reject', { id: tid }); }
+                                    finally { setSubmitting(false); }
+                                  }}
+                                  style={{ padding: '5px 14px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 5, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
+                                >Reject</button>
+                                <button
+                                  onClick={() => toast.dismiss(t.id)}
+                                  style={{ padding: '5px 14px', background: '#374151', color: '#d1d5db', border: 'none', borderRadius: 5, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
+                                >Cancel</button>
+                              </div>
+                            </span>
+                          ),
+                          { duration: Infinity }
+                        );
+                      }}
+                    style={{
+                      background: 'var(--danger-50)', color: 'var(--danger-600)', border: '1px solid var(--danger-border)',
+                      borderRadius: '8px', padding: '10px', fontWeight: 700, cursor: 'pointer',
+                      fontSize: '13px', transition: 'background .15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--danger-50)'; }}
+                  >
+                    ✕ Reject Request
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div style={{ fontSize: '13px', color: '#6b7280', fontStyle: 'italic', padding: '10px 0' }}>
+                You do not have permission to modify return status.
+              </div>
+            )}
           </Section>
 
           {/* Media */}

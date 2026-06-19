@@ -27,6 +27,8 @@ const couponRoutes = require("./routes/coupons");
 const contactRoutes = require("./routes/contact");
 const customerRoutes = require("./routes/customers");
 const dashboardRoutes = require("./routes/dashboard");
+const roleRoutes = require("./routes/roles");
+const userRoutes = require("./routes/users");
 const testimonialRoutes = require("./routes/testimonials");
 const shippingRoutes = require("./routes/shipping");
 const newComboRoutes = require("./routes/combos");
@@ -70,6 +72,8 @@ app.use("/api/coupons", couponRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/roles", roleRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/combos", newComboRoutes);
@@ -96,11 +100,48 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log("✅ MySQL database connected");
 
+    // ── Safe alter users table (MySQL backward compatible) ─────────────────────
+    try {
+      await sequelize.query("ALTER TABLE users ADD COLUMN role_id CHAR(36) BINARY NULL;").catch(() => {});
+      await sequelize.query("ALTER TABLE users ADD COLUMN status ENUM('active', 'inactive') DEFAULT 'active';").catch(() => {});
+      console.log("✅ Users table columns verified");
+    } catch (alterErr) {
+      console.warn("⚠️ Column alter query failed (ignoring):", alterErr.message);
+    }
+
     await sequelize.query("SET FOREIGN_KEY_CHECKS = 0;");
     await sequelize.sync();
     await models.backfillReferenceSlugs();
     console.log("✅ Models synced");
     await sequelize.query("SET FOREIGN_KEY_CHECKS = 1;");
+
+    // Seed default Super Admin role
+    try {
+      const { Role, User } = models;
+      let superAdminRole = await Role.findOne({ where: { name: "Super Admin" } });
+      if (!superAdminRole) {
+        superAdminRole = await Role.create({
+          name: "Super Admin",
+          permissions: ["*"],
+        });
+        console.log("✅ Default 'Super Admin' role seeded");
+      }
+
+      // Link existing admins to Super Admin
+      const adminsWithoutRoleId = await User.findAll({
+        where: {
+          role: "admin",
+          roleId: null,
+        },
+      });
+      for (const adminUser of adminsWithoutRoleId) {
+        adminUser.roleId = superAdminRole.id;
+        await adminUser.save();
+        console.log(`✅ User ${adminUser.email} mapped to 'Super Admin' role`);
+      }
+    } catch (seedRoleErr) {
+      console.error("❌ Failed to seed default roles:", seedRoleErr.message);
+    }
 
     const { seedCoupons } = require("./controllers/couponController");
     await seedCoupons();

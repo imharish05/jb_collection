@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import DataTable from '../DataTable/DataTable';
 import { fetchOrders, changeOrderStatus, changeOrderItemStatus } from '../../redux/services/ordersService';
 import { renderVariantLabel } from '../Products/VariantBuilder';
+import { hasPermission } from '../../utils/authHelper';
 
 // ✅ Removed 'returned' from STATUS_OPTIONS, added 'pending'
 const STATUS_OPTIONS = ['pending', 'confirmed', 'shipped', 'processing', 'delivered', 'cancelled'];
@@ -227,28 +228,34 @@ export default function Orders({ status = null }) {
                       : <span className="td-muted">—</span>}
                   </td>
                   <td>
-                    <div className={`km-status-wrapper ${isUpdatingStatus ? 'is-updating' : ''}`}>
-                      <select
-                        className={`km-status-select km-status-${order.status}`}
-                        value={order.status}
-                        onChange={e => updateStatus(order.id, e.target.value)}
-                        disabled={isUpdatingStatus}
-                        aria-busy={isUpdatingStatus}
-                      >
-                        {STATUS_OPTIONS.map(st => (
-                          <option key={st} value={st}>{labelFor(st)}</option>
-                        ))}
-                      </select>
-                      <span className="km-status-chevron">▾</span>
-                      {isUpdatingStatus && (
-                        <span className="km-status-spinner">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="2" opacity="0.2" />
-                            <path d="M 8 1.5 A 6.5 6.5 0 0 1 13.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                          </svg>
-                        </span>
-                      )}
-                    </div>
+                    {hasPermission('orders_edit') ? (
+                      <div className={`km-status-wrapper ${isUpdatingStatus ? 'is-updating' : ''}`}>
+                        <select
+                          className={`km-status-select km-status-${order.status}`}
+                          value={order.status}
+                          onChange={e => updateStatus(order.id, e.target.value)}
+                          disabled={isUpdatingStatus}
+                          aria-busy={isUpdatingStatus}
+                        >
+                          {STATUS_OPTIONS.map(st => (
+                            <option key={st} value={st}>{labelFor(st)}</option>
+                          ))}
+                        </select>
+                        <span className="km-status-chevron">▾</span>
+                        {isUpdatingStatus && (
+                          <span className="km-status-spinner">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="2" opacity="0.2" />
+                              <path d="M 8 1.5 A 6.5 6.5 0 0 1 13.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className={`km-status-select km-status-${order.status}`} style={{ display: 'inline-block', padding: '6px 12px', borderRadius: '6px', fontWeight: 600, fontSize: '12px', textAlign: 'center', minWidth: '100px' }}>
+                        {labelFor(order.status)}
+                      </span>
+                    )}
                   </td>
                   <td className="td-muted">
                     {order.createdAt

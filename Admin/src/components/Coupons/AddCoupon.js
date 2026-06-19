@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { fetchCoupons, createCoupon, editCoupon, removeCoupon } from '../../redux/services/couponsService';
 import { confirmDelete } from '../../utils/sweetalert';
+import { hasPermission } from '../../utils/authHelper';
 
 export default function Coupons({ showToast }) {
   const dispatch = useDispatch();
@@ -78,9 +79,11 @@ export default function Coupons({ showToast }) {
     <div>
       <div className="section-header">
         <div className="section-title">Coupons</div>
-        <button className="action-btn btn-edit" onClick={() => showForm ? resetForm() : setShowForm(true)}>
-          {showForm ? 'Close' : '+ Add Coupon'}
-        </button>
+        {hasPermission('coupons_create') && (
+          <button className="action-btn btn-edit" onClick={() => showForm ? resetForm() : setShowForm(true)}>
+            {showForm ? 'Close' : '+ Add Coupon'}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -159,7 +162,11 @@ export default function Coupons({ showToast }) {
         <p className="km-loading">Loading...</p>
       ) : (
         <DataTable
-          columns={['Code', 'Discount', 'Min Order', 'Max Cap', 'Expiry', 'Status', 'Actions']}
+          columns={(() => {
+            const cols = ['Code', 'Discount', 'Min Order', 'Max Cap', 'Expiry', 'Status'];
+            if (hasPermission('coupons_edit') || hasPermission('coupons_delete')) cols.push('Actions');
+            return cols;
+          })()}
           initialRows={rows}
           renderRow={(row) => (
             <tr key={row.id}>
@@ -173,10 +180,16 @@ export default function Coupons({ showToast }) {
                   {row.is_active ? 'ACTIVE' : 'INACTIVE'}
                 </span>
               </td>
-              <td>
-                <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
-                <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
-              </td>
+              {(hasPermission('coupons_edit') || hasPermission('coupons_delete')) && (
+                <td>
+                  {hasPermission('coupons_edit') && (
+                    <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
+                  )}
+                  {hasPermission('coupons_delete') && (
+                    <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
+                  )}
+                </td>
+              )}
             </tr>
           )}
         />
