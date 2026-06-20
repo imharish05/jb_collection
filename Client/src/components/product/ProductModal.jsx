@@ -127,7 +127,7 @@ const ORANGE_LIGHT = "#FEF0EB";
 function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSelect }) {
   const isColour = /colou?r/i.test(attrKey);
   return (
-    <div style={{ marginBottom: 14 }}>
+    <div style={{ marginBottom: 14, flex: "0 1 auto" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 7 }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: "#444", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           {attrKey}
@@ -320,7 +320,7 @@ function ProductModal({ product, currency, discountedPrice, finalProductPrice, f
 
               {/* ── Backend grouped variant selectors (same as product page) ── */}
               {hasNewVar && (
-                <div className="pro-details-size-color" style={{ marginBottom: 8 }}>
+                <div className="pro-details-size-color" style={{ marginBottom: 8, display: "flex", flexWrap: "wrap", gap: "20px" }}>
                   {orderedKeys.map(key => (
                     <AttributeGroup
                       key={key}
