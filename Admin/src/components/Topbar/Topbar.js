@@ -11,10 +11,16 @@ export default function Topbar({ title, addBtn, addLabel, onAdd }) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
 
-  // Fetch unread count on mount (lightweight — limit 1 just for count)
+  // Fetch notifications on mount and poll every 5 seconds for real-time updates
   useEffect(() => {
     dispatch(fetchNotifications(5));
-  }, []);
+
+    const interval = setInterval(() => {
+      dispatch(fetchNotifications(5));
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [dispatch]);
 
   const badgeStr = unreadCount > 99 ? '99+' : String(unreadCount);
 

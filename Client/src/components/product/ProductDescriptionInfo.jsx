@@ -1587,7 +1587,7 @@ const handleBuyNow = async () => {
 
         /* ── Variants ── */
         .pdp-info__variants {
-          display: flex;
+          // display: flex;
           flex-wrap: wrap;
           gap: 24px;
           margin-bottom: 12px;

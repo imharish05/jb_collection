@@ -50,7 +50,7 @@ const getStats = async (req, res) => {
     orderSums.forEach(o => {
       totalGST      += parseFloat(o.taxAmount) || 0;
       totalShipping += parseFloat(o.shippingCharge) || 0;
-      remainAmount  += parseFloat(o.codAmount) || 0;
+      remainAmount  += (parseFloat(o.totalAmount) || 0) - (parseFloat(o.taxAmount) || 0) - (parseFloat(o.shippingCharge) || 0);
     });
 
     // ── Razorpay Payment Stats (all-time) ──
@@ -63,13 +63,13 @@ const getStats = async (req, res) => {
       stats: {
         totalProducts,
         totalCustomers,
-        totalGST: Math.round(totalGST),
-        totalShipping: Math.round(totalShipping),
-        remainAmount: Math.round(remainAmount),
+        totalGST: parseFloat(totalGST.toFixed(2)),
+        totalShipping: parseFloat(totalShipping.toFixed(2)),
+        remainAmount: parseFloat(remainAmount.toFixed(2)),
         successfulPaymentCount,
-        successfulPaymentAmount: Math.round(successfulPaymentAmount),
+        successfulPaymentAmount: parseFloat(successfulPaymentAmount.toFixed(2)),
         failedPaymentCount,
-        failedPaymentAmount: Math.round(failedPaymentAmount),
+        failedPaymentAmount: parseFloat(failedPaymentAmount.toFixed(2)),
       },
       recentProducts: shaped,
     });
@@ -163,7 +163,7 @@ const getMonthlySales = async (req, res) => {
     orders.forEach((o) => {
       amounts[new Date(o.createdAt).getMonth()] += parseFloat(o.totalAmount) || 0;
     });
-    res.json(MONTHS.map((m, i) => ({ m, amount: Math.round(amounts[i]) })));
+    res.json(MONTHS.map((m, i) => ({ m, amount: parseFloat(amounts[i].toFixed(2)) })));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -187,8 +187,8 @@ const getQuarterlySales = async (req, res) => {
     const yearly = quarters.reduce((a, b) => a + b, 0);
     const QLABELS = ["Q1", "Q2", "Q3", "Q4"];
     res.json({
-      yearly: Math.round(yearly),
-      quarters: quarters.map((amount, i) => ({ q: QLABELS[i], amount: Math.round(amount) })),
+      yearly: parseFloat(yearly.toFixed(2)),
+      quarters: quarters.map((amount, i) => ({ q: QLABELS[i], amount: parseFloat(amount.toFixed(2)) })),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

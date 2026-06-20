@@ -509,12 +509,15 @@ const maybeCreateStockNotification = async (variant, newStatus, productName) => 
   if (!newType) return;
 
   const last = await Notification.findOne({
-    where: { metadata: { [Op.like]: `%"variantId":${variant.id}%` }, type: { [Op.like]: "stock_%" } },
+    where: {
+      "metadata.variantId": variant.id,
+      type: { [Op.like]: "stock_%" }
+    },
     order: [["createdAt", "DESC"]],
   });
   if (last && last.type === newType) return;
 
-  // const emojiMap = { high: "🟢", medium: "🔵", low: "🟠", out_of_stock: "🔴" };
+  const emojiMap = { high: "🟢", medium: "🔵", low: "🟠", out_of_stock: "🔴" };
   const titleMap = { high: "High Stock", medium: "Medium Stock", low: "Low Stock Alert", out_of_stock: "Out Of Stock" };
   const attrs = Array.isArray(variant.attributes) ? variant.attributes : [];
   const variantLabel = buildVariantLabel(attrs) || variant.variantName || "Variant";

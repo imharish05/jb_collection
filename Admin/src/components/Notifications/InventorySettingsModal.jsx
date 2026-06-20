@@ -117,7 +117,7 @@ export default function InventorySettingsModal({ onClose }) {
         <div style={{ padding: "16px 22px 0" }}>
           <FieldRow label="High Stock Threshold" value={high} onChange={e => setHigh(e.target.value)} />
           <FieldRow label="Medium Stock Threshold" value={medium} onChange={e => setMedium(e.target.value)} />
-          <FieldRow label="Low Stock Threshold" value={low} onChange={e => setLow(e.target.value)} />
+          {/* <FieldRow label="Low Stock Threshold" value={low} onChange={e => setLow(e.target.value)} /> */}
           <FieldRow label="Out Of Stock" value={0} readOnly />
 
           {error && (
