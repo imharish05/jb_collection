@@ -114,6 +114,9 @@ export const cartStore = {
           rootComboId: snap.rootComboId || null,
           childComboId: snap.childComboId || null,
           selectedProducts: snap.products || null,
+          isPartialCodAvailable: cartItem.product?.isPartialCodAvailable !== false,
+          customisationDetails: cartItem.customisationDetails || null,
+          customisationFields: cartItem.product?.customisationFields || null,
         };
       });
       store.dispatch(replaceCart(formattedItems));

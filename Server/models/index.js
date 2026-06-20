@@ -36,6 +36,8 @@ const InventorySettings   = require("./InventorySettings");
 const Notification        = require("./Notification");
 const StockHistory        = require("./StockHistory");
 const Role                = require("./Role");
+const Font                = require("./Font");
+const CustomisationField  = require("./CustomisationField");
 
 User.belongsTo(Role, { foreignKey: "roleId", as: "roleRecord" });
 Role.hasMany(User, { foreignKey: "roleId", as: "users" });
@@ -182,6 +184,8 @@ const models = {
   Refund,
   ReverseShipment,
   ReferenceSequence,
+  Font,
+  CustomisationField,
 };
 
 attachReferenceSlugs(models);

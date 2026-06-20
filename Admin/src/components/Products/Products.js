@@ -9,6 +9,7 @@ import { fetchEvents } from '../../redux/services/eventService';
 import VariantBuilder, { renderVariantLabel } from './VariantBuilder'; // ← make sure VariantBuilder.jsx is in the same folder
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
+import API from '../../api/axiosInstance';
 
 const BASE_URL = process.env.REACT_APP_API_URL;
 const IMG_URL = process.env.REACT_APP_IMG_URL;
@@ -132,6 +133,8 @@ const BLANK_FORM = {
   productName: '', categoryId: '', categoryName: '', subCategoryId: '', subCategoryName: '',
   brandId: '', discount: '', shortDescription: '', fullDescription: '',
   tag: '', isCustomisable: true, isNewArrival: false, isHotDeal: false,
+  isPartialCodAvailable: true,
+  customisationFields: {},
 };
 
 // ── EventTagSelector — searchable multi-tag picker from Events model ──────────
@@ -271,6 +274,7 @@ export default function Products({ showToast }) {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ ...BLANK_FORM });
   const [errors, setErrors] = useState({});
+  const [customisationFieldsTemplates, setCustomisationFieldsTemplates] = useState([]);
 
   // ── Variants — now managed by VariantBuilder ──────────────────────────────
   const [variants, setVariants] = useState([blankVariantRow()]);
@@ -305,6 +309,14 @@ export default function Products({ showToast }) {
     dispatch(fetchBrands());
     dispatch(fetchEvents());
     dispatch(fetchProducts());
+
+    API.get('/customisation-fields?active=true')
+      .then(res => {
+        setCustomisationFieldsTemplates(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(err => {
+        console.error("Failed to load customisation fields", err);
+      });
   }, [location.search]);
 
   // ── Filter ────────────────────────────────────────────────────────────────
@@ -411,6 +423,20 @@ export default function Products({ showToast }) {
       isCustomisable: p.isCustomisable !== false,
       isNewArrival: !!p.isNew,
       isHotDeal: !!p.isHotDeal,
+      isPartialCodAvailable: p.isPartialCodAvailable !== false,
+      customisationFields: (() => {
+        let cf = p.customisationFields || {};
+        if (typeof cf === 'string') {
+          try { cf = JSON.parse(cf); } catch { cf = {}; }
+        }
+        const mapped = {};
+        if (cf && typeof cf === 'object') {
+          Object.keys(cf).forEach(k => {
+            mapped[k] = !!cf[k];
+          });
+        }
+        return mapped;
+      })(),
     });
 
     // ── Map existing variants → VariantBuilder shape ──────────────────────
@@ -560,6 +586,10 @@ export default function Products({ showToast }) {
     fd.append('isNewArrival', formData.isNewArrival);
     fd.append('isCustomisable', formData.isCustomisable);
     fd.append('isHotDeal', formData.isHotDeal);
+    fd.append('isPartialCodAvailable', formData.isPartialCodAvailable);
+    if (formData.isCustomisable) {
+      fd.append('customisationFields', JSON.stringify(formData.customisationFields));
+    }
 
     if (formData.subCategoryId) fd.append('subCategoryId', formData.subCategoryId);
     if (formData.subCategoryName) fd.append('subCategoryName', formData.subCategoryName);
@@ -933,6 +963,7 @@ export default function Products({ showToast }) {
                   { key: 'isCustomisable', label: '🎨 Customisable' },
                   { key: 'isNewArrival', label: '✨ New Arrival' },
                   { key: 'isHotDeal', label: '🔥 Hot Deal' },
+                  { key: 'isPartialCodAvailable', label: '💳 Allow Partial COD' },
                 ].map(item => (
                   <label key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
                     <input type="checkbox" checked={!!formData[item.key]}
@@ -941,6 +972,32 @@ export default function Products({ showToast }) {
                   </label>
                 ))}
               </div>
+
+              {/* Customisation Fields — visible only when Customisable is checked */}
+              {formData.isCustomisable && (
+                <div style={{ gridColumn: 'span 2', padding: '12px 14px', background: '#F0FDF4', borderRadius: 8, border: '1px solid #BBF7D0' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Customisation Input Fields</div>
+                  <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                    {customisationFieldsTemplates.length === 0 ? (
+                      <div style={{ fontSize: 13, color: '#166534', opacity: 0.8 }}>No active customisation fields found. Add them in Settings → Customisation Fields first.</div>
+                    ) : (
+                      customisationFieldsTemplates.map(field => (
+                        <label key={field.key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', fontWeight: 500, color: '#166534' }}>
+                          <input type="checkbox"
+                            checked={!!(formData.customisationFields?.[field.key])}
+                            onChange={e => setFormData({
+                              ...formData,
+                              customisationFields: { ...formData.customisationFields, [field.key]: e.target.checked }
+                            })} />
+                          {field.icon ? <span style={{ marginRight: 2 }}>{field.icon}</span> : null}
+                          {field.label} {field.isRequired ? <span style={{ color: '#ef4444' }}>*</span> : null}
+                        </label>
+                      ))
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#166534', marginTop: 8 }}>Selected fields will appear as input fields on the product page for customers to fill in.</div>
+                </div>
+              )}
 
               {/* Hidden file input - product images handled per-variant */}
               <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp"

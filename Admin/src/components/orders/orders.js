@@ -114,6 +114,7 @@ export default function Orders({ status = null }) {
       const customerName = o.customer_name ?? user?.name ?? user?.fullName ?? '';
       const customerEmail = o.customer_email ?? user?.email ?? '';
       const customerPhone = o.customer_phone ?? user?.phone ?? o.shippingAddress?.phone ?? '';
+      const customerType = user?.roleRecord?.name || (user?.role === 'admin' ? 'Admin' : (user ? 'Registered Customer' : 'Guest'));
 
       const billing = parseAddr(o.billing_address ?? o.billingAddress ?? null);
       const shipping = parseAddr(o.shipping_address ?? o.shippingAddress ?? null);
@@ -136,6 +137,10 @@ export default function Orders({ status = null }) {
       return {
         ...o,
         user,
+        customerName,
+        customerEmail,
+        customerPhone,
+        customerType,
         items,
         couponCode: coupon,
         totalAmount: resolvedTotal,
@@ -213,7 +218,22 @@ export default function Orders({ status = null }) {
                 <tr key={order.id}>
                   <td className="td-id">#{order.referenceSlug || order.id}</td>
                   <td>
-                    <div className="td-name">{order.customer_name || '—'}</div>
+                    <div className="td-name" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span>{order.customer_name || '—'}</span>
+                      {order.customerType && (
+                        <span style={{
+                          fontSize: 9,
+                          fontWeight: 700,
+                          backgroundColor: order.customerType.toLowerCase() === 'guest' ? '#f3f4f6' : '#e0f2fe',
+                          color: order.customerType.toLowerCase() === 'guest' ? '#4b5563' : '#0369a1',
+                          padding: '1px 5px',
+                          borderRadius: 4,
+                          display: 'inline-block'
+                        }}>
+                          {order.customerType}
+                        </span>
+                      )}
+                    </div>
                     {order.customer_email && <div className="td-sub">{order.customer_email}</div>}
                     {order.customer_phone && <div className="td-sub">{order.customer_phone}</div>}
                   </td>
@@ -275,7 +295,23 @@ export default function Orders({ status = null }) {
                         <div className="km-form-header">
                           <div className="km-form-header-icon">📦</div>
                           <div>
-                            <div className="km-form-header-title">Order #{order.referenceSlug || order.id} — {order.customer_name}</div>
+                            <div className="km-form-header-title" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                              <span>Order #{order.referenceSlug || order.id} — {order.customer_name}</span>
+                              {order.customerType && (
+                                <span style={{
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  backgroundColor: order.customerType.toLowerCase() === 'guest' ? 'rgba(255,255,255,0.15)' : '#38bdf8',
+                                  color: order.customerType.toLowerCase() === 'guest' ? '#fff' : '#0f172a',
+                                  padding: '2px 8px',
+                                  borderRadius: 20,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.05em'
+                                }}>
+                                  {order.customerType}
+                                </span>
+                              )}
+                            </div>
                             <div className="km-form-header-sub">
                               Payment: {
                                 (() => {
@@ -341,18 +377,93 @@ export default function Orders({ status = null }) {
                                           <div style={{ fontSize: 10, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
                                             Combo Included Products:
                                           </div>
-                                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                                             {selectedProducts.map((p, idx) => (
-                                              <div key={idx} style={{ fontSize: 11, color: '#333', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                              <div key={idx} style={{ fontSize: 11, color: '#333', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                                 <span style={{ fontWeight: 600 }}>• {p.name}</span>
                                                 {p.variantName && (
-                                                  <span style={{ fontSize: 9, background: '#fff0f6', color: '#db1a5d', border: '1px solid #ffd6e7', borderRadius: 3, padding: '0px 4px', fontWeight: 600 }}>
-                                                    {p.variantName}
+                                                  <span style={{ fontSize: 9, background: '#fff0f6', color: '#db1a5d', border: '1px solid #ffd6e7', borderRadius: 3, padding: '1px 5px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                                    {renderVariantLabel(p.variantName, 9, 3)}
                                                   </span>
                                                 )}
-                                                <span style={{ color: '#666' }}>×{p.quantity}</span>
+                                                <span style={{ color: '#888', fontSize: 10 }}>× {p.quantity}</span>
                                               </div>
                                             ))}
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+
+                                  {/* Customisation Details */}
+                                  {(() => {
+                                    let custom = item.customisationDetails;
+                                    if (typeof custom === 'string') {
+                                      try { custom = JSON.parse(custom); } catch { custom = null; }
+                                    }
+                                    if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
+                                      return (
+                                        <div style={{ marginTop: 8, border: '1.5px solid #fbbf24', borderRadius: 8, overflow: 'hidden' }}>
+                                          {/* Header */}
+                                          <div style={{ background: '#fbbf24', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{ fontSize: 13 }}>🎨</span>
+                                            <span style={{ fontSize: 10, fontWeight: 800, color: '#451a03', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Customer Customisation</span>
+                                          </div>
+                                          {/* Body */}
+                                          <div style={{ background: '#fffbeb', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                            {Object.entries(custom).map(([key, val]) => {
+                                              if (!val) return null;
+                                              const label = key
+                                                .split('_')
+                                                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                                .join(' ');
+
+                                              const isColorValue = typeof val === 'string' && (val.startsWith('#') || ['red', 'blue', 'green', 'yellow', 'gold', 'silver', 'black', 'white', 'rose gold', 'bronze', 'orange', 'pink', 'purple', 'grey', 'brown'].includes(val.toLowerCase()));
+                                              const isFont = key.toLowerCase().includes('font');
+                                              const isLongText = typeof val === 'string' && val.length > 30;
+
+                                              if (isFont) {
+                                                return (
+                                                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <span style={{ fontSize: 10, fontWeight: 700, color: '#92400e', minWidth: 60 }}>{label}:</span>
+                                                    <span style={{ fontSize: 11, fontFamily: val, background: '#fff', border: '1px solid #fde68a', borderRadius: 4, padding: '1px 6px', color: '#333' }}>
+                                                      {val} — Aa Bb Cc
+                                                    </span>
+                                                  </div>
+                                                );
+                                              }
+
+                                              if (isColorValue) {
+                                                return (
+                                                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <span style={{ fontSize: 10, fontWeight: 700, color: '#92400e', minWidth: 60 }}>{label}:</span>
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                                      <span style={{ width: 14, height: 14, borderRadius: '50%', background: val, border: '1.5px solid #ccc', display: 'inline-block', flexShrink: 0 }} />
+                                                      <span style={{ fontSize: 11, fontWeight: 600, color: '#333' }}>{val}</span>
+                                                    </span>
+                                                  </div>
+                                                );
+                                              }
+
+                                              return (
+                                                <div key={key} style={{ display: 'flex', alignItems: isLongText ? 'flex-start' : 'baseline', gap: 6 }}>
+                                                  <span style={{ fontSize: 10, fontWeight: 700, color: '#92400e', minWidth: 60 }}>{label}:</span>
+                                                  <span style={{
+                                                    fontSize: isLongText ? 11 : 14,
+                                                    fontWeight: isLongText ? 500 : 700,
+                                                    color: '#1a1a1a',
+                                                    whiteSpace: 'pre-wrap',
+                                                    background: '#fff',
+                                                    border: '1px solid #fde68a',
+                                                    borderRadius: 4,
+                                                    padding: '2px 8px',
+                                                    letterSpacing: '0.02em',
+                                                    flex: isLongText ? 1 : undefined,
+                                                  }}>{val}</span>
+                                                </div>
+                                              );
+                                            })}
                                           </div>
                                         </div>
                                       );

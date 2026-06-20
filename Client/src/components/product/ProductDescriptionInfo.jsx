@@ -53,9 +53,9 @@ const COLOR_MAP = {
   charcoal: "#424242", black: "#212121", jet: "#343434", onyx: "#353839",
   ash: "#B2BEB5", brown: "#795548", tan: "#a1887f", beige: "#f5f5dc",
   sienna: "#A0522D", mahogany: "#C04000", chestnut: "#954535", coffee: "#6F4E37",
-  caramel: "#C68642", umber: "#635147", walnut: "#773F1A", hazel: "#8E7618",
   bronze: "#CD7F32",
   multicolour: "linear-gradient(135deg,#f06,#0cf,#fc0)",
+  all: "linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff)",
 };
 const LIGHT_COLORS = new Set(["white","ivory","cream","yellow","lime","gold","amber","silver","bronze","lemon","canary"]);
 
@@ -602,6 +602,40 @@ const ProductDescriptionInfo = ({
   const [errors, setErrors] = useState({});
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
+  // Customisation fields state — driven by product.customisationFields
+  const [customisationDetails, setCustomisationDetails] = useState({});
+  const [availableFonts, setAvailableFonts] = useState([]);
+  const [customisationTemplates, setCustomisationTemplates] = useState([]);
+
+  const parsedCustomisationFields = useMemo(() => {
+    let cf = localProduct?.customisationFields;
+    if (typeof cf === 'string') {
+      try { return JSON.parse(cf); } catch { return {}; }
+    }
+    return cf || {};
+  }, [localProduct?.customisationFields]);
+
+  useEffect(() => {
+    api.get('/customisation-fields?active=true')
+      .then(r => {
+        const fields = Array.isArray(r.data) ? r.data : [];
+        const parsed = fields.map(f => {
+          let opts = f.options;
+          if (typeof opts === 'string') {
+            try { opts = JSON.parse(opts); } catch { opts = null; }
+          }
+          return { ...f, options: opts };
+        });
+        setCustomisationTemplates(parsed);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (localProduct?.isCustomisable) {
+      api.get('/fonts').then(r => setAvailableFonts(r.data || [])).catch(() => {});
+    }
+  }, [localProduct?.id, localProduct?.isCustomisable]);
 
   const effectiveStock = selectedVariant ? Number(selectedVariant.stock ?? 0) : productStock;
 
@@ -687,6 +721,14 @@ const ProductDescriptionInfo = ({
           : "You already have all available stock in your cart";
       }
     }
+    if (localProduct?.isCustomisable) {
+      const activeFields = customisationTemplates.filter(t => !!parsedCustomisationFields[t.key]);
+      activeFields.forEach(field => {
+        if (field.isRequired && (!customisationDetails[field.key] || !String(customisationDetails[field.key]).trim())) {
+          next[field.key] = `${field.label} is required`;
+        }
+      });
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -720,6 +762,7 @@ const ProductDescriptionInfo = ({
         selectedProductSize: variantSize,
         price: selectedVariant ? parseFloat(selectedVariant.salesPrice) : (localProduct.price || 0),
         quantity: quantityCount,
+        customisationDetails: localProduct?.isCustomisable ? customisationDetails : null,
       });
     } catch (err) {
       console.error("Failed to add to cart:", err);
@@ -841,6 +884,9 @@ const handleBuyNow = async () => {
         variation: localProduct.variation || [],
         stock: resolvedStock,
         Variants: localProduct.Variants || [],
+        isPartialCodAvailable: localProduct.isPartialCodAvailable !== false,
+        customisationDetails: localProduct?.isCustomisable ? customisationDetails : null,
+        customisationFields: parsedCustomisationFields || null,
       };
 
       dispatch(createBuyNowCheckout(buyNowItem));
@@ -1082,6 +1128,185 @@ const handleBuyNow = async () => {
   {!stockState.isPurchasable ? "Out of Stock" : (isBuyingNow ? "Processing..." : "Buy Now")}
 </button>
       ) : (
+        <>
+        {/* ── Customisation Fields Panel ── */}
+        {(() => {
+          if (!localProduct.isCustomisable || !parsedCustomisationFields) return null;
+          const activeFields = customisationTemplates.filter(t => !!parsedCustomisationFields[t.key]);
+          if (activeFields.length === 0) return null;
+
+          return (
+            <div style={{
+              margin: '0 0 18px 0', padding: '16px 18px',
+              background: 'linear-gradient(135deg, #fff7ed 0%, #fef0e8 100%)',
+              borderRadius: 12, border: '1px solid #fed7aa',
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#9a3412', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+                🎨 Personalise Your Product
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {activeFields.map(field => {
+                  const errorKey = field.key;
+                  return (
+                    <div key={field.key}>
+                      {field.inputType === 'text' && (
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                            {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
+                            {field.label}
+                            {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder={field.placeholder || "Enter details..."}
+                            value={customisationDetails[field.key] || ''}
+                            onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
+                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                          />
+                        </div>
+                      )}
+
+                      {field.inputType === 'textarea' && (
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                            {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
+                            {field.label}
+                            {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+                          </label>
+                          <textarea
+                            placeholder={field.placeholder || "Any special instructions..."}
+                            value={customisationDetails[field.key] || ''}
+                            onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
+                            rows={2}
+                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                          />
+                        </div>
+                      )}
+
+                      {field.inputType === 'color' && (
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                            {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
+                            {field.label}
+                            {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+                          </label>
+
+                          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 4 }}>
+                            {/* Color Picker box */}
+                            <div style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, overflow: 'hidden', border: '1px solid #d1d5db', cursor: 'pointer', flexShrink: 0 }}>
+                              <input
+                                type="color"
+                                value={customisationDetails[field.key] && customisationDetails[field.key].startsWith('#') ? customisationDetails[field.key] : '#f15a24'}
+                                onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                style={{ position: 'absolute', top: -5, left: -5, width: 50, height: 50, border: 0, padding: 0, cursor: 'pointer' }}
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              placeholder={field.placeholder || "Choose a color or enter code (e.g. #ff0000)"}
+                              value={customisationDetails[field.key] || ''}
+                              onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
+                              style={{ flex: 1, padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                            />
+                          </div>
+
+                          {Array.isArray(field.options) && field.options.length > 0 && (
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                              {field.options.map(opt => {
+                                const hexVal = toHex(opt) || opt;
+                                const isSelected = customisationDetails[field.key] === hexVal || customisationDetails[field.key] === opt;
+                                return (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={() => setCustomisationDetails(prev => ({ ...prev, [field.key]: hexVal }))}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 6,
+                                      padding: '5px 10px',
+                                      border: isSelected ? '2px solid #F15A24' : '1px solid #d1d5db',
+                                      borderRadius: 20,
+                                      background: isSelected ? '#FEF0EB' : '#fff',
+                                      color: isSelected ? '#F15A24' : '#374151',
+                                      fontSize: 12,
+                                      fontWeight: 500,
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s',
+                                    }}
+                                  >
+                                    {toHex(opt) && (
+                                      <span style={{ width: 12, height: 12, borderRadius: '50%', background: toHex(opt), border: '1px solid rgba(0,0,0,0.1)' }} />
+                                    )}
+                                    {opt}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {field.inputType === 'font' && (
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                            {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
+                            {field.label}
+                            {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+                          </label>
+                          <select
+                            value={customisationDetails[field.key] || ''}
+                            onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
+                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                          >
+                            <option value="">-- Select a font --</option>
+                            {availableFonts.map(f => (
+                              <option key={f.id} value={f.name} style={{ fontFamily: f.name }}>{f.name}</option>
+                            ))}
+                          </select>
+                          {customisationDetails[field.key] && (
+                            <div style={{ marginTop: 6, padding: '6px 10px', background: '#fff', borderRadius: 6, border: '1px solid #e5e7eb', fontFamily: customisationDetails[field.key], fontSize: 16 }}>
+                              {(() => {
+                                const textField = activeFields.find(f => f.inputType === 'text');
+                                const previewText = textField ? (customisationDetails[textField.key] || '') : '';
+                                return previewText || 'Font Preview';
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {field.inputType === 'select' && (
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                            {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
+                            {field.label}
+                            {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+                          </label>
+                          <select
+                            value={customisationDetails[field.key] || ''}
+                            onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
+                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                          >
+                            <option value="">{field.placeholder || "-- Select an option --"}</option>
+                            {Array.isArray(field.options) && field.options.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <ErrorMsg field={errorKey} />
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 11, color: '#9a3412', marginTop: 8, opacity: 0.8 }}>
+                * Customisation details will be added to your order. Our team will confirm via WhatsApp before production.
+              </div>
+            </div>
+          );
+        })()}
         <div className={`pdp-info__actions pdp-info__actions--product${stockState.state === STOCK_STATES.DISCONTINUED ? " is-discontinued" : ""}`}>
           {/* Quantity & Wishlist Row */}
           {stockState.state !== STOCK_STATES.DISCONTINUED && (
@@ -1236,6 +1461,7 @@ const handleBuyNow = async () => {
             }
           `}</style>
         </div>
+      </>
       )}
 
       <ErrorMsg field="quantity" />

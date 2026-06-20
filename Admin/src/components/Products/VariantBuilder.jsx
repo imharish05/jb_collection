@@ -504,6 +504,7 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
 
         {/* Right-side controls: open-choice toggle + remove */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, marginTop: 20 }}>
+          {/*
           {option.key && (
             <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: option.isOpenChoice ? KM.blue : KM.muted, cursor: 'pointer', whiteSpace: 'nowrap' }}>
               <input
@@ -515,6 +516,7 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
               Let customer choose
             </label>
           )}
+          */}
           {canRemove && (
             <button type="button" onClick={onRemove}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.red, fontSize: 18, padding: '4px 6px', alignSelf: 'flex-start' }}

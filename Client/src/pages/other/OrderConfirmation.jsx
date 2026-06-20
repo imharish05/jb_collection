@@ -330,6 +330,63 @@ useEffect(() => {
     })}
   </div>
 )}
+
+{(() => {
+  let custom = item.customisationDetails;
+  if (typeof custom === 'string') {
+    try { custom = JSON.parse(custom); } catch { custom = null; }
+  }
+  if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
+    return (
+      <div style={{
+        marginTop: 8,
+        padding: "8px 10px",
+        background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
+        border: "1px solid #fde68a",
+        borderRadius: "6px",
+        fontSize: "11px",
+        color: "#78350f",
+        maxWidth: "fit-content"
+      }}>
+        <div style={{ fontSize: "9px", fontWeight: 700, color: "#b45309", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+          🎨 Personalisation Details:
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+          {Object.entries(custom).map(([key, val]) => {
+            if (!val) return null;
+            const label = key
+              .split('_')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+            const isFont = key.toLowerCase().includes('font');
+            const isCol = key.toLowerCase().includes('color') || key.toLowerCase().includes('colour') || (typeof val === 'string' && val.startsWith('#'));
+            return (
+              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, ...(isFont ? { fontFamily: val } : {}) }}>
+                <span style={{ fontWeight: 600 }}>{label}:</span>
+                {isCol ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: '50%',
+                      background: val,
+                      border: '1px solid rgba(0,0,0,0.15)',
+                      display: 'inline-block'
+                    }} />
+                    <code style={{ fontSize: 11, background: '#f3f4f6', padding: '1px 4px', borderRadius: 4 }}>{val}</code>
+                  </span>
+                ) : (
+                  <span>{val} {isFont && "(Preview)"}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+  return null;
+})()}
                               </div>
                             </div>
                             <div style={{ display: "flex", gap: 40, flexShrink: 0, paddingTop: 2 }}>

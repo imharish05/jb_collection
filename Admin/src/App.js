@@ -33,6 +33,8 @@ import ReturnsDashboard from './components/Returns/ReturnsDashboard';
 import ReturnDetail from './components/Returns/ReturnDetail';
 import Roles from './components/Roles/Roles';
 import Users from './components/Users/Users';
+import Fonts from './components/Fonts/Fonts';
+import CustomisationFields from './components/CustomisationFields/CustomisationFields';
 
 import './components/global.css';
 import Swal from 'sweetalert2';
@@ -70,6 +72,8 @@ const PAGE_CONFIG = {
   returns:             { title: 'Returns & Refunds' },
   roles:               { title: 'Roles & Permissions' },
   users:               { title: 'User Management' },
+  fonts:               { title: 'Font Management' },
+  customisation_fields: { title: 'Customisation Fields' },
 };
 
 function AdminLayoutWrapper({ handleLogout }) {
@@ -133,6 +137,8 @@ function AdminLayoutWrapper({ handleLogout }) {
             <Route path="/returns/:id"         element={<ReturnDetail />} />
             <Route path="/roles"               element={<Roles              showToast={showToast} />} />
             <Route path="/users"               element={<Users              showToast={showToast} />} />
+            <Route path="/fonts"               element={<Fonts              showToast={showToast} />} />
+            <Route path="/customisation_fields" element={<CustomisationFields showToast={showToast} />} />
             <Route path="/"                    element={<Navigate to="/dashboard" />} />
           </Routes>
         </div>

@@ -84,6 +84,7 @@ const addToCart = async (req, res, next) => {
       selectedProductSize,
       selectedVariantId,
       selectedVariantName,
+      customisationDetails,
     } = req.body;
 
     if (!productId) return res.status(400).json({ message: "productId is required" });
@@ -148,6 +149,7 @@ const addToCart = async (req, res, next) => {
           image:              product.image,
           selectedVariantName: selectedVariantName || null,
         },
+        customisationDetails: customisationDetails || null,
       });
     }
 

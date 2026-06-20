@@ -9,6 +9,7 @@ const {
   Address,
   Coupon,
   OrderStatusEmailAudit,
+  Role,
 } = require("../models");
 const sequelize = require("../config/database");
 const { Op } = require("sequelize");
@@ -527,6 +528,7 @@ const createOrder = async (req, res, next) => {
           selectedProducts: itemData.selectedProducts || null,
           comboSnapshot:    itemData.comboSnapshot    || null,
           customerChoices:  itemData.customerChoices  || null,
+          customisationDetails: itemData.customisationDetails || null,
         },
         { transaction }
       );
@@ -582,7 +584,11 @@ const getAllOrders = async (req, res, next) => {
     const orders = await Order.findAll({
       order: [["createdAt", "DESC"]],
       include: [
-        { model: User, attributes: ["id", "referenceSlug", "name", "email", "phone"] },
+        {
+          model: User,
+          attributes: ["id", "referenceSlug", "name", "email", "phone", "role"],
+          include: [{ model: Role, as: "roleRecord", attributes: ["id", "name"] }]
+        },
         { model: OrderItem, as: "items" },
         { model: Address, as: "shippingAddress" },
         { model: Address, as: "billingAddress" },

@@ -212,6 +212,19 @@ const NAV_ITEMS = [
           <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
           <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
+      )},
+      { id: 'fonts', label: 'Font Management', icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="4 7 4 4 20 4 20 7"/>
+          <line x1="9" y1="20" x2="15" y2="20"/>
+          <line x1="12" y1="4" x2="12" y2="20"/>
+        </svg>
+      )},
+      { id: 'customisation_fields', label: 'Customisation Fields', icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
       )}
     ]
   }
@@ -283,6 +296,10 @@ export default function Sidebar({ onLogout }) {
         return permissions.includes('roles_view');
       case 'users':
         return permissions.includes('users_view');
+      case 'fonts':
+        return permissions.includes('fonts_view') || permissions.includes('*') || permissions.includes('super_admin');
+      case 'customisation_fields':
+        return permissions.includes('fonts_view') || permissions.includes('*') || permissions.includes('super_admin');
       default:
         return false;
     }

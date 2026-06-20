@@ -119,6 +119,15 @@ const PERMISSION_GROUPS = [
       { key: "reviews_edit", label: "Moderate Product Reviews" },
       { key: "reviews_delete", label: "Delete Product Review" }
     ]
+  },
+  {
+    module: "Font Management",
+    permissions: [
+      { key: "fonts_view", label: "View Fonts" },
+      { key: "fonts_create", label: "Add Font" },
+      { key: "fonts_edit", label: "Edit Font" },
+      { key: "fonts_delete", label: "Delete Font" }
+    ]
   }
 ];
 

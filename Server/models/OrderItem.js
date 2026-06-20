@@ -129,6 +129,11 @@ const OrderItem = sequelize.define(
       allowNull: true,
       field: "customer_choices",
     },
+    customisationDetails: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: "customisation_details",
+    },
   },
   {
     tableName: "order_items",

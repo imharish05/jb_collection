@@ -46,6 +46,7 @@ const COLOR_MAP = {
   brown:"#795548",tan:"#a1887f",beige:"#f5f5dc",bronze:"#CD7F32",
   multicolour:"linear-gradient(135deg,#f06,#0cf,#fc0)",
   "gold-plated":"#CFB53B","rose gold":"#b76e79",
+  all: "linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff)",
 };
 const LIGHT_COLORS = new Set(["white","ivory","cream","yellow","lime","gold","amber","silver","bronze"]);
 function toHex(name) {

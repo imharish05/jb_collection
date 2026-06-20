@@ -110,6 +110,7 @@ const shape = (p) => {
   row.tag       = safeParse(row.tag,       []);
   row.variation = safeParse(row.variation, []);
   row.category  = safeParse(row.category,  []);
+  row.customisationFields = safeParse(row.customisationFields, null);
   row.slug      = row.slug || row.id;  // fallback to id — never non-unique name slug
   // Parse Combo.productIds if it came back as a JSON string
   if (row.Combo && typeof row.Combo.productIds === 'string') {
@@ -338,6 +339,7 @@ const createProduct = async (req, res, next) => {
       productName, categoryId, subCategoryId, brandId, comboId,
       isNewArrival, isCustomisable, isHotDeal, discount, offerEnd, tag,
       shortDescription, fullDescription, variants,
+      isPartialCodAvailable, customisationFields,
     } = req.body;
 
     if (!productName) return res.status(400).json({ message: "productName is required" });
@@ -375,6 +377,8 @@ const createProduct = async (req, res, next) => {
       subCategoryId:   subCategoryId || null,
       brandId:         brandId       || null,
       comboId:         comboId       || null,
+      isPartialCodAvailable: isPartialCodAvailable === "false" || isPartialCodAvailable === false ? false : true,
+      customisationFields: customisationFields ? safeParse(customisationFields, null) : null,
     });
 
     // create Variant rows
@@ -417,6 +421,7 @@ const updateProduct = async (req, res, next) => {
       productName, categoryId, subCategoryId, brandId, comboId,
       isNewArrival, isCustomisable, isHotDeal, discount, offerEnd, tag,
       shortDescription, fullDescription, variants,
+      isPartialCodAvailable, customisationFields,
     } = req.body;
 
     const productImgFiles = (req.files || []).filter(f => f.fieldname === 'images');
@@ -464,6 +469,12 @@ const updateProduct = async (req, res, next) => {
       subCategoryId:    subCategoryId    !== undefined ? subCategoryId     : product.subCategoryId,
       brandId:          brandId          !== undefined ? brandId           : product.brandId,
       comboId:          comboId          !== undefined ? comboId           : product.comboId,
+      isPartialCodAvailable: isPartialCodAvailable !== undefined
+                          ? (isPartialCodAvailable === "false" || isPartialCodAvailable === false ? false : true)
+                          : product.isPartialCodAvailable,
+      customisationFields: customisationFields !== undefined
+                          ? safeParse(customisationFields, null)
+                          : product.customisationFields,
     });
 
     // replace variants if new ones supplied

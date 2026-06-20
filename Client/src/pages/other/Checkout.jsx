@@ -517,24 +517,32 @@ const Checkout = () => {
     ? selectedShippingAddr
     : addresses.find((a) => a.id === selectedBillingAddrId);
 
+  // Partial COD is available only if:
+  // 1. Shiprocket says COD is available for this pincode
+  // 2. Every item in the cart has isPartialCodAvailable === true (on the product)
+  const allItemsPartialCodEligible = (checkoutItems || []).every(
+    (item) => item.isPartialCodAvailable !== false
+  );
+  const partialCodGloballyAvailable = shippingInfo?.codAvailable === true && allItemsPartialCodEligible;
+
   const availablePaymentMethods = PAYMENT_METHODS.filter(
-    (pm) => pm.id !== "partial_cod" || (shippingInfo?.codAvailable === true)
+    (pm) => pm.id !== "partial_cod" || partialCodGloballyAvailable
   );
 
   // When Partial COD becomes unavailable, fall back to razorpay
   useEffect(() => {
-    if (paymentMethod === "partial_cod" && !shippingInfo?.codAvailable) {
+    if (paymentMethod === "partial_cod" && !partialCodGloballyAvailable) {
       const fallback = availablePaymentMethods.find(p => p.id !== "partial_cod")?.id || "razorpay";
       setPaymentMethod(fallback);
     }
-  }, [shippingInfo?.codAvailable, paymentMethod, availablePaymentMethods]);
+  }, [partialCodGloballyAvailable, paymentMethod]);
 
   // When Partial COD becomes available again, switch to it
   useEffect(() => {
-    if (shippingInfo?.codAvailable && paymentMethod === "razorpay") {
+    if (partialCodGloballyAvailable && paymentMethod === "razorpay") {
       setPaymentMethod("partial_cod");
     }
-  }, [shippingInfo?.codAvailable]);
+  }, [partialCodGloballyAvailable]);
 
   const grandTotalWithCOD = shippingPricing.grandTotal;
 
@@ -618,6 +626,7 @@ const Checkout = () => {
           comboName: item.isCombo ? item.name : null,
           comboType: item.comboType || null,
           selectedProducts: item.selectedProducts || null,
+          customisationDetails: item.customisationDetails || null,
         })),
         totalAmount: shippingPricing.grandTotal,
         shippingAddressId: selectedShippingAddrId,
@@ -1272,6 +1281,29 @@ const Checkout = () => {
                         </div>
                       ))}
                     </div>
+                    {!partialCodGloballyAvailable && (
+                      <div style={{
+                        marginTop: 16,
+                        padding: '12px 14px',
+                        background: '#fef2f2',
+                        border: '1.5px dashed #fca5a5',
+                        borderRadius: 10,
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 10
+                      }}>
+                        <span style={{ fontSize: 16 }}>⚠️</span>
+                        <div style={{ fontSize: 13, color: '#991b1b', lineHeight: 1.4 }}>
+                          <strong>Partial COD Unavailable:</strong>{' '}
+                          {!allItemsPartialCodEligible 
+                            ? 'One or more items in your cart do not support Partial COD (online payment required).'
+                            : (selectedShippingAddr && shippingInfo && shippingInfo.codAvailable !== true)
+                              ? `Cash on Delivery is not supported for your pincode (${selectedShippingAddr.pincode}).`
+                              : 'Cash on Delivery is not available for this order.'
+                          }
+                        </div>
+                      </div>
+                    )}
                     {/* {paymentMethod !== "partial_cod" && (
                       <p className="kco-pay-note">
   🔒 Secure payment. Pay using UPI, Cards, or Net Banking.
@@ -1373,6 +1405,59 @@ const Checkout = () => {
                               <div style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
                                 Qty: {item.quantity}
                               </div>
+                              {(() => {
+                                let custom = item.customisationDetails;
+                                if (typeof custom === 'string') {
+                                  try { custom = JSON.parse(custom); } catch { custom = null; }
+                                }
+                                if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
+                                  return (
+                                    <div style={{
+                                      marginTop: 5,
+                                      padding: "6px 8px",
+                                      background: "#fffbeb",
+                                      border: "1px solid #fde68a",
+                                      borderRadius: "6px",
+                                      fontSize: "11px",
+                                      color: "#78350f"
+                                    }}>
+                                      <span style={{ fontWeight: 700 }}>🎨 Custom: </span>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: 3 }}>
+                                        {Object.entries(custom).map(([key, val]) => {
+                                          if (!val) return null;
+                                          const label = key
+                                            .split('_')
+                                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                            .join(' ');
+                                          const isFont = key.toLowerCase().includes('font');
+                                          const isCol = key.toLowerCase().includes('color') || key.toLowerCase().includes('colour') || (typeof val === 'string' && val.startsWith('#'));
+                                          return (
+                                            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, ...(isFont ? { fontFamily: val } : {}) }}>
+                                              <span style={{ fontWeight: 600 }}>{label}:</span>
+                                              {isCol ? (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                                  <span style={{
+                                                    width: 10,
+                                                    height: 10,
+                                                    borderRadius: '50%',
+                                                    background: val,
+                                                    border: '1px solid rgba(0,0,0,0.15)',
+                                                    display: 'inline-block'
+                                                  }} />
+                                                  <code style={{ fontSize: 9, background: '#f3f4f6', padding: '1px 3px', borderRadius: 3 }}>{val}</code>
+                                                </span>
+                                              ) : (
+                                                <span>{val}</span>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                             <div style={{ fontSize: 14, fontWeight: 800, color: "#db1a5d", flexShrink: 0 }}>
                               ₹{(price * currency.currencyRate * item.quantity).toFixed(2)}
@@ -1466,6 +1551,60 @@ const Checkout = () => {
                                 <VariantChips attrs={attrs} fontSize={10} swatchSize={12} />
                               </div>
                             )}
+
+                            {(() => {
+                              let custom = item.customisationDetails;
+                              if (typeof custom === 'string') {
+                                try { custom = JSON.parse(custom); } catch { custom = null; }
+                              }
+                                if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
+                                  return (
+                                    <div style={{
+                                      marginTop: 5,
+                                      padding: "4px 6px",
+                                      background: "#fffbeb",
+                                      border: "1px solid #fde68a",
+                                      borderRadius: "4px",
+                                      fontSize: "10px",
+                                      color: "#78350f"
+                                    }}>
+                                      <span style={{ fontWeight: 700 }}>🎨 Custom: </span>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: 2 }}>
+                                        {Object.entries(custom).map(([key, val]) => {
+                                          if (!val) return null;
+                                          const label = key
+                                            .split('_')
+                                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                            .join(' ');
+                                          const isFont = key.toLowerCase().includes('font');
+                                          const isCol = key.toLowerCase().includes('color') || key.toLowerCase().includes('colour') || (typeof val === 'string' && val.startsWith('#'));
+                                          return (
+                                            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, ...(isFont ? { fontFamily: val } : {}) }}>
+                                              <span style={{ fontWeight: 600 }}>{label}:</span>
+                                              {isCol ? (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                                  <span style={{
+                                                    width: 10,
+                                                    height: 10,
+                                                    borderRadius: '50%',
+                                                    background: val,
+                                                    border: '1px solid rgba(0,0,0,0.15)',
+                                                    display: 'inline-block'
+                                                  }} />
+                                                  <code style={{ fontSize: 9, background: '#f3f4f6', padding: '1px 3px', borderRadius: 3 }}>{val}</code>
+                                                </span>
+                                              ) : (
+                                                <span>{val}</span>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
 
                             <div className="kco-item-price-row">
                               <span className="kco-item-price">₹{(price * item.quantity).toFixed(2)}</span>

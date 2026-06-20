@@ -45,6 +45,11 @@ const CartItem = sequelize.define(
       allowNull: true,
       field: "product_snapshot",
     },
+    customisationDetails: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: "customisation_details",
+    },
   },
   {
     tableName: "cart_items",

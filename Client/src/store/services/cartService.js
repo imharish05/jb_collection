@@ -38,6 +38,7 @@ const addToCartBaseService = async (dispatchOrProduct, optionalProduct, silent =
       selectedProductSize: product.selectedProductSize || null,
       selectedVariantId: product.selectedVariantId || null,
       selectedVariantName: product.selectedVariantName || null,
+      customisationDetails: product.customisationDetails || null,
     };
 
     const res = await api.post("/cart/add", payload);
@@ -66,6 +67,9 @@ const addToCartBaseService = async (dispatchOrProduct, optionalProduct, silent =
       variation: cartItem.product?.variation || product.variation || [],
       stock: resolvedStock,
       Variants: variants,
+      isPartialCodAvailable: cartItem.product?.isPartialCodAvailable !== false,
+      customisationDetails: cartItem.customisationDetails || null,
+      customisationFields: cartItem.product?.customisationFields || null,
     };
 
     if (silent) {
