@@ -118,11 +118,22 @@ const salesReport = async (req, res) => {
 // ── 2. Product-wise Sales Report ─────────────────────────────────────────────
 const productSalesReport = async (req, res) => {
   try {
-    const { format = "xlsx" } = req.query;
+    const { format = "xlsx", productId, orderStatus } = req.query;
     const dateWhere  = buildDateWhere(req.query);
-    const orderWhere = { status: { [Op.in]: ACTIVE_STATUSES }, ...dateWhere };
+    
+    const statusWhere = orderStatus && orderStatus !== "all"
+      ? { status: orderStatus }
+      : { status: { [Op.in]: ACTIVE_STATUSES } };
+
+    const orderWhere = { ...statusWhere, ...dateWhere };
+
+    const itemWhere = {};
+    if (productId && productId !== "all") {
+      itemWhere.productId = productId;
+    }
 
     const rows = await OrderItem.findAll({
+      where: itemWhere,
       attributes: [
         "productId",
         ["selected_variant_id", "variantId"],
@@ -133,7 +144,12 @@ const productSalesReport = async (req, res) => {
         [fn("SUM", literal("quantity * COALESCE(sales_price, price, 0)")), "revenue"],
       ],
       include: [{ model: Order, attributes: [], where: orderWhere, required: true }],
-      group: ["product_id", "selected_variant_id", "product_name", "is_combo"],
+      group: [
+        col("OrderItem.product_id"),
+        col("OrderItem.selected_variant_id"),
+        col("OrderItem.product_name"),
+        col("OrderItem.is_combo")
+      ],
       order: [[literal("revenue"),"DESC"]],
       raw: true,
     });
