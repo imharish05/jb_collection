@@ -129,8 +129,14 @@ const adminOnly = async (req, res, next) => {
       } else if (url.includes("/api/customers")) {
         reqPerm = "customers_view";
       } else if (url.includes("/api/dashboard/reports") || url.includes("/api/reports")) {
-        if (method === "get") reqPerm = "reports_view";
-        else reqPerm = "reports_export";
+        if (method === "get") {
+          if (perms.includes("reports_view") || perms.includes("reports_export")) {
+            return next();
+          }
+          reqPerm = "reports_view";
+        } else {
+          reqPerm = "reports_export";
+        }
       } else if (url.includes("/api/roles")) {
         if (method === "get") reqPerm = "roles_view";
         else if (method === "post") reqPerm = "roles_create";

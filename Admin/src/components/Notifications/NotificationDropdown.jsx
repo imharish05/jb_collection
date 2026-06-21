@@ -53,7 +53,7 @@ export default function NotificationDropdown({ onClose }) {
 
     // Redirect based on notification type
     if (notification.type === "order") {
-      navigate("/orders_confirmed");
+      navigate("/orders_pending");
     } else if (
       notification.type === "stock_high" ||
       notification.type === "stock_medium" ||

@@ -128,12 +128,12 @@ const productSalesReport = async (req, res) => {
         ["selected_variant_id", "variantId"],
         "productName",
         "isCombo",
-        [fn("SUM", col("OrderItem.quantity")),                               "qtySold"],
-        [fn("COUNT", fn("DISTINCT", col("OrderItem.order_id"))),             "totalOrders"],
-        [fn("SUM", literal("OrderItem.quantity * COALESCE(OrderItem.sales_price, OrderItem.price, 0)")), "revenue"],
+        [fn("SUM", col("quantity")),                               "qtySold"],
+        [fn("COUNT", fn("DISTINCT", col("order_id"))),             "totalOrders"],
+        [fn("SUM", literal("quantity * COALESCE(sales_price, price, 0)")), "revenue"],
       ],
       include: [{ model: Order, attributes: [], where: orderWhere, required: true }],
-      group: ["productId","selected_variant_id","productName","isCombo"],
+      group: ["product_id", "selected_variant_id", "product_name", "is_combo"],
       order: [[literal("revenue"),"DESC"]],
       raw: true,
     });
@@ -179,6 +179,16 @@ const productSalesReport = async (req, res) => {
     sendWorkbook(res, wb, "Product Sales", `Product_Sales_Report_${Date.now()}`, format);
   } catch (e) {
     console.error("productSalesReport error:", e);
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      fs.appendFileSync(
+        path.join(__dirname, "../product_sales_error.log"),
+        `${new Date().toISOString()} - ERROR: ${e.message}\nStack: ${e.stack}\n\n`
+      );
+    } catch (logErr) {
+      console.error("Failed to write error to log file:", logErr);
+    }
     res.status(500).json({ message: e.message });
   }
 };
@@ -257,11 +267,11 @@ const topProducts = async (req, res) => {
         'productId',
         ['selected_variant_id', 'variantId'],
         'productName',
-        [fn('SUM', col('OrderItem.quantity')),                              'qtySold'],
-        [fn('SUM', literal('OrderItem.quantity * OrderItem.sales_price')), 'revenue'],
+        [fn('SUM', col('quantity')),                              'qtySold'],
+        [fn('SUM', literal('quantity * COALESCE(sales_price, price, 0)')), 'revenue'],
       ],
       include: [{ model: Order, attributes: [], where: orderWhere, required: true }],
-      group: ['productId', 'selected_variant_id', 'productName'],
+      group: ['product_id', 'selected_variant_id', 'product_name'],
       order: [[literal('qtySold'), 'DESC']],
       limit: 10,
       raw: true,

@@ -118,7 +118,7 @@ const startServer = async () => {
     }
 
     await sequelize.query("SET FOREIGN_KEY_CHECKS = 0;");
-    await sequelize.sync();
+    await sequelize.sync({});
     await models.backfillReferenceSlugs();
     console.log("✅ Models synced");
     await sequelize.query("SET FOREIGN_KEY_CHECKS = 1;");
