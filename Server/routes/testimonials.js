@@ -18,9 +18,9 @@ const uploadTestimonial = multer({
   storage: testimonialStorage,
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.tiff', '.tif', '.ico', '.heic', '.heif', '.avif'];
     if (!allowed.includes(ext)) {
-      return cb(new Error('Only image files are allowed'), false);
+      return cb(new Error('Only image files are allowed (supported: JPG, JPEG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF)'), false);
     }
     cb(null, true);
   },

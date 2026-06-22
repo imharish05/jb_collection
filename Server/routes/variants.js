@@ -15,7 +15,7 @@ const upload = multer({
     filename: (req, file, cb) => cb(null, `${Date.now()}-${Math.random().toString(36).substr(2, 9)}${path.extname(file.originalname)}`),
   }),
   fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|webp|gif/;
+    const allowed = /jpeg|jpg|png|webp|gif|svg|bmp|tiff|tif|ico|heic|heif|avif/;
     cb(null, allowed.test(path.extname(file.originalname).toLowerCase()));
   },
   limits: { fileSize: 5 * 1024 * 1024 },

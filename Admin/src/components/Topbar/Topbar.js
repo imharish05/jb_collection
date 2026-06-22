@@ -29,6 +29,50 @@ export default function Topbar({ title, addBtn, addLabel, onAdd }) {
     setOpen(v => !v);
   };
 
+  const [logoUrl, setLogoUrl] = useState('');
+  const [adminName, setAdminName] = useState('Admin');
+  const [adminRole, setAdminRole] = useState('Kamali Gifts');
+
+  const fetchLogo = async () => {
+    try {
+      const res = await fetch(`${process.env.REACT_APP_API_URL || '/api'}/settings`);
+      const data = await res.json();
+      if (data && data.logoUrl) {
+        setLogoUrl(data.logoUrl);
+      } else {
+        setLogoUrl('');
+      }
+    } catch (e) {
+      console.error("Error fetching logo in topbar:", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogo();
+    window.addEventListener('site-settings-updated', fetchLogo);
+
+    // Get admin details from storage
+    try {
+      const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+      if (adminUser?.name) {
+        setAdminName(adminUser.name);
+      }
+      if (adminUser?.role?.name) {
+        setAdminRole(adminUser.role.name);
+      } else if (adminUser?.role) {
+        setAdminRole(adminUser.role);
+      }
+    } catch (e) {
+      console.error("Error reading admin user in topbar:", e);
+    }
+
+    return () => {
+      window.removeEventListener('site-settings-updated', fetchLogo);
+    };
+  }, []);
+
+  const IMG_BASE_URL = process.env.REACT_APP_IMG_URL || 'http://localhost:5000';
+
   return (
     <div className="topbar">
       <div className="topbarLeft">
@@ -41,10 +85,14 @@ export default function Topbar({ title, addBtn, addLabel, onAdd }) {
           </button>
         )}
         <div className="adminProfile">
-          <img src={logo} alt="Kamali gifts" className="adminLogo" />
+          <img
+            src={logoUrl ? `${IMG_BASE_URL}/${logoUrl}` : logo}
+            alt="Kamali gifts"
+            className="adminLogo"
+          />
           <div className="adminInfo">
-            <span className="adminName">Admin</span>
-            <span className="adminRole">Kamali Gifts</span>
+            <span className="adminName">{adminName}</span>
+            <span className="adminRole">{adminRole}</span>
           </div>
         </div>
 

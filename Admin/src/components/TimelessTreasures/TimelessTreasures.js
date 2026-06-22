@@ -26,7 +26,11 @@ const BANNER_DIMENSIONS = {
   aspectRatio: 16 / 9,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024,
-  formats: ['image/jpeg', 'image/webp', 'image/png'],
+  formats: [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
+    'image/heic', 'image/heif', 'image/avif'
+  ],
 };
 
 const validateImageDimensions = (file) => {
@@ -36,7 +40,7 @@ const validateImageDimensions = (file) => {
       return;
     }
     if (!BANNER_DIMENSIONS.formats.includes(file.type)) {
-      resolve({ valid: false, error: `Invalid format. Use JPG, PNG or WebP. You uploaded: ${file.type || 'unknown'}` });
+      resolve({ valid: false, error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You uploaded: ${file.type || 'unknown'}` });
       return;
     }
     const reader = new FileReader();
@@ -341,7 +345,7 @@ export default function TimelessTreasures({ showToast }) {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif"
                       style={{ display: 'none' }}
                       onChange={(e) => {
                         const file = e.target.files[0];

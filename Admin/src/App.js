@@ -35,6 +35,7 @@ import Roles from './components/Roles/Roles';
 import Users from './components/Users/Users';
 import Fonts from './components/Fonts/Fonts';
 import CustomisationFields from './components/CustomisationFields/CustomisationFields';
+import SiteSettings from './components/Settings/SiteSettings';
 
 import './components/global.css';
 import Swal from 'sweetalert2';
@@ -42,6 +43,7 @@ import Swal from 'sweetalert2';
 const PAGE_CONFIG = {
   dashboard:           { title: 'Dashboard' },
   reports:             { title: 'Reports' },
+  settings:            { title: 'Site Settings' },
   payments:            { title: 'Payments & Transactions' },
   categories:          { title: 'Categories' },
   sub_categories:      { title: 'Sub Categories' },
@@ -139,6 +141,7 @@ function AdminLayoutWrapper({ handleLogout }) {
             <Route path="/users"               element={<Users              showToast={showToast} />} />
             <Route path="/fonts"               element={<Fonts              showToast={showToast} />} />
             <Route path="/customisation_fields" element={<CustomisationFields showToast={showToast} />} />
+            <Route path="/settings"             element={<SiteSettings       showToast={showToast} />} />
             <Route path="/"                    element={<Navigate to="/dashboard" />} />
           </Routes>
         </div>

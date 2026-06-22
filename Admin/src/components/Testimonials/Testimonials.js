@@ -34,7 +34,11 @@ const TESTIMONIAL_IMAGE_CONFIG = {
   aspectRatio: 1 / 1,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024,
-  formats: ['image/jpeg', 'image/png', 'image/webp'],
+  formats: [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
+    'image/heic', 'image/heif', 'image/avif'
+  ],
 };
 
 const validateImageDimensions = (file) =>
@@ -44,7 +48,7 @@ const validateImageDimensions = (file) =>
       return;
     }
     if (!TESTIMONIAL_IMAGE_CONFIG.formats.includes(file.type)) {
-      resolve({ valid: false, error: `Invalid format. Use JPG, PNG or WebP. You uploaded: ${file.type || 'unknown'}` });
+      resolve({ valid: false, error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You uploaded: ${file.type || 'unknown'}` });
       return;
     }
     const reader = new FileReader();
@@ -235,8 +239,8 @@ export default function Testimonials({ showToast }) {
                 }}
                 onClear={handleClearImage}
                 validation={imageDimensions}
-                requirements="300×300px (1:1) • Max: 3MB (JPG / PNG / WebP)"
-                accept="image/jpeg,image/png,image/webp"
+                requirements="300×300px (1:1) • Max: 3MB (Common Image Formats)"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif"
               />
 
               {/* Author Name */}

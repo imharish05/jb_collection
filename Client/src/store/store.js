@@ -28,12 +28,13 @@ import contactReducer from "./slices/contactSlice";
 import comboReducer from "./slices/combo-slice";   // ← new
 import checkoutReducer from "./slices/checkout-slice";
 import returnReducer from "./slices/returnSlice";
+import settingsReducer from "./slices/settings-slice";
 
 const persistConfig = {
     key: "flone",
     version: 1.1,
     storage,
-    blacklist: ["product", "navMenu", "headerSlider", "review", "combo", "return"]
+    blacklist: ["product", "navMenu", "headerSlider", "review", "combo", "return", "settings"]
 };
 
 const appReducer = combineReducers({
@@ -55,6 +56,7 @@ const appReducer = combineReducers({
     contact:       contactReducer,
     combo:         comboReducer,               // ← new
     return:        returnReducer,
+    settings:      settingsReducer,
 });
 
 // ── Root reducer: wipe cart+wishlist on logout ──────────────────────────────

@@ -486,7 +486,7 @@ const ReturnRequest = () => {
                             type="file"
                             id="images-input"
                             multiple
-                            accept="image/jpeg,image/png,image/webp"
+                            accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif"
                             onChange={handleImagesChange}
                             className="rr-upload-input"
                           />
@@ -510,7 +510,7 @@ const ReturnRequest = () => {
                     {/* Verified Customer box */}
                     <div className="rr-field">
                       <label className="rr-field-label">
-                        Customer Contact Details (Verified)
+                        Customer Contact Details
                       </label>
                       <div className="rr-contact-box">
                         <p className="rr-contact-item">

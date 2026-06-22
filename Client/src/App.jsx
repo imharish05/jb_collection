@@ -14,6 +14,7 @@ import { replaceCart } from "./store/slices/cart-slice";
 import PaymentPolicy from "./pages/other/PaymentPolicy";
 import { useSelector } from "react-redux";
 import { clearCheckout } from "./store/slices/checkout-slice";
+import { fetchSettings } from "./store/services/settingsService";
 
 // Main home
 const HomeFashion = lazy(() => import("./pages/home/HomeFashion"));
@@ -88,6 +89,7 @@ useEffect(() => {
       getMarqueeMessages(),
       getOfferBanners(dispatch),
       getHeroSlides(),
+      fetchSettings(dispatch),
     ]);
   }, []);
 

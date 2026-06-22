@@ -36,6 +36,7 @@ const HomeFashion = () => {
         <OfferBanner />
 
         {/* tab product */}
+        <TabProduct spaceBottomClass="pb-60" spaceTopClass="pt-60" />
 
         {/* Shop by Event */}
         <FeatureIcon spaceTopClass="pt-100" spaceBottomClass="pb-60" />

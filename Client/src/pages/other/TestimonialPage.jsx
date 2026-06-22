@@ -30,8 +30,8 @@ const TestimonialPage = () => {
     <section className="testimonial-section pt-100 pb-100">
       <div className="container">
         <div className="section-title text-center mb-60">
-          <h2>Client Success Stories</h2>
-          <p>What Our Partners Say</p>
+          <h2>Happy Tales from Parents & Kids</h2>
+          <p>What families say about our personalized gifts & stationery</p>
         </div>
 
         {loading ? (

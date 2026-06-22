@@ -13,7 +13,11 @@ const BRAND_LOGO_CONFIG = {
   width: 300,
   height: 120,
   maxFileSize: 3 * 1024 * 1024,
-  formats: ['image/jpeg', 'image/png', 'image/webp'],
+  formats: [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
+    'image/heic', 'image/heif', 'image/avif'
+  ],
 };
 
 const validateBrandLogo = (file) => {
@@ -31,7 +35,7 @@ const validateBrandLogo = (file) => {
     if (!BRAND_LOGO_CONFIG.formats.includes(file.type)) {
       resolve({
         valid: false,
-        error: `Invalid format. Use JPG, PNG or WebP. You uploaded: ${file.type || 'unknown'}`,
+        error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You uploaded: ${file.type || 'unknown'}`,
       });
       return;
     }
@@ -237,8 +241,8 @@ export default function Brands({ showToast }) {
                 }}
                 onClear={handleClearImage}
                 validation={logoDimensions}
-                requirements="300×120px • Max: 3MB (JPG / PNG / WebP)"
-                accept="image/jpeg,image/png,image/webp"
+                requirements="300×120px • Max: 3MB (Common Image Formats)"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif"
               />
 
               {/* Status */}

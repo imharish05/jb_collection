@@ -645,13 +645,15 @@ const Checkout = () => {
       };
 
       const res = await api.post("/orders", payload);
-      const id = res.data?.id || res.data?.orderId || "KG" + Date.now();
+      const createdOrder = res.data || {};
+      const id = createdOrder.id || createdOrder.orderId || "KG" + Date.now();
+      const referenceSlug = createdOrder.referenceSlug || id;
 
       if (paymentMethod === "partial_cod") {
-        initPartialCodPayment(id, shippingInfo?.shippingCharge || 0);
+        initPartialCodPayment(id, shippingInfo?.shippingCharge || 0, referenceSlug);
       } else {
         // All non-partial_cod methods go through Razorpay
-        initRazorpayPayment(id);
+        initRazorpayPayment(id, referenceSlug);
       }
     } catch (err) {
       const errorData = err.response?.data;
@@ -670,7 +672,7 @@ const Checkout = () => {
   };
 
   /* ── Initialize Partial COD Payment ── */
-  const initPartialCodPayment = async (dbOrderId, deliveryCharge) => {
+  const initPartialCodPayment = async (dbOrderId, deliveryCharge, referenceSlug) => {
     if (!deliveryCharge || deliveryCharge <= 0) {
       if (checkoutSource === "cart") dispatch(deleteAllFromCart());
       navigatingRef.current = true;
@@ -680,6 +682,7 @@ const Checkout = () => {
           replace: true,
           state: {
             orderId: dbOrderId,
+            referenceSlug,
             selectedShippingAddr,
             billingAddress: selectedBillingAddr,
             paymentMethod,
@@ -706,6 +709,7 @@ const Checkout = () => {
       const rzpOrderId = paymentRes.data.orderId;
       if (!window.Razorpay) {
         cogoToast.error("Razorpay SDK not loaded", { position: "top-center" });
+        setProcessingRazorpay(false);
         return;
       }
       const productCost = shippingPricing.grandTotal - deliveryCharge;
@@ -745,6 +749,7 @@ const Checkout = () => {
                   replace: true,
                   state: {
                     orderId: dbOrderId,
+                    referenceSlug,
                     selectedShippingAddr,
                     billingAddress: selectedBillingAddr,
                     paymentMethod: "partial_cod",
@@ -763,10 +768,13 @@ const Checkout = () => {
                   },
                 });
               }, 1500);
+            } else {
+              setProcessingRazorpay(false);
             }
           } catch (verifyErr) {
             cogoToast.error("Delivery charge verification failed", { position: "top-center" });
             console.error("Partial COD verify error:", verifyErr);
+            setProcessingRazorpay(false);
           }
         },
         modal: {
@@ -781,13 +789,12 @@ const Checkout = () => {
     } catch (err) {
       cogoToast.error("Could not initialize delivery charge payment", { position: "top-center" });
       console.error("Partial COD init error:", err);
-    } finally {
       setProcessingRazorpay(false);
     }
   };
 
   /* ── Initialize Razorpay Payment ── */
-  const initRazorpayPayment = async (dbOrderId) => {
+  const initRazorpayPayment = async (dbOrderId, referenceSlug) => {
     try {
       setProcessingRazorpay(true);
       const paymentRes = await api.post("/payment/create-order", {
@@ -799,6 +806,7 @@ const Checkout = () => {
       setRazorpayOrderId(rzpOrderId);
       if (!window.Razorpay) {
         cogoToast.error("Razorpay SDK not loaded", { position: "top-center" });
+        setProcessingRazorpay(false);
         return;
       }
       const options = {
@@ -836,6 +844,7 @@ const Checkout = () => {
                   replace: true,
                   state: {
                     orderId: dbOrderId,
+                    referenceSlug,
                     selectedShippingAddr,
                     billingAddress: selectedBillingAddr,
                     paymentMethod: resolvedMethod,
@@ -849,11 +858,13 @@ const Checkout = () => {
                   },
                 });
               }, 1500);
+            } else {
+              setProcessingRazorpay(false);
             }
-
           } catch (verifyErr) {
             cogoToast.error("Payment verification failed", { position: "top-center" });
             console.error("Verification error:", verifyErr);
+            setProcessingRazorpay(false);
           }
         },
         modal: {
@@ -868,7 +879,6 @@ const Checkout = () => {
     } catch (err) {
       cogoToast.error("Could not initialize payment", { position: "top-center" });
       console.error("Razorpay init error:", err);
-    } finally {
       setProcessingRazorpay(false);
     }
   };
@@ -878,6 +888,57 @@ const Checkout = () => {
   ══════════════════════════════════════════════════════════════════════════ */
   return (
     <Fragment>
+      {(placing || processingRazorpay) && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(255, 255, 255, 0.75)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          zIndex: 99999,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            border: '5px solid #f3f3f3',
+            borderTop: '5px solid #f15a24',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            marginBottom: '20px',
+          }} />
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+          <h3 style={{
+            margin: 0,
+            fontFamily: '"Outfit", "Inter", sans-serif',
+            fontSize: '22px',
+            fontWeight: '600',
+            color: '#333',
+            letterSpacing: '0.5px',
+          }}>
+            {placing ? 'Creating Your Order...' : 'Processing Payment...'}
+          </h3>
+          <p style={{
+            margin: '8px 0 0 0',
+            fontFamily: '"Inter", sans-serif',
+            fontSize: '14px',
+            color: '#666',
+          }}>
+            Please do not close this window or refresh the page.
+          </p>
+        </div>
+      )}
       <SEO
         titleTemplate="Checkout — Kamali Gifts"
         description="Complete your purchase securely."

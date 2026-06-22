@@ -10,6 +10,7 @@ const {
   Blog,
   Product,
   User,
+  Testimonial,
 } = require("../models");
 
 // ─── Helper: upsert a list into a model using a unique key ───────────────────
@@ -70,6 +71,39 @@ const seed = async () => {
       "label"
     );
     console.log("✅ Nav events seeded");
+
+    // ── Testimonials ─────────────────────────────────────────────────────────
+    await upsertAll(
+      Testimonial,
+      [
+        {
+          id: "88e5d6cc-cf6e-473d-82d2-cc684f4f728c",
+          name: "Priyal & Aarav",
+          designation: "Parent of Aarav (6 yrs)",
+          text: "Aarav loved his custom dinosaur school bag and matching personalized pencils! The engraving is beautiful and the quality is outstanding. It made starting 1st grade so much more exciting for him.",
+          image: "uploads/testimonials/1780918029609.png",
+          sortOrder: 0
+        },
+        {
+          id: "f20c1537-8de4-4740-979f-0980ff63ff0d",
+          name: "Meera Krishnan",
+          designation: "Mother of two, Bangalore",
+          text: "We ordered personalized notebooks and name stamps for my daughter's birthday party return gifts. All the kids were thrilled to see their own names on the notebooks! Excellent service and quick delivery.",
+          image: "uploads/testimonials/1780918067114.png",
+          sortOrder: 1
+        },
+        {
+          id: "a9062eb5-2b02-47ab-a1db-449e3ccb8882",
+          name: "Rajesh Sen",
+          designation: "Father of Diya (8 yrs)",
+          text: "The customized wooden pencil case with Diya's custom cartoon sketch is her new favorite possession. She keeps showing it to all her school friends. Kamali Gifts has the best personalized stationary collection for kids.",
+          image: "uploads/testimonials/1781004680993.png",
+          sortOrder: 2
+        }
+      ],
+      "id"
+    );
+    console.log("✅ Testimonials seeded");
 
     const { seedCoupons } = require("../controllers/couponController");
     await seedCoupons();

@@ -138,16 +138,29 @@ export default function CustomisationFields({ showToast }) {
 
   const inputTypeIcon = { text: '📝', textarea: '📄', color: '🎨', font: '🔤', select: '📋' };
 
+  if (!hasPermission('customisation_fields_view')) {
+    return (
+      <div className="categories-container">
+        <div className="section-header">
+          <div className="section-title">Access Denied</div>
+        </div>
+        <p className="km-loading">You do not have permission to view this page.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="categories-container">
       <div className="section-header">
         <div className="section-title">Customisation Fields</div>
-        <button
-          className="action-btn btn-edit"
-          onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
-        >
-          {showForm ? 'Close' : '+ Add Field'}
-        </button>
+        {hasPermission('customisation_fields_create') && (
+          <button
+            className="action-btn btn-edit"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
+          >
+            {showForm ? 'Close' : '+ Add Field'}
+          </button>
+        )}
       </div>
 
       <div style={{ padding: '10px 14px', background: '#F0F9FF', borderRadius: 8, border: '1px solid #BAE6FD', fontSize: 12, color: '#0369A1', marginBottom: 18 }}>
@@ -312,7 +325,9 @@ export default function CustomisationFields({ showToast }) {
         <DataTable
           columns={(() => {
             const cols = ['#', 'Key', 'Label', 'Type', 'Placeholder', 'Required', 'Order', 'Status'];
-            cols.push('Actions');
+            if (hasPermission('customisation_fields_edit') || hasPermission('customisation_fields_delete')) {
+              cols.push('Actions');
+            }
             return cols;
           })()}
           initialRows={fields}
@@ -337,12 +352,18 @@ export default function CustomisationFields({ showToast }) {
                   {row.isActive ? 'Active' : 'Inactive'}
                 </span>
               </td>
-              <td>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
-                  <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
-                </div>
-              </td>
+              {(hasPermission('customisation_fields_edit') || hasPermission('customisation_fields_delete')) && (
+                <td>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {hasPermission('customisation_fields_edit') && (
+                      <button className="action-btn btn-edit" onClick={() => handleEditClick(row)}>Edit</button>
+                    )}
+                    {hasPermission('customisation_fields_delete') && (
+                      <button className="action-btn btn-del" onClick={() => handleDelete(row.id)}>Delete</button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           )}
         />

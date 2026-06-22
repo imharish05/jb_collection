@@ -4,8 +4,16 @@ const fs = require("fs");
 
 // ── Configuration ────────────────────────────────────────────
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+const ALLOWED_MIMES = [
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
+  'image/heic', 'image/heif', 'image/avif'
+];
+const ALLOWED_EXTENSIONS = [
+  '.jpg', '.jpeg', '.png', '.webp', '.gif',
+  '.svg', '.bmp', '.tiff', '.tif', '.ico',
+  '.heic', '.heif', '.avif'
+];
 
 // Auto-create uploads folders
 const uploadFolders = [
@@ -16,6 +24,7 @@ const uploadFolders = [
   '../uploads/events',
   '../uploads/combos',
   '../uploads/testimonials',
+  '../uploads/settings',
 ];
 
 uploadFolders.forEach(folder => {
@@ -43,12 +52,12 @@ const fileFilter = (req, file, cb) => {
   
   // Check file extension
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
-    return cb(new Error(`Invalid file type. Only images (.jpg, .png, .webp, .gif) are allowed`), false);
+    return cb(new Error(`Invalid file type. Supported: JPG, JPEG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF`), false);
   }
 
   // Check MIME type
   if (!ALLOWED_MIMES.includes(file.mimetype)) {
-    return cb(new Error(`Invalid file type. Only JPEG, PNG, WebP, and GIF images are allowed`), false);
+    return cb(new Error(`Invalid file type. Supported: JPEG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF`), false);
   }
 
   cb(null, true);

@@ -128,6 +128,22 @@ const PERMISSION_GROUPS = [
       { key: "fonts_edit", label: "Edit Font" },
       { key: "fonts_delete", label: "Delete Font" }
     ]
+  },
+  {
+    module: "Site Settings",
+    permissions: [
+      { key: "settings_view", label: "View Settings" },
+      { key: "settings_edit", label: "Edit Settings" }
+    ]
+  },
+  {
+    module: "Customisation Fields",
+    permissions: [
+      { key: "customisation_fields_view", label: "View Customisation Fields" },
+      { key: "customisation_fields_create", label: "Add Customisation Field" },
+      { key: "customisation_fields_edit", label: "Edit Customisation Field" },
+      { key: "customisation_fields_delete", label: "Delete Customisation Field" }
+    ]
   }
 ];
 

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styles from './Sidebar.module.css';
 import logo from "../../assets/image.png"
@@ -200,6 +201,12 @@ const NAV_ITEMS = [
   {
     section: 'Settings',
     items: [
+      { id: 'settings', label: 'Site Settings', icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      )},
       { id: 'roles', label: 'Roles & Permissions', icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -294,16 +301,53 @@ export default function Sidebar({ onLogout }) {
         return permissions.includes('contacts_view');
       case 'roles':
         return permissions.includes('roles_view');
+      case 'settings':
+        return permissions.includes('settings_view') || permissions.includes('*') || permissions.includes('super_admin');
       case 'users':
         return permissions.includes('users_view');
       case 'fonts':
         return permissions.includes('fonts_view') || permissions.includes('*') || permissions.includes('super_admin');
       case 'customisation_fields':
-        return permissions.includes('fonts_view') || permissions.includes('*') || permissions.includes('super_admin');
+        return permissions.includes('customisation_fields_view') || permissions.includes('*') || permissions.includes('super_admin');
       default:
         return false;
     }
   };
+
+  const [logoUrl, setLogoUrl] = useState('');
+
+  const fetchLogo = async () => {
+    try {
+      const res = await fetch(`${process.env.REACT_APP_API_URL || '/api'}/settings`);
+      const data = await res.json();
+      if (data && data.logoUrl) {
+        setLogoUrl(data.logoUrl);
+      } else {
+        setLogoUrl('');
+      }
+    } catch (e) {
+      console.error("Error fetching logo in sidebar:", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogo();
+    window.addEventListener('site-settings-updated', fetchLogo);
+    return () => {
+      window.removeEventListener('site-settings-updated', fetchLogo);
+    };
+  }, []);
+
+  const IMG_BASE_URL = process.env.REACT_APP_IMG_URL || 'http://localhost:5000';
+  let adminRole = 'ADMIN';
+  try {
+    const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+    if (adminUser?.role?.name) {
+      adminRole = adminUser.role.name.toUpperCase();
+    } else if (adminUser?.role) {
+      adminRole = adminUser.role.toUpperCase();
+    }
+  } catch (e) {}
 
   const filteredNavItems = NAV_ITEMS.map((group) => {
     const items = group.items.filter((item) => hasPermission(item.id));
@@ -314,10 +358,12 @@ export default function Sidebar({ onLogout }) {
     <aside className={styles.sidebar}>
       <div className={styles.logoArea}>
         <div className={styles.logoText}>
-          <div className={styles.logoK}><img src={logo} alt="" /></div>
+          <div className={styles.logoK}>
+            <img src={logoUrl ? `${IMG_BASE_URL}/${logoUrl}` : logo} alt="Logo" />
+          </div>
           <div>
             <div className={styles.logoName}></div>
-            <div className={styles.logoSub}>ADMIN PANEL</div>
+            <div className={styles.logoSub}>{adminRole} PANEL</div>
           </div>
         </div>
       </div>

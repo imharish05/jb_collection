@@ -56,9 +56,14 @@ function toHex(name) {
   return COLOR_MAP[l] || null;
 }
 
-const KEY_ALIASES = { color:"Colour", colour:"Colour", size:"Size", material:"Material", finish:"Finish", capacity:"Capacity" };
-function normalKey(k) { return KEY_ALIASES[k?.toLowerCase()] || k; }
-const KEY_ORDER = ["Colour","Size","Material","Finish","Capacity"];
+const KEY_ALIASES = { color: "Colour", colour: "Colour", size: "Size", material: "Material", finish: "Finish", capacity: "Capacity" };
+function normalKey(k) {
+  if (!k) return "";
+  const lower = k.trim().toLowerCase();
+  if (KEY_ALIASES[lower]) return KEY_ALIASES[lower];
+  return k.trim().charAt(0).toUpperCase() + k.trim().slice(1).toLowerCase();
+}
+const KEY_ORDER = ["Colour", "Size", "Material", "Finish", "Capacity"];
 
 function buildOptionMap(variants) {
   const map = {};

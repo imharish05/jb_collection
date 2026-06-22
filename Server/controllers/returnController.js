@@ -213,7 +213,9 @@ const cancelOrder = async (req, res, next) => {
     // Customised items
     if (order.status !== "pending" && order.items) {
       const hasCustom = order.items.some(
-        (item) => item.product && item.product.isCustomisable
+        (item) => 
+          (item.product && item.product.isCustomisable) ||
+          (item.customisationDetails && Object.keys(item.customisationDetails).length > 0)
       );
       if (hasCustom)
         return res.status(400).json({ message: "Customised items in production cannot be cancelled" });

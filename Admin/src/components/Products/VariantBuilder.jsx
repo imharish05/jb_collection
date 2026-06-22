@@ -17,7 +17,11 @@ const VARIANT_IMAGE_RULES = {
   aspectRatio: 5 / 6,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024,
-  formats: ['image/jpeg', 'image/webp', 'image/png'],
+  formats: [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
+    'image/heic', 'image/heif', 'image/avif'
+  ],
 };
 
 const validateVariantImage = (file) => {
@@ -27,7 +31,7 @@ const validateVariantImage = (file) => {
       return;
     }
     if (!VARIANT_IMAGE_RULES.formats.includes(file.type)) {
-      resolve({ valid: false, error: `Invalid format. Use JPG/WebP/PNG. Yours: ${file.type || 'unknown'}` });
+      resolve({ valid: false, error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). Yours: ${file.type || 'unknown'}` });
       return;
     }
     const reader = new FileReader();
@@ -51,22 +55,17 @@ const validateVariantImage = (file) => {
 
 // ── Predefined option types ────────────────────────────────────────────────────
 export const OPTION_PRESETS = {
-  'Colour':    [],
-  'Size':      ['XS','S','M','L','XL','XXL','Free Size','Small','Medium','Large'],
-  'Material':  ['Synthetic','Nylon','Korai Silk','Kalamkari','Transparent window bags ','Jute','Brass','Acrylic','Wood','Leather','Steel','Copper','Clay','Glass','Ceramic'],
-  'Finish':    ['Matte','Glossy','Antique','Polished','Hand-painted','Mirror','Oxidised'],
-  'Storage':   ['32GB','64GB','128GB','256GB','512GB','1TB'],
-  'Style':     ['Classic','Modern','Vintage','Minimalist','Luxury','Rustic'],
-  'Bundle':    ['Single','Pair','Set of 3','Set of 5','Set of 10'],
-  'Capacity':  ['50ml','100ml','250ml','500ml','1L','1.5L','2L'],
-  'Weight':    ['Light','Standard','Heavy'],
-  'Design':    ['Cow','Cow and calf','Peacock','Lotus','Flowers','Elephant','Mandala','Standard','Heavy','Plain','Kolam','Wavey lines','Painted'],
-  // Dead keys from Products.js mappedVariants — added so they appear in the searchable dropdown
-  // and can be toggled as open-choice (inputType: text) for personalized product dimensions
+  'Colour':    ['Red', 'Blue', 'Pink', 'Purple', 'Silver', 'Gold', 'Copper', 'Brass', 'Assorted Colors'],
+  'Color':     ['Red', 'Blue', 'Pink', 'Purple', 'Silver', 'Gold', 'Copper', 'Brass', 'Assorted Colors'],
+  'Size':      ['Small', 'Medium', 'Large', '2 inches', '2.2 inches', '2.4 inches', '2.6 inches', '2.8 inches'],
+  'Material':  ['Jute', 'Synthetic', 'Silk', 'Nylon', 'Transparent Window', 'Brass', 'Steel', 'Copper', 'Glass', 'Wood', 'Cane'],
+  'Design':    ['Ganesha', 'Murugan', 'Lakshmi', 'Vishnu', 'Elephant', 'Horse', 'Garudan', 'Nandhi', 'Krishna', 'Lotus', 'Cow', 'Cow and calf', 'House warming', 'Kolam', 'Puberty', 'Half saree girl', 'Pregnant lady', 'Peacock', 'Mandala', 'Rose', 'Smiley', 'Unicorn', 'Mickey', 'Disney princess', 'Mermaid', 'Kuromi', 'DIY coloring'],
+  'Style':     ['Plain', 'Printed', 'Etched', 'Painted', 'Floral etched', 'Meenakari painted', 'Hammered', 'Stripped', 'Brass coated', 'Kolam etched'],
+  'Shape':     ['Long', 'Round', 'Oval', 'Square', 'Heart', 'Floral'],
+  'Pack Size': ['Single', 'Pack of 12', 'Pack of 25'],
   'Engraving': [],
   'Print Text': [],
   'Dimensions': [],
-  'Sub-type':   [],
 };
 
 const OPTION_KEYS = Object.keys(OPTION_PRESETS);
@@ -283,8 +282,9 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
   const addValue = (raw) => {
     let v = raw.trim();
     if (isColour && !option.isOpenChoice) {
-      if (!isHexColor(v)) return;
-      v = v.toUpperCase();
+      if (isHexColor(v)) {
+        v = v.toUpperCase();
+      }
     }
     if (!v) return;
     if (option.values.some(existing => norm(existing) === norm(v))) return;
@@ -436,68 +436,110 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
           ) : (
             /* ── Normal fixed-values UI ── */
             <>
-              <label style={lbl}>Values</label>
-
-              {/* Preset suggestions */}
-              {option.key && OPTION_PRESETS[option.key]?.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
-                  {OPTION_PRESETS[option.key].map(preset => {
-                    const already = option.values.some(v => norm(v) === norm(preset));
-                    return (
-                      <button key={preset} type="button"
-                        onClick={() => !already && addValue(preset)}
-                        style={{ fontSize: 11, padding: '3px 9px', borderRadius: 5, border: `1px solid ${already ? KM.green : KM.border}`, background: already ? '#F0FFF4' : '#fff', color: already ? KM.green : KM.muted, cursor: already ? 'default' : 'pointer', fontWeight: 500 }}>
-                        {already ? '✓ ' : '+'}{preset}
+              {!option.key ? (
+                /* ── Quick-select Option Type Pills ── */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 0' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Quick Select Option Type:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {OPTION_KEYS.filter(k => !allOtherKeys.includes(k)).map(k => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => onChange({ ...option, key: k, values: [], isOpenChoice: false })}
+                        style={{
+                          fontSize: 12,
+                          padding: '6px 12px',
+                          borderRadius: 8,
+                          border: `1.5px solid ${KM.border}`,
+                          background: '#fff',
+                          color: KM.text,
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          transition: 'all 0.15s',
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.borderColor = KM.blue;
+                          e.currentTarget.style.color = KM.blue;
+                          e.currentTarget.style.background = KM.blueFaint;
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.borderColor = KM.border;
+                          e.currentTarget.style.color = KM.text;
+                          e.currentTarget.style.background = '#fff';
+                        }}
+                      >
+                        {k}
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
-              )}
+              ) : (
+                /* ── Normal values config ── */
+                <>
+                  <label style={lbl}>Values</label>
 
-              {/* Selected values as pills */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8, minHeight: option.values.length ? 'auto' : 0 }}>
-                {option.values.map((v, i) => (
-                  <span key={i} style={{ ...pill(true), display: 'inline-flex', alignItems: 'center' }}>
-                    {isColour && isHexColor(v) && (
-                      <span
-                        style={{ width: 14, height: 14, borderRadius: '50%', border: '1px solid #dcdcdc', backgroundColor: v, display: 'inline-block', marginRight: 6, flexShrink: 0 }}
+                  {/* Preset suggestions */}
+                  {OPTION_PRESETS[option.key]?.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+                      {OPTION_PRESETS[option.key].map(preset => {
+                        const already = option.values.some(v => norm(v) === norm(preset));
+                        return (
+                          <button key={preset} type="button"
+                            onClick={() => !already && addValue(preset)}
+                            style={{ fontSize: 11, padding: '3px 9px', borderRadius: 5, border: `1px solid ${already ? KM.green : KM.border}`, background: already ? '#F0FFF4' : '#fff', color: already ? KM.green : KM.muted, cursor: already ? 'default' : 'pointer', fontWeight: 500 }}>
+                            {already ? '✓ ' : '+'}{preset}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Selected values as pills */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8, minHeight: option.values.length ? 'auto' : 0 }}>
+                    {option.values.map((v, i) => (
+                      <span key={i} style={{ ...pill(true), display: 'inline-flex', alignItems: 'center' }}>
+                        {isColour && isHexColor(v) && (
+                          <span
+                            style={{ width: 14, height: 14, borderRadius: '50%', border: '1px solid #dcdcdc', backgroundColor: v, display: 'inline-block', marginRight: 6, flexShrink: 0 }}
+                          />
+                        )}
+                        <span>{v}</span>
+                        <button type="button" onClick={() => removeValue(i)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.muted, fontSize: 14, padding: '0 0 0 2px', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>×</button>
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Custom value input */}
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {isColour ? (
+                      <input
+                        ref={inputRef}
+                        type="color"
+                        style={{ width: 52, height: 36, padding: 2, border: `1px solid ${KM.border}`, borderRadius: 7, background: '#fff', cursor: 'pointer' }}
+                        value={isHexColor(valueInput) ? valueInput : '#000000'}
+                        onChange={e => setValueInput(e.target.value.toUpperCase())}
+                      />
+                    ) : (
+                      <input
+                        ref={inputRef}
+                        style={{ ...inp, flex: 1 }}
+                        placeholder={`Add ${option.key.toLowerCase()} value…`}
+                        value={valueInput}
+                        onChange={e => setValueInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addValue(valueInput); } }}
                       />
                     )}
-                    <span>{v}</span>
-                    <button type="button" onClick={() => removeValue(i)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: KM.muted, fontSize: 14, padding: '0 0 0 2px', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>×</button>
-                  </span>
-                ))}
-              </div>
-
-              {/* Custom value input */}
-              <div style={{ display: 'flex', gap: 6 }}>
-                {isColour ? (
-                  <input
-                    ref={inputRef}
-                    type="color"
-                    style={{ width: 52, height: 36, padding: 2, border: `1px solid ${KM.border}`, borderRadius: 7, background: '#fff', cursor: option.key ? 'pointer' : 'not-allowed' }}
-                    value={isHexColor(valueInput) ? valueInput : '#000000'}
-                    disabled={!option.key}
-                    onChange={e => setValueInput(e.target.value.toUpperCase())}
-                  />
-                ) : (
-                  <input
-                    ref={inputRef}
-                    style={{ ...inp, flex: 1 }}
-                    placeholder={option.key ? `Add ${option.key.toLowerCase()} value…` : 'Select option type first'}
-                    value={valueInput}
-                    disabled={!option.key}
-                    onChange={e => setValueInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addValue(valueInput); } }}
-                  />
-                )}
-                <button type="button" onClick={() => addValue(isColour && !valueInput ? '#000000' : valueInput)}
-                  disabled={!option.key || (!isColour && !valueInput.trim())}
-                  style={{ padding: '8px 14px', background: KM.teal, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: (!option.key || (!isColour && !valueInput.trim())) ? 0.4 : 1 }}>
-                  {isColour ? 'Add Colour' : 'Add'}
-                </button>
-              </div>
+                    <button type="button" onClick={() => addValue(isColour && !valueInput ? '#000000' : valueInput)}
+                      disabled={!isColour && !valueInput.trim()}
+                      style={{ padding: '8px 14px', background: KM.teal, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: (!isColour && !valueInput.trim()) ? 0.4 : 1 }}>
+                      {isColour ? 'Add Colour' : 'Add'}
+                    </button>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
@@ -569,8 +611,8 @@ function SkuRow({ sku, index, onChange, onDelete, errors = [] }) {
 
       {/* Image upload — big zone */}
       <div style={{ flexShrink: 0 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Image • 800×960px (5:6) • Max: 3MB</div>
-        <input ref={imgRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handleImg} />
+        <div style={{ fontSize: 10, fontWeight: 700, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Image • 800×960px (5:6) • Max: 3MB (Common Image Formats)</div>
+        <input ref={imgRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif" style={{ display: 'none' }} onChange={handleImg} />
         {sku.imagePreview ? (
           <div style={{ position: 'relative', width: 90, height: 90 }}>
             <img src={sku.imagePreview} alt="variant"
@@ -920,10 +962,10 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
   const hasErrors = errorCount > 0;
 
   return (
-    <div style={{ gridColumn: 'span 2', background: KM.bg, border: `2px solid ${hasErrors ? KM.red : KM.border}`, borderRadius: 12, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+    <div style={{ gridColumn: 'span 2', background: KM.bg, border: `2px solid ${hasErrors ? KM.red : KM.border}`, borderRadius: 12, transition: 'border-color 0.2s' }}>
 
       {/* Header */}
-      <div style={{ background: hasErrors ? '#7f1d1d' : KM.blue, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'background 0.2s' }}>
+      <div style={{ background: hasErrors ? '#7f1d1d' : KM.blue, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'background 0.2s', borderTopLeftRadius: 10, borderTopRightRadius: 10 }}>
         <div>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>🎁 Variant Options</span>
           {hasErrors ? (
@@ -1063,7 +1105,7 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
               </div>
 
               {/* Summary */}
-              <div style={{ padding: '10px 14px', background: KM.bg, borderTop: `1px solid ${KM.border}`, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ padding: '10px 14px', background: KM.bg, borderTop: `1px solid ${KM.border}`, display: 'flex', gap: 16, flexWrap: 'wrap', borderBottomLeftRadius: 10, borderBottomRightRadius: 10 }}>
                 <span style={{ fontSize: 12, color: KM.muted }}>
                   <strong style={{ color: KM.blue }}>{variants.filter(v => v.status === 'Active').length}</strong> active
                 </span>

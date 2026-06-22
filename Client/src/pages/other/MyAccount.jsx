@@ -480,7 +480,7 @@ const toggleVisibility = (field) => {
                           const hoursFromCreated = hoursSince(order.createdAt);
                           const orderStatusLow = order.status?.toLowerCase() || "";
                           const nonCancellableStatuses = ["shipped", "processing", "delivered", "cancelled"];
-                          const hasCustomItem = order.items?.some(i => i.product?.isCustomisable);
+                          const hasCustomItem = order.items?.some(i => i.product?.isCustomisable || (i.customisationDetails && Object.keys(i.customisationDetails).length > 0));
                           const isProductionCustom = hasCustomItem && orderStatusLow !== "pending";
                           const canCancel = hoursFromCreated < 24 && !nonCancellableStatuses.includes(orderStatusLow) && !isProductionCustom;
 
@@ -538,7 +538,7 @@ const toggleVisibility = (field) => {
                               </div>
                               <div className="header-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                                 <span className={`status-pill ${orderStatusLow || 'pending'}`}>{order.status || 'Pending'}</span>
-                                {/* {canCancel && (
+                                {canCancel && (
                                   <button
                                     onClick={handleCancelFromAccount}
                                     className="btn-cancel-action"
@@ -546,7 +546,7 @@ const toggleVisibility = (field) => {
                                   >
                                     Cancel
                                   </button>
-                                )} */}
+                                )}
                               </div>
                             </div>
                             <div className="order-card-body">

@@ -21,7 +21,11 @@ const PRODUCT_IMAGE_DIMENSIONS = {
   aspectRatio: 5 / 6,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024,
-  formats: ['image/jpeg', 'image/webp','image/png'],
+  formats: [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
+    'image/heic', 'image/heif', 'image/avif'
+  ],
 };
 
 const validateProductImageDimensions = (file) => {
@@ -39,7 +43,7 @@ const validateProductImageDimensions = (file) => {
     if (!PRODUCT_IMAGE_DIMENSIONS.formats.includes(file.type)) {
       resolve({
         valid: false,
-        error: `Invalid format. Use JPG or WebP. You have: ${file.type || 'unknown'}`,
+        error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You have: ${file.type || 'unknown'}`,
       });
       return;
     }
@@ -110,8 +114,8 @@ const KM = {
 };
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-const formCard = { background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 20 };
-const formHeader = { background: KM.blue, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 10 };
+const formCard = { background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 12, marginBottom: 20 };
+const formHeader = { background: KM.blue, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 10, borderTopLeftRadius: 11, borderTopRightRadius: 11 };
 const headerIcon = { width: 32, height: 32, background: 'rgba(255,255,255,0.15)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 15, fontWeight: 600 };
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 5 };
 const labelStyle = { fontSize: 11, fontWeight: 500, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em' };
@@ -443,22 +447,38 @@ export default function Products({ showToast }) {
     setVariants(
       p.Variants?.length
         ? p.Variants.map(v => {
+          const parseVariantName = (name) => {
+            if (!name || name === 'Default') return [];
+            return name.split(/\s*(?:·|\||,|\/|-)\s*/).map(part => {
+              const ci = part.indexOf(':');
+              if (ci === -1) return { key: 'Custom Note', value: part.trim(), customValue: '' };
+              return { key: part.slice(0, ci).trim(), value: part.slice(ci + 1).trim(), customValue: '' };
+            }).filter(a => a.key && a.value);
+          };
+
+          const nameAttrs = parseVariantName(v.variantName);
           const rawAttrs = v.attributes;
           const parsedAttrs = typeof rawAttrs === 'string'
             ? (() => { try { return JSON.parse(rawAttrs); } catch { return []; } })()
             : (Array.isArray(rawAttrs) ? rawAttrs : []);
 
-          const parseVariantName = (name) => {
-            if (!name || name === 'Default') return [];
-            return name.split(' · ').map(part => {
-              const ci = part.indexOf(': ');
-              if (ci === -1) return { key: 'Custom Note', value: part.trim(), customValue: '' };
-              return { key: part.slice(0, ci).trim(), value: part.slice(ci + 2).trim(), customValue: '' };
-            }).filter(a => a.key && a.value);
-          };
+          // HEAL LOGIC: If parsed attributes from variantName do not match DB attributes,
+          // automatically heal DB attributes to match the name-based ones.
+          let finalAttrs = parsedAttrs;
+          if (nameAttrs.length > 0) {
+            const matches = nameAttrs.every(na =>
+              parsedAttrs.some(pa =>
+                na.key.toLowerCase() === pa.key.toLowerCase() &&
+                na.value.toLowerCase() === pa.value.toLowerCase()
+              )
+            );
+            if (!matches || parsedAttrs.length !== nameAttrs.length) {
+              finalAttrs = nameAttrs;
+            }
+          }
 
-          const builtAttrs = parsedAttrs.length > 0
-            ? parsedAttrs.map(a => ({ key: a.key, value: a.value, customValue: '' }))
+          const builtAttrs = finalAttrs.length > 0
+            ? finalAttrs.map(a => ({ key: a.key, value: a.value, customValue: '' }))
             : (() => {
               const fromFlat = [
                 v.colour ? { key: 'Colour', value: v.colour, customValue: '' } : null,
@@ -471,7 +491,7 @@ export default function Products({ showToast }) {
                 v.printText ? { key: 'Print Text', value: v.printText, customValue: '' } : null,
                 v.customLabel ? { key: 'Custom Note', value: v.customLabel, customValue: '' } : null,
               ].filter(Boolean);
-              return fromFlat.length > 0 ? fromFlat : parseVariantName(v.variantName);
+              return fromFlat.length > 0 ? fromFlat : nameAttrs;
             })();
 
           return {
@@ -1000,7 +1020,7 @@ export default function Products({ showToast }) {
               )}
 
               {/* Hidden file input - product images handled per-variant */}
-              <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp"
+              <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif"
                 style={{ display: 'none' }} onChange={handleFileChange} />
 
               <div className="km-form-actions km-field-full" style={{display : "flex",gap : "10px"}}>

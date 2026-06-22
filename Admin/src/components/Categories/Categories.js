@@ -15,7 +15,11 @@ const CATEGORY_IMAGE_DIMENSIONS = {
   aspectRatio: 1 / 1,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024,
-  formats: ['image/jpeg', 'image/webp','image/png'],
+  formats: [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
+    'image/heic', 'image/heif', 'image/avif'
+  ],
 };
 
 const validateCategoryImageDimensions = (file) => {
@@ -33,7 +37,7 @@ const validateCategoryImageDimensions = (file) => {
     if (!CATEGORY_IMAGE_DIMENSIONS.formats.includes(file.type)) {
       resolve({
         valid: false,
-        error: `Invalid format. Use JPG or WebP. You have: ${file.type || 'unknown'}`,
+        error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You have: ${file.type || 'unknown'}`,
       });
       return;
     }

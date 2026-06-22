@@ -14,7 +14,11 @@ const EVENT_IMAGE_DIMENSIONS = {
   aspectRatio: 1 / 1,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024,
-  formats: ['image/jpeg', 'image/webp','image/png'],
+  formats: [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
+    'image/heic', 'image/heif', 'image/avif'
+  ],
 };
 
 const validateEventImageDimensions = (file) => {
@@ -32,7 +36,7 @@ const validateEventImageDimensions = (file) => {
     if (!EVENT_IMAGE_DIMENSIONS.formats.includes(file.type)) {
       resolve({
         valid: false,
-        error: `Invalid format. Use JPG or WebP. You have: ${file.type || 'unknown'}`,
+        error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You have: ${file.type || 'unknown'}`,
       });
       return;
     }
@@ -273,7 +277,7 @@ export default function EventCategories({ showToast }) {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif"
                       style={{ display: 'none' }}
                       onChange={e => {
                         const f = e.target.files[0];

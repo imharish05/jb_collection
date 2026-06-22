@@ -5,6 +5,7 @@ import { fetchProducts } from '../../redux/services/productsService';
 import { editVariant } from '../../redux/services/variantsService';
 import { isHexColor } from '../Products/VariantBuilder';
 import { hasPermission } from '../../utils/authHelper';
+import { fetchInventorySettings } from '../../redux/services/notificationsService';
 
 const isColourKey = (key) => /colou?r/i.test(key || '');
 
@@ -210,12 +211,14 @@ function StockModal({ variant, onClose, onDone, showToast }) {
 export default function Stock({ showToast }) {
   const dispatch = useDispatch();
   const { items: products, loading } = useSelector(state => state.products);
+  const { settings: invSettings } = useSelector(state => state.notifications);
   const [stockModal, setStockModal] = useState(null);
   // Flatten products → variant rows locally (no separate stock slice needed)
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
-    dispatch(fetchProducts())
+    dispatch(fetchProducts());
+    dispatch(fetchInventorySettings());
   }, []);
 
   // Rebuild flat rows whenever products change
@@ -271,7 +274,43 @@ export default function Stock({ showToast }) {
           })()}
           initialRows={rows}
           renderRow={(row,i) => {
-            const lowStock = row.stock <= 5;
+            const qty = row.stock;
+            const high = invSettings?.highStockThreshold ?? 51;
+            const medium = invSettings?.mediumStockThreshold ?? 11;
+
+            let stockColor = KM.text;
+            let badge = null;
+
+            if (qty === 0) {
+              stockColor = '#dc2626';
+              badge = (
+                <span style={{ fontSize: 10, fontWeight: 700, background: '#fee2e2', color: '#dc2626', padding: '2px 6px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                  Out of Stock
+                </span>
+              );
+            } else if (qty < medium) {
+              stockColor = '#ea580c';
+              badge = (
+                <span style={{ fontSize: 10, fontWeight: 700, background: '#fff7ed', color: '#ea580c', padding: '2px 6px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                  Low
+                </span>
+              );
+            } else if (qty < high) {
+              stockColor = '#d97706';
+              badge = (
+                <span style={{ fontSize: 10, fontWeight: 700, background: '#fef3c7', color: '#d97706', padding: '2px 6px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                  Medium
+                </span>
+              );
+            } else {
+              stockColor = '#39B54A';
+              badge = (
+                <span style={{ fontSize: 10, fontWeight: 700, background: '#dcfce7', color: '#15803d', padding: '2px 6px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                  In Stock
+                </span>
+              );
+            }
+
             return (
               <tr key={row.id}>
                 <td style={{ fontWeight: 600, color: KM.muted }}>{i+1}</td>
@@ -281,15 +320,11 @@ export default function Stock({ showToast }) {
                 </td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontWeight: 700, color: row.stock === 0 ? '#dc2626' : lowStock ? '#ea580c' : KM.text }}>
-                      {row.stock}
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: stockColor }} />
+                    <span style={{ fontWeight: 700, color: stockColor }}>
+                      {qty}
                     </span>
-                    {row.stock === 0 && (
-                      <span style={{ fontSize: 10, fontWeight: 700, background: '#fee2e2', color: '#dc2626', padding: '2px 6px', borderRadius: 20, whiteSpace: 'nowrap' }}>Out of Stock</span>
-                    )}
-                    {row.stock > 0 && lowStock && (
-                      <span style={{ fontSize: 10, fontWeight: 700, background: '#fff7ed', color: '#ea580c', padding: '2px 6px', borderRadius: 20, whiteSpace: 'nowrap' }}>Low</span>
-                    )}
+                    {badge}
                   </div>
                 </td>
                 <td>

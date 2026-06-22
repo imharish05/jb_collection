@@ -67,7 +67,12 @@ function toHex(name) {
 }
 
 const KEY_ALIASES = { color: "Colour", colour: "Colour", size: "Size", material: "Material", finish: "Finish", capacity: "Capacity" };
-function normalKey(k) { return KEY_ALIASES[k?.toLowerCase()] || k; }
+function normalKey(k) {
+  if (!k) return "";
+  const lower = k.trim().toLowerCase();
+  if (KEY_ALIASES[lower]) return KEY_ALIASES[lower];
+  return k.trim().charAt(0).toUpperCase() + k.trim().slice(1).toLowerCase();
+}
 const KEY_ORDER = ["Colour", "Size", "Material", "Finish", "Capacity"];
 
 function parseVariantNameAttrs(variantName) {
@@ -636,6 +641,24 @@ const ProductDescriptionInfo = ({
       api.get('/fonts').then(r => setAvailableFonts(r.data || [])).catch(() => {});
     }
   }, [localProduct?.id, localProduct?.isCustomisable]);
+
+  // Dynamically load Google Font stylesheets
+  useEffect(() => {
+    if (availableFonts && availableFonts.length > 0) {
+      availableFonts.forEach(font => {
+        const fontName = font.name?.trim();
+        if (!fontName) return;
+        const fontId = `google-font-${fontName.replace(/\s+/g, '-').toLowerCase()}`;
+        if (!document.getElementById(fontId)) {
+          const link = document.createElement('link');
+          link.id = fontId;
+          link.rel = 'stylesheet';
+          link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@300;400;500;600;700&display=swap`;
+          document.head.appendChild(link);
+        }
+      });
+    }
+  }, [availableFonts]);
 
   const effectiveStock = selectedVariant ? Number(selectedVariant.stock ?? 0) : productStock;
 
@@ -1302,7 +1325,16 @@ const handleBuyNow = async () => {
                 })}
               </div>
               <div style={{ fontSize: 11, color: '#9a3412', marginTop: 8, opacity: 0.8 }}>
-                * Customisation details will be added to your order. Our team will confirm via WhatsApp before production.
+                * Customisation details will be added to your order. Please{' '}
+                <a
+                  href="https://wa.me/7338814319?text=Hello! I want to enquire about customisation details for my order."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#9a3412', textDecoration: 'underline', fontWeight: 600 }}
+                >
+                  Contact our team via WhatsApp
+                </a>{' '}
+                for detailed information.
               </div>
             </div>
           );

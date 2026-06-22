@@ -1,10 +1,18 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
+import { useSelector } from "react-redux";
 
 const S = process.env.PUBLIC_URL + "/shop";
 
 const FooterOne = ({ containerClass, extraFooterClass }) => {
+  const { settings } = useSelector(state => state.settings);
+  const IMG_BASE_URL = process.env.REACT_APP_IMG_URL || 'http://localhost:5000';
+  
+  const resolvedLogo = settings?.logoUrl 
+    ? `${IMG_BASE_URL}/${settings.logoUrl}` 
+    : process.env.PUBLIC_URL + "/assets/img/logo.png";
+
   return (
     <footer className={clsx("footer-area", extraFooterClass)}>
       <style>{`
@@ -190,7 +198,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
             <div className="km-brand-col">
               <Link to={process.env.PUBLIC_URL + "/"}>
                 <img
-                  src={process.env.PUBLIC_URL + "/assets/img/logo.png"}
+                  src={resolvedLogo}
                   alt="Kamali Gifts & Crafts"
                   className="km-brand-logo"
                   onError={(e) => { e.target.style.display = "none"; }}

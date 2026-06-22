@@ -179,6 +179,32 @@ const ReturnTracking = () => {
                       <p style={{ margin: 0, fontSize: "13px" }}>{returnReq.comments}</p>
                     </div>
                   )}
+                  {returnReq.adminNotes && (
+                    <div style={{
+                      marginTop: "10px",
+                      padding: "12px",
+                      background: returnReq.status === "rejected" ? "#fff5f5" : "#f0fdf4",
+                      border: returnReq.status === "rejected" ? "1px solid #fee2e2" : "1px solid #bbf7d0",
+                      borderRadius: "4px"
+                    }}>
+                      <label style={{
+                        fontWeight: 600,
+                        fontSize: "12px",
+                        display: "block",
+                        color: returnReq.status === "rejected" ? "#991b1b" : "#166534",
+                        marginBottom: "4px"
+                      }}>
+                        Admin Response
+                      </label>
+                      <p style={{
+                        margin: 0,
+                        fontSize: "13px",
+                        color: returnReq.status === "rejected" ? "#7f1d1d" : "#14532d"
+                      }}>
+                        {returnReq.adminNotes}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {returnReq.status !== "rejected" && returnReq.status !== "cancelled" && (

@@ -50,9 +50,17 @@ const combinedStorage = multer.diskStorage({
 });
 
 // ── File filter ───────────────────────────────────────────────────────────────
-const ALLOWED_IMAGE_MIMES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_IMAGE_MIMES = [
+  "image/jpeg", "image/png", "image/webp", "image/gif",
+  "image/svg+xml", "image/bmp", "image/tiff", "image/x-icon",
+  "image/heic", "image/heif", "image/avif"
+];
 const ALLOWED_VIDEO_MIMES = ["video/mp4", "video/quicktime"];
-const ALLOWED_IMAGE_EXTS  = [".jpg", ".jpeg", ".png", ".webp"];
+const ALLOWED_IMAGE_EXTS  = [
+  ".jpg", ".jpeg", ".png", ".webp", ".gif",
+  ".svg", ".bmp", ".tiff", ".tif", ".ico",
+  ".heic", ".heif", ".avif"
+];
 const ALLOWED_VIDEO_EXTS  = [".mp4", ".mov"];
 
 const returnFileFilter = (req, file, cb) => {
@@ -64,7 +72,7 @@ const returnFileFilter = (req, file, cb) => {
     }
   } else if (file.fieldname === "images") {
     if (!ALLOWED_IMAGE_EXTS.includes(ext) || !ALLOWED_IMAGE_MIMES.includes(file.mimetype)) {
-      return cb(new Error("Images must be JPG, PNG, or WEBP format"), false);
+      return cb(new Error("Images must be a supported image format (JPEG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF)"), false);
     }
   } else {
     return cb(new Error("Invalid field name. Use 'video' or 'images'"), false);

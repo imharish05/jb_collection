@@ -12,8 +12,8 @@ function ImageUploadField({
   onFileChange,
   onClear,
   validation,
-  accept = "image/jpeg,image/webp,image/png",
-  requirements = "400×400px • Max: 3MB (JPG/WebP)"
+  accept = "image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif",
+  requirements = "Max: 5MB (Common Image Formats)"
 }) {
   const [dragActive, setDragActive] = useState(false);
   const dropZoneRef = useRef();

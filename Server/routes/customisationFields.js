@@ -6,13 +6,14 @@ const {
   updateField,
   deleteField,
 } = require("../controllers/customisationFieldController");
+const { protect, adminOnly } = require("../middleware/auth");
 
 // Public — any product page can fetch available fields
 router.get("/", getAllFields);
 
-// Admin-only mutations (auth enforced at server.js level if needed)
-router.post("/", createField);
-router.put("/:id", updateField);
-router.delete("/:id", deleteField);
+// Admin-only mutations
+router.post("/", protect, adminOnly, createField);
+router.put("/:id", protect, adminOnly, updateField);
+router.delete("/:id", protect, adminOnly, deleteField);
 
 module.exports = router;

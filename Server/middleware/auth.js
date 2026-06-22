@@ -98,6 +98,11 @@ const adminOnly = async (req, res, next) => {
         else if (method === "post") reqPerm = "brands_create";
         else if (method === "put" || method === "patch") reqPerm = "brands_edit";
         else if (method === "delete") reqPerm = "brands_delete";
+      } else if (url.includes("/api/customisation-fields")) {
+        if (method === "get") reqPerm = "customisation_fields_view";
+        else if (method === "post") reqPerm = "customisation_fields_create";
+        else if (method === "put" || method === "patch") reqPerm = "customisation_fields_edit";
+        else if (method === "delete") reqPerm = "customisation_fields_delete";
       } else if (url.includes("/api/coupons")) {
         if (method === "get") reqPerm = "coupons_view";
         else if (method === "post") reqPerm = "coupons_create";

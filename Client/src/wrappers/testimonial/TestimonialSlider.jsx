@@ -78,8 +78,8 @@ TestimonialSlider.propTypes = {
 };
 
 TestimonialSlider.defaultProps = {
-  title: "Client Success Stories",
-  subtitle: "What Our Partners Say",
+  title: "Happy Tales from Parents & Kids",
+  subtitle: "What families say about our personalized gifts & stationery",
 };
 
 export default TestimonialSlider;

@@ -149,7 +149,7 @@ const OrderDetails = () => {
     const nonCancellable = ["shipped", "processing", "delivered", "cancelled"];
     
     // Check if customised items in production
-    const hasCustom = order.items?.some(i => i.product?.isCustomisable);
+    const hasCustom = order.items?.some(i => i.product?.isCustomisable || (i.customisationDetails && Object.keys(i.customisationDetails).length > 0));
     const isProductionCustom = hasCustom && orderStatusLower !== "pending";
 
     const cancellable = hours < 24 && !nonCancellable.includes(orderStatusLower) && !isProductionCustom;

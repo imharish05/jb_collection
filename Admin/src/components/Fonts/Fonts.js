@@ -33,6 +33,38 @@ export default function Fonts({ showToast }) {
 
   useEffect(() => { fetchFonts(); }, []);
 
+  // Dynamically load Google Fonts for preview in Admin
+  useEffect(() => {
+    if (fonts && fonts.length > 0) {
+      fonts.forEach(f => {
+        const fontName = f.name?.trim();
+        if (!fontName) return;
+        const linkId = `gfont-${fontName.replace(/\s+/g, '-').toLowerCase()}`;
+        if (!document.getElementById(linkId)) {
+          const link = document.createElement('link');
+          link.id = linkId;
+          link.rel = 'stylesheet';
+          link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@400;700&display=swap`;
+          document.head.appendChild(link);
+        }
+      });
+    }
+  }, [fonts]);
+
+  // Load current input name font for real-time preview
+  useEffect(() => {
+    const fontName = name.trim();
+    if (!fontName) return;
+    const linkId = `gfont-input-${fontName.replace(/\s+/g, '-').toLowerCase()}`;
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement('link');
+      link.id = linkId;
+      link.rel = 'stylesheet';
+      link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@400;700&display=swap`;
+      document.head.appendChild(link);
+    }
+  }, [name]);
+
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);

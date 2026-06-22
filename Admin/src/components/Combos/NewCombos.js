@@ -22,10 +22,14 @@ const COMBO_IMAGE_DIMENSIONS = {
   aspectRatio: 5 / 6,
   tolerance: 0.05,
   maxFileSize: 3 * 1024 * 1024,
-  formats: ["image/jpeg", "image/webp",'image/png'],
+  formats: [
+    "image/jpeg", "image/png", "image/webp", "image/gif",
+    "image/svg+xml", "image/bmp", "image/tiff", "image/x-icon",
+    "image/heic", "image/heif", "image/avif"
+  ],
 };
 
-const COMBO_IMAGE_REQUIREMENTS = "800×960px (5:6) • Max: 3MB (JPG/WebP)";
+const COMBO_IMAGE_REQUIREMENTS = "800×960px (5:6) • Max: 3MB (Common Image Formats)";
 
 const countWords = (text) => {
   return text ? text.trim().split(/\s+/).filter(Boolean).length : 0;
@@ -48,7 +52,7 @@ const validateComboImageDimensions = (file) => new Promise((resolve) => {
   if (!COMBO_IMAGE_DIMENSIONS.formats.includes(file.type)) {
     resolve({
       valid: false,
-      error: `Invalid format. Use JPG or WebP. You have: ${file.type || "unknown"}`,
+      error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You have: ${file.type || "unknown"}`,
     });
     return;
   }
@@ -1022,7 +1026,7 @@ function ChildComboForm({ rootComboId, initial, allProducts, onSave, onCancel, s
             onClear={handleClearImage}
             validation={imageValidation}
             requirements={COMBO_IMAGE_REQUIREMENTS}
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif"
           />
 
           {/* Product picker — overflow visible so dropdown doesn't clip */}
@@ -1170,7 +1174,7 @@ function RootComboForm({ initial, onSave, onCancel, showToast }) {
             onClear={handleClearImage}
             validation={imageValidation}
             requirements={COMBO_IMAGE_REQUIREMENTS}
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif"
           />
 
           <div className="km-form-actions">
