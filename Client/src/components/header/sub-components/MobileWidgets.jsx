@@ -19,7 +19,7 @@ const MobileWidgets = () => {
         <a href="//twitter.com" title="Twitter" aria-label="Twitter">
           <i className="fa fa-twitter"></i>
         </a>
-        <a href="//instagram.com" title="Instagram" aria-label="Instagram">
+        <a href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw==" title="Instagram" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
           <i className="fa fa-instagram"></i>
         </a>
         <a href="https://www.facebook.com/share/1F6BNcFs9L/" title="Facebook" aria-label="Facebook">

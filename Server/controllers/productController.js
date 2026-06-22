@@ -404,6 +404,9 @@ const createProduct = async (req, res, next) => {
       });
     }
 
+    // Sync variants to product.variation, price, and stock
+    await syncProductVariants(product.id);
+
     // re-fetch with associations so response matches GET shape
     const fresh = await Product.findByPk(product.id, { include: PRODUCT_INCLUDE });
     return res.status(201).json(shape(fresh));
@@ -560,6 +563,9 @@ const updateProduct = async (req, res, next) => {
         }
       } catch (e) { console.warn('Error cleaning up old variant images:', e.message); }
       // ─────────────────────────────────────────────────────────────────────
+
+      // Sync the variants to product.variation, price, and stock
+      await syncProductVariants(product.id);
     }
 
     // Cleanup product images that were removed during update

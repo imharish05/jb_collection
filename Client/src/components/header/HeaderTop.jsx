@@ -185,7 +185,7 @@ const HeaderTop = () => {
         >
           <svg className="fb-icon" viewBox="0 0 448 512"><path d="M400 32H48A48 48 0 0 0 0 80v352a48 48 0 0 0 48 48h137.25V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.27c-30.81 0-40.41 19.12-40.41 38.73V256h68.75l-11 71.69h-57.75V480H400a48 48 0 0 0 48-48V80a48 48 0 0 0-48-48z"/></svg>
         </a>
-        <a href="#" className="social-link" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+        <a href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw==" className="social-link" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
           <svg viewBox="0 0 448 512">
             <defs>
               <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">

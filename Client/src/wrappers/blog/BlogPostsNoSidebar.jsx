@@ -54,7 +54,12 @@ const BlogPostsNoSidebar = () => {
                       </a>
                     </li>
                     <li>
-                      <a className="instagram" href="//instagram.com">
+                      <a
+                        className="instagram"
+                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <i className="fa fa-instagram" />
                       </a>
                     </li>
@@ -116,7 +121,12 @@ const BlogPostsNoSidebar = () => {
                       </a>
                     </li>
                     <li>
-                      <a className="instagram" href="//instagram.com">
+                      <a
+                        className="instagram"
+                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <i className="fa fa-instagram" />
                       </a>
                     </li>
@@ -178,7 +188,12 @@ const BlogPostsNoSidebar = () => {
                       </a>
                     </li>
                     <li>
-                      <a className="instagram" href="//instagram.com">
+                      <a
+                        className="instagram"
+                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <i className="fa fa-instagram" />
                       </a>
                     </li>
@@ -240,7 +255,12 @@ const BlogPostsNoSidebar = () => {
                       </a>
                     </li>
                     <li>
-                      <a className="instagram" href="//instagram.com">
+                      <a
+                        className="instagram"
+                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <i className="fa fa-instagram" />
                       </a>
                     </li>
@@ -302,7 +322,12 @@ const BlogPostsNoSidebar = () => {
                       </a>
                     </li>
                     <li>
-                      <a className="instagram" href="//instagram.com">
+                      <a
+                        className="instagram"
+                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <i className="fa fa-instagram" />
                       </a>
                     </li>
@@ -364,7 +389,12 @@ const BlogPostsNoSidebar = () => {
                       </a>
                     </li>
                     <li>
-                      <a className="instagram" href="//instagram.com">
+                      <a
+                        className="instagram"
+                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <i className="fa fa-instagram" />
                       </a>
                     </li>

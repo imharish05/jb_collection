@@ -220,7 +220,7 @@ export default function Orders({ status = null }) {
                   <td>
                     <div className="td-name" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <span>{order.customer_name || '—'}</span>
-                      {order.customerType && (
+                      {order.customerType && order.customerType.toLowerCase() !== 'registered customer' && (
                         <span style={{
                           fontSize: 9,
                           fontWeight: 700,
@@ -297,7 +297,7 @@ export default function Orders({ status = null }) {
                           <div>
                             <div className="km-form-header-title" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                               <span>Order #{order.referenceSlug || order.id} — {order.customer_name}</span>
-                              {order.customerType && (
+                              {order.customerType && order.customerType.toLowerCase() !== 'registered customer' && (
                                 <span style={{
                                   fontSize: 10,
                                   fontWeight: 800,

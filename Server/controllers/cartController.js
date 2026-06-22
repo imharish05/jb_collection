@@ -185,7 +185,7 @@ const increaseQuantity = async (req, res, next) => {
 
     // Stock validation before increase
     const variant = item.selectedVariantId
-      ? (item.product?.variants || []).find(v => String(v.id) === String(item.selectedVariantId))
+      ? (item.product?.Variants || item.product?.variants || []).find(v => String(v.id) === String(item.selectedVariantId))
       : null;
     const maxStock = variant ? Number(variant.stock) : Number(item.product?.stock ?? 999);
     if (item.quantity >= maxStock) {
