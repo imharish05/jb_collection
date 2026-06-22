@@ -18,6 +18,17 @@ import cogoToast from "cogo-toast";
 import "./Checkout.css";
 import { useRef } from "react";
 
+// ── Helper: calculate total cart weight (in kg) ─────────────────────────────
+const calculateTotalWeight = (items) => {
+  let total = 0;
+  (items || []).forEach((item) => {
+    // Default to 0.2 kg (200g) if shippingWeight is not set or is 0
+    const w = parseFloat(item.shippingWeight) || 0.2;
+    total += w * item.quantity;
+  });
+  return parseFloat(total.toFixed(3));
+};
+
 // ── Helper: check Shiprocket shipping rates ─────────────────────────────────
 const checkShippingServiceability = async (pincode, orderValue, weight = 0.5) => {
   try {
@@ -31,6 +42,7 @@ const checkShippingServiceability = async (pincode, orderValue, weight = 0.5) =>
       courier: res.data.courier || null,
       estimatedDays: res.data.estimatedDays || null,
       codAvailable: cod,
+      allCouriers: res.data.allCouriers || [],
     };
   } catch (err) {
     console.error("[Checkout] Shipping rates check failed:", err.message);
@@ -288,6 +300,7 @@ const Checkout = () => {
   const [billingCollapsed, setBillingCollapsed] = useState(false);
 
   const [shippingInfo, setShippingInfo] = useState(null);
+  const [courierModalOpen, setCourierModalOpen] = useState(false);
   const [checkingServiceability, setCheckingServiceability] = useState(false);
   const [shippingPricing, setShippingPricing] = useState({
     subtotal: 0,
@@ -339,9 +352,11 @@ const Checkout = () => {
         return;
       }
       setCheckingServiceability(true);
+      const totalWeight = calculateTotalWeight(checkoutItems || []);
       const result = await checkShippingServiceability(
         selectedShippingAddr.pincode,
-        shippingPricing.subtotal
+        shippingPricing.subtotal,
+        totalWeight
       );
       setCheckingServiceability(false);
       if (result) {
@@ -353,7 +368,18 @@ const Checkout = () => {
       }
     };
     checkShipping();
-  }, [selectedShippingAddrId, shippingPricing.subtotal]);
+  }, [selectedShippingAddrId, shippingPricing.subtotal, checkoutItems]);
+
+  const handleSelectCourier = (selected) => {
+    setShippingInfo((prev) => ({
+      ...prev,
+      shippingCharge: selected.charge,
+      courier: selected.name,
+      estimatedDays: selected.days,
+    }));
+    setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: selected.charge }));
+    setCourierModalOpen(false);
+  };
 
   /* ── Mount-time inventory & price revalidation ── */
   useEffect(() => {
@@ -1403,6 +1429,27 @@ const Checkout = () => {
                           {" "}{selectedShippingAddr.city}, {selectedShippingAddr.state} – {selectedShippingAddr.pincode}
                           <br />
                           <span style={{ color: "#888", fontSize: 12 }}>Shipping Address</span>
+                          {shippingInfo && shippingInfo.courier && (
+                            <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px dashed #e2e8f0" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <div>
+                                  <span style={{ fontWeight: 600, color: "#111", fontSize: "12px" }}>🚚 {shippingInfo.courier}</span>
+                                  {shippingInfo.estimatedDays && (
+                                    <div style={{ fontSize: "11px", color: "#666" }}>Est. Delivery: {shippingInfo.estimatedDays} days</div>
+                                  )}
+                                </div>
+                                {shippingInfo.allCouriers && shippingInfo.allCouriers.length > 0 && (
+                                  <button 
+                                    className="kco-edit-link" 
+                                    style={{ fontSize: "11px", padding: 0, height: "auto", background: "none", border: "none", color: "#f15a24", cursor: "pointer" }}
+                                    onClick={() => setCourierModalOpen(true)}
+                                  >
+                                    Change Partner
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                       {selectedBillingAddr && (
@@ -1837,6 +1884,49 @@ const Checkout = () => {
             </div>
           </div>
         </div>
+
+        {/* Courier Selection Modal */}
+        {courierModalOpen && shippingInfo?.allCouriers && shippingInfo.allCouriers.length > 0 && (
+          <div className="kco-modal-overlay">
+            <div className="kco-modal-content">
+              <div className="kco-modal-header">
+                <h3>Select Courier Partner</h3>
+                <button className="kco-modal-close" onClick={() => setCourierModalOpen(false)}>×</button>
+              </div>
+              <div className="kco-modal-body">
+                <p>Select your preferred courier partner for this delivery:</p>
+                <div className="kco-courier-list">
+                  {shippingInfo.allCouriers.map((c) => {
+                    const isSelected = shippingInfo.courier === c.name && shippingInfo.shippingCharge === c.charge;
+                    return (
+                      <div 
+                        key={c.name + "_" + c.charge} 
+                        className={`kco-courier-item ${isSelected ? 'active' : ''}`}
+                        onClick={() => handleSelectCourier(c)}
+                      >
+                        <div className="kco-courier-info">
+                          <span className="kco-courier-icon">🚚</span>
+                          <div>
+                            <div className="kco-courier-name">{c.name}</div>
+                            <div className="kco-courier-days">Estimated Delivery: {c.days} days</div>
+                          </div>
+                        </div>
+                        <div className="kco-courier-price">
+                          ₹{c.charge.toFixed(2)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="kco-modal-footer">
+                <button className="kco-modal-btn" onClick={() => setCourierModalOpen(false)}>
+                  Confirm Delivery Partner
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </LayoutOne>
     </Fragment>
   );

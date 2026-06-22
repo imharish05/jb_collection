@@ -340,6 +340,7 @@ const createProduct = async (req, res, next) => {
       isNewArrival, isCustomisable, isHotDeal, discount, offerEnd, tag,
       shortDescription, fullDescription, variants,
       isPartialCodAvailable, customisationFields,
+      shippingWeight, shippingDimensions,
     } = req.body;
 
     if (!productName) return res.status(400).json({ message: "productName is required" });
@@ -379,6 +380,8 @@ const createProduct = async (req, res, next) => {
       comboId:         comboId       || null,
       isPartialCodAvailable: isPartialCodAvailable === "false" || isPartialCodAvailable === false ? false : true,
       customisationFields: customisationFields ? safeParse(customisationFields, null) : null,
+      shippingWeight:  shippingWeight ? parseFloat(shippingWeight) : null,
+      shippingDimensions: shippingDimensions ? safeParse(shippingDimensions, null) : null,
     });
 
     // create Variant rows
@@ -422,6 +425,7 @@ const updateProduct = async (req, res, next) => {
       isNewArrival, isCustomisable, isHotDeal, discount, offerEnd, tag,
       shortDescription, fullDescription, variants,
       isPartialCodAvailable, customisationFields,
+      shippingWeight, shippingDimensions,
     } = req.body;
 
     const productImgFiles = (req.files || []).filter(f => f.fieldname === 'images');
@@ -475,6 +479,8 @@ const updateProduct = async (req, res, next) => {
       customisationFields: customisationFields !== undefined
                           ? safeParse(customisationFields, null)
                           : product.customisationFields,
+      shippingWeight:   shippingWeight !== undefined ? (shippingWeight ? parseFloat(shippingWeight) : null) : product.shippingWeight,
+      shippingDimensions: shippingDimensions !== undefined ? (shippingDimensions ? safeParse(shippingDimensions, null) : null) : product.shippingDimensions,
     });
 
     // replace variants if new ones supplied

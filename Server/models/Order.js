@@ -171,6 +171,10 @@ const Order = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    courier: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     shippingCharge: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,

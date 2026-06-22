@@ -110,6 +110,7 @@ Review.belongsTo(User,  { foreignKey: "customer_id", as: "Customer" });
 Order.hasMany(OrderItem, { foreignKey: "order_id", as: "items", onDelete: "CASCADE" });
 OrderItem.belongsTo(Order, { foreignKey: "order_id" });
 OrderItem.belongsTo(Product, { foreignKey: "productId", as: "product", constraints: false });
+OrderItem.belongsTo(Variant, { foreignKey: "selectedVariantId", as: "variant", constraints: false });
 
 // ── RootCombo ↔ ChildCombo ────────────────────────────────────────────────────
 RootCombo.hasMany(ChildCombo, { foreignKey: "root_combo_id", as: "children", onDelete: "CASCADE" });

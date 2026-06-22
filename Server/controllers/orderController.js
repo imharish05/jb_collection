@@ -40,7 +40,14 @@ const pushOrderToShiprocket = async (orderId, userEmail = "") => {
   try {
     const order = await Order.findByPk(orderId, {
       include: [
-        { model: OrderItem, as: "items" },
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            { model: Product, as: "product" },
+            { model: Variant, as: "variant" }
+          ],
+        },
         { model: Address, as: "shippingAddress" },
       ],
     });
@@ -72,6 +79,60 @@ const pushOrderToShiprocket = async (orderId, userEmail = "") => {
       `payment_method=${payment_method} | cod_amount=${cod_amount} | ` +
       `sub_total=${order.totalAmount}`
     );
+
+    // Calculate total weight and dimensions dynamically
+    let totalWeight = 0;
+    let maxLength = 10;
+    let maxBreadth = 10;
+    let maxHeight = 10;
+    let hasCustomDims = false;
+
+    order.items.forEach((item) => {
+      const prod = item.product;
+      const variant = item.variant;
+      const qty = parseInt(item.quantity) || 1;
+      
+      const w = parseFloat(variant?.shippingWeight) || parseFloat(prod?.shippingWeight) || 0.2;
+      totalWeight += w * qty;
+
+      let dims = variant?.shippingDimensions || prod?.shippingDimensions;
+      if (typeof dims === "string") {
+        try {
+          dims = JSON.parse(dims);
+        } catch {
+          dims = null;
+        }
+      }
+
+      if (dims && typeof dims === "object") {
+        if (dims.length || dims.breadth || dims.height) {
+          hasCustomDims = true;
+          maxLength = Math.max(maxLength, parseFloat(dims.length) || 10);
+          maxBreadth = Math.max(maxBreadth, parseFloat(dims.breadth) || 10);
+          // heights accumulate if stacked
+          maxHeight += (parseFloat(dims.height) || 10) * qty;
+        }
+      }
+    });
+
+    if (!hasCustomDims) {
+      if (totalWeight > 3.0) {
+        maxLength = 35;
+        maxBreadth = 25;
+        maxHeight = 20;
+      } else if (totalWeight > 1.0) {
+        maxLength = 25;
+        maxBreadth = 20;
+        maxHeight = 15;
+      } else {
+        maxLength = 15;
+        maxBreadth = 15;
+        maxHeight = 10;
+      }
+    }
+    if (totalWeight <= 0) {
+      totalWeight = 0.2;
+    }
 
     // sub_total = full order value (NOT just what was paid online).
     // Shiprocket uses this for insurance / declared value.
@@ -110,11 +171,11 @@ const pushOrderToShiprocket = async (orderId, userEmail = "") => {
       //   PREPAID     → 0 (omitted / not collected)
       ...(payment_method === "COD" && { cod_amount: cod_amount }),
 
-      // Package dimensions (defaults — update per product category if needed)
-      length: 10,
-      breadth: 10,
-      height: 10,
-      weight: 0.5,
+      // Package dimensions (calculated dynamically or default fallback)
+      length: Math.round(maxLength),
+      breadth: Math.round(maxBreadth),
+      height: Math.round(maxHeight),
+      weight: parseFloat(totalWeight.toFixed(3)),
     };
 
     const srResponse = await shiprocketPost("/orders/create/adhoc", srPayload);
@@ -276,6 +337,7 @@ const createOrder = async (req, res, next) => {
       taxAmount,         // ← NEW: receive tax from frontend (also accept gstAmount)
       gstAmount,         // ← NEW: alias
       notes,
+      courier,
       shippingCharge,
       estimatedDeliveryDays,
       advancePaid: clientAdvancePaid,
@@ -491,6 +553,7 @@ const createOrder = async (req, res, next) => {
         couponDiscount:    serverCouponDiscount,     // ← save coupon rupee amount
         taxAmount:         receivedTax,              // ← save tax amount
         notes,
+        courier,
         shippingCharge:    parseFloat(shippingCharge || 0),
         estimatedDeliveryDays: estimatedDeliveryDays || null,
         partialCodAmount:  isPartialCod ? resolvedCodAmount : null, // legacy

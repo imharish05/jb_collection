@@ -135,6 +135,8 @@ useEffect(() => {
           isPartialCodAvailable: cartItem.product?.isPartialCodAvailable !== false,
           customisationDetails: cartItem.customisationDetails || null,
           customisationFields: cartItem.product?.customisationFields || null,
+          shippingWeight: matched?.shippingWeight ?? cartItem.product?.shippingWeight ?? null,
+          shippingDimensions: matched?.shippingDimensions ?? cartItem.product?.shippingDimensions ?? null,
         };
       });
       dispatch(replaceCart(items));
