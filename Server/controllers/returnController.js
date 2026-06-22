@@ -12,7 +12,7 @@ const {
   Address,
 } = require("../models");
 const { Op } = require("sequelize");
-const { shiprocketPost } = require("../utils/shiprocket");
+const { shiprocketPost, getPickupLocations } = require("../utils/shiprocket");
 const { sendReturnNotificationEmail } = require("../utils/mailer");
 const { referenceWhere } = require("../utils/referenceSlugs");
 
@@ -735,6 +735,28 @@ const createReversePickup = async (req, res, next) => {
       product = await require("../models").Product.findByPk(orderItem.productId, { attributes: ["sku","name"] });
     } catch (_) {}
 
+    let whAddress = process.env.WAREHOUSE_ADDRESS;
+    let whCity    = process.env.WAREHOUSE_CITY;
+    let whPincode = process.env.WAREHOUSE_PINCODE;
+    let whState   = process.env.WAREHOUSE_STATE;
+
+    if (!whAddress || !whCity || !whPincode || !whState) {
+      try {
+        console.log("[Shiprocket] Warehouse variables missing from env, fetching from account...");
+        const locations = await getPickupLocations();
+        const primary = locations.find(loc => loc.is_primary_location === 1) || locations[0];
+        if (primary) {
+          whAddress = `${primary.address}${primary.address_2 ? ", " + primary.address_2 : ""}`;
+          whCity    = primary.city;
+          whPincode = primary.pin_code;
+          whState   = primary.state;
+          console.log(`[Shiprocket] Resolved warehouse location dynamically: ${whAddress}, ${whCity} (${whPincode})`);
+        }
+      } catch (locErr) {
+        console.error("[Shiprocket] Dynamic warehouse resolution failed:", locErr.message);
+      }
+    }
+
     const srPayload = {
       order_id:   returnRequest.id,
       order_date: new Date(returnRequest.createdAt).toISOString().slice(0, 19).replace("T", " "),
@@ -746,10 +768,10 @@ const createReversePickup = async (req, res, next) => {
       pickup_pincode:       String(address.pincode || ""),
       pickup_country:       "India",
       shipping_customer_name: "Kamali Gifts",
-      shipping_address:     process.env.WAREHOUSE_ADDRESS   || "",
-      shipping_city:        process.env.WAREHOUSE_CITY      || "",
-      shipping_pincode:     process.env.WAREHOUSE_PINCODE   || "",
-      shipping_state:       process.env.WAREHOUSE_STATE     || "",
+      shipping_address:     whAddress || "",
+      shipping_city:        whCity || "",
+      shipping_pincode:     String(whPincode || ""),
+      shipping_state:       whState || "",
       shipping_country:     "India",
       payment_method:       "Prepaid", // Always Prepaid for reverse pickups — no COD collection
                                     // happens on returns regardless of the original order payment type.

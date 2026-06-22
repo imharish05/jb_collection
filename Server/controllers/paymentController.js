@@ -233,6 +233,13 @@ const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDel
         } catch (adminEmailErr) {
           console.error('[Mailer] Failed to send admin email notification:', adminEmailErr.message);
         }
+
+        try {
+          console.log(`[Shiprocket] Auto-pushing order ${orderId} after successful payment...`);
+          await pushOrderToShiprocket(orderId, userEmail);
+        } catch (srErr) {
+          console.error('[Shiprocket] Auto-push failed after successful payment:', srErr.message);
+        }
       } catch (postErr) {
         console.error('[Post-Payment] Error in post-commit operations:', postErr.message);
       }

@@ -176,7 +176,18 @@ const buildVariantAttrs = (item) => {
 const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
   if (!attrs || attrs.length === 0) return null;
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+    <div 
+      className="kco-variant-chips-container"
+      style={{ 
+        display: "flex", 
+        flexWrap: "nowrap", 
+        gap: 6,
+        overflowX: "auto",
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+        width: "100%"
+      }}
+    >
       {attrs.map((a, i) => {
         const isCol = isColourKey(a.key);
         const hasPreview = isCol && isHexColor(a.val);
@@ -195,6 +206,8 @@ const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
               alignItems: "center",
               gap: 4,
               fontWeight: 500,
+              whiteSpace: "nowrap",
+              flexShrink: 0
             }}
           >
             <span>{a.key}:</span>
@@ -292,10 +305,9 @@ const Checkout = () => {
   const [showNewAddrForm, setShowNewAddrForm] = useState(false);
   const [addrForm, setAddrForm] = useState(EMPTY_ADDR);
   const [addrErrors, setAddrErrors] = useState({});
-  const [step, setStep] = useState(1);
+  const step = 1;
   const [placing, setPlacing] = useState(false);
   const [giftNote, setGiftNote] = useState("");
-  const [giftNoteOpen, setGiftNoteOpen] = useState(false);
   const [shippingCollapsed, setShippingCollapsed] = useState(false);
   const [billingCollapsed, setBillingCollapsed] = useState(false);
 
@@ -981,44 +993,11 @@ const Checkout = () => {
         <div className="kco-page">
           <div className="kco-container">
 
-            {/* ── Step Indicator ── */}
-            <div className="kco-step-bar">
-              {["Shipping & Billing", "Payment", "Review & Place"].map((label, i) => {
-                const n = i + 1;
-                const active = step === n;
-                const done = step > n;
-                return (
-                  <Fragment key={n}>
-                    <div
-                      className="kco-step"
-                      style={{ cursor: done ? "pointer" : "default" }}
-                      onClick={() => done && setStep(n)}
-                    >
-                      <div
-                        className="kco-step-circle"
-                        style={{
-                          background: done ? "#22c55e" : active ? "#db1a5d" : "#e5e7eb",
-                          color: done || active ? "#fff" : "#aaa",
-                        }}
-                      >
-                        {done ? "✓" : n}
-                      </div>
-                      <span
-                        className="kco-step-label"
-                        style={{ color: active ? "#db1a5d" : done ? "#16a34a" : "#aaa" }}
-                      >
-                        {label}
-                      </span>
-                    </div>
-                    {i < 2 && (
-                      <div
-                        className="kco-step-line"
-                        style={{ background: done ? "#22c55e" : "#e5e7eb" }}
-                      />
-                    )}
-                  </Fragment>
-                );
-              })}
+            {/* ── Secure Checkout Header ── */}
+            <div className="kco-header">
+              <h2 className="kg-cart-title">
+                Secure Checkout
+              </h2>
             </div>
 
             {/* ── Two-column layout ── */}
@@ -1027,595 +1006,326 @@ const Checkout = () => {
               {/* ══ LEFT COLUMN ══ */}
               <div className="kco-left">
 
-                {/* ── STEP 1: Shipping & Billing Address ── */}
-                {step === 1 && (
-                  <div className="kco-card">
-                    <div className="kco-card-header">
-                      <h3 className="kco-card-title">Shipping & Billing Address</h3>
-                      <button
-                        className="kco-add-new-btn"
-                        onClick={() => {
-                          setShowNewAddrForm((p) => {
-                            if (!p) {
-                              setTimeout(() => {
-                                newAddrFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                              }, 50);
-                            }
-                            return !p;
-                          });
-                        }}
-                      >
-                        {showNewAddrForm ? "✕ Cancel" : "+ Add New"}
-                      </button>
-                    </div>
-
-                    {addrLoading && (
-                      <div style={{ color: "#aaa", fontSize: 13, padding: "20px 0", textAlign: "center" }}>
-                        Loading your saved addresses...
-                      </div>
-                    )}
-
-                    {!addrLoading && addresses.length === 0 && !showNewAddrForm && (
-                      <div className="kco-no-addr">
-                        <div style={{ fontSize: 40 }}>📭</div>
-                        <div>No saved addresses yet.</div>
-                        <button className="kco-add-first-btn" onClick={() => setShowNewAddrForm(true)}>
-                          + Add Your First Address
-                        </button>
-                      </div>
-                    )}
-
-                    {addresses.length > 0 && (
-                      <div className="kco-address-sections">
-
-                        {/* Shipping */}
-                        <div className="kco-address-panel">
-                          <div className="kco-panel-header-row">
-                            <p className="kco-section-label">Shipping Address</p>
-                            <button
-                              className="kco-collapse-btn"
-                              onClick={() => setShippingCollapsed((s) => !s)}
-                              aria-label={shippingCollapsed ? "Expand shipping" : "Collapse shipping"}
-                            >
-                              <span className={`kco-chevron ${shippingCollapsed ? "collapsed" : ""}`}>‹</span>
-                            </button>
-                          </div>
-                          {!shippingCollapsed && addresses.map((addr) => (
-                            <div
-                              key={addr.id}
-                              className={`kco-addr-card ${selectedShippingAddrId === addr.id ? "selected" : ""}`}
-                              onClick={() => handleSelectShippingAddr(addr.id)}
-                            >
-                              <div className="kco-radio-outer">
-                                {selectedShippingAddrId === addr.id && <div className="kco-radio-dot" />}
-                              </div>
-                              <div className="kco-addr-body">
-                                <div className="kco-addr-top">
-                                  <span className="kco-addr-name">{addr.fullName}</span>
-                                  <span className="kco-addr-type-badge">{addr.addressType}</span>
-                                  {addr.isDefault && <span className="kco-default-badge">★ Default</span>}
-                                </div>
-                                <div className="kco-addr-line">
-                                  {addr.street}{addr.apartment ? ", " + addr.apartment : ""}
-                                </div>
-                                <div className="kco-addr-line">
-                                  {addr.city}, {addr.state} – {addr.pincode}
-                                </div>
-                                <div className="kco-addr-line">{addr.country}</div>
-                                <div className="kco-addr-phone">📞 {addr.phone}</div>
-                              </div>
-                            </div>
-                          ))}
-                          {shippingCollapsed && selectedShippingAddr && (
-                            <div className="kco-collapsed-summary">
-                              <strong>{selectedShippingAddr.fullName}</strong>
-                              {" · "}{selectedShippingAddr.city}, {selectedShippingAddr.state} – {selectedShippingAddr.pincode}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Billing Divider */}
-                        <div className="kco-billing-divider">
-                          <div className="kco-billing-divider-line" />
-                          <label className="kco-same-billing-pill">
-                            <input
-                              type="checkbox"
-                              checked={billingSameAsShipping}
-                              onChange={(e) => handleToggleBillingSame(e.target.checked)}
-                            />
-                            Billing same as shipping
-                          </label>
-                          <div className="kco-billing-divider-line" />
-                        </div>
-
-                        {/* Billing */}
-                        <div className={`kco-address-panel kco-billing-panel ${billingSameAsShipping ? "disabled" : ""}`}>
-                          <div className="kco-panel-header-row">
-                            <p className="kco-section-label">Billing Address</p>
-                            {!billingSameAsShipping && (
-                              <button
-                                className="kco-collapse-btn"
-                                onClick={() => setBillingCollapsed((b) => !b)}
-                                aria-label={billingCollapsed ? "Expand billing" : "Collapse billing"}
-                              >
-                                <span className={`kco-chevron ${billingCollapsed ? "collapsed" : ""}`}>‹</span>
-                              </button>
-                            )}
-                          </div>
-
-                          {billingSameAsShipping && (
-                            <div className="kco-billing-disabled-overlay">
-                              <span className="kco-billing-disabled-msg">✓ Same as shipping address</span>
-                            </div>
-                          )}
-
-                          {!billingSameAsShipping && !billingCollapsed && addresses.map((addr) => (
-                            <div
-                              key={addr.id}
-                              className={`kco-addr-card ${selectedBillingAddrId === addr.id ? "selected" : ""}`}
-                              onClick={() => handleSelectBillingAddr(addr.id)}
-                            >
-                              <div className="kco-radio-outer">
-                                {selectedBillingAddrId === addr.id && <div className="kco-radio-dot" />}
-                              </div>
-                              <div className="kco-addr-body">
-                                <div className="kco-addr-top">
-                                  <span className="kco-addr-name">{addr.fullName}</span>
-                                  <span className="kco-addr-type-badge">{addr.addressType}</span>
-                                  {addr.isDefault && <span className="kco-default-badge">★ Default</span>}
-                                </div>
-                                <div className="kco-addr-line">
-                                  {addr.street}{addr.apartment ? ", " + addr.apartment : ""}
-                                </div>
-                                <div className="kco-addr-line">
-                                  {addr.city}, {addr.state} – {addr.pincode}
-                                </div>
-                                <div className="kco-addr-line">{addr.country}</div>
-                                <div className="kco-addr-phone">📞 {addr.phone}</div>
-                              </div>
-                            </div>
-                          ))}
-                          {!billingSameAsShipping && billingCollapsed && selectedBillingAddr && (
-                            <div className="kco-collapsed-summary">
-                              <strong>{selectedBillingAddr.fullName}</strong>
-                              {" · "}{selectedBillingAddr.city}, {selectedBillingAddr.state} – {selectedBillingAddr.pincode}
-                            </div>
-                          )}
-                        </div>
-
-                      </div>
-                    )}
-
-                    {/* New Address Form */}
-                    {showNewAddrForm && (
-                      <div className="kco-new-addr-form" ref={newAddrFormRef}>
-                        <h4 className="kco-new-addr-title">➕ New Address</h4>
-                        <div className="kco-type-row">
-                          {["Home", "Work", "Other"].map((t) => (
-                            <button
-                              key={t}
-                              className={`kco-type-btn ${addrForm.addressType === t ? "active" : ""}`}
-                              onClick={() => setAddrForm((f) => ({ ...f, addressType: t }))}
-                            >
-                              {t === "Home" ? "🏠" : t === "Work" ? "🏢" : "📍"} {t}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="kco-field-grid">
-                          <FormField label="Full Name *" error={addrErrors.fullName}>
-                            <input
-                              className={`kco-input ${addrErrors.fullName ? "error" : ""}`}
-                              value={addrForm.fullName}
-                              onChange={(e) => setAddrForm((f) => ({ ...f, fullName: e.target.value }))}
-                              placeholder="Enter your full name"
-                            />
-                          </FormField>
-                          <FormField label="Mobile Number *" error={addrErrors.phone}>
-                            <input
-                              className={`kco-input ${addrErrors.phone ? "error" : ""}`}
-                              value={addrForm.phone}
-                              onChange={(e) => setAddrForm((f) => ({ ...f, phone: e.target.value }))}
-                              placeholder="10-digit mobile"
-                              type="tel"
-                              maxLength={10}
-                            />
-                          </FormField>
-                        </div>
-                        <FormField label="Street / House No. *" error={addrErrors.street}>
-                          <input
-                            className={`kco-input ${addrErrors.street ? "error" : ""}`}
-                            value={addrForm.street}
-                            onChange={(e) => setAddrForm((f) => ({ ...f, street: e.target.value }))}
-                            placeholder="House / flat no., road name"
-                          />
-                        </FormField>
-                        <FormField label="Apartment / Landmark (optional)">
-                          <input
-                            className="kco-input"
-                            value={addrForm.apartment}
-                            onChange={(e) => setAddrForm((f) => ({ ...f, apartment: e.target.value }))}
-                            placeholder="Building name, floor, landmark"
-                          />
-                        </FormField>
-                        <div className="kco-field-grid">
-                          <FormField label="City *" error={addrErrors.city}>
-                            <input
-                              className={`kco-input ${addrErrors.city ? "error" : ""}`}
-                              value={addrForm.city}
-                              onChange={(e) => setAddrForm((f) => ({ ...f, city: e.target.value }))}
-                              placeholder="City"
-                            />
-                          </FormField>
-                          <FormField label="State *" error={addrErrors.state}>
-                            <input
-                              className={`kco-input ${addrErrors.state ? "error" : ""}`}
-                              value={addrForm.state}
-                              onChange={(e) => setAddrForm((f) => ({ ...f, state: e.target.value }))}
-                              placeholder="State"
-                            />
-                          </FormField>
-                        </div>
-                        <div className="kco-field-grid">
-                          <FormField label="Pincode *" error={addrErrors.pincode}>
-                            <input
-                              className={`kco-input ${addrErrors.pincode ? "error" : ""}`}
-                              value={addrForm.pincode}
-                              onChange={(e) => setAddrForm((f) => ({ ...f, pincode: e.target.value }))}
-                              placeholder="6-digit pincode"
-                              maxLength={6}
-                              type="tel"
-                            />
-                          </FormField>
-                          <FormField label="Country">
-                            <input
-                              className="kco-input"
-                              value={addrForm.country}
-                              readOnly
-                              style={{ background: "#f5f5f7", color: "#888" }}
-                            />
-                          </FormField>
-                        </div>
-                        <label className="kco-default-check-row" style={{ display: "flex" }}>
-                          <input
-                            type="checkbox"
-                            checked={addrForm.isDefault}
-                            onChange={(e) => setAddrForm((f) => ({ ...f, isDefault: e.target.checked }))}
-                            style={{ accentColor: "#db1a5d" }}
-                          />
-                          Set as my default address
-                        </label>
-                        <div className="kco-form-actions">
-                          <button className="kco-save-addr-btn btn-small" onClick={handleSaveNewAddr}>
-                            Save Address
-                          </button>
-                          <button
-                            className="kco-cancel-btn"
-                            onClick={() => {
-                              setShowNewAddrForm(false);
-                              setAddrErrors({});
-                              setAddrForm(EMPTY_ADDR);
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Continue button */}
+                {/* Shipping & Billing Address Card */}
+                <div className="kco-card">
+                  <div className="kco-card-header">
+                    <h3 className="kco-card-title">Shipping & Billing Address</h3>
                     <button
-                      className="kco-next-btn"
-                      disabled={
-                        !selectedShippingAddr ||
-                        (!billingSameAsShipping && !selectedBillingAddr) ||
-                        checkingServiceability ||
-                        (selectedShippingAddr && !shippingInfo)
-                      }
-                      style={{
-                        opacity:
-                          !selectedShippingAddr ||
-                          (!billingSameAsShipping && !selectedBillingAddr) ||
-                          checkingServiceability ||
-                          (selectedShippingAddr && !shippingInfo)
-                            ? 0.5 : 1,
-                        cursor:
-                          !selectedShippingAddr ||
-                          (!billingSameAsShipping && !selectedBillingAddr) ||
-                          checkingServiceability ||
-                          (selectedShippingAddr && !shippingInfo)
-                            ? "not-allowed" : "pointer",
-                      }}
+                      className="kco-add-new-btn"
                       onClick={() => {
-                        if (!selectedShippingAddr) {
-                          cogoToast.warn("Please select a shipping address", { position: "top-center" });
-                          return;
-                        }
-                        if (!billingSameAsShipping && !selectedBillingAddr) {
-                          cogoToast.warn("Please select a billing address", { position: "top-center" });
-                          return;
-                        }
-                        if (selectedShippingAddr && !shippingInfo) {
-                          cogoToast.error("Delivery not available to selected pincode", { position: "top-center" });
-                          return;
-                        }
-                        if (!showNewAddrForm) setStep(2);
+                        setShowNewAddrForm((p) => {
+                          if (!p) {
+                            setTimeout(() => {
+                              newAddrFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }, 50);
+                          }
+                          return !p;
+                        });
                       }}
                     >
-                      Continue to Payment →
+                      {showNewAddrForm ? "✕ Cancel" : "+ Add New"}
                     </button>
                   </div>
-                )}
 
-                {/* ── STEP 2: Payment Method ── */}
-                {step === 2 && (
-                  <div className="kco-card">
-                    <h3 className="kco-card-title">Payment Method</h3>
-                    <div style={{ marginTop: 20 }}>
-                      {availablePaymentMethods.map((pm) => (
-                        <div
-                          key={pm.id}
-                          className={`kco-pay-card ${paymentMethod === pm.id ? "selected" : ""}`}
-                          onClick={() => setPaymentMethod(pm.id)}
-                        >
-                          <div className="kco-radio-outer">
-                            {paymentMethod === pm.id && <div className="kco-radio-dot" />}
-                          </div>
-                          <span className="kco-pay-icon">{pm.icon}</span>
-                          <div>
-                            <div className="kco-pay-label">{pm.label}</div>
-                            <div className="kco-pay-desc">{pm.desc}</div>
-                          </div>
-                        </div>
-                      ))}
+                  {addrLoading && (
+                    <div style={{ color: "#aaa", fontSize: 13, padding: "20px 0", textAlign: "center" }}>
+                      Loading your saved addresses...
                     </div>
-                    {!partialCodGloballyAvailable && (
-                      <div style={{
-                        marginTop: 16,
-                        padding: '12px 14px',
-                        background: '#fef2f2',
-                        border: '1.5px dashed #fca5a5',
-                        borderRadius: 10,
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: 10
-                      }}>
-                        <span style={{ fontSize: 16 }}>⚠️</span>
-                        <div style={{ fontSize: 13, color: '#991b1b', lineHeight: 1.4 }}>
-                          <strong>Partial COD Unavailable:</strong>{' '}
-                          {!allItemsPartialCodEligible 
-                            ? 'One or more items in your cart do not support Partial COD (online payment required).'
-                            : (selectedShippingAddr && shippingInfo && shippingInfo.codAvailable !== true)
-                              ? `Cash on Delivery is not supported for your pincode (${selectedShippingAddr.pincode}).`
-                              : 'Cash on Delivery is not available for this order.'
-                          }
-                        </div>
-                      </div>
-                    )}
-                    {/* {paymentMethod !== "partial_cod" && (
-                      <p className="kco-pay-note">
-  🔒 Secure payment. Pay using UPI, Cards, or Net Banking.
-</p>
-                    )} */}
-                    <div className="kco-btn-row">
-                      <button className="kco-back-btn" onClick={() => setStep(1)}>← Back</button>
-                      <button
-                        className="kco-next-btn"
-                        style={{ marginTop: 0, flex: 1 }}
-                        onClick={() => setStep(3)}
-                      >
-                        Review Order →
+                  )}
+
+                  {!addrLoading && addresses.length === 0 && !showNewAddrForm && (
+                    <div className="kco-no-addr">
+                      <div style={{ fontSize: 40 }}>📭</div>
+                      <div>No saved addresses yet.</div>
+                      <button className="kco-add-first-btn" onClick={() => setShowNewAddrForm(true)}>
+                        + Add Your First Address
                       </button>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* ── STEP 3: Review & Place ── */}
-                {step === 3 && (
-                  <div className="kco-card">
-                    <h3 className="kco-card-title">Review Your Order</h3>
+                  {addresses.length > 0 && (
+                    <div className="kco-address-sections">
 
-                    {/* Address summary */}
-                    <div className="kco-review-section">
-                      <div className="kco-review-header">
-                        <span className="kco-review-section-title">📍 Delivering To</span>
-                        <button className="kco-edit-link" onClick={() => setStep(1)}>Edit</button>
-                      </div>
-                      {selectedShippingAddr && (
-                        <div className="kco-review-addr-box">
-                          <strong>{selectedShippingAddr.fullName}</strong> · {selectedShippingAddr.phone}
-                          <br />
-                          {selectedShippingAddr.street}
-                          {selectedShippingAddr.apartment ? ", " + selectedShippingAddr.apartment : ""},
-                          {" "}{selectedShippingAddr.city}, {selectedShippingAddr.state} – {selectedShippingAddr.pincode}
-                          <br />
-                          <span style={{ color: "#888", fontSize: 12 }}>Shipping Address</span>
-                          {shippingInfo && shippingInfo.courier && (
-                            <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px dashed #e2e8f0" }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <div>
-                                  <span style={{ fontWeight: 600, color: "#111", fontSize: "12px" }}>🚚 {shippingInfo.courier}</span>
-                                  {shippingInfo.estimatedDays && (
-                                    <div style={{ fontSize: "11px", color: "#666" }}>Est. Delivery: {shippingInfo.estimatedDays} days</div>
-                                  )}
-                                </div>
-                                {shippingInfo.allCouriers && shippingInfo.allCouriers.length > 0 && (
-                                  <button 
-                                    className="kco-edit-link" 
-                                    style={{ fontSize: "11px", padding: 0, height: "auto", background: "none", border: "none", color: "#f15a24", cursor: "pointer" }}
-                                    onClick={() => setCourierModalOpen(true)}
-                                  >
-                                    Change Partner
-                                  </button>
-                                )}
-                              </div>
+                      {/* Shipping */}
+                      <div className="kco-address-panel">
+                        <div className="kco-panel-header-row">
+                          <p className="kco-section-label">Shipping Address</p>
+                          <button
+                            className="kco-collapse-btn"
+                            onClick={() => setShippingCollapsed((s) => !s)}
+                            aria-label={shippingCollapsed ? "Expand shipping" : "Collapse shipping"}
+                          >
+                            <span className={`kco-chevron ${shippingCollapsed ? "collapsed" : ""}`}>‹</span>
+                          </button>
+                        </div>
+                        {!shippingCollapsed && addresses.map((addr) => (
+                          <div
+                            key={addr.id}
+                            className={`kco-addr-card ${selectedShippingAddrId === addr.id ? "selected" : ""}`}
+                            onClick={() => handleSelectShippingAddr(addr.id)}
+                          >
+                            <div className="kco-radio-outer">
+                              {selectedShippingAddrId === addr.id && <div className="kco-radio-dot" />}
                             </div>
+                            <div className="kco-addr-body">
+                              <div className="kco-addr-top">
+                                <span className="kco-addr-name">{addr.fullName}</span>
+                                <span className="kco-addr-type-badge">{addr.addressType}</span>
+                                {addr.isDefault && <span className="kco-default-badge">★ Default</span>}
+                              </div>
+                              <div className="kco-addr-line">
+                                {addr.street}{addr.apartment ? ", " + addr.apartment : ""}
+                              </div>
+                              <div className="kco-addr-line">
+                                {addr.city}, {addr.state} – {addr.pincode}
+                              </div>
+                              <div className="kco-addr-line">{addr.country}</div>
+                              <div className="kco-addr-phone">📞 {addr.phone}</div>
+                            </div>
+                          </div>
+                        ))}
+                        {shippingCollapsed && selectedShippingAddr && (
+                          <div className="kco-collapsed-summary">
+                            <strong>{selectedShippingAddr.fullName}</strong>
+                            {" · "}{selectedShippingAddr.city}, {selectedShippingAddr.state} – {selectedShippingAddr.pincode}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Billing Divider */}
+                      <div className="kco-billing-divider">
+                        <div className="kco-billing-divider-line" />
+                        <label className="kco-same-billing-pill">
+                          <input
+                            type="checkbox"
+                            checked={billingSameAsShipping}
+                            onChange={(e) => handleToggleBillingSame(e.target.checked)}
+                          />
+                          Billing same as shipping
+                        </label>
+                        <div className="kco-billing-divider-line" />
+                      </div>
+
+                      {/* Billing */}
+                      <div className={`kco-address-panel kco-billing-panel ${billingSameAsShipping ? "disabled" : ""}`}>
+                        <div className="kco-panel-header-row">
+                          <p className="kco-section-label">Billing Address</p>
+                          {!billingSameAsShipping && (
+                            <button
+                              className="kco-collapse-btn"
+                              onClick={() => setBillingCollapsed((b) => !b)}
+                              aria-label={billingCollapsed ? "Expand billing" : "Collapse billing"}
+                            >
+                              <span className={`kco-chevron ${billingCollapsed ? "collapsed" : ""}`}>‹</span>
+                            </button>
                           )}
                         </div>
-                      )}
-                      {selectedBillingAddr && (
-                        <div className="kco-review-addr-box" style={{ marginTop: 12 }}>
-                          <strong>{selectedBillingAddr.fullName}</strong> · {selectedBillingAddr.phone}
-                          <br />
-                          {selectedBillingAddr.street}
-                          {selectedBillingAddr.apartment ? ", " + selectedBillingAddr.apartment : ""},
-                          {" "}{selectedBillingAddr.city}, {selectedBillingAddr.state} – {selectedBillingAddr.pincode}
-                          <br />
-                          <span style={{ color: "#888", fontSize: 12 }}>Billing Address</span>
-                        </div>
-                      )}
-                      {giftNote && (
-                        <div className="kco-gift-note-preview">🎁 "{giftNote}"</div>
-                      )}
-                    </div>
 
-                    {/* Payment summary */}
-                    <div className="kco-review-section">
-                      <div className="kco-review-header">
-                        <span className="kco-review-section-title">💳 Payment</span>
-                        <button className="kco-edit-link" onClick={() => setStep(2)}>Edit</button>
-                      </div>
-                      <div style={{ fontSize: 13, color: "#444", marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 20 }}>
-                          {PAYMENT_METHODS.find((p) => p.id === paymentMethod)?.icon}
-                        </span>
-                        <span>
-                          {PAYMENT_METHODS.find((p) => p.id === paymentMethod)?.label}
-                        </span>
-                      </div>
-                    </div>
+                        {billingSameAsShipping && (
+                          <div className="kco-billing-disabled-overlay">
+                            <span className="kco-billing-disabled-msg">✓ Same as shipping address</span>
+                          </div>
+                        )}
 
-                    {/* Items */}
-                    <div className="kco-review-section">
-                      <div className="kco-review-section-title" style={{ marginBottom: 12 }}>
-                        🛍 Items ({checkoutItems.length})
-                      </div>
-                      {checkoutItems.map((item) => {
-                        const price = parseFloat(item.price || 0);
-                        const attrs = buildVariantAttrs(item);
-
-                        return (
-                          <div key={item.cartItemId} className="kco-review-item">
-                            <img
-                              src={resolveCartImg(item.image)}
-                              alt={item.name}
-                              className="kco-review-item-img"
-                              onError={(e) => { e.target.src = "/assets/img/products/products-1.jpeg"; }}
-                            />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {item.name}
-                              </div>
-                              {attrs.length > 0 && (
-                                <div style={{ marginTop: 3 }}>
-                                  <VariantChips attrs={attrs} fontSize={10} swatchSize={12} />
-                                </div>
-                              )}
-                              <div style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
-                                Qty: {item.quantity}
-                              </div>
-                              {(() => {
-                                let custom = item.customisationDetails;
-                                if (typeof custom === 'string') {
-                                  try { custom = JSON.parse(custom); } catch { custom = null; }
-                                }
-                                if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
-                                  return (
-                                    <div style={{
-                                      marginTop: 5,
-                                      padding: "6px 8px",
-                                      background: "#fffbeb",
-                                      border: "1px solid #fde68a",
-                                      borderRadius: "6px",
-                                      fontSize: "11px",
-                                      color: "#78350f"
-                                    }}>
-                                      <span style={{ fontWeight: 700 }}>🎨 Custom: </span>
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: 3 }}>
-                                        {Object.entries(custom).map(([key, val]) => {
-                                          if (!val) return null;
-                                          const label = key
-                                            .split('_')
-                                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                            .join(' ');
-                                          const isFont = key.toLowerCase().includes('font');
-                                          const isCol = key.toLowerCase().includes('color') || key.toLowerCase().includes('colour') || (typeof val === 'string' && val.startsWith('#'));
-                                          return (
-                                            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, ...(isFont ? { fontFamily: val } : {}) }}>
-                                              <span style={{ fontWeight: 600 }}>{label}:</span>
-                                              {isCol ? (
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                                  <span style={{
-                                                    width: 10,
-                                                    height: 10,
-                                                    borderRadius: '50%',
-                                                    background: val,
-                                                    border: '1px solid rgba(0,0,0,0.15)',
-                                                    display: 'inline-block'
-                                                  }} />
-                                                  <code style={{ fontSize: 9, background: '#f3f4f6', padding: '1px 3px', borderRadius: 3 }}>{val}</code>
-                                                </span>
-                                              ) : (
-                                                <span>{val}</span>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              })()}
+                        {!billingSameAsShipping && !billingCollapsed && addresses.map((addr) => (
+                          <div
+                            key={addr.id}
+                            className={`kco-addr-card ${selectedBillingAddrId === addr.id ? "selected" : ""}`}
+                            onClick={() => handleSelectBillingAddr(addr.id)}
+                          >
+                            <div className="kco-radio-outer">
+                              {selectedBillingAddrId === addr.id && <div className="kco-radio-dot" />}
                             </div>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: "#db1a5d", flexShrink: 0 }}>
-                              ₹{(price * currency.currencyRate * item.quantity).toFixed(2)}
+                            <div className="kco-addr-body">
+                              <div className="kco-addr-top">
+                                <span className="kco-addr-name">{addr.fullName}</span>
+                                <span className="kco-addr-type-badge">{addr.addressType}</span>
+                                {addr.isDefault && <span className="kco-default-badge">★ Default</span>}
+                              </div>
+                              <div className="kco-addr-line">
+                                {addr.street}{addr.apartment ? ", " + addr.apartment : ""}
+                              </div>
+                              <div className="kco-addr-line">
+                                {addr.city}, {addr.state} – {addr.pincode}
+                              </div>
+                              <div className="kco-addr-line">{addr.country}</div>
+                              <div className="kco-addr-phone">📞 {addr.phone}</div>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Place Order */}
-                    {paymentMethod === "partial_cod" && (
-                      <div style={{
-                        background: "#fff3cd",
-                        border: "1px solid #ffc107",
-                        borderRadius: 6,
-                        padding: "12px 14px",
-                        marginBottom: 16,
-                        fontSize: 13,
-                        color: "#856404",
-                        textAlign: "center",
-                      }}>
-                        ℹ️ ₹{(shippingPricing.grandTotal - (shippingInfo?.shippingCharge || 0)).toFixed(2)} will be collected on delivery
+                        ))}
+                        {!billingSameAsShipping && billingCollapsed && selectedBillingAddr && (
+                          <div className="kco-collapsed-summary">
+                            <strong>{selectedBillingAddr.fullName}</strong>
+                            {" · "}{selectedBillingAddr.city}, {selectedBillingAddr.state} – {selectedBillingAddr.pincode}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <div className="kco-btn-row">
-                      <button className="kco-back-btn" onClick={() => setStep(2)}>← Back</button>
-                      <button
-                        className="kco-place-order-btn"
-                        onClick={handlePlaceOrder}
-                        disabled={placing || !selectedShippingAddr || !paymentMethod}
-                        style={{
-                          opacity: placing || !selectedShippingAddr || !paymentMethod ? 0.5 : 1,
-                          cursor: !selectedShippingAddr || !paymentMethod ? "not-allowed" : "pointer",
-                        }}
-                        title={
-                          !selectedShippingAddr
-                            ? "Please select a shipping address first"
-                            : !paymentMethod
-                            ? "Please select a payment method"
-                            : ""
-                        }
-                      >
-                        {placing ? "Placing Order..." : paymentMethod === "partial_cod"
-                          ? `Place Order · Pay ₹${(shippingInfo?.shippingCharge || 0).toFixed(2)} now`
-                          : `Place Order · ₹${grandTotalWithCOD.toFixed(2)}`
-                        }
-                      </button>
+
                     </div>
+                  )}
+
+                  {/* New Address Form */}
+                  {showNewAddrForm && (
+                    <div className="kco-new-addr-form" ref={newAddrFormRef}>
+                      <h4 className="kco-new-addr-title">➕ New Address</h4>
+                      <div className="kco-type-row">
+                        {["Home", "Work", "Other"].map((t) => (
+                          <button
+                            key={t}
+                            className={`kco-type-btn ${addrForm.addressType === t ? "active" : ""}`}
+                            onClick={() => setAddrForm((f) => ({ ...f, addressType: t }))}
+                          >
+                            {t === "Home" ? "🏠" : t === "Work" ? "🏢" : "📍"} {t}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="kco-field-grid">
+                        <FormField label="Full Name *" error={addrErrors.fullName}>
+                          <input
+                            className={`kco-input ${addrErrors.fullName ? "error" : ""}`}
+                            value={addrForm.fullName}
+                            onChange={(e) => setAddrForm((f) => ({ ...f, fullName: e.target.value }))}
+                            placeholder="Enter your full name"
+                          />
+                        </FormField>
+                        <FormField label="Mobile Number *" error={addrErrors.phone}>
+                          <input
+                            className={`kco-input ${addrErrors.phone ? "error" : ""}`}
+                            value={addrForm.phone}
+                            onChange={(e) => setAddrForm((f) => ({ ...f, phone: e.target.value }))}
+                            placeholder="10-digit mobile"
+                            type="tel"
+                            maxLength={10}
+                          />
+                        </FormField>
+                      </div>
+                      <FormField label="Street / House No. *" error={addrErrors.street}>
+                        <input
+                          className={`kco-input ${addrErrors.street ? "error" : ""}`}
+                          value={addrForm.street}
+                          onChange={(e) => setAddrForm((f) => ({ ...f, street: e.target.value }))}
+                          placeholder="House / flat no., road name"
+                        />
+                      </FormField>
+                      <FormField label="Apartment / Landmark (optional)">
+                        <input
+                          className="kco-input"
+                          value={addrForm.apartment}
+                          onChange={(e) => setAddrForm((f) => ({ ...f, apartment: e.target.value }))}
+                          placeholder="Building name, floor, landmark"
+                        />
+                      </FormField>
+                      <div className="kco-field-grid">
+                        <FormField label="City *" error={addrErrors.city}>
+                          <input
+                            className={`kco-input ${addrErrors.city ? "error" : ""}`}
+                            value={addrForm.city}
+                            onChange={(e) => setAddrForm((f) => ({ ...f, city: e.target.value }))}
+                            placeholder="City"
+                          />
+                        </FormField>
+                        <FormField label="State *" error={addrErrors.state}>
+                          <input
+                            className={`kco-input ${addrErrors.state ? "error" : ""}`}
+                            value={addrForm.state}
+                            onChange={(e) => setAddrForm((f) => ({ ...f, state: e.target.value }))}
+                            placeholder="State"
+                          />
+                        </FormField>
+                      </div>
+                      <div className="kco-field-grid">
+                        <FormField label="Pincode *" error={addrErrors.pincode}>
+                          <input
+                            className={`kco-input ${addrErrors.pincode ? "error" : ""}`}
+                            value={addrForm.pincode}
+                            onChange={(e) => setAddrForm((f) => ({ ...f, pincode: e.target.value }))}
+                            placeholder="6-digit pincode"
+                            maxLength={6}
+                            type="tel"
+                          />
+                        </FormField>
+                        <FormField label="Country">
+                          <input
+                            className="kco-input"
+                            value={addrForm.country}
+                            readOnly
+                            style={{ background: "#f5f5f7", color: "#888" }}
+                          />
+                        </FormField>
+                      </div>
+                      <label className="kco-default-check-row" style={{ display: "flex" }}>
+                        <input
+                          type="checkbox"
+                          checked={addrForm.isDefault}
+                          onChange={(e) => setAddrForm((f) => ({ ...f, isDefault: e.target.checked }))}
+                          style={{ accentColor: "#db1a5d" }}
+                        />
+                        Set as my default address
+                      </label>
+                      <div className="kco-form-actions">
+                        <button className="kco-save-addr-btn btn-small" onClick={handleSaveNewAddr}>
+                          Save Address
+                        </button>
+                        <button
+                          className="kco-cancel-btn"
+                          onClick={() => {
+                            setShowNewAddrForm(false);
+                            setAddrErrors({});
+                            setAddrForm(EMPTY_ADDR);
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Payment Method Card */}
+                <div className="kco-card" style={{ marginTop: 24 }}>
+                  <h3 className="kco-card-title">Select Payment Method</h3>
+                  <div style={{ marginTop: 20 }}>
+                    {availablePaymentMethods.map((pm) => (
+                      <div
+                        key={pm.id}
+                        className={`kco-pay-card ${paymentMethod === pm.id ? "selected" : ""}`}
+                        onClick={() => setPaymentMethod(pm.id)}
+                      >
+                        <div className="kco-radio-outer">
+                          {paymentMethod === pm.id && <div className="kco-radio-dot" />}
+                        </div>
+                        <span className="kco-pay-icon">{pm.icon}</span>
+                        <div>
+                          <div className="kco-pay-label">{pm.label}</div>
+                          <div className="kco-pay-desc">{pm.desc}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
+                  {!partialCodGloballyAvailable && (
+                    <div style={{
+                      marginTop: 16,
+                      padding: '12px 14px',
+                      background: '#fef2f2',
+                      border: '1.5px dashed #fca5a5',
+                      borderRadius: 10,
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10
+                    }}>
+                      <span style={{ fontSize: 16 }}>⚠️</span>
+                      <div style={{ fontSize: 13, color: '#991b1b', lineHeight: 1.4 }}>
+                        <strong>Partial COD Unavailable:</strong>{' '}
+                        {!allItemsPartialCodEligible 
+                          ? 'One or more items in your cart do not support Partial COD (online payment required).'
+                          : (selectedShippingAddr && shippingInfo && shippingInfo.codAvailable !== true)
+                            ? `Cash on Delivery is not supported for your pincode (${selectedShippingAddr.pincode}).`
+                            : 'Cash on Delivery is not available for this order.'
+                        }
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* ══ RIGHT COLUMN — Order Summary ══ */}
@@ -1666,20 +1376,30 @@ const Checkout = () => {
                                 try { custom = JSON.parse(custom); } catch { custom = null; }
                               }
                                 if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
+                                  const validEntries = Object.entries(custom).filter(([_, val]) => val);
                                   return (
-                                    <div style={{
-                                      marginTop: 5,
-                                      padding: "4px 6px",
-                                      background: "#fffbeb",
-                                      border: "1px solid #fde68a",
-                                      borderRadius: "4px",
-                                      fontSize: "10px",
-                                      color: "#78350f"
-                                    }}>
-                                      <span style={{ fontWeight: 700 }}>🎨 Custom: </span>
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: 2 }}>
-                                        {Object.entries(custom).map(([key, val]) => {
-                                          if (!val) return null;
+                                    <div 
+                                      className="kco-custom-row-container"
+                                      style={{
+                                        marginTop: 5,
+                                        padding: "4px 8px",
+                                        background: "#fffbeb",
+                                        border: "1px solid #fde68a",
+                                        borderRadius: "6px",
+                                        fontSize: "10px",
+                                        color: "#78350f",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "6px",
+                                        whiteSpace: "nowrap",
+                                        overflowX: "auto",
+                                        scrollbarWidth: "none",
+                                        width: "100%"
+                                      }}
+                                    >
+                                      <span style={{ fontWeight: 700, flexShrink: 0 }}>🎨 Custom:</span>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                                        {validEntries.map(([key, val], idx) => {
                                           const label = key
                                             .split('_')
                                             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -1687,7 +1407,20 @@ const Checkout = () => {
                                           const isFont = key.toLowerCase().includes('font');
                                           const isCol = key.toLowerCase().includes('color') || key.toLowerCase().includes('colour') || (typeof val === 'string' && val.startsWith('#'));
                                           return (
-                                            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, ...(isFont ? { fontFamily: val } : {}) }}>
+                                            <span 
+                                              key={key} 
+                                              style={{ 
+                                                display: 'inline-flex', 
+                                                alignItems: 'center', 
+                                                gap: 3, 
+                                                background: "rgba(253, 230, 138, 0.4)", 
+                                                padding: "2px 6px", 
+                                                borderRadius: "4px",
+                                                fontSize: "9px",
+                                                flexShrink: 0,
+                                                ...(isFont ? { fontFamily: val } : {}) 
+                                              }}
+                                            >
                                               <span style={{ fontWeight: 600 }}>{label}:</span>
                                               {isCol ? (
                                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
@@ -1704,7 +1437,10 @@ const Checkout = () => {
                                               ) : (
                                                 <span>{val}</span>
                                               )}
-                                            </div>
+                                              {idx < validEntries.length - 1 && (
+                                                <span style={{ marginLeft: 6, color: '#d97706', fontWeight: "bold" }}>•</span>
+                                              )}
+                                            </span>
                                           );
                                         })}
                                       </div>
@@ -1834,19 +1570,45 @@ const Checkout = () => {
                     )}
 
                     {!checkingServiceability && shippingInfo && (
-                      <div className="kco-sum-row">
-                        <span>
-                          Delivery
-                          {shippingInfo.estimatedDays && (
-                            <span style={{ fontSize: "0.85em", color: "#666" }}>
-                              {" "}(Est. {shippingInfo.estimatedDays} {Number(shippingInfo.estimatedDays) === 1 ? "day" : "days"})
-                            </span>
-                          )}
-                        </span>
-                        <span style={shippingInfo.shippingCharge === 0 ? { color: "#16a34a", fontWeight: 700 } : {}}>
-                          {shippingInfo.shippingCharge === 0 ? "FREE" : `₹${shippingInfo.shippingCharge}`}
-                        </span>
-                      </div>
+                      <>
+                        <div className="kco-sum-row" style={{ marginBottom: shippingInfo.allCouriers?.length > 0 ? "4px" : "12px" }}>
+                          <span>
+                            Delivery
+                            {shippingInfo.estimatedDays && (
+                              <span style={{ fontSize: "0.85em", color: "#666" }}>
+                                {" "}(Est. {shippingInfo.estimatedDays} {Number(shippingInfo.estimatedDays) === 1 ? "day" : "days"})
+                              </span>
+                            )}
+                          </span>
+                          <span style={shippingInfo.shippingCharge === 0 ? { color: "#16a34a", fontWeight: 700 } : {}}>
+                            {shippingInfo.shippingCharge === 0 ? "FREE" : `₹${shippingInfo.shippingCharge}`}
+                          </span>
+                        </div>
+                        {shippingInfo.allCouriers && shippingInfo.allCouriers.length > 0 && (
+                          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: -6, marginBottom: 8 }}>
+                            <button
+                              type="button"
+                              onClick={() => setCourierModalOpen(true)}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "#db1a5d",
+                                fontSize: "11px",
+                                fontWeight: "700",
+                                cursor: "pointer",
+                                padding: 0,
+                                textDecoration: "underline",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "3px"
+                              }}
+                            >
+                              <span>Change Partner ({shippingInfo.courier})</span>
+                              <span style={{ fontSize: "9px" }}>✏️</span>
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
 
                     {!checkingServiceability && !shippingInfo && selectedShippingAddr && (
@@ -1874,6 +1636,57 @@ const Checkout = () => {
                       🎉 You save ₹{shippingPricing.couponDiscount.toFixed(2)} with coupon!
                     </div>
                   )}
+
+                  {paymentMethod === "partial_cod" && (
+                    <div style={{
+                      background: "#fff3cd",
+                      border: "1px solid #ffc107",
+                      borderRadius: 8,
+                      padding: "10px 12px",
+                      marginBottom: 14,
+                      fontSize: "12px",
+                      color: "#856404",
+                      textAlign: "center",
+                      fontWeight: "500",
+                      lineHeight: "1.4"
+                    }}>
+                      ℹ️ ₹{(shippingPricing.grandTotal - (shippingInfo?.shippingCharge || 0)).toFixed(2)} will be collected on delivery
+                    </div>
+                  )}
+
+                  <button
+                    className="kco-place-order-btn"
+                    onClick={handlePlaceOrder}
+                    disabled={placing || !selectedShippingAddr || !paymentMethod || checkingServiceability || (selectedShippingAddr && !shippingInfo)}
+                    style={{
+                      width: "100%",
+                      display: "block",
+                      opacity: placing || !selectedShippingAddr || !paymentMethod || checkingServiceability || (selectedShippingAddr && !shippingInfo) ? 0.5 : 1,
+                      cursor: placing || !selectedShippingAddr || !paymentMethod || checkingServiceability || (selectedShippingAddr && !shippingInfo) ? "not-allowed" : "pointer",
+                      marginBottom: 16,
+                      padding: "14px 20px",
+                      borderRadius: "12px",
+                      fontSize: "15px",
+                      fontWeight: "800",
+                      background: "linear-gradient(135deg, #db1a5d, #c01550)",
+                      color: "#fff",
+                      border: "none",
+                      boxShadow: "0 4px 14px rgba(219,26,93,0.28)",
+                      transition: "opacity 0.2s"
+                    }}
+                    title={
+                      !selectedShippingAddr
+                        ? "Please select a shipping address first"
+                        : !paymentMethod
+                        ? "Please select a payment method"
+                        : ""
+                    }
+                  >
+                    {placing ? "Placing Order..." : paymentMethod === "partial_cod"
+                      ? `Continue to Payment · Pay ₹${(shippingInfo?.shippingCharge || 0).toFixed(2)} now`
+                      : `Continue to Payment · ₹${grandTotalWithCOD.toFixed(2)}`
+                    }
+                  </button>
 
                   <div className="kco-secure-note">
                     🔒 Safe &amp; secure payments · 100% authentic

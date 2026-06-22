@@ -5,9 +5,18 @@
 
 /* ── Page ─────────────────────────────────────────── */
 .kco-page {
-  background: #f7f8fa;
+  background: #ffffff;
   min-height: 100vh;
   padding: 32px 0 90px;
+}
+
+.kco-page * {
+  box-sizing: border-box;
+}
+
+.kco-left,
+.kco-right {
+  min-width: 0;
 }
 
 .kco-container {
@@ -16,7 +25,33 @@
   padding: 0 20px;
 }
 
-/* ── Step Bar ─────────────────────────────────────── */
+.kco-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ── Page Header ─────────────────────────────────── */
+.kco-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.kco-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #111;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  letter-spacing: -0.5px;
+  font-family: inherit;
+}
 .kco-step-bar {
   display: flex;
   align-items: center;
@@ -67,9 +102,20 @@
 /* ── Layout ───────────────────────────────────────── */
 .kco-layout {
   display: grid;
-  grid-template-columns: 1fr 330px;
-  gap: 24px;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 28px;
   align-items: start;
+}
+
+/* Hide horizontal scrollbar for variant and custom inline rows */
+.kco-variant-chips-container::-webkit-scrollbar,
+.kco-custom-row-container::-webkit-scrollbar {
+  display: none !important;
+}
+.kco-variant-chips-container,
+.kco-custom-row-container {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
 }
 
 /* ── Card ─────────────────────────────────────────── */
@@ -86,6 +132,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 22px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .kco-card-title {
@@ -362,6 +410,7 @@
   font-size: 13px;
   color: #555;
   line-height: 1.65;
+  word-break: break-word;
 }
 
 .kco-addr-phone {
@@ -1114,7 +1163,7 @@
 .kco-item-variant {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-top: 3px;
 }
 .kco-item-price-row {
@@ -1382,16 +1431,38 @@
     width: 100%;
   }
   .kco-card-title {
-  font-size: 14px;
-  font-weight: 800;
-  color: #111;
-  margin: 0;
-  letter-spacing: -0.3px;
-}
-.kco-add-new-btn{
-  padding: 3px;
-   font-size: 10px;
-}
+    font-size: 14px;
+    font-weight: 800;
+    color: #111;
+    margin: 0;
+    letter-spacing: -0.3px;
+  }
+  .kco-add-new-btn {
+    padding: 3px;
+    font-size: 10px;
+  }
+  .kco-new-addr-form {
+    padding: 14px;
+  }
+  .kco-form-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .kco-save-addr-btn,
+  .kco-cancel-btn {
+    width: 100%;
+    text-align: center;
+  }
+  .kco-title {
+    font-size: 20px;
+  }
+  .kco-price-card {
+    padding: 16px;
+  }
+  .kco-addr-card {
+    padding: 12px 14px;
+    gap: 10px;
+  }
 }
 
 @media (max-width: 380px) {
@@ -1401,14 +1472,11 @@
   }
 }
 
-.kco-default-check-row input{
-  width: 3%;
-}
-
-@media (max-width : 762px){
-  .kco-default-check-row input{
-  width: 5%;
-}
+.kco-default-check-row input {
+  accent-color: #db1a5d;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 /* ── Courier Selection Modal ── */

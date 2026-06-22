@@ -627,6 +627,13 @@ const createOrder = async (req, res, next) => {
         } catch (adminMailErr) {
           console.error("[Mailer] Failed to send admin email notification:", adminMailErr.message);
         }
+
+        try {
+          console.log(`[Shiprocket] Auto-pushing COD order ${createdOrder.id} to Shiprocket...`);
+          await pushOrderToShiprocket(createdOrder.id, userRecord?.email || "");
+        } catch (srErr) {
+          console.error("[Shiprocket] Auto-push failed for COD order:", srErr.message);
+        }
       } catch (emailErr) {
         console.error("[Mailer] Failed to send confirmation:", emailErr.message);
       }

@@ -425,23 +425,26 @@ const Cart = () => {
                               try { custom = JSON.parse(custom); } catch { custom = null; }
                             }
                             if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
+                              const validEntries = Object.entries(custom).filter(([_, val]) => val);
                               return (
                                 <div style={{
                                   marginTop: 10,
-                                  padding: "10px 12px",
+                                  padding: "8px 12px",
                                   background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
                                   border: "1px solid #fde68a",
                                   borderRadius: "8px",
                                   display: "flex",
-                                  flexDirection: "column",
-                                  gap: "4px"
+                                  flexWrap: "wrap",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  fontSize: "11px",
+                                  color: "#78350f"
                                 }}>
-                                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#b45309", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#b45309", textTransform: "uppercase", letterSpacing: "0.05em", display: "inline-flex", alignItems: "center", flexShrink: 0, marginRight: "4px" }}>
                                     🎨 Personalisation Details:
                                   </div>
-                                  <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", color: "#78350f" }}>
-                                    {Object.entries(custom).map(([key, val]) => {
-                                      if (!val) return null;
+                                  <div style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
+                                    {validEntries.map(([key, val], idx) => {
                                       const label = key
                                         .split('_')
                                         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -449,7 +452,7 @@ const Cart = () => {
                                       const isFont = key.toLowerCase().includes('font');
                                       const isCol = key.toLowerCase().includes('color') || key.toLowerCase().includes('colour') || (typeof val === 'string' && val.startsWith('#'));
                                       return (
-                                        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, ...(isFont ? { fontFamily: val } : {}) }}>
+                                        <div key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, ...(isFont ? { fontFamily: val } : {}) }}>
                                           <span style={{ fontWeight: 600 }}>{label}:</span>
                                           {isCol ? (
                                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -465,6 +468,9 @@ const Cart = () => {
                                             </span>
                                           ) : (
                                             <span>{val} {isFont && "(Preview)"}</span>
+                                          )}
+                                          {idx < validEntries.length - 1 && (
+                                            <span style={{ marginLeft: 6, color: '#b45309', opacity: 0.5 }}>|</span>
                                           )}
                                         </div>
                                       );
