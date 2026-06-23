@@ -106,7 +106,10 @@ export const cartStore = {
           name: snap.name || cartItem.product?.name,
           price: matchedVariant?.salesPrice ?? snap.price ?? cartItem.product?.price ?? 0,
           discount: snap.discount ?? cartItem.product?.discount ?? 0,
-          image: snap.image || cartItem.product?.image || [],
+          image: matchedVariant?.image
+                   ? [matchedVariant.image]
+                   : (cartItem.product?.image?.length ? cartItem.product.image
+                      : (snap.image?.length ? snap.image : [])),
           variation: cartItem.product?.variation || [],
           Variants: variants,
           selectedVariant: matchedVariant || null,

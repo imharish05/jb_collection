@@ -43,6 +43,7 @@ export default function Dashboard() {
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
   const [salesView, setSalesView] = useState('monthly'); // 'monthly' | 'quarterly'
   const isFirstChartLoad = useRef(true);
+  const [returnStats, setReturnStats] = useState({ pending: 0, refundInitiated: 0, refundCompleted: 0, total: 0 });
 
   let permissions = [];
   try {
@@ -152,6 +153,20 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadDashboard(dispatch);
+
+    // ── Fetch return stats ──
+    const token = localStorage.getItem('adminToken');
+    api.get('/returns/admin/all', { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => {
+        const list = Array.isArray(res.data?.returns) ? res.data.returns
+                   : Array.isArray(res.data)            ? res.data
+                   : [];
+        const pending         = list.filter(r => ['pending_review','approved','pickup_scheduled','picked_up','inspection_completed'].includes(r.status)).length;
+        const refundInitiated = list.filter(r => r.status === 'refund_initiated').length;
+        const refundCompleted = list.filter(r => r.status === 'refund_completed').length;
+        setReturnStats({ pending, refundInitiated, refundCompleted, total: list.length });
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -530,6 +545,44 @@ export default function Dashboard() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Returns & Refunds Panel ── */}
+      {hasPermission('returns_view') && (
+        <div style={{
+          background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '16px',
+          padding: '24px', marginBottom: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.04)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#111827' }}>Returns &amp; Refunds</h3>
+              <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#9ca3af' }}>Live overview of return requests</p>
+            </div>
+            <a href="/returns" style={{
+              fontSize: '12px', fontWeight: 700, color: '#db1a5d',
+              textDecoration: 'none', padding: '6px 14px',
+              border: '1px solid #fce7f3', borderRadius: '8px',
+              background: '#fff0f6',
+            }}>View All →</a>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+            {[
+              { label: 'Total Returns',    value: returnStats.total,          bg: 'linear-gradient(135deg,#6366f1,#4f46e5)', icon: '📦' },
+              { label: 'Pending / Review', value: returnStats.pending,         bg: 'linear-gradient(135deg,#f97316,#ea6600)', icon: '⏳' },
+              { label: 'Refund Initiated', value: returnStats.refundInitiated, bg: 'linear-gradient(135deg,#0ea5e9,#0284c7)', icon: '💳' },
+              { label: 'Refund Completed', value: returnStats.refundCompleted, bg: 'linear-gradient(135deg,#22c55e,#16a34a)', icon: '✅' },
+            ].map((card) => (
+              <div key={card.label} style={{
+                background: card.bg, borderRadius: '12px', padding: '18px 16px',
+                color: '#fff', position: 'relative', overflow: 'hidden',
+              }}>
+                <div style={{ fontSize: '22px', marginBottom: '8px' }}>{card.icon}</div>
+                <div style={{ fontSize: '26px', fontWeight: 800, lineHeight: 1 }}>{card.value}</div>
+                <div style={{ fontSize: '11px', fontWeight: 600, opacity: 0.85, marginTop: '6px', letterSpacing: '0.04em' }}>{card.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       )}

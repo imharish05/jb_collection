@@ -646,66 +646,68 @@ const Checkout = () => {
       console.warn("Pre-order revalidation failed (proceeding):", revalErr);
     }
 
-    setPlacing(true);
-    try {
-      const payload = {
-        items: checkoutItems.map((item) => ({
-          productId: item.id,
-          selectedVariantId: item.selectedVariantId || null,
-          quantity: item.quantity,
-          price: item.price,
-          discount: item.discount || 0,
-          image: item.image || null,
-          selectedProductColor: item.selectedProductColor || null,
-          selectedProductSize: item.selectedProductSize || null,
-          isCombo: item.isCombo || false,
-          rootComboId: item.rootComboId || null,
-          childComboId: item.childComboId || null,
-          comboName: item.isCombo ? item.name : null,
-          comboType: item.comboType || null,
-          selectedProducts: item.selectedProducts || null,
-          customisationDetails: item.customisationDetails || null,
-        })),
-        totalAmount: shippingPricing.grandTotal,
-        shippingAddressId: selectedShippingAddrId,
-        billingAddressId: selectedBillingAddrId,
-        paymentMethod,
-        couponCode: shippingPricing.couponCode || null,
-        couponDiscount: shippingPricing.couponDiscount || 0,
-        couponType: shippingPricing.couponType || null,
-        couponValue: shippingPricing.couponValue || null,
-        notes: giftNote.trim() || null,
-        shippingCharge: shippingInfo?.shippingCharge || 0,
-        taxAmount: shippingPricing.gstAmount || 0,
-        gstAmount: shippingPricing.gstAmount || 0,
-        courier: shippingInfo?.courier || null,
-        estimatedDeliveryDays: shippingInfo?.estimatedDays || null,
-      };
+    // Build order payload (used for both COD/partial_cod and prepaid)
+    const orderPayload = {
+      items: checkoutItems.map((item) => ({
+        productId: item.id,
+        selectedVariantId: item.selectedVariantId || null,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount || 0,
+        image: item.image || null,
+        selectedProductColor: item.selectedProductColor || null,
+        selectedProductSize: item.selectedProductSize || null,
+        isCombo: item.isCombo || false,
+        rootComboId: item.rootComboId || null,
+        childComboId: item.childComboId || null,
+        comboName: item.isCombo ? item.name : null,
+        comboType: item.comboType || null,
+        selectedProducts: item.selectedProducts || null,
+        customisationDetails: item.customisationDetails || null,
+      })),
+      totalAmount: shippingPricing.grandTotal,
+      shippingAddressId: selectedShippingAddrId,
+      billingAddressId: selectedBillingAddrId,
+      paymentMethod,
+      couponCode: shippingPricing.couponCode || null,
+      couponDiscount: shippingPricing.couponDiscount || 0,
+      couponType: shippingPricing.couponType || null,
+      couponValue: shippingPricing.couponValue || null,
+      notes: giftNote.trim() || null,
+      shippingCharge: shippingInfo?.shippingCharge || 0,
+      taxAmount: shippingPricing.gstAmount || 0,
+      gstAmount: shippingPricing.gstAmount || 0,
+      courier: shippingInfo?.courier || null,
+      estimatedDeliveryDays: shippingInfo?.estimatedDays || null,
+    };
 
-      const res = await api.post("/orders", payload);
-      const createdOrder = res.data || {};
-      const id = createdOrder.id || createdOrder.orderId || "KG" + Date.now();
-      const referenceSlug = createdOrder.referenceSlug || id;
-
-      if (paymentMethod === "partial_cod") {
+    if (paymentMethod === "partial_cod") {
+      // Partial COD: create DB order first, then open Razorpay for advance payment
+      setPlacing(true);
+      try {
+        const res = await api.post("/orders", orderPayload);
+        const createdOrder = res.data || {};
+        const id = createdOrder.id || createdOrder.orderId || "KG" + Date.now();
+        const referenceSlug = createdOrder.referenceSlug || id;
         initPartialCodPayment(id, shippingInfo?.shippingCharge || 0, referenceSlug);
-      } else {
-        // All non-partial_cod methods go through Razorpay
-        initRazorpayPayment(id, referenceSlug);
+      } catch (err) {
+        const errorData = err.response?.data;
+        const message = errorData?.message || "Could not place order. Please try again.";
+        cogoToast.error(message, { position: "top-center" });
+        if (errorData?.outOfStock) {
+          import("../../store/services/productService").then(({ refreshProductsSilently }) => {
+            refreshProductsSilently();
+          });
+          dispatch(clearCheckout());
+          setTimeout(() => { navigate(`${process.env.PUBLIC_URL}/cart`); }, 1500);
+        }
+      } finally {
+        setPlacing(false);
       }
-    } catch (err) {
-      const errorData = err.response?.data;
-      const message = errorData?.message || "Could not place order. Please try again.";
-      cogoToast.error(message, { position: "top-center" });
-      if (errorData?.outOfStock) {
-        import("../../store/services/productService").then(({ refreshProductsSilently }) => {
-          refreshProductsSilently();
-        });
-        dispatch(clearCheckout());
-        setTimeout(() => { navigate(`${process.env.PUBLIC_URL}/cart`); }, 1500);
-      }
-    } finally {
-      setPlacing(false);
+    } else {
+      // Prepaid (Razorpay): open payment modal FIRST.
+      // DB order is created ONLY after payment succeeds — cancel leaves nothing in DB.
+      initRazorpayPayment(orderPayload);
     }
   };
 
@@ -816,8 +818,14 @@ const Checkout = () => {
           }
         },
         modal: {
-          ondismiss: () => {
-            cogoToast.warn("Payment cancelled — your order is placed but delivery charge unpaid. Contact support.", { position: "top-center" });
+          ondismiss: async () => {
+            // User cancelled — delete the pending DB order so no ghost order is left
+            try {
+              await api.delete(`/payment/abort-pending-order/${dbOrderId}`);
+            } catch (abortErr) {
+              console.warn("Could not abort pending order:", abortErr);
+            }
+            cogoToast.warn("Payment cancelled. Your order has been removed.", { position: "top-center" });
             setProcessingRazorpay(false);
           },
         },
@@ -832,28 +840,33 @@ const Checkout = () => {
   };
 
   /* ── Initialize Razorpay Payment ── */
-  const initRazorpayPayment = async (dbOrderId, referenceSlug) => {
+  // orderPayload: the full order data to be saved in DB only after payment succeeds.
+  // DB order is NOT created before opening the modal — cancel = nothing saved.
+  const initRazorpayPayment = async (orderPayload) => {
     try {
       setProcessingRazorpay(true);
+
+      // Create Razorpay order (no dbOrderId — DB order doesn't exist yet)
       const paymentRes = await api.post("/payment/create-order", {
-        amount: shippingPricing.grandTotal,
+        amount: orderPayload.totalAmount,
         currency: "INR",
-        dbOrderId,
       });
       const rzpOrderId = paymentRes.data.orderId;
       setRazorpayOrderId(rzpOrderId);
+
       if (!window.Razorpay) {
         cogoToast.error("Razorpay SDK not loaded", { position: "top-center" });
         setProcessingRazorpay(false);
         return;
       }
+
       const options = {
         key: process.env.REACT_APP_RAZORPAY_KEY_ID,
         order_id: rzpOrderId,
-        amount: Math.round(shippingPricing.grandTotal * 100),
+        amount: Math.round(orderPayload.totalAmount * 100),
         currency: "INR",
         name: "Kamali Gifts",
-        description: `Order ${dbOrderId}`,
+        description: "Order Payment",
         customer_notify: 1,
         prefill: {
           name: user?.name || "",
@@ -862,17 +875,20 @@ const Checkout = () => {
         },
         theme: { color: "#f15a24" },
         handler: async (response) => {
+          // Payment succeeded — NOW create the DB order + verify atomically
           try {
-            const verifyRes = await api.post("/payment/verify", {
+            const verifyRes = await api.post("/payment/verify-and-create-order", {
+              // Payment proof
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              dbOrderId,
+              // Full order payload
+              ...orderPayload,
             });
             if (verifyRes.data.success) {
-              // Use the actual payment method returned by backend (fetched from Razorpay)
-              // e.g. user may have selected "card" but paid via UPI inside Razorpay modal
               const resolvedMethod = verifyRes.data.actualPaymentMethod || paymentMethod;
+              const orderId = verifyRes.data.orderId;
+              const referenceSlug = verifyRes.data.referenceSlug || orderId;
               cogoToast.success("Payment successful!", { position: "top-center" });
               if (checkoutSource === "cart") dispatch(deleteAllFromCart());
               navigatingRef.current = true;
@@ -881,7 +897,7 @@ const Checkout = () => {
                 navigate(`/order-confirmation`, {
                   replace: true,
                   state: {
-                    orderId: dbOrderId,
+                    orderId,
                     referenceSlug,
                     selectedShippingAddr,
                     billingAddress: selectedBillingAddr,
@@ -897,16 +913,18 @@ const Checkout = () => {
                 });
               }, 1500);
             } else {
+              cogoToast.error("Order creation failed after payment. Please contact support.", { position: "top-center" });
               setProcessingRazorpay(false);
             }
           } catch (verifyErr) {
-            cogoToast.error("Payment verification failed", { position: "top-center" });
+            cogoToast.error("Payment verification failed. Please contact support.", { position: "top-center" });
             console.error("Verification error:", verifyErr);
             setProcessingRazorpay(false);
           }
         },
         modal: {
           ondismiss: () => {
+            // User cancelled — no DB order was created, nothing to clean up
             cogoToast.warn("Payment cancelled", { position: "top-center" });
             setProcessingRazorpay(false);
           },

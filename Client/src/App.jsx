@@ -123,8 +123,14 @@ useEffect(() => {
           name: snap.name || cartItem.product?.name,
           price: typeof resolvedPrice === "string" ? parseFloat(resolvedPrice) : resolvedPrice,
           discount: typeof resolvedDiscount === "string" ? parseFloat(resolvedDiscount) : resolvedDiscount,
-          image: snap.image || cartItem.product?.image || [],
+          image: matched?.image
+                   ? [matched.image]
+                   : (cartItem.product?.image?.length ? cartItem.product.image
+                      : (snap.image?.length ? snap.image : [])),
           variation: cartItem.product?.variation || [],
+          stock: matched?.stock ?? cartItem.product?.stock ?? 999,
+          Variants: variants,
+          selectedVariant: matched || null,
           // Combo specific fields
           isCombo: snap.isCombo || false,
           rootComboId: snap.rootComboId || null,

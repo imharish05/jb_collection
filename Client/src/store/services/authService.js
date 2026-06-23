@@ -39,7 +39,10 @@ const syncCartFromServer = async (dispatch) => {
         name: snap.name || cartItem.product?.name,
         price: typeof resolvedPrice === 'string' ? parseFloat(resolvedPrice) : resolvedPrice,
         discount: typeof resolvedDiscount === 'string' ? parseFloat(resolvedDiscount) : resolvedDiscount,
-        image: snap.image || cartItem.product?.image || [],
+        image: matchedVariant?.image
+                 ? [matchedVariant.image]
+                 : (cartItem.product?.image?.length ? cartItem.product.image
+                    : (snap.image?.length ? snap.image : [])),
         variation: cartItem.product?.variation || [],
         Variants: variants,
         selectedVariant: matchedVariant || null,

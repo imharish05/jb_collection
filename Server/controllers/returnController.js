@@ -396,6 +396,20 @@ const updateReturnStatus = async (req, res, next) => {
     }
     await returnRequest.save();
 
+    // If marked as refund_completed, update any associated manual offline refund status to manual_completed
+    if (status === "refund_completed") {
+      try {
+        const refund = await Refund.findOne({ where: { returnId: returnRequest.id } });
+        if (refund && refund.refundMode === "manual_offline") {
+          refund.refundStatus = "manual_completed";
+          refund.refundedAt = new Date();
+          await refund.save();
+        }
+      } catch (refundErr) {
+        console.error("[Return Status Update] Failed to complete associated manual refund:", refundErr.message);
+      }
+    }
+
     // Send email if status changed
     if (status) {
       try {
@@ -465,46 +479,17 @@ const approveRefund = async (req, res, next) => {
         refundedAt:       rzpRefund?.status === 'processed' ? new Date() : null,
         refundMode:       "razorpay",
       });
-    } else if (paymentType === "PARTIAL_COD" && order.razorpayPaymentId) {
-      const advancePaid = parseFloat(order.advancePaid || 0);
-      
-      const totalRefundedOnline = await Refund.sum("refundAmount", {
-        where: { orderId: order.id, refundMode: "razorpay" }
-      }) || 0;
-
-      const remainingOnlineBalance = Math.max(0, advancePaid - totalRefundedOnline);
-      const onlineRefundAmount = Math.min(productValue, remainingOnlineBalance);
-      const offlineRefundAmount = productValue - onlineRefundAmount;
-
-      if (onlineRefundAmount > 0) {
-        const rzpRefund = await razorpay.payments.refund(order.razorpayPaymentId, {
-          amount: Math.round(onlineRefundAmount * 100),
-          notes:  { reason: "Return Approved — Partial COD Refund", returnId: returnRequest.id },
-        });
-        
-        refundRecord = await Refund.create({
-          orderId:           order.id,
-          returnId:          returnRequest.id,
-          razorpayRefundId:  rzpRefund.id,
-          refundAmount:      productValue,
-          refundStatus:      resolveRefundStatus(rzpRefund),
-          refundedAt:        rzpRefund?.status === 'processed' ? new Date() : null,
-          refundMode:        "razorpay",
-          manualRefundNotes: offlineRefundAmount > 0 
-            ? `Online advance refund ₹${onlineRefundAmount.toFixed(2)} initiated. Remaining product value ₹${offlineRefundAmount.toFixed(2)} to be refunded manually offline.`
-            : `Online advance refund ₹${onlineRefundAmount.toFixed(2)} initiated (covers returned item value).`,
-        });
-      } else {
-        refundRecord = await Refund.create({
-          orderId:           order.id,
-          returnId:          returnRequest.id,
-          razorpayRefundId:  null,
-          refundAmount:      productValue,
-          refundStatus:      "manual_pending",
-          refundMode:        "manual_offline",
-          manualRefundNotes: `Online advance already fully refunded. Full product value ₹${productValue.toFixed(2)} to be refunded manually offline.`,
-        });
-      }
+    } else if (paymentType === "PARTIAL_COD") {
+      // PARTIAL_COD — advance is shipping charges (non-refundable), product refund must be manual offline
+      refundRecord = await Refund.create({
+        orderId:           order.id,
+        returnId:          returnRequest.id,
+        razorpayRefundId:  null,
+        refundAmount:      productValue,
+        refundStatus:      "manual_pending",
+        refundMode:        "manual_offline",
+        manualRefundNotes: req.body.manual_refund_notes || `Partial COD — Advance was shipping charges (non-refundable). Full product value ₹${productValue.toFixed(2)} must be refunded manually offline.`,
+      });
     } else {
       // FULL_COD or no payment ID
       refundRecord = await Refund.create({
@@ -778,18 +763,25 @@ const createReversePickup = async (req, res, next) => {
     let whCity    = process.env.WAREHOUSE_CITY;
     let whPincode = process.env.WAREHOUSE_PINCODE;
     let whState   = process.env.WAREHOUSE_STATE;
+    let whPhone   = process.env.WAREHOUSE_PHONE;
+    let whEmail   = process.env.WAREHOUSE_EMAIL;
 
-    if (!whAddress || !whCity || !whPincode || !whState) {
+    if (!whAddress || !whCity || !whPincode || !whState || !whPhone || !whEmail) {
       try {
         console.log("[Shiprocket] Warehouse variables missing from env, fetching from account...");
         const locations = await getPickupLocations();
-        const primary = locations.find(loc => loc.is_primary_location === 1) || locations[0];
-        if (primary) {
-          whAddress = `${primary.address}${primary.address_2 ? ", " + primary.address_2 : ""}`;
-          whCity    = primary.city;
-          whPincode = primary.pin_code;
-          whState   = primary.state;
-          console.log(`[Shiprocket] Resolved warehouse location dynamically: ${whAddress}, ${whCity} (${whPincode})`);
+        const targetName = (process.env.SHIPROCKET_PICKUP_LOCATION || "").toLowerCase();
+        const match = locations.find(loc => (loc.pickup_location || "").toLowerCase() === targetName) ||
+                      locations.find(loc => loc.is_primary_location === 1) ||
+                      locations[0];
+        if (match) {
+          if (!whAddress) whAddress = `${match.address}${match.address_2 ? ", " + match.address_2 : ""}`;
+          if (!whCity) whCity = match.city;
+          if (!whPincode) whPincode = match.pin_code;
+          if (!whState) whState = match.state;
+          if (!whPhone) whPhone = match.phone;
+          if (!whEmail) whEmail = match.email;
+          console.log(`[Shiprocket] Resolved warehouse location dynamically: ${whAddress}, ${whCity} (${whPincode}), Phone: ${whPhone}, Email: ${whEmail}`);
         }
       } catch (locErr) {
         console.error("[Shiprocket] Dynamic warehouse resolution failed:", locErr.message);
@@ -812,6 +804,8 @@ const createReversePickup = async (req, res, next) => {
       shipping_pincode:     String(whPincode || ""),
       shipping_state:       whState || "",
       shipping_country:     "India",
+      shipping_phone:       String(whPhone || "6382488167"),
+      shipping_email:       whEmail || "harishsangaran96@gmail.com",
       payment_method:       "Prepaid", // Always Prepaid for reverse pickups — no COD collection
                                     // happens on returns regardless of the original order payment type.
       sub_total:            productPrice * returnRequest.returnQuantity,

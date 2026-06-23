@@ -595,6 +595,338 @@ const getPaymentTransactions = async (req, res, next) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE /api/payment/abort-pending-order/:orderId
+//
+// Called when user CANCELS the Razorpay modal for a PARTIAL_COD delivery charge.
+// Since the order was created in DB before the modal opened, we must clean it up.
+// Guard: only allowed when inventoryProcessed=false AND status=pending AND owner=user.
+// ─────────────────────────────────────────────────────────────────────────────
+const abortPendingOrder = async (req, res, next) => {
+  try {
+    const { Order, OrderItem } = require('../models');
+    const orderId = req.params.orderId;
+
+    const order = await Order.findOne({
+      where: { id: orderId, userId: req.user.id },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Only allow aborting if payment hasn't been processed yet
+    if (order.inventoryProcessed) {
+      return res.status(400).json({ message: 'Order has already been paid — cannot abort' });
+    }
+    if (!['pending'].includes(order.status)) {
+      return res.status(400).json({ message: 'Only pending orders can be aborted' });
+    }
+
+    // Hard-delete order items then the order itself
+    await OrderItem.destroy({ where: { orderId: order.id } });
+    await order.destroy();
+
+    console.log(`[AbortPendingOrder] Deleted unpaid order ${orderId} for user ${req.user.id}`);
+    return res.json({ success: true, message: 'Order aborted and removed' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/payment/verify-and-create-order
+//
+// Called AFTER Razorpay payment succeeds (handler callback on frontend).
+// 1. Verifies Razorpay HMAC signature
+// 2. Creates the DB order (same logic as POST /api/orders)
+// 3. Marks it as paid immediately
+//
+// This ensures the DB order is NEVER created if the user cancels payment.
+// ─────────────────────────────────────────────────────────────────────────────
+const verifyAndCreateOrder = async (req, res, next) => {
+  const {
+    // Payment verification fields
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    // Order creation fields (same as POST /api/orders)
+    items,
+    totalAmount,
+    shippingAddressId,
+    billingAddressId,
+    paymentMethod,
+    couponCode,
+    couponDiscount,
+    couponType,
+    couponValue,
+    taxAmount,
+    gstAmount,
+    notes,
+    shippingCharge,
+    estimatedDeliveryDays,
+    courier,
+  } = req.body;
+
+  // ── Step 1: Verify Razorpay HMAC ─────────────────────────────────────────
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    return res.status(400).json({ message: 'Missing required payment verification fields' });
+  }
+
+  const body     = razorpay_order_id + '|' + razorpay_payment_id;
+  const expected = crypto
+    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+    .update(body)
+    .digest('hex');
+
+  if (expected !== razorpay_signature) {
+    return res.status(400).json({ message: 'Payment verification failed: Invalid signature' });
+  }
+
+  // ── Step 2: Create the DB order ───────────────────────────────────────────
+  const { Order, OrderItem, Address, CartItem, User, Coupon, Variant, Product } = require('../models');
+  const inventoryService = require('../services/inventoryService');
+  const { sendOrderConfirmationEmail, sendAdminNewOrderEmail } = require('../utils/mailer');
+  const { pushOrderToShiprocket } = require('./orderController');
+
+  const transaction = await sequelize.transaction();
+  try {
+    if (!items || !items.length || !totalAmount || !shippingAddressId) {
+      await transaction.rollback();
+      return res.status(400).json({ message: 'items, totalAmount and shippingAddressId are required' });
+    }
+
+    const receivedTax = parseFloat(taxAmount ?? gstAmount ?? 0) || 0;
+
+    const shippingAddress = await Address.findOne({
+      where: { id: shippingAddressId, userId: req.user.id },
+      transaction,
+    });
+    if (!shippingAddress) {
+      await transaction.rollback();
+      return res.status(404).json({ message: 'Shipping address not found' });
+    }
+
+    let billingAddressRef = billingAddressId || shippingAddress.id;
+    if (billingAddressId && billingAddressId !== shippingAddressId) {
+      const billingAddress = await Address.findOne({
+        where: { id: billingAddressId, userId: req.user.id },
+        transaction,
+      });
+      if (!billingAddress) {
+        await transaction.rollback();
+        return res.status(404).json({ message: 'Billing address not found' });
+      }
+    }
+
+    // Stock validation
+    try {
+      await inventoryService.validateOrderStock(items, transaction);
+    } catch (stockErr) {
+      await transaction.rollback();
+      const msg = stockErr.message;
+      const isOOS = /insufficient stock|out of stock|stock.*0|available.*0/i.test(msg);
+      return res.status(400).json({
+        success: false,
+        message: isOOS ? 'Product is out of stock' : msg,
+        outOfStock: isOOS,
+      });
+    }
+
+    // Compute server-side items
+    let serverComputedSubtotal = 0;
+    const itemsWithDetails = [];
+
+    for (const item of items) {
+      let itemPrice = 0;
+      let itemData = { ...item };
+      const isComboItem = item.isCombo === true || item.isCombo === 'true';
+
+      if (item.selectedVariantId) {
+        const variant = await Variant.findByPk(item.selectedVariantId, { transaction });
+        const product = await Product.findByPk(item.productId, { transaction });
+        if (!variant) { await transaction.rollback(); return res.status(404).json({ message: `Variant ${item.selectedVariantId} not found` }); }
+        if (!product) { await transaction.rollback(); return res.status(404).json({ message: `Product ${item.productId} not found` }); }
+        itemPrice = parseFloat(variant.salesPrice || variant.mrp || 0);
+        itemData.productName = product.name;
+        itemData.selectedVariantId = variant.id;
+        itemData.selectedVariantName = variant.variantName || null;
+        itemData.variantAttributes = variant.attributes || [];
+        itemData.image = variant.image || product.image || [];
+        itemData.mrp = variant.mrp || null;
+        itemData.salesPrice = variant.salesPrice || null;
+      } else {
+        const product = await Product.findByPk(item.productId, { transaction });
+        if (!product) { await transaction.rollback(); return res.status(404).json({ message: `Product ${item.productId} not found` }); }
+        itemPrice = parseFloat(item.price || product.price || 0);
+        itemData.productName = isComboItem ? (item.comboName || item.name || product.name) : product.name;
+        itemData.selectedVariantId = null;
+        itemData.selectedVariantName = null;
+        itemData.variantAttributes = [];
+        itemData.image = item.image || product.image || [];
+      }
+
+      itemData.isCombo = isComboItem;
+      itemData.rootComboId = item.rootComboId || null;
+      itemData.childComboId = item.childComboId || null;
+      itemData.comboName = item.comboName || item.name || null;
+      itemData.comboType = item.comboType || null;
+      itemData.selectedProducts = item.selectedProducts || null;
+      itemData.customerChoices = item.customerChoices || null;
+      itemData.comboSnapshot = isComboItem ? {
+        comboId: item.childComboId,
+        comboName: item.comboName || item.name || null,
+        comboType: item.comboType || null,
+        selectedProducts: item.selectedProducts || null,
+        quantities: item.quantity,
+        pricing: itemPrice,
+      } : null;
+
+      serverComputedSubtotal += itemPrice * item.quantity;
+      itemsWithDetails.push(itemData);
+    }
+
+    // Coupon validation
+    let serverCouponDiscount = 0;
+    let normalizedCouponCode = couponCode || null;
+    if (normalizedCouponCode) {
+      const coupon = await Coupon.findOne({ where: { code: normalizedCouponCode, is_active: true }, transaction });
+      if (!coupon) { await transaction.rollback(); return res.status(400).json({ message: 'Invalid coupon code' }); }
+      if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) { await transaction.rollback(); return res.status(400).json({ message: 'Coupon has expired' }); }
+      if (serverComputedSubtotal < parseFloat(coupon.min_order || 0)) { await transaction.rollback(); return res.status(400).json({ message: `Minimum order of ₹${coupon.min_order} required` }); }
+      serverCouponDiscount = coupon.type === 'percent'
+        ? (serverComputedSubtotal * parseFloat(coupon.value || 0)) / 100
+        : parseFloat(coupon.value || 0);
+      if (coupon.max_discount) serverCouponDiscount = Math.min(serverCouponDiscount, parseFloat(coupon.max_discount));
+      serverCouponDiscount = parseFloat(serverCouponDiscount.toFixed(2));
+      normalizedCouponCode = coupon.code;
+    }
+
+    // Create the order (PREPAID — full amount paid online)
+    const pm = (paymentMethod || 'razorpay').toLowerCase();
+
+    // ── Step 3: Fetch actual payment method from Razorpay ─────────────────
+    let actualMethod = 'razorpay';
+    try {
+      const rzpPayment = await razorpay.payments.fetch(razorpay_payment_id);
+      actualMethod = mapRazorpayMethod(rzpPayment.method);
+    } catch (fetchErr) {
+      console.warn('[verifyAndCreateOrder] Could not fetch Razorpay payment method:', fetchErr.message);
+    }
+
+    const order = await Order.create({
+      userId:            req.user.id,
+      totalAmount:       parseFloat(totalAmount),
+      shippingAddressId: shippingAddress.id,
+      billingAddressId:  billingAddressRef,
+      paymentMethod:     actualMethod,
+      paymentStatus:     'paid',
+      paymentType:       'PREPAID',
+      advancePaid:       parseFloat(totalAmount),
+      codAmount:         0,
+      couponCode:        normalizedCouponCode,
+      couponDiscount:    serverCouponDiscount,
+      taxAmount:         receivedTax,
+      notes,
+      courier,
+      shippingCharge:    parseFloat(shippingCharge || 0),
+      estimatedDeliveryDays: estimatedDeliveryDays || null,
+      partialCodAmount:  null,
+      status:            'pending',
+      inventoryProcessed: false,
+      inventoryRestored:  false,
+      razorpayPaymentId: razorpay_payment_id,
+      razorpayOrderId:   razorpay_order_id,
+      transactionId:     razorpay_payment_id,
+    }, { transaction });
+
+    // Create OrderItem records
+    for (const itemData of itemsWithDetails) {
+      await OrderItem.create({
+        orderId:             order.id,
+        productId:           itemData.productId,
+        productName:         itemData.productName,
+        selectedVariantId:   itemData.selectedVariantId   || null,
+        selectedVariantName: itemData.selectedVariantName || null,
+        variantAttributes:   itemData.variantAttributes   || null,
+        quantity:            itemData.quantity,
+        price:               itemData.price,
+        mrp:                 itemData.mrp        || null,
+        salesPrice:          itemData.salesPrice || null,
+        discount:            itemData.discount   || 0,
+        image:               itemData.image      || null,
+        selectedProductColor: itemData.selectedProductColor || null,
+        selectedProductSize:  itemData.selectedProductSize  || null,
+        isCombo:     itemData.isCombo     || false,
+        rootComboId: itemData.rootComboId || null,
+        childComboId: itemData.childComboId || null,
+        comboName:   itemData.comboName  || null,
+        comboType:   itemData.comboType  || null,
+        status:      'pending',
+        selectedProducts: itemData.selectedProducts || null,
+        comboSnapshot:    itemData.comboSnapshot    || null,
+        customerChoices:  itemData.customerChoices  || null,
+        customisationDetails: itemData.customisationDetails || null,
+      }, { transaction });
+    }
+
+    // Decrement inventory
+    try {
+      await inventoryService.decrementOrderStock(order.id, transaction, 'Razorpay Payment Success', 'frontend_verify');
+    } catch (stockErr) {
+      console.error('[verifyAndCreateOrder] Inventory OOS conflict after payment:', stockErr.message);
+      order.status = 'inventory_failed';
+      order.paymentStatus = 'failed';
+      await order.save({ transaction });
+      await transaction.commit();
+      return res.status(409).json({ success: false, message: `Payment received but stock unavailable: ${stockErr.message}`, inventoryFailed: true });
+    }
+
+    order.inventoryProcessed = true;
+    await order.save({ transaction });
+    await transaction.commit();
+
+    // Post-commit operations
+    const orderId = order.id;
+    const userId  = req.user.id;
+    setImmediate(async () => {
+      try {
+        await CartItem.destroy({ where: { userId } });
+        const userRecord = await User.findByPk(userId, { attributes: ['name', 'email'] });
+        const freshOrder = await Order.findByPk(orderId, {
+          include: [
+            { model: OrderItem, as: 'items' },
+            { model: Address, as: 'shippingAddress' },
+            { model: Address, as: 'billingAddress' },
+          ],
+        });
+        if (userRecord?.email) {
+          await sendOrderConfirmationEmail(freshOrder, { name: userRecord.name, email: userRecord.email });
+        }
+        try {
+          await sendAdminNewOrderEmail(freshOrder, { name: userRecord?.name, email: userRecord?.email || '' });
+        } catch (e) { console.error('[verifyAndCreateOrder] Admin email failed:', e.message); }
+        try {
+          await pushOrderToShiprocket(orderId, userRecord?.email || '');
+        } catch (e) { console.error('[verifyAndCreateOrder] Shiprocket push failed:', e.message); }
+      } catch (e) {
+        console.error('[verifyAndCreateOrder] Post-commit error:', e.message);
+      }
+    });
+
+    const referenceSlug = order.referenceSlug || order.id;
+    return res.json({
+      success: true,
+      orderId: order.id,
+      referenceSlug,
+      actualPaymentMethod: actualMethod,
+    });
+  } catch (err) {
+    await transaction.rollback();
+    next(err);
+  }
+};
+
 module.exports = {
   createRazorpayOrder,
   createDeliveryChargeOrder,
@@ -602,4 +934,6 @@ module.exports = {
   handlePaymentWebhook,
   processSuccessfulPayment,
   getPaymentTransactions,
+  verifyAndCreateOrder,
+  abortPendingOrder,
 };

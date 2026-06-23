@@ -148,6 +148,48 @@ export default function ReturnDetail() {
     }
   };
 
+  const handleInitiateRefund = async () => {
+    setSubmitting(true);
+    const tid = toast.loading('Initiating refund via Razorpay…');
+    try {
+      const token = localStorage.getItem('adminToken');
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.post(`/returns/admin/${id}/refund`, {}, { headers });
+      const rf = res.data?.refund;
+      if (rf?.refundMode === 'razorpay') {
+        toast.success(`✅ Razorpay refund initiated! ID: ${rf.razorpayRefundId || '—'}`, { id: tid, duration: 6000 });
+      } else {
+        toast.success('Refund record created (Manual offline refund required)', { id: tid, duration: 5000 });
+      }
+      fetchDetail();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Refund initiation failed', { id: tid });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSchedulePickup = async () => {
+    setSubmitting(true);
+    const tid = toast.loading('Scheduling pickup via Shiprocket…');
+    try {
+      const token = localStorage.getItem('adminToken');
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.post(`/returns/admin/${id}/reverse-pickup`, {}, { headers });
+      const awb = res.data?.return?.reverseShipment?.awbCode;
+      const courier = res.data?.return?.reverseShipment?.courierName;
+      toast.success(
+        `🚚 Pickup scheduled!${ awb ? ` AWB: ${awb}` : ''}${ courier ? ` via ${courier}` : ''}`,
+        { id: tid, duration: 7000 }
+      );
+      fetchDetail();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to schedule pickup', { id: tid });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
@@ -331,10 +373,10 @@ export default function ReturnDetail() {
           {/* Reverse shipment */}
           {reverseShipment && (
             <Section title="Reverse Shipment">
-              <InfoRow label="Shiprocket Order ID" value={reverseShipment.shiprocketOrderId} />
+              <InfoRow label="Shiprocket Order ID" value={reverseShipment.shiprocketReturnId} />
               <InfoRow label="AWB Code"            value={reverseShipment.awbCode} />
               <InfoRow label="Courier"             value={reverseShipment.courierName} />
-              <InfoRow label="Status"              value={reverseShipment.status} />
+              <InfoRow label="Status"              value={reverseShipment.pickupStatus} />
               <InfoRow label="Tracking URL"
                 value={reverseShipment.trackingUrl
                   ? <a href={reverseShipment.trackingUrl} target="_blank" rel="noreferrer" style={{ color: '#db1a5d', fontWeight: 600 }}>Track Shipment</a>
@@ -379,7 +421,8 @@ export default function ReturnDetail() {
                     .filter(([k]) => {
                       if (['pending_review', 'approved', 'rejected', 'cancelled'].includes(k)) return true;
                       if (r?.returnType === 'refund') {
-                        return ['pickup_scheduled', 'picked_up', 'inspection_completed', 'refund_initiated', 'refund_completed'].includes(k);
+                        // refund_initiated & refund_completed are set automatically by Initiate Refund button
+                        return ['pickup_scheduled', 'picked_up', 'inspection_completed'].includes(k);
                       }
                       if (r?.returnType === 'replacement') {
                         return ['pickup_scheduled', 'picked_up', 'inspection_completed', 'replacement_shipped', 'replacement_delivered'].includes(k);
@@ -410,6 +453,109 @@ export default function ReturnDetail() {
                   }}>
                   {submitting ? 'Updating…' : 'Update Status'}
                 </button>
+
+                {/* ── Schedule Pickup via Shiprocket (approved status only) ── */}
+                {r?.status === 'approved' && !reverseShipment && (
+                  <div style={{ marginTop: '8px', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '16px', background: '#eff6ff' }}>
+                    <div style={{ fontSize: '12px', color: '#1e40af', fontWeight: 700, marginBottom: '4px' }}>🚚 Shiprocket Reverse Pickup</div>
+                    <div style={{ fontSize: '12px', color: '#374151', marginBottom: '12px', lineHeight: 1.5 }}>
+                      Return approved! Click below to create a reverse pickup order in Shiprocket.
+                      A courier will be assigned and will pick up the product from the customer's address.
+                    </div>
+                    <button
+                      onClick={() => {
+                        toast(
+                          (t) => (
+                            <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              <strong>Schedule Pickup for Return #{r.referenceSlug || r.id}?</strong>
+                              <span style={{ fontSize: 12, color: '#6b7280' }}>
+                                This will create a reverse pickup order in Shiprocket.
+                                A courier will be dispatched to pick up the product from the customer.
+                              </span>
+                              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                                <button
+                                  onClick={async () => { toast.dismiss(t.id); handleSchedulePickup(); }}
+                                  style={{ padding: '6px 16px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
+                                >🚚 Yes, Schedule</button>
+                                <button
+                                  onClick={() => toast.dismiss(t.id)}
+                                  style={{ padding: '6px 14px', background: '#374151', color: '#d1d5db', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
+                                >Cancel</button>
+                              </div>
+                            </span>
+                          ),
+                          { duration: Infinity }
+                        );
+                      }}
+                      disabled={submitting}
+                      style={{
+                        width: '100%', background: submitting ? '#d1d5db' : '#1d4ed8',
+                        color: '#fff', border: 'none', borderRadius: '8px', padding: '11px',
+                        fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer',
+                        fontSize: '14px', transition: 'background .2s',
+                      }}
+                      onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = '#1e40af'; }}
+                      onMouseLeave={e => { if (!submitting) e.currentTarget.style.background = '#1d4ed8'; }}
+                    >
+                      {submitting ? 'Processing…' : '🚚 Schedule Pickup via Shiprocket'}
+                    </button>
+                  </div>
+                )}
+
+                {/* ── Initiate Refund Button (inspection_completed + refund type only) ── */}
+                {r?.returnType === 'refund' && r?.status === 'inspection_completed' && !r?.refund && (
+                  <div style={{ marginTop: '8px', border: '1px solid #d1fae5', borderRadius: '12px', padding: '16px', background: '#f0fdf4' }}>
+                    <div style={{ fontSize: '12px', color: '#065f46', fontWeight: 700, marginBottom: '4px' }}>💳 Refund Action Required</div>
+                    <div style={{ fontSize: '12px', color: '#374151', marginBottom: '12px', lineHeight: 1.5 }}>
+                      Inspection complete! Click below to trigger the actual refund.
+                      {r?.order?.paymentType === 'PREPAID'
+                        ? ' Amount will be auto-credited to customer via Razorpay.'
+                        : r?.order?.paymentType === 'PARTIAL_COD'
+                          ? ' This is a Partial COD order (advance was shipping charges, which are non-refundable). A manual offline refund record will be created for the product value.'
+                          : ' This is a COD order — a manual offline refund record will be created.'}
+                    </div>
+                    <button
+                      onClick={() => {
+                        toast(
+                          (t) => (
+                            <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              <strong>Initiate Refund for Return #{r.requestId || r.referenceSlug || r.id}?</strong>
+                              <span style={{ fontSize: 12, color: '#6b7280' }}>
+                                {r?.order?.paymentType === 'PREPAID'
+                                  ? `₹${parseFloat(r?.orderItem?.salesPrice || r?.orderItem?.price || 0) * (r?.returnQuantity || 1)} will be refunded via Razorpay to the customer's original payment method.`
+                                  : r?.order?.paymentType === 'PARTIAL_COD'
+                                    ? `A manual offline refund record will be created for the product value ₹${parseFloat(r?.orderItem?.salesPrice || r?.orderItem?.price || 0) * (r?.returnQuantity || 1)} (advance was shipping charges, which are non-refundable).`
+                                    : 'A manual refund record will be created for this COD order.'}
+                              </span>
+                              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                                <button
+                                  onClick={async () => { toast.dismiss(t.id); handleInitiateRefund(); }}
+                                  style={{ padding: '6px 16px', background: '#059669', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
+                                >✅ Yes, Initiate</button>
+                                <button
+                                  onClick={() => toast.dismiss(t.id)}
+                                  style={{ padding: '6px 14px', background: '#374151', color: '#d1d5db', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
+                                >Cancel</button>
+                              </div>
+                            </span>
+                          ),
+                          { duration: Infinity }
+                        );
+                      }}
+                      disabled={submitting}
+                      style={{
+                        width: '100%', background: submitting ? '#d1d5db' : '#059669',
+                        color: '#fff', border: 'none', borderRadius: '8px', padding: '11px',
+                        fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer',
+                        fontSize: '14px', transition: 'background .2s',
+                      }}
+                      onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = '#047857'; }}
+                      onMouseLeave={e => { if (!submitting) e.currentTarget.style.background = '#059669'; }}
+                    >
+                      {submitting ? 'Processing…' : '💸 Initiate Refund'}
+                    </button>
+                  </div>
+                )}
 
                 {/* Quick reject */}
                 {r.status === 'pending_review' && (
@@ -465,6 +611,29 @@ export default function ReturnDetail() {
               </div>
             )}
           </Section>
+
+          {/* ── Reverse Shipment Info ── */}
+          {reverseShipment && (
+            <Section title="Reverse Shipment (Shiprocket)">
+              <InfoRow label="Shiprocket Order ID" value={reverseShipment.shiprocketReturnId || '—'} />
+              <InfoRow label="AWB Code"            value={reverseShipment.awbCode || '—'} />
+              <InfoRow label="Courier"             value={reverseShipment.courierName || '—'} />
+              <InfoRow label="Pickup Status"       value={reverseShipment.pickupStatus || '—'} />
+              {reverseShipment.trackingUrl && (
+                <div style={{ padding: '8px 0', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#6b7280', fontSize: '13px', minWidth: '140px' }}>Tracking</span>
+                  <a
+                    href={reverseShipment.trackingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#1d4ed8', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}
+                  >
+                    🔗 Track on Shiprocket ↗
+                  </a>
+                </div>
+              )}
+            </Section>
+          )}
 
           {/* Media */}
           {media?.length > 0 && (

@@ -51,17 +51,19 @@ const ReturnTracking = () => {
   const getActiveStageIndex = (status) => {
     if (!status) return 0;
     if (status === "rejected" || status === "cancelled") return -1;
-    
+
     // Map status strings to stages
     if (status === "pending_review") return 0;
     if (status === "approved") return 1;
     if (status === "pickup_scheduled") return 2;
     if (status === "picked_up") return 3;
     if (status === "inspection_completed") return 4;
-    
     if (status === "refund_initiated" || status === "replacement_shipped") return 5;
-    if (status === "refund_completed" || status === "replacement_delivered") return 6;
-    
+
+    // refund_completed / replacement_delivered → all steps done ✅
+    // Return stages.length so every step shows as completed (green checkmark)
+    if (status === "refund_completed" || status === "replacement_delivered") return 7;
+
     return 0;
   };
 

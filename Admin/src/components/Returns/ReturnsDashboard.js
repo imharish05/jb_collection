@@ -172,12 +172,12 @@ export default function ReturnsDashboard({ showToast }) {
       </div>
 
       {/* ── Table ── */}
-      <div style={{ background: '#ffffff', borderRadius: '14px', border: '1.5px solid #d1d5db', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
+      <div style={{ background: '#ffffff', borderRadius: '14px', border: '1.5px solid #d1d5db', overflowX: 'auto', overflowY: 'visible', WebkitOverflowScrolling: 'touch', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
             <tr style={{ background: '#f1f5ff', borderBottom: '2px solid #d1d5db' }}>
               {['ID','Order','Customer','Type','Reason','Status','Refunded','Requested','Actions'].map(h => (
-                <th key={h} style={{ padding: '13px 16px', fontWeight: 700, fontSize: '11px', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                <th key={h} style={{ padding: '13px 12px', fontWeight: 700, fontSize: '11px', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -202,8 +202,8 @@ export default function ReturnsDashboard({ showToast }) {
                   Array.from(e.currentTarget.children).forEach(td => td.style.background = 'transparent');
                 }}
               >
-                <td style={{ padding: '12px 16px', color: '#6b7280', fontFamily: 'monospace', fontWeight: 600, borderLeft: idx > 0 ? 'none' : undefined }}>#{r.referenceSlug || r.id}</td>
-                <td style={{ padding: '12px 16px', color: '#111827', fontWeight: 700, borderLeft: '1px solid #e5e7eb' }}>
+                <td style={{ padding: '12px 12px', color: '#6b7280', fontFamily: 'monospace', fontWeight: 600, borderLeft: idx > 0 ? 'none' : undefined }}>#{r.referenceSlug || r.id}</td>
+                <td style={{ padding: '12px 12px', color: '#111827', fontWeight: 700, borderLeft: '1px solid #e5e7eb' }}>
                   {r.order
                     ? (r.order.referenceSlug || r.order.id)
                     : (
@@ -214,11 +214,11 @@ export default function ReturnsDashboard({ showToast }) {
                     )
                   }
                 </td>
-                <td style={{ padding: '12px 16px', color: '#374151', borderLeft: '1px solid #e5e7eb' }}>
+                <td style={{ padding: '12px 12px', color: '#374151', borderLeft: '1px solid #e5e7eb' }}>
                   <div style={{ fontWeight: 600 }}>{r.user?.name || '—'}</div>
                   <div style={{ fontSize: '11px', color: '#6b7280' }}>{r.user?.email || ''}</div>
                 </td>
-                <td style={{ padding: '12px 16px', borderLeft: '1px solid #e5e7eb' }}>
+                <td style={{ padding: '12px 12px', borderLeft: '1px solid #e5e7eb' }}>
                   <span style={{
                     padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
                     background: r.returnType === 'refund' ? '#eff6ff' : '#f3e8ff',
@@ -227,17 +227,17 @@ export default function ReturnsDashboard({ showToast }) {
                     {TYPE_LABELS[r.returnType] || r.returnType}
                   </span>
                 </td>
-                <td style={{ padding: '12px 16px', color: '#6b7280', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderLeft: '1px solid #e5e7eb' }} title={r.reason}>
+                <td style={{ padding: '12px 12px', color: '#6b7280', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderLeft: '1px solid #e5e7eb' }} title={r.reason}>
                   {r.reason ? r.reason.replace(/_/g, ' ') : '—'}
                 </td>
-                <td style={{ padding: '12px 16px', borderLeft: '1px solid #e5e7eb' }}><StatusBadge status={r.status} /></td>
-                <td style={{ padding: '12px 16px', color: '#111827', fontWeight: 600, borderLeft: '1px solid #e5e7eb' }}>
+                <td style={{ padding: '12px 12px', borderLeft: '1px solid #e5e7eb' }}><StatusBadge status={r.status} /></td>
+                <td style={{ padding: '12px 12px', color: '#111827', fontWeight: 600, borderLeft: '1px solid #e5e7eb' }}>
                   {r.refund?.refundAmount ? `₹${parseFloat(r.refund.refundAmount).toFixed(2)}` : '—'}
                 </td>
-                <td style={{ padding: '12px 16px', color: '#6b7280', whiteSpace: 'nowrap', borderLeft: '1px solid #e5e7eb' }}>
+                <td style={{ padding: '12px 12px', color: '#6b7280', whiteSpace: 'nowrap', borderLeft: '1px solid #e5e7eb' }}>
                   {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                 </td>
-                <td style={{ padding: '12px 16px', borderLeft: '1px solid #e5e7eb' }}>
+                <td style={{ padding: '12px 12px', borderLeft: '1px solid #e5e7eb' }}>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                     <Link to={`/returns/${r.id}`}
                       style={{
@@ -251,14 +251,14 @@ export default function ReturnsDashboard({ showToast }) {
                     {r.status === 'pending_review' && hasPermission('returns_edit') && (
                       <>
                         <button onClick={() => handleQuickStatus(r.id, 'approved')}
-                          style={{ background: 'var(--success-50)', color: 'var(--success-600)', border: '1px solid var(--success-border)', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
+                          style={{ background: 'var(--success-50)', color: 'var(--success-600)', border: '1px solid var(--success-border)', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
                           onMouseEnter={e => { e.currentTarget.style.background = '#dcfce7'; }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'var(--success-50)'; }}
                         >
                           ✓ Approve
                         </button>
                         <button onClick={() => handleQuickStatus(r.id, 'rejected')}
-                          style={{ background: 'var(--danger-50)', color: 'var(--danger-600)', border: '1px solid var(--danger-border)', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
+                          style={{ background: 'var(--danger-50)', color: 'var(--danger-600)', border: '1px solid var(--danger-border)', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
                           onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'var(--danger-50)'; }}
                         >

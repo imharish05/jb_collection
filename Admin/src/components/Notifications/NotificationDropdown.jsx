@@ -44,6 +44,7 @@ export default function NotificationDropdown({ onClose }) {
   const { items, unreadCount, loading, summary, summaryLoading } =
     useSelector(s => s.notifications);
   const [showSettings, setShowSettings] = useState(false);
+  const [limit, setLimit] = useState(20);
   const ref = useRef(null);
 
   // Handle notification click - redirect based on type
@@ -67,12 +68,18 @@ export default function NotificationDropdown({ onClose }) {
     onClose();
   };
 
-  // Load on mount
+  // Load on mount — fetch 20 so the full unread list is visible
   useEffect(() => {
-    dispatch(fetchNotifications(5));
+    dispatch(fetchNotifications(20));
     dispatch(fetchInventorySummary());
     dispatch(fetchInventorySettings());
   }, []);
+
+  const handleLoadMore = () => {
+    const newLimit = limit + 20;
+    setLimit(newLimit);
+    dispatch(fetchNotifications(newLimit));
+  };
 
   // Close on outside click — but not when the settings modal is open
   useEffect(() => {
@@ -93,7 +100,7 @@ export default function NotificationDropdown({ onClose }) {
     <>
       <div ref={ref} style={{
         position: "absolute", top: "calc(100% + 10px)", right: 0,
-        width: 380, maxHeight: 560, background: "#fff",
+        width: 380, maxHeight: 600, background: "#fff",
         borderRadius: 16, boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
         border: "1px solid #f0f0f0", zIndex: 9999, overflow: "hidden",
         display: "flex", flexDirection: "column",
@@ -222,6 +229,23 @@ export default function NotificationDropdown({ onClose }) {
 
         {/* ── Footer ── */}
         <div style={{ borderTop: "1px solid #f3f4f6", padding: "10px 18px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+
+          {/* Load More — show when fetched items might be less than total unread */}
+          {items.length >= limit && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleLoadMore(); }}
+              disabled={loading}
+              style={{
+                width: "100%", padding: "8px 12px", borderRadius: 8,
+                border: "1px solid #e5e7eb", background: "#f9fafb",
+                color: "#374151", fontSize: 12, fontWeight: 600,
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+            >
+              {loading ? "Loading…" : `Load More (${items.length} shown)`}
+            </button>
+          )}
+
           <button
             onClick={(e) => { e.stopPropagation(); setShowSettings(true); }}
             style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}
