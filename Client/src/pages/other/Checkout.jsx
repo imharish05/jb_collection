@@ -1682,9 +1682,8 @@ const Checkout = () => {
                         : ""
                     }
                   >
-                    {placing ? "Placing Order..." : paymentMethod === "partial_cod"
-                      ? `Continue to Payment · Pay ₹${(shippingInfo?.shippingCharge || 0).toFixed(2)} now`
-                      : `Continue to Payment · ₹${grandTotalWithCOD.toFixed(2)}`
+                    {placing ? "Placing Order..." :
+                      `Continue to Payment · Pay ₹${(paymentMethod === "partial_cod" ? (shippingInfo?.shippingCharge || 0) : grandTotalWithCOD).toFixed(2)} now`
                     }
                   </button>
 

@@ -233,7 +233,8 @@ const add = async (req, res) => {
     const created = [];
     for (const payload of incomingPayloads) {
       const parsedAttributes = parseAttributes(payload.attributes || []);
-      const combinations     = expandToCombinations(parsedAttributes, existingVariants);
+      // Disable database existing variant Cartesian expansion for new standalone additions
+      const combinations     = [parsedAttributes];
 
       for (const combo of combinations) {
         const name = payload.variantName && combinations.length === 1

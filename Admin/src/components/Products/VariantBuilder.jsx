@@ -1,7 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { confirmDelete } from '../../utils/sweetalert';
-import { removeVariant } from '../../redux/services/variantsService';
-import { useDispatch } from 'react-redux';
 
 const KM = {
   orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B',
@@ -56,7 +53,6 @@ const validateVariantImage = (file) => {
 // ── Predefined option types ────────────────────────────────────────────────────
 export const OPTION_PRESETS = {
   'Colour':    ['Red', 'Blue', 'Pink', 'Purple', 'Silver', 'Gold', 'Copper', 'Brass', 'Assorted Colors'],
-  'Color':     ['Red', 'Blue', 'Pink', 'Purple', 'Silver', 'Gold', 'Copper', 'Brass', 'Assorted Colors'],
   'Size':      ['Small', 'Medium', 'Large', '2 inches', '2.2 inches', '2.4 inches', '2.6 inches', '2.8 inches'],
   'Material':  ['Jute', 'Synthetic', 'Silk', 'Nylon', 'Transparent Window', 'Brass', 'Steel', 'Copper', 'Glass', 'Wood', 'Cane'],
   'Design':    ['Ganesha', 'Murugan', 'Lakshmi', 'Vishnu', 'Elephant', 'Horse', 'Garudan', 'Nandhi', 'Krishna', 'Lotus', 'Cow', 'Cow and calf', 'House warming', 'Kolam', 'Puberty', 'Half saree girl', 'Pregnant lady', 'Peacock', 'Mandala', 'Rose', 'Smiley', 'Unicorn', 'Mickey', 'Disney princess', 'Mermaid', 'Kuromi', 'DIY coloring'],
@@ -66,6 +62,13 @@ export const OPTION_PRESETS = {
   'Engraving': [],
   'Print Text': [],
   'Dimensions': [],
+};
+
+export const normalizeOptionKey = (k) => {
+  if (!k) return '';
+  const trimmed = k.trim();
+  if (/^colou?r$/i.test(trimmed)) return 'Colour';
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 };
 
 const OPTION_KEYS = Object.keys(OPTION_PRESETS);
@@ -215,8 +218,12 @@ function SearchableDropdown({ value, options, placeholder, onChange, customLabel
   const [search, setSearch] = useState('');
   const filtered = options.filter(k =>
     k.toLowerCase().includes(search.toLowerCase()) &&
-    !allOtherSelected.includes(k)
+    !allOtherSelected.some(sel => sel.toLowerCase() === k.toLowerCase())
   );
+
+  const normalizedSearch = normalizeOptionKey(search.trim());
+  const isSearchAlreadySelected = allOtherSelected.some(sel => sel.toLowerCase() === normalizedSearch.toLowerCase());
+
   return (
     <div style={{ position: 'relative' }}>
       <div
@@ -238,8 +245,10 @@ function SearchableDropdown({ value, options, placeholder, onChange, customLabel
             onChange={e => setSearch(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter' && search.trim()) {
-                onChange(search.trim());
-                setOpen(false); setSearch('');
+                if (!isSearchAlreadySelected) {
+                  onChange(search.trim());
+                  setOpen(false); setSearch('');
+                }
               }
               if (e.key === 'Escape') setOpen(false);
             }}
@@ -254,10 +263,15 @@ function SearchableDropdown({ value, options, placeholder, onChange, customLabel
                 {k}
               </div>
             ))}
-            {search && !filtered.includes(search.trim()) && (
+            {search && !filtered.includes(search.trim()) && !isSearchAlreadySelected && (
               <div onClick={() => { onChange(search.trim()); setOpen(false); setSearch(''); }}
                 style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: KM.orange, borderTop: `1px solid ${KM.border}` }}>
                 + {customLabel} "{search.trim()}" as custom
+              </div>
+            )}
+            {search && isSearchAlreadySelected && (
+              <div style={{ padding: '8px 12px', fontSize: 12, color: KM.red, background: KM.redLight, borderTop: `1px solid ${KM.border}`, cursor: 'default' }}>
+                ⚠ Option "{normalizedSearch}" already selected
               </div>
             )}
           </div>
@@ -270,8 +284,6 @@ function SearchableDropdown({ value, options, placeholder, onChange, customLabel
 // ── OptionRow — one option type with its values ───────────────────────────────
 function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
   const [valueInput, setValueInput] = useState('');
-  const [inputTypeSearch, setInputTypeSearch] = useState('');
-  const [inputTypeOpen, setInputTypeOpen] = useState(false);
   const [customInputTypes, setCustomInputTypes] = useState([]);
   const inputRef = useRef();
   const isColour = isColourKey(option.key);
@@ -294,21 +306,6 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
   };
 
   const removeValue = (idx) => onChange({ ...option, values: option.values.filter((_, i) => i !== idx) });
-
-  const toggleOpenChoice = (checked) => {
-    // Default inputType: 'Text' for known text-type keys, 'Color' for colour-like keys, else 'Text'
-    const defaultInputType = isColourKey(option.key) ? 'Color' : 'Text';
-    onChange({
-      ...option,
-      isOpenChoice: checked,
-      inputType: option.inputType || defaultInputType,
-      renderAs: getRenderAs(option.inputType || defaultInputType),
-      label: option.label || '',
-      hint: option.hint || '',
-      customListValues: option.customListValues || [],
-      values: checked ? [] : option.values,
-    });
-  };
 
   const updateOpenChoiceField = (field, val) => {
     const updated = { ...option, [field]: val };
@@ -345,7 +342,7 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
             options={OPTION_KEYS}
             placeholder="Select type…"
             allOtherSelected={allOtherKeys}
-            onChange={(k) => onChange({ ...option, key: k, values: [], isOpenChoice: false })}
+            onChange={(k) => onChange({ ...option, key: normalizeOptionKey(k), values: [], isOpenChoice: false })}
           />
         </div>
 
@@ -1128,7 +1125,7 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
 }
 
 // ── AttributeRow export (kept for Variants.js standalone admin page) ──────────
-export function AttributeRow({ attr, onChange, onRemove, isOnly }) {
+export function AttributeRow({ attr, onChange, onRemove, isOnly, allOtherSelected = [] }) {
   const preset = OPTION_PRESETS[attr.key];
   const [keyOpen, setKeyOpen] = useState(false);
   const [keySearch, setKeySearch] = useState('');
@@ -1152,6 +1149,14 @@ export function AttributeRow({ attr, onChange, onRemove, isOnly }) {
     );
   }
 
+  const normalizedSearch = normalizeOptionKey(keySearch.trim());
+  const isSearchAlreadySelected = allOtherSelected.some(sel => sel.toLowerCase() === normalizedSearch.toLowerCase());
+
+  const filteredKeys = OPTION_KEYS.filter(k => 
+    k.toLowerCase().includes(keySearch.toLowerCase()) &&
+    !allOtherSelected.some(sel => sel.toLowerCase() === k.toLowerCase())
+  );
+
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', width: '100%' }}>
       <div style={{ flex: '0 0 160px', position: 'relative' }}>
@@ -1165,21 +1170,34 @@ export function AttributeRow({ attr, onChange, onRemove, isOnly }) {
         {keyOpen && (
           <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, width: 220, background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', marginTop: 4, overflow: 'hidden' }}>
             <input autoFocus style={{ ...inp, borderRadius: 0, borderWidth: '0 0 1px 0' }} placeholder="Search or type…" value={keySearch} onChange={e => setKeySearch(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && keySearch.trim()) { onChange({ ...attr, key: keySearch.trim(), value: '', customValue: '' }); setKeyOpen(false); setKeySearch(''); } if (e.key === 'Escape') setKeyOpen(false); }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && keySearch.trim()) {
+                  if (!isSearchAlreadySelected) {
+                    onChange({ ...attr, key: normalizeOptionKey(keySearch.trim()), value: '', customValue: '' });
+                    setKeyOpen(false); setKeySearch('');
+                  }
+                }
+                if (e.key === 'Escape') setKeyOpen(false);
+              }}
             />
             <div style={{ maxHeight: 180, overflowY: 'auto' }}>
-              {OPTION_KEYS.filter(k => k.toLowerCase().includes(keySearch.toLowerCase())).map(k => (
-                <div key={k} onClick={() => { onChange({ ...attr, key: k, value: '', customValue: '' }); setKeyOpen(false); setKeySearch(''); }}
+              {filteredKeys.map(k => (
+                <div key={k} onClick={() => { onChange({ ...attr, key: normalizeOptionKey(k), value: '', customValue: '' }); setKeyOpen(false); setKeySearch(''); }}
                   style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, background: attr.key === k ? KM.blueFaint : 'transparent', color: attr.key === k ? KM.blue : KM.text }}
                   onMouseEnter={e => { if (attr.key !== k) e.currentTarget.style.background = KM.bg; }}
                   onMouseLeave={e => { if (attr.key !== k) e.currentTarget.style.background = 'transparent'; }}>
                   {k}
                 </div>
               ))}
-              {keySearch && !OPTION_KEYS.includes(keySearch.trim()) && (
-                <div onClick={() => { onChange({ ...attr, key: keySearch.trim(), value: '', customValue: '' }); setKeyOpen(false); setKeySearch(''); }}
+              {keySearch && !OPTION_KEYS.some(k => k.toLowerCase() === keySearch.trim().toLowerCase()) && !isSearchAlreadySelected && (
+                <div onClick={() => { onChange({ ...attr, key: normalizeOptionKey(keySearch.trim()), value: '', customValue: '' }); setKeyOpen(false); setKeySearch(''); }}
                   style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: KM.orange, borderTop: `1px solid ${KM.border}` }}>
                   + Use "{keySearch.trim()}"
+                </div>
+              )}
+              {keySearch && isSearchAlreadySelected && (
+                <div style={{ padding: '8px 12px', fontSize: 12, color: KM.red, background: KM.redLight, borderTop: `1px solid ${KM.border}`, cursor: 'default' }}>
+                  ⚠ Already selected
                 </div>
               )}
             </div>

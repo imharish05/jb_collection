@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import toast from 'react-hot-toast';
 import DataTable from '../DataTable/DataTable';
 import { fetchVariants, createVariant, editVariant, removeVariant } from '../../redux/services/variantsService';
 import { fetchProducts } from '../../redux/services/productsService';
-import VariantBuilder, { renderVariantLabel } from '../Products/VariantBuilder';
+import VariantBuilder, { renderVariantLabel, AttributeRow, normalizeOptionKey } from '../Products/VariantBuilder';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
 
@@ -58,22 +57,22 @@ const validateProductImageDimensions = (file) => {
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const { width, height } = img;
-        const actualRatio = width / height;
-        const expectedRatio = PRODUCT_IMAGE_DIMENSIONS.aspectRatio;
-        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
-        if (ratioDiff > PRODUCT_IMAGE_DIMENSIONS.tolerance) {
-          resolve({
-            valid: false,
-            error: `Incorrect aspect ratio. Use 5:6 (${PRODUCT_IMAGE_DIMENSIONS.width}×${PRODUCT_IMAGE_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
-            dimensions: { width, height },
-          });
-          return;
-        }
-        resolve({
-          valid: true,
-          dimensions: { width, height },
-        });
+         const { width, height } = img;
+         const actualRatio = width / height;
+         const expectedRatio = PRODUCT_IMAGE_DIMENSIONS.aspectRatio;
+         const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
+         if (ratioDiff > PRODUCT_IMAGE_DIMENSIONS.tolerance) {
+           resolve({
+             valid: false,
+             error: `Incorrect aspect ratio. Use 5:6 (${PRODUCT_IMAGE_DIMENSIONS.width}×${PRODUCT_IMAGE_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
+             dimensions: { width, height },
+           });
+           return;
+         }
+         resolve({
+           valid: true,
+           dimensions: { width, height },
+         });
       };
       img.src = e.target.result;
     };
@@ -166,12 +165,11 @@ export default function Variants({ showToast }) {
 
   // For EDIT — single SKU loaded from the row being edited
   const [editSku,  setEditSku]  = useState(null);
-  const [editSkus, setEditSkus] = useState([]);
 
   useEffect(() => {
     dispatch(fetchVariants());
     dispatch(fetchProducts());
-  }, []);
+  }, [dispatch]);
 
   // ── Reset skus when productId changes in add mode ─────────────────────────
   // No pre-seeding — always blank builder regardless of existing variants
@@ -179,6 +177,44 @@ export default function Variants({ showToast }) {
     if (mode !== 'add') return;
     setSkus([]);
   }, [productId, mode]);
+
+  const [existingKeys, setExistingKeys] = useState([]);
+
+  useEffect(() => {
+    if (!productId) {
+      setExistingKeys([]);
+      return;
+    }
+    const productVariants = rows.filter(r => String(r.productId) === String(productId));
+    const keys = new Set();
+    productVariants.forEach(v => {
+      const attrs = safeAttrs(v.attributes);
+      attrs.forEach(a => {
+        if (a.key && a.key !== 'Custom Note') {
+          keys.add(normalizeOptionKey(a.key));
+        }
+      });
+    });
+    setExistingKeys([...keys]);
+  }, [productId, rows]);
+
+  const handleEditImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErrors(prev => ({ ...prev, image: null }));
+    validateProductImageDimensions(file).then((result) => {
+      if (!result.valid) {
+        setErrors(prev => ({ ...prev, image: result.error }));
+        e.target.value = null;
+        return;
+      }
+      setEditSku(prev => ({
+        ...prev,
+        imageFile: file,
+        imagePreview: URL.createObjectURL(file)
+      }));
+    });
+  };
 
   // ── Open ADD form ─────────────────────────────────────────────────────────
   const openAdd = () => {
@@ -197,8 +233,10 @@ export default function Variants({ showToast }) {
     setEditingId(v.id);
     setProductId(String(v.productId || ''));
     const sku = variantToSku(v);
+    if (!sku.attributes || sku.attributes.length === 0) {
+      sku.attributes = [{ key: '', value: '', customValue: '' }];
+    }
     setEditSku(sku);
-    setEditSkus([sku]);
     setErrors({});
     setVariantTab('skus');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -209,7 +247,6 @@ export default function Variants({ showToast }) {
     setEditingId(null);
     setSkus([]);
     setEditSku(null);
-    setEditSkus([]);
     setErrors({});
   };
 
@@ -256,15 +293,26 @@ export default function Variants({ showToast }) {
   const validateEdit = () => {
     const next = {};
     if (!productId) next.productId = 'Please select a product';
-    if (!editSkus.length) {
-      next.variantErrors = [['Add at least one attribute']];
-    } else {
-      const variantErrors = validateSkuRows(editSkus);
-      if (variantErrors.some(list => list.length)) {
-        next.variantErrors = variantErrors;
-        setVariantTab('skus');
-      }
-    }
+    if (!editSku) return false;
+
+    const mrp = Number(editSku.mrp);
+    const salesPrice = Number(editSku.salesPrice);
+    const stock = Number(editSku.stock);
+    const hasAttribute = editSku.attributes?.some(a => a.key && a.value);
+
+    if (!hasAttribute) next.attributes = 'Add at least one attribute';
+    if (!editSku.mrp) next.mrp = 'Enter MRP';
+    else if (Number.isNaN(mrp) || mrp <= 0) next.mrp = 'MRP must be greater than 0';
+
+    if (!editSku.salesPrice) next.salesPrice = 'Enter sales price';
+    else if (Number.isNaN(salesPrice) || salesPrice <= 0) next.salesPrice = 'Sales price must be greater than 0';
+    else if (!Number.isNaN(mrp) && mrp > 0 && salesPrice > mrp) next.salesPrice = 'Sales price cannot be greater than MRP';
+
+    if (editSku.stock === '' || editSku.stock === undefined || editSku.stock === null) next.stock = 'Enter stock';
+    else if (Number.isNaN(stock) || stock < 0) next.stock = 'Stock cannot be negative';
+
+    if (!editSku.imagePreview && !editSku.imageFile) next.image = 'Upload a variant image';
+
     setErrors(next);
     return !Object.keys(next).length;
   };
@@ -325,62 +373,35 @@ export default function Variants({ showToast }) {
   const handleEdit = async (e) => {
     e.preventDefault();
     if (!validateEdit()) return;
-    if (!(await validateImageDimensions(editSkus))) {
-      showToast.error('One or more variant images have invalid dimensions');
-      return;
+    
+    if (editSku.imageFile) {
+      const result = await validateProductImageDimensions(editSku.imageFile);
+      if (!result.valid) {
+        showToast.error(`Image: ${result.error}`);
+        return;
+      }
     }
 
-    const s = editSkus[0];
-    const attrs = s.combo?.length
-      ? s.combo.map(c => ({ key: c.key, value: c.value }))
-      : (s.attributes || []).filter(a => a.key && a.value);
-
-    const tid = showToast.loading(
-      editSkus.length > 1
-        ? `Updating variant + adding ${editSkus.length - 1} new…`
-        : 'Updating variant…'
-    );
+    const tid = showToast.loading('Updating variant…');
     try {
-      // Always update the original variant (editSkus[0])
+      const attrs = (editSku.attributes || []).filter(a => a.key && a.value);
+      const variantName = attrs.map(a => `${a.key}: ${a.value}`).join(' · ') || 'Default';
+
       await dispatch(editVariant({
         id: editingId,
         data: {
           productId,
-          variantName: s.variantName,
-          mrp:         s.mrp,
-          salesPrice:  s.salesPrice,
-          stock:       s.stock,
-          status:      s.status || 'Active',
+          variantName,
+          mrp:         editSku.mrp,
+          salesPrice:  editSku.salesPrice,
+          stock:       editSku.stock,
+          status:      editSku.status || 'Active',
           attributes:  attrs,
-          imageFile:   s.imageFile || undefined,
+          imageFile:   editSku.imageFile || undefined,
         },
       }));
 
-      // If the user added a new option value in the Options tab, extra SKUs were generated
-      if (editSkus.length > 1) {
-        for (const newSku of editSkus.slice(1)) {
-          const newAttrs = newSku.combo?.length
-            ? newSku.combo.map(c => ({ key: c.key, value: c.value }))
-            : (newSku.attributes || []).filter(a => a.key && a.value);
-          await dispatch(createVariant({
-            productId,
-            variantName: newSku.variantName,
-            mrp:         newSku.mrp        || s.mrp,
-            salesPrice:  newSku.salesPrice || s.salesPrice,
-            stock:       newSku.stock      ?? 0,
-            status:      newSku.status     || 'Active',
-            attributes:  newAttrs,
-            imageFile:   newSku.imageFile  || undefined,
-          }));
-        }
-      }
-
-      showToast.success(
-        editSkus.length > 1
-          ? `Variant updated + ${editSkus.length - 1} new variant${editSkus.length > 2 ? 's' : ''} created!`
-          : 'Variant updated!',
-        tid
-      );
+      showToast.success('Variant updated!', tid);
       closeForm();
       dispatch(fetchVariants());
     } catch (err) {
@@ -455,6 +476,21 @@ export default function Variants({ showToast }) {
                   {products.map(p => <option key={p.id} value={p.id}>{p.name || p.productName}</option>)}
                 </select>
                 <ErrorMsg field="productId" />
+                {existingKeys.length > 0 && (
+                  <div style={{
+                    padding: '10px 14px',
+                    background: '#FFFBEB',
+                    border: '1px solid #F59E0B',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    color: '#B45309',
+                    fontWeight: 500,
+                    marginTop: 8,
+                    lineHeight: 1.4
+                  }}>
+                    💡 <strong>Note:</strong> There is already variants with the difference in {existingKeys.join(', ')}. The new variants will be added as separate options without affecting or merging with the existing ones.
+                  </div>
+                )}
               </div>
 
               {/* VariantBuilder — blank matrix, no existingOptions seeding */}
@@ -482,7 +518,7 @@ export default function Variants({ showToast }) {
       )}
 
       {/* ── EDIT form ─────────────────────────────────────────────────────── */}
-      {mode === 'edit' && editSkus.length > 0 && (
+      {mode === 'edit' && editSku && (
         <div style={formCard}>
           <div style={formHeader}>
             <div style={headerIcon}>✏</div>
@@ -507,23 +543,104 @@ export default function Variants({ showToast }) {
                 <ErrorMsg field="productId" />
               </div>
 
-              {/* VariantBuilder — opens on SKUs tab, shows the single variant card */}
-              <VariantBuilder
-                key={`edit-${editingId}`}
-                variants={editSkus}
-                errors={errors.variantErrors || editSkus.map(() => [])}
-                tab={variantTab}
-                onTabChange={setVariantTab}
-                onChange={(updated) => {
-                  setEditSkus(updated);
-                  if (updated[0]) setEditSku(updated[0]);
-                }}
-              />
-              {errors.variantErrors && (
-                <div style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8 }}>
-                  ⚠ One or more variants are incomplete — switch to the <strong>📦 SKUs</strong> tab to fix them.
+              {/* Variant Details Fields */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>MRP (₹) *</label>
+                  <input
+                    style={inputStyle}
+                    type="number" step="0.01" min="0" required
+                    value={editSku.mrp}
+                    onChange={e => setEditSku({ ...editSku, mrp: e.target.value })}
+                  />
+                  <ErrorMsg field="mrp" />
                 </div>
-              )}
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Sale Price (₹) *</label>
+                  <input
+                    style={inputStyle}
+                    type="number" step="0.01" min="0" required
+                    value={editSku.salesPrice}
+                    onChange={e => setEditSku({ ...editSku, salesPrice: e.target.value })}
+                  />
+                  <ErrorMsg field="salesPrice" />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Stock *</label>
+                  <input
+                    style={inputStyle}
+                    type="number" min="0" required
+                    value={editSku.stock}
+                    onChange={e => setEditSku({ ...editSku, stock: e.target.value })}
+                  />
+                  <ErrorMsg field="stock" />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Status *</label>
+                  <select style={inputStyle} value={editSku.status} onChange={e => setEditSku({ ...editSku, status: e.target.value })}>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+                
+                {/* Variant Image Upload */}
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Variant Image *</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={inputStyle}
+                    onChange={handleEditImageChange}
+                  />
+                  {editSku.imagePreview && (
+                    <div style={{ marginTop: 8, position: 'relative', width: 80, height: 96 }}>
+                      <img src={editSku.imagePreview} alt="Preview" style={{ width: 80, height: 96, objectFit: 'cover', borderRadius: 6, border: '1px solid #ccc' }} />
+                    </div>
+                  )}
+                  <ErrorMsg field="image" />
+                </div>
+              </div>
+
+              {/* Attributes Section */}
+              <div style={{ marginTop: 12 }}>
+                <label style={{ ...labelStyle, marginBottom: 8, display: 'block' }}>Variant Attributes</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {(editSku.attributes || []).map((attr, idx) => (
+                    <AttributeRow
+                      key={idx}
+                      attr={attr}
+                      allOtherSelected={(editSku.attributes || []).filter((_, i) => i !== idx).map(a => a.key).filter(Boolean)}
+                      onChange={(updatedAttr) => {
+                        const nextAttrs = [...editSku.attributes];
+                        nextAttrs[idx] = updatedAttr;
+                        setEditSku({ ...editSku, attributes: nextAttrs });
+                      }}
+                      onRemove={() => {
+                        const nextAttrs = editSku.attributes.filter((_, i) => i !== idx);
+                        setEditSku({ ...editSku, attributes: nextAttrs });
+                      }}
+                      isOnly={editSku.attributes.length <= 1}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextAttrs = [...(editSku.attributes || []), { key: '', value: '', customValue: '' }];
+                    setEditSku({ ...editSku, attributes: nextAttrs });
+                  }}
+                  style={{
+                    marginTop: 8, padding: '6px 12px', background: 'none', border: `1px dashed ${KM.teal}`,
+                    color: KM.teal, borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600
+                  }}
+                >
+                  + Add Attribute
+                </button>
+                <ErrorMsg field="attributes" />
+              </div>
 
               <button type="submit" style={submitBtn}>Update Variant</button>
             </form>
