@@ -497,7 +497,7 @@ exports.validateCombo = async (req, res) => {
 // body: { childComboId, quantity, selections (mix_match only) }
 exports.addComboToCart = async (req, res) => {
   try {
-    const { childComboId, quantity = 1, selections } = req.body;
+    const { childComboId, quantity = 1, selections, customisationDetails } = req.body;
     const userId = req.user.id;
 
     const child = await ChildCombo.findByPk(childComboId, {
@@ -638,6 +638,7 @@ exports.addComboToCart = async (req, res) => {
         price: comboPrice,
         isCombo: true,
       },
+      customisationDetails: customisationDetails || null,
     });
 
     res.status(201).json({

@@ -91,7 +91,7 @@ const salesReport = async (req, res) => {
       }
 
       return {
-        "Order ID":         o.id,
+        "Order ID":         o.referenceSlug || o.id,
         "Customer Name":    o.User?.name  || "Guest",
         "Customer Email":   o.User?.email || "—",
         "Order Date":       fmtDate(o.createdAt),
@@ -375,7 +375,7 @@ const successfulPayments = async (req, res) => {
       const o = dbOrderId ? orderMap[dbOrderId] : null;
       return {
         "Payment ID":       p.id,
-        "Order ID":         dbOrderId || "—",
+        "Order ID":         o?.referenceSlug || dbOrderId || "—",
         "Customer Name":    o?.User?.name  || "Guest",
         "Customer Email":   o?.User?.email || "—",
         "Customer Phone":   o?.User?.phone || "—",
@@ -428,7 +428,7 @@ const failedPayments = async (req, res) => {
       const reason = p.error_description || p.error_reason || p.description || "Payment failed";
       return {
         "Payment ID":       p.id,
-        "Order ID":         dbOrderId || "—",
+        "Order ID":         o?.referenceSlug || dbOrderId || "—",
         "Customer Name":    o?.User?.name  || "Guest",
         "Customer Email":   o?.User?.email || "—",
         "Customer Phone":   o?.User?.phone || "—",
@@ -503,7 +503,7 @@ const paymentReport = async (req, res) => {
       const codDue = o.codAmount ? parseFloat(o.codAmount) : (!isPrepaid ? parseFloat(o.totalAmount || 0) - rzpPaid : 0);
 
       return {
-        "Order ID":         o.id,
+        "Order ID":         o.referenceSlug || o.id,
         "Customer Name":    o.User?.name  || "Guest",
         "Customer Email":   o.User?.email || "—",
         "Payment ID (Razorpay)": o.razorpayPaymentId || "—",

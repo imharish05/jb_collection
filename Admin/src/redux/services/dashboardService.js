@@ -39,7 +39,7 @@ export const fetchRecentVariants = () => async (dispatch) => {
 };
 
 export const fetchOrderCounts = () => async (dispatch) => {
-    const statuses = ["new", "confirmed", "shipped", "delivery", "delivered", "cancelled"];
+    const statuses = ["new", "confirmed", "shipped", "delivery", "delivered", "cancelled", "returned"];
     const results = await Promise.allSettled(statuses.map(s => api.get(`/orders/status/${s}`)));
     const counts = {};
     results.forEach((r, i) => {

@@ -23,6 +23,43 @@ import cogoToast from "cogo-toast";
 import ProductImageGallerySideThumb from "../../components/product/ProductImageGallerySideThumb";
 import { isColourKey, isHexColor } from "../../helpers/product"; // Add this import
 
+const COLOR_MAP = {
+  red: "#e53935", crimson: "#c62828", maroon: "#800000", scarlet: "#FF2400", ruby: "#9B111E",
+  cherry: "#DE3163", carmine: "#960018", orange: "#fb8c00", coral: "#ff7043",
+  tangerine: "#F28500", peach: "#FFCBA4", salmon: "#FA8072", apricot: "#FBCEB1",
+  yellow: "#fdd835", gold: "#ffc107", amber: "#ffb300", lemon: "#FFF44F",
+  canary: "#FFEF00", saffron: "#F4C430", khaki: "#C3B091",
+  green: "#43a047", olive: "#827717", lime: "#cddc39", emerald: "#50C878",
+  forest: "#228B22", sage: "#BCB88A", mint: "#98FF98", moss: "#8A9A5B",
+  chartreuse: "#7FFF00", jade: "#00A36C", teal: "#00897b", cyan: "#00bcd4",
+  turquoise: "#26c6da", aquamarine: "#7FFFD4", seafoam: "#93E9BE", viridian: "#40826D",
+  blue: "#1e88e5", navy: "#1a237e", skyblue: "#29b6f6", "sky blue": "#29b6f6",
+  cobalt: "#0047AB", cerulean: "#007BA7", denim: "#1560BD", "royal blue": "#4169E1",
+  "steel blue": "#4682B4", "powder blue": "#B0E0E6", "baby blue": "#89CFF0",
+  "midnight blue": "#191970", periwinkle: "#CCCCFF",
+  indigo: "#3949ab", purple: "#7b1fa2", violet: "#6a1b9a", lavender: "#b39ddb",
+  magenta: "#8e24aa", lilac: "#C8A2C8", atio: "#DDA0DD", amethyst: "#9966CC",
+  orchid: "#DA70D6", byzantium: "#702963", pink: "#e91e63", rose: "#f48fb1",
+  blush: "#DE5D83", "hot pink": "#FF69B4", fuchsia: "#FF00FF", flamingo: "#FC8EAC",
+  "rose gold": "#b76e79", bubblegum: "#FFC1CC", carnation: "#FF7BA9",
+  white: "#ffffff", ivory: "#fffff0", cream: "#fffde7", "off-white": "#FAF9F6",
+  snow: "#FFFAFA", silver: "#bdbdbd", grey: "#757575", gray: "#757575",
+  charcoal: "#424242", black: "#212121", jet: "#343434", onyx: "#353839",
+  ash: "#B2BEB5", brown: "#795548", tan: "#a1887f", beige: "#f5f5dc",
+  sienna: "#A0522D", mahogany: "#C04000", chestnut: "#954535", coffee: "#6F4E37",
+  bronze: "#CD7F32",
+  multicolour: "linear-gradient(135deg,#f06,#0cf,#fc0)",
+  all: "linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff)",
+};
+const LIGHT_COLORS = new Set(["white","ivory","cream","yellow","lime","gold","amber","silver","bronze","lemon","canary"]);
+
+function toHex(name) {
+  if (!name) return null;
+  const l = name.trim().toLowerCase();
+  if (l.startsWith("#")) return l;
+  return COLOR_MAP[l] || null;
+}
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function parseProductImages(image) {
@@ -483,7 +520,21 @@ const ComboDetailPage = () => {
   const [addingCart, setAddingCart] = useState(false);
   const [activeChild, setActiveChild] = useState(null); // selected child combo tab
 
+  const [customisationDetails, setCustomisationDetails] = useState({});
+  const [availableFonts, setAvailableFonts] = useState([]);
+  const [customisationTemplates, setCustomisationTemplates] = useState([]);
+  const [errors, setErrors] = useState({});
+
   const child = activeChild || currentCombo?.children?.[0];
+
+  // Mix & Match state for this child (must be declared before other memos/hooks)
+  const mmState    = child ? (mixMatchSelections?.[child.id] || { selections: [] }) : { selections: [] };
+  const selections = mmState.selections || [];
+  const totalSel   = selections.reduce((s, i) => s + (parseInt(i.quantity) || 1), 0);
+  const minQty     = child?.minQty || 1;
+  const maxQty     = child?.maxQty || Infinity;
+  const canAdd     = totalSel >= minQty;
+
   const comboCartQty = useMemo(() => {
     if (!child || !cartItems) return 0;
     const match = cartItems.find(
@@ -517,8 +568,6 @@ const ComboDetailPage = () => {
 
   const mixMatchMaxQty = useMemo(() => {
     if (!child || child.type !== "mix_match") return Infinity;
-    const mmState = mixMatchSelections?.[child.id] || { selections: [] };
-    const selections = mmState.selections || [];
     if (!selections.length) return Infinity;
 
     const maxPerSelection = selections.map(sel => {
@@ -535,7 +584,7 @@ const ComboDetailPage = () => {
     });
 
     return Math.min(...maxPerSelection);
-  }, [child, mixMatchSelections]);
+  }, [child, selections]);
 
   const comboMaxQty = child?.type === "fixed" ? fixedMaxQty : mixMatchMaxQty;
 
@@ -549,6 +598,106 @@ const ComboDetailPage = () => {
     if (!child || child.type !== "fixed" || !child.comboProducts?.length) return [];
     return child.comboProducts.filter(cp => isLowStock(cp));
   }, [child]);
+
+  const customisableProductsToRender = useMemo(() => {
+    if (!child || !child.comboProducts) return [];
+    if (child.type === "fixed") {
+      return child.comboProducts
+        .filter(cp => cp.product?.isCustomisable)
+        .map(cp => cp.product);
+    } else {
+      return selections.map(sel => {
+        const cp = child.comboProducts.find(c => String(c.productId) === String(sel.productId));
+        return cp?.product?.isCustomisable ? cp.product : null;
+      }).filter(Boolean);
+    }
+  }, [child, selections]);
+
+  const parsedCustomisationFields = (prod) => {
+    let cf = prod?.customisationFields;
+    if (typeof cf === 'string') {
+      try { return JSON.parse(cf); } catch { return {}; }
+    }
+    return cf || {};
+  };
+
+  const makeComboCustomKey = (productName, fieldKey) => {
+    const cleanName = productName.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    return `${cleanName}_${fieldKey}`;
+  };
+
+  useEffect(() => {
+    api.get('/customisation-fields?active=true')
+      .then(r => {
+        const fields = Array.isArray(r.data) ? r.data : [];
+        const parsed = fields.map(f => {
+          let opts = f.options;
+          if (typeof opts === 'string') {
+            try { opts = JSON.parse(opts); } catch { opts = null; }
+          }
+          return { ...f, options: opts };
+        });
+        setCustomisationTemplates(parsed);
+      })
+      .catch(() => {});
+
+    api.get('/fonts').then(r => setAvailableFonts(r.data || [])).catch(() => {});
+  }, []);
+
+  // Dynamically load Google Font stylesheets
+  useEffect(() => {
+    if (availableFonts && availableFonts.length > 0) {
+      availableFonts.forEach(font => {
+        const fontName = font.name?.trim();
+        if (!fontName) return;
+        const fontId = `google-font-${fontName.replace(/\s+/g, '-').toLowerCase()}`;
+        if (!document.getElementById(fontId)) {
+          const link = document.createElement('link');
+          link.id = fontId;
+          link.rel = 'stylesheet';
+          link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@300;400;500;600;700&display=swap`;
+          document.head.appendChild(link);
+        }
+      });
+    }
+  }, [availableFonts]);
+
+  const validateCustomisations = () => {
+    const next = {};
+    customisableProductsToRender.forEach(prod => {
+      const fieldsConfig = parsedCustomisationFields(prod);
+      const activeFields = customisationTemplates.filter(t => !!fieldsConfig[t.key]);
+      activeFields.forEach(field => {
+        const comboKey = makeComboCustomKey(prod.name, field.key);
+        if (field.isRequired && (!customisationDetails[comboKey] || !String(customisationDetails[comboKey]).trim())) {
+          next[comboKey] = `${field.label} is required for ${prod.name}`;
+        }
+      });
+    });
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const getCleanedCustomisationDetails = () => {
+    const cleaned = {};
+    customisableProductsToRender.forEach(prod => {
+      const fieldsConfig = parsedCustomisationFields(prod);
+      const activeFields = customisationTemplates.filter(t => !!fieldsConfig[t.key]);
+      activeFields.forEach(field => {
+        const comboKey = makeComboCustomKey(prod.name, field.key);
+        if (customisationDetails[comboKey] !== undefined) {
+          cleaned[comboKey] = customisationDetails[comboKey];
+        }
+      });
+    });
+    return cleaned;
+  };
+
+  const ErrorMsg = ({ field }) => errors[field] ? (
+    <div style={{ color: "#e11d48", fontSize: 12, fontWeight: 600, marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
+      <span>⚠</span> {errors[field]}
+    </div>
+  ) : null;
 
   useEffect(() => {
     dispatch(fetchComboById(rootComboId));
@@ -646,14 +795,6 @@ const ComboDetailPage = () => {
   const comboShortDescription = child.shortDescription || child.description || "";
   const comboFullDescription  = child.fullDescription || child.description || child.shortDescription || "";
 
-  // Mix & Match state for this child
-  const mmState    = mixMatchSelections?.[child.id] || { selections: [] };
-  const selections = mmState.selections || [];
-  const totalSel   = selections.reduce((s, i) => s + (parseInt(i.quantity) || 1), 0);
-  const minQty     = child.minQty || 1;
-  const maxQty     = child.maxQty || Infinity;
-  const canAdd     = totalSel >= minQty;
-
   // ── Fixed combo OOS & stock rules ─────────────────────────────────────────
   const fixedOos = child.type === "fixed" && child.comboProducts?.some(cp => isOutOfStock(cp));
 
@@ -667,12 +808,18 @@ const ComboDetailPage = () => {
       cogoToast.warn(`Select at least ${minQty} item${minQty > 1 ? "s" : ""}`, { position: "top-center" });
       return;
     }
+    if (!validateCustomisations()) {
+      cogoToast.error("Please fill in all required customisation fields.", { position: "top-center" });
+      return;
+    }
     setAddingCart(true);
     try {
+      const cleanedCustomDetails = getCleanedCustomisationDetails();
       const res = await addComboToCart({
         childComboId: child.id,
         quantity: qty,
         selections: child.type === "mix_match" ? selections : undefined,
+        customisationDetails: Object.keys(cleanedCustomDetails).length > 0 ? cleanedCustomDetails : undefined,
       });
 
       if (child.type === "mix_match") dispatch(clearMixMatch(child.id));
@@ -727,6 +874,7 @@ const ComboDetailPage = () => {
         childComboId: child.id,
         comboType: child.type,
         selectedProducts,
+        customisationDetails: Object.keys(cleanedCustomDetails).length > 0 ? cleanedCustomDetails : null,
       }));
 
       cogoToast.success("Combo added to cart!", { position: "top-center" });
@@ -751,12 +899,18 @@ const ComboDetailPage = () => {
       cogoToast.warn(`Select at least ${minQty} item${minQty > 1 ? "s" : ""}`, { position: "top-center" });
       return;
     }
+    if (!validateCustomisations()) {
+      cogoToast.error("Please fill in all required customisation fields.", { position: "top-center" });
+      return;
+    }
     setAddingCart(true);
     try {
+      const cleanedCustomDetails = getCleanedCustomisationDetails();
       const res = await addComboToCart({
         childComboId: child.id,
         quantity: qty,
         selections: child.type === "mix_match" ? selections : undefined,
+        customisationDetails: Object.keys(cleanedCustomDetails).length > 0 ? cleanedCustomDetails : undefined,
       });
 
       if (child.type === "mix_match") dispatch(clearMixMatch(child.id));
@@ -806,6 +960,7 @@ const ComboDetailPage = () => {
         childComboId: child.id,
         comboType: child.type,
         selectedProducts,
+        customisationDetails: Object.keys(cleanedCustomDetails).length > 0 ? cleanedCustomDetails : null,
       }));
 
       navigate("/cart");
@@ -981,6 +1136,207 @@ const ComboDetailPage = () => {
                       )}
                     </>
                   )}
+
+                  {/* ── Customisation Fields Panel ── */}
+                  {(() => {
+                    if (customisableProductsToRender.length === 0) return null;
+
+                    return (
+                      <div style={{
+                        margin: '18px 0', padding: '16px 18px',
+                        background: 'linear-gradient(135deg, #fff7ed 0%, #fef0e8 100%)',
+                        borderRadius: 12, border: '1px solid #fed7aa',
+                      }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#9a3412', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+                          🎨 Personalise Your Combo
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                          {customisableProductsToRender.map(prod => {
+                            const fieldsConfig = parsedCustomisationFields(prod);
+                            const activeFields = customisationTemplates.filter(t => !!fieldsConfig[t.key]);
+                            if (activeFields.length === 0) return null;
+
+                            return (
+                              <div key={prod.id} style={{ borderBottom: '1px dashed #fed7aa', paddingBottom: 12 }}>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: '#c2410c', marginBottom: 10 }}>
+                                  {prod.name}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                  {activeFields.map(field => {
+                                    const errorKey = makeComboCustomKey(prod.name, field.key);
+                                    return (
+                                      <div key={field.key}>
+                                        {field.inputType === 'text' && (
+                                          <div>
+                                            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                                              {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
+                                              {field.label}
+                                              {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+                                            </label>
+                                            <input
+                                              type="text"
+                                              placeholder={field.placeholder || "Enter details..."}
+                                              value={customisationDetails[errorKey] || ''}
+                                              onChange={e => setCustomisationDetails(prev => ({ ...prev, [errorKey]: e.target.value }))}
+                                              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                                            />
+                                          </div>
+                                        )}
+
+                                        {field.inputType === 'textarea' && (
+                                          <div>
+                                            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                                              {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
+                                              {field.label}
+                                              {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+                                            </label>
+                                            <textarea
+                                              placeholder={field.placeholder || "Any special instructions..."}
+                                              value={customisationDetails[errorKey] || ''}
+                                              onChange={e => setCustomisationDetails(prev => ({ ...prev, [errorKey]: e.target.value }))}
+                                              rows={2}
+                                              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                                            />
+                                          </div>
+                                        )}
+
+                                        {field.inputType === 'color' && (
+                                          <div>
+                                            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                                              {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
+                                              {field.label}
+                                              {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+                                            </label>
+
+                                            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 4 }}>
+                                              <div style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, overflow: 'hidden', border: '1px solid #d1d5db', cursor: 'pointer', flexShrink: 0 }}>
+                                                <input
+                                                  type="color"
+                                                  value={customisationDetails[errorKey] && customisationDetails[errorKey].startsWith('#') ? customisationDetails[errorKey] : '#f15a24'}
+                                                  onChange={e => setCustomisationDetails(prev => ({ ...prev, [errorKey]: e.target.value }))}
+                                                  style={{ position: 'absolute', top: -5, left: -5, width: 50, height: 50, border: 0, padding: 0, cursor: 'pointer' }}
+                                                />
+                                              </div>
+                                              <input
+                                                type="text"
+                                                placeholder={field.placeholder || "Choose a color or enter code (e.g. #ff0000)"}
+                                                value={customisationDetails[errorKey] || ''}
+                                                onChange={e => setCustomisationDetails(prev => ({ ...prev, [errorKey]: e.target.value }))}
+                                                style={{ flex: 1, padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                                              />
+                                            </div>
+
+                                            {Array.isArray(field.options) && field.options.length > 0 && (
+                                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                                                {field.options.map(opt => {
+                                                  const hexVal = toHex(opt) || opt;
+                                                  const isSelected = customisationDetails[errorKey] === hexVal || customisationDetails[errorKey] === opt;
+                                                  return (
+                                                    <button
+                                                      key={opt}
+                                                      type="button"
+                                                      onClick={() => setCustomisationDetails(prev => ({ ...prev, [errorKey]: hexVal }))}
+                                                      style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 6,
+                                                        padding: '5px 10px',
+                                                        border: isSelected ? '2px solid #F15A24' : '1px solid #d1d5db',
+                                                        borderRadius: 20,
+                                                        background: isSelected ? '#FEF0EB' : '#fff',
+                                                        color: isSelected ? '#F15A24' : '#374151',
+                                                        fontSize: 12,
+                                                        fontWeight: 500,
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                      }}
+                                                    >
+                                                      {toHex(opt) && (
+                                                        <span style={{ width: 12, height: 12, borderRadius: '50%', background: toHex(opt), border: '1px solid rgba(0,0,0,0.1)' }} />
+                                                      )}
+                                                      {opt}
+                                                    </button>
+                                                  );
+                                                })}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+
+                                        {field.inputType === 'font' && (
+                                          <div>
+                                            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                                              {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
+                                              {field.label}
+                                              {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+                                            </label>
+                                            <select
+                                              value={customisationDetails[errorKey] || ''}
+                                              onChange={e => setCustomisationDetails(prev => ({ ...prev, [errorKey]: e.target.value }))}
+                                              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                                            >
+                                              <option value="">-- Select a font --</option>
+                                              {availableFonts.map(f => (
+                                                <option key={f.id} value={f.name} style={{ fontFamily: f.name }}>{f.name}</option>
+                                              ))}
+                                            </select>
+                                            {customisationDetails[errorKey] && (
+                                              <div style={{ marginTop: 6, padding: '6px 10px', background: '#fff', borderRadius: 6, border: '1px solid #e5e7eb', fontFamily: customisationDetails[errorKey], fontSize: 16 }}>
+                                                {(() => {
+                                                  const textField = activeFields.find(f => f.inputType === 'text');
+                                                  const textKey = textField ? makeComboCustomKey(prod.name, textField.key) : null;
+                                                  const previewText = textKey ? (customisationDetails[textKey] || '') : '';
+                                                  return previewText || 'Font Preview';
+                                                })()}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+
+                                        {field.inputType === 'select' && (
+                                          <div>
+                                            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                                              {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
+                                              {field.label}
+                                              {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+                                            </label>
+                                            <select
+                                              value={customisationDetails[errorKey] || ''}
+                                              onChange={e => setCustomisationDetails(prev => ({ ...prev, [errorKey]: e.target.value }))}
+                                              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                                            >
+                                              <option value="">{field.placeholder || "-- Select an option --"}</option>
+                                              {Array.isArray(field.options) && field.options.map(opt => (
+                                                <option key={opt} value={opt}>{opt}</option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                        )}
+
+                                        <ErrorMsg field={errorKey} />
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#9a3412', marginTop: 8, opacity: 0.8 }}>
+                          * Customisation details will be added to your order. Please{' '}
+                          <a
+                            href="https://wa.me/7338814319?text=Hello! I want to enquire about customisation details for my order."
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#9a3412', textDecoration: 'underline', fontWeight: 600 }}
+                          >
+                            Contact our team via WhatsApp
+                          </a>{' '}
+                          for detailed information.
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="pdp-info__actions pdp-info__actions--combo" style={{ marginTop: 24 }}>
                     {/* Qty stepper — shown for both fixed & mix_match unless out of stock */}

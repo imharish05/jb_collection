@@ -336,7 +336,14 @@ useEffect(() => {
 {(() => {
   let custom = item.customisationDetails;
   if (typeof custom === 'string') {
-    try { custom = JSON.parse(custom); } catch { custom = null; }
+    try {
+      custom = JSON.parse(custom);
+      if (typeof custom === 'string') {
+        custom = JSON.parse(custom);
+      }
+    } catch {
+      custom = null;
+    }
   }
   if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
     return (

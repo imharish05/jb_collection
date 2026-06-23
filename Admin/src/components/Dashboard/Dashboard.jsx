@@ -203,6 +203,7 @@ export default function Dashboard() {
     { label: 'Out for Delivery', count: orderCounts.delivery,   color: '#8252e9', bg: '#f0e1ff' },
     { label: 'Delivered',        count: orderCounts.delivered,  color: '#45b369', bg: '#daf0e1' },
     { label: 'Cancelled',        count: orderCounts.cancelled,  color: '#ef4444', bg: '#fef2f2' },
+    // { label: 'Refunded',         count: orderCounts.returned,   color: '#6b7280', bg: '#f3f4f6' },
   ];
 
   return (
@@ -550,7 +551,7 @@ export default function Dashboard() {
       )}
 
       {/* ── Returns & Refunds Panel ── */}
-      {hasPermission('returns_view') && (
+      {/* {hasPermission('returns_view') && (
         <div style={{
           background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '16px',
           padding: '24px', marginBottom: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.04)'
@@ -585,7 +586,7 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Export Options Modal */}
       {showExportModal && (

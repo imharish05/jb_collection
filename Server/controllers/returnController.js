@@ -206,7 +206,7 @@ const cancelOrder = async (req, res, next) => {
       return res.status(400).json({ message: "Cancellation window expired (24 hours from placement)" });
 
     // Status check
-    const nonCancellableStatuses = ["shipped", "processing", "delivered", "cancelled"];
+    const nonCancellableStatuses = ["confirmed", "shipped", "processing", "delivered", "cancelled"];
     if (nonCancellableStatuses.includes(order.status))
       return res.status(400).json({ message: "Order cannot be cancelled at this stage" });
 
@@ -410,6 +410,17 @@ const updateReturnStatus = async (req, res, next) => {
       }
     }
 
+    if (status === "refund_completed" || status === "replacement_delivered") {
+      try {
+        if (returnRequest.order) {
+          returnRequest.order.status = "returned";
+          await returnRequest.order.save();
+        }
+      } catch (orderErr) {
+        console.error("[Return Status Update] Failed to update parent order status:", orderErr.message);
+      }
+    }
+
     // Send email if status changed
     if (status) {
       try {
@@ -507,6 +518,15 @@ const approveRefund = async (req, res, next) => {
       ? 'refund_completed'
       : 'refund_initiated';
     await returnRequest.save();
+
+    if (returnRequest.status === "refund_completed") {
+      try {
+        order.status = "returned";
+        await order.save();
+      } catch (orderErr) {
+        console.error("[Approve Refund] Failed to update parent order status:", orderErr.message);
+      }
+    }
 
     // Email
     try {

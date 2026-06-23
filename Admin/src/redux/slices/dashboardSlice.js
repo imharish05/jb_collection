@@ -8,7 +8,7 @@ const dashboardSlice = createSlice({
         recentVariants: [],
         thresholds: { high: 51, medium: 11, low: 1 },
         totalStock: "-",
-        orderCounts: { new: 0, confirmed: 0, shipped: 0, delivery: 0, delivered: 0, cancelled: 0 },
+        orderCounts: { new: 0, confirmed: 0, shipped: 0, delivery: 0, delivered: 0, cancelled: 0, returned: 0 },
         monthlyData: [],
         monthlySalesData: [],
         quarterlySalesData: [],

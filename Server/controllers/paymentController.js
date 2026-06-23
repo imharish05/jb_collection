@@ -413,6 +413,12 @@ const handlePaymentWebhook = async (req, res, next) => {
               { where: { id: refundRecord.returnId } }
             );
           }
+          if (refundRecord.orderId) {
+            await Order.update(
+              { status: 'returned' },
+              { where: { id: refundRecord.orderId } }
+            );
+          }
         }
       }
       return res.status(200).json({ received: true });

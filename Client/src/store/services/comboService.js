@@ -25,7 +25,7 @@ export const validateCombo = async ({ childComboId, selections }) => {
   }
 };
 
-export const addComboToCart = async ({ childComboId, quantity = 1, selections }) => {
+export const addComboToCart = async ({ childComboId, quantity = 1, selections, customisationDetails }) => {
   const state = store.getState();
   if (!state.auth?.isAuthenticated) {
     cogoToast.warn("Please login to add items to cart", { position: "top-center" });
@@ -34,7 +34,7 @@ export const addComboToCart = async ({ childComboId, quantity = 1, selections })
     return null;
   }
   try {
-    const res = await api.post("/combos/cart/add", { childComboId, quantity, selections });
+    const res = await api.post("/combos/cart/add", { childComboId, quantity, selections, customisationDetails });
     return res.data;
   } catch (err) {
     const msg = err.response?.data?.errors?.join(", ") || err.response?.data?.message || "Failed to add combo to cart";

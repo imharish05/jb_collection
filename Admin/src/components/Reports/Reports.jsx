@@ -32,7 +32,7 @@ const ORDER_STATUS_LABEL = {
   processing: 'Out for Delivery',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
-  returned: 'Returned',
+  returned: 'Refunded',
 };
 
 const STATUS_COLORS = {
@@ -131,6 +131,12 @@ export default function Reports() {
     const map = {};
     filteredOrders.forEach(o => {
       (o.items || o.orderItems || []).forEach(item => {
+        if (categoryFilter !== 'all') {
+          const product = (products || []).find(p => String(p.id) === String(item.productId));
+          if (!product || String(product.categoryId) !== String(categoryFilter)) {
+            return;
+          }
+        }
         const key = item.productId ?? item.productName;
         if (!map[key]) {
           map[key] = { id: key, name: item.productName || 'Unknown product', units: 0, revenue: 0 };
@@ -142,7 +148,7 @@ export default function Reports() {
       });
     });
     return Object.values(map).sort((a, b) => b.units - a.units);
-  }, [filteredOrders]);
+  }, [filteredOrders, categoryFilter, products]);
 
   // ── Customers: orders count / spend, derived from filtered orders ──
   const customerRows = useMemo(() => {
@@ -158,11 +164,15 @@ export default function Reports() {
         stats[email].lastOrder = created;
       }
     });
-    return (Array.isArray(customers) ? customers : []).map(c => {
+    let list = (Array.isArray(customers) ? customers : []).map(c => {
       const s = stats[c.email] || { orders: 0, spend: 0, lastOrder: null };
       return { ...c, ordersCount: s.orders, spend: s.spend, lastOrder: s.lastOrder };
     });
-  }, [customers, filteredOrders]);
+    if (dateRange !== 'all') {
+      list = list.filter(c => c.ordersCount > 0);
+    }
+    return list;
+  }, [customers, filteredOrders, dateRange]);
 
   // ── Products: filtered by category, for the report dropdown count card ──
   const filteredProducts = useMemo(() => {

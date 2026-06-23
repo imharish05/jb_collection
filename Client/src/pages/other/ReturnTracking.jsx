@@ -78,7 +78,7 @@ const ReturnTracking = () => {
       refund_initiated: "Refund Initiated",
       refund_completed: "Refund Completed",
       replacement_shipped: "Replacement Shipped",
-      replacement_delivered: "Replacement Delivered",
+      replacement_delivered: "Replacement Delivered (Order Completed)",
     };
     return labels[status] || status;
   };
@@ -228,7 +228,7 @@ const ReturnTracking = () => {
                               <p className="return-stepper-title">
                                 {stage.key === "refund_completed"
                                   ? returnReq.returnType === "replacement"
-                                    ? "Replacement Delivered"
+                                    ? "Replacement Delivered (Order Completed)"
                                     : "Refund Completed"
                                   : stage.key === "refund_initiated"
                                   ? returnReq.returnType === "replacement"

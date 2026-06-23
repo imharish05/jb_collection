@@ -146,7 +146,7 @@ const OrderDetails = () => {
     if (!order) return null;
     const hours = hoursSince(order.createdAt);
     const orderStatusLower = order.status?.toLowerCase();
-    const nonCancellable = ["shipped", "processing", "delivered", "cancelled"];
+    const nonCancellable = ["confirmed", "shipped", "processing", "delivered", "cancelled"];
     
     // Check if customised items in production
     const hasCustom = order.items?.some(i => i.product?.isCustomisable || (i.customisationDetails && Object.keys(i.customisationDetails).length > 0));
@@ -494,6 +494,38 @@ const couponDiscount =
                       {renderCancelButton()}
                     </div>
 
+                    {order.shiprocketShipmentId && ["shipped", "processing", "delivery", "delivered"].includes(order.status?.toLowerCase()) && (
+                      <div className="side-card info-summary" style={{ marginTop: "12px", border: "1px solid #bfdbfe", background: "#f0f7ff" }}>
+                        <div className="info-group" style={{ margin: 0 }}>
+                          <label style={{ color: "#1e3a8a", fontWeight: 700, fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                            🚚 Shipping & Tracking
+                          </label>
+                          <p style={{ fontSize: "13px", color: "#374151", marginTop: "6px", marginBottom: "8px" }}>
+                            Courier Partner: <strong>{order.courier || "Shiprocket"}</strong>
+                          </p>
+                          <a
+                            href={`https://shiprocket.co/tracking/${order.shiprocketShipmentId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              backgroundColor: "#0d1b40",
+                              color: "#fff",
+                              padding: "8px 16px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              borderRadius: "6px",
+                              display: "inline-block",
+                              textDecoration: "none",
+                              textAlign: "center",
+                              width: "100%"
+                            }}
+                          >
+                            Track Order Package
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="side-card info-summary">
                       <div className="info-group">
                         <label>Delivery Address</label>
@@ -569,12 +601,19 @@ const couponDiscount =
                                 <div className="prod-info">
                                   <h6>{cleanProductName(item.productName)}</h6>
                                   <p>{getVariantLabel(item)}</p>
-                                  {(() => {
-                                    let custom = item.customisationDetails;
-                                    if (typeof custom === 'string') {
-                                      try { custom = JSON.parse(custom); } catch { custom = null; }
-                                    }
-                                    if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
+                                   {(() => {
+                                     let custom = item.customisationDetails;
+                                     if (typeof custom === 'string') {
+                                       try {
+                                         custom = JSON.parse(custom);
+                                         if (typeof custom === 'string') {
+                                           custom = JSON.parse(custom);
+                                         }
+                                       } catch {
+                                         custom = null;
+                                       }
+                                     }
+                                     if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
                                       return (
                                         <div style={{
                                           marginTop: 6,
