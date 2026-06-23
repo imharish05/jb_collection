@@ -245,49 +245,116 @@ export const getIndividualTags = products => {
 
 export const getIndividualColors = products => {
   let productColors = [];
-  products &&
-    products.map(product => {
-      return (
-        product.variation &&
-        product.variation.map(single => {
-          return productColors.push(single.color);
-        })
-      );
+  if (Array.isArray(products)) {
+    products.forEach(product => {
+      if (Array.isArray(product.variation)) {
+        product.variation.forEach(single => {
+          if (single.color) productColors.push(single.color);
+        });
+      }
+      const variants = Array.isArray(product.Variants) ? product.Variants
+                     : Array.isArray(product.variants) ? product.variants
+                     : [];
+      variants.forEach(v => {
+        let attrs = v.attributes;
+        if (typeof attrs === "string") {
+          try { attrs = JSON.parse(attrs); } catch { attrs = null; }
+        }
+        if (Array.isArray(attrs)) {
+          attrs.forEach(a => {
+            if (isColourKey(a.key) && a.value) productColors.push(a.value);
+          });
+        } else if (v.variantName) {
+          const parts = String(v.variantName).split(/\s*(?:·|\||,|\/)\s*/);
+          parts.forEach(part => {
+            if (part.includes(":")) {
+              const [k, ...rest] = part.split(":");
+              if (isColourKey(k.trim())) productColors.push(rest.join(":").trim());
+            }
+          });
+        }
+      });
     });
-  const individualProductColors = getIndividualItemArray(productColors);
-  return individualProductColors;
+  }
+  return getIndividualItemArray(productColors);
 };
 
 export const getProductsIndividualSizes = products => {
   let productSizes = [];
-  products &&
-    products.map(product => {
-      return (
-        product.variation &&
-        product.variation.map(single => {
-          return single.size.map(single => {
-            return productSizes.push(single.name);
+  if (Array.isArray(products)) {
+    products.forEach(product => {
+      if (Array.isArray(product.variation)) {
+        product.variation.forEach(single => {
+          if (Array.isArray(single.size)) {
+            single.size.forEach(sz => {
+              if (sz.name) productSizes.push(sz.name);
+            });
+          }
+        });
+      }
+      const variants = Array.isArray(product.Variants) ? product.Variants
+                     : Array.isArray(product.variants) ? product.variants
+                     : [];
+      variants.forEach(v => {
+        let attrs = v.attributes;
+        if (typeof attrs === "string") {
+          try { attrs = JSON.parse(attrs); } catch { attrs = null; }
+        }
+        if (Array.isArray(attrs)) {
+          attrs.forEach(a => {
+            if (/size/i.test(a.key) && a.value) productSizes.push(a.value);
           });
-        })
-      );
+        } else if (v.variantName) {
+          const parts = String(v.variantName).split(/\s*(?:·|\||,|\/)\s*/);
+          parts.forEach(part => {
+            if (part.includes(":")) {
+              const [k, ...rest] = part.split(":");
+              if (/size/i.test(k.trim())) productSizes.push(rest.join(":").trim());
+            }
+          });
+        }
+      });
     });
-  const individualProductSizes = getIndividualItemArray(productSizes);
-  return individualProductSizes;
+  }
+  return getIndividualItemArray(productSizes);
 };
 
 export const getIndividualSizes = product => {
   let productSizes = [];
-  product.variation &&
-    product.variation.map(singleVariation => {
-      return (
-        singleVariation.size &&
-        singleVariation.size.map(singleSize => {
-          return productSizes.push(singleSize.name);
-        })
-      );
+  if (product) {
+    if (Array.isArray(product.variation)) {
+      product.variation.forEach(single => {
+        if (Array.isArray(single.size)) {
+          single.size.forEach(sz => {
+            if (sz.name) productSizes.push(sz.name);
+          });
+        }
+      });
+    }
+    const variants = Array.isArray(product.Variants) ? product.Variants
+                   : Array.isArray(product.variants) ? product.variants
+                   : [];
+    variants.forEach(v => {
+      let attrs = v.attributes;
+      if (typeof attrs === "string") {
+        try { attrs = JSON.parse(attrs); } catch { attrs = null; }
+      }
+      if (Array.isArray(attrs)) {
+        attrs.forEach(a => {
+          if (/size/i.test(a.key) && a.value) productSizes.push(a.value);
+        });
+      } else if (v.variantName) {
+        const parts = String(v.variantName).split(/\s*(?:·|\||,|\/)\s*/);
+        parts.forEach(part => {
+          if (part.includes(":")) {
+            const [k, ...rest] = part.split(":");
+            if (/size/i.test(k.trim())) productSizes.push(rest.join(":").trim());
+          }
+        });
+      }
     });
-  const individualSizes = getIndividualItemArray(productSizes);
-  return individualSizes;
+  }
+  return getIndividualItemArray(productSizes);
 };
 
 export const setActiveSort = e => {

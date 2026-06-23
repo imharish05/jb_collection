@@ -111,14 +111,13 @@ export default function ReturnDetail() {
   const [newStatus, setNewStatus]   = useState('');
   const [adminNote, setAdminNote]   = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [mediaOpen, setMediaOpen]   = useState(null);   // lightbox URL
-
-  const token = localStorage.getItem('adminToken');
-  const headers = { Authorization: `Bearer ${token}` };
+  const [mediaOpen, setMediaOpen]   = useState(null);   // lightbox state: { url, type }
 
   const fetchDetail = useCallback(async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('adminToken');
+      const headers = { Authorization: `Bearer ${token}` };
       const res = await axios.get(`/returns/admin/${id}`, { headers });
       setData(res.data);
     } catch {
@@ -135,6 +134,8 @@ export default function ReturnDetail() {
     setSubmitting(true);
     const tid = toast.loading('Updating…');
     try {
+      const token = localStorage.getItem('adminToken');
+      const headers = { Authorization: `Bearer ${token}` };
       await axios.patch(`/returns/admin/${id}/status`, { status: newStatus, adminNote }, { headers });
       toast.success('Status updated!', { id: tid });
       setAdminNote('');
@@ -303,8 +304,8 @@ export default function ReturnDetail() {
             <Section title="Payment Summary">
               <InfoRow label="Payment Method" value={r.order.paymentMethod} />
               <InfoRow
-                label="Subtotal"
-                value={`₹${(parseFloat(r.orderItem?.salesPrice || r.orderItem?.price || 0) * (r.returnQuantity || 1)).toFixed(2)}`}
+                label="Subtotal (before GST)"
+                value={`₹${(parseFloat(r.order.totalAmount || 0) - parseFloat(r.order.shippingCharge || 0) + parseFloat(r.order.couponDiscount || 0) - parseFloat(r.order.taxAmount || 0)).toFixed(2)}`}
               />
               {parseFloat(r.order.couponDiscount || 0) > 0 && (
                 <InfoRow label="Discount" value={`-₹${parseFloat(r.order.couponDiscount).toFixed(2)}`} />
@@ -426,6 +427,8 @@ export default function ReturnDetail() {
                                     setSubmitting(true);
                                     const tid = toast.loading('Rejecting…');
                                     try {
+                                      const token = localStorage.getItem('adminToken');
+                                      const headers = { Authorization: `Bearer ${token}` };
                                       await axios.patch(`/returns/admin/${id}/status`, { status: 'rejected', adminNote }, { headers });
                                       toast.success('Return request rejected', { id: tid });
                                       fetchDetail();
@@ -471,7 +474,7 @@ export default function ReturnDetail() {
                   const resolvedUrl = getReturnMediaUrl(m.mediaUrl);
                   const isVideo = m.mediaType === "video";
                   return (
-                    <div key={i} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setMediaOpen(resolvedUrl)}>
+                    <div key={i} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setMediaOpen({ url: resolvedUrl, type: isVideo ? 'video' : 'image' })}>
                       {isVideo ? (
                         <div style={{
                           width: '100%', paddingBottom: '100%', background: '#f3f4f6', borderRadius: '8px',
@@ -520,7 +523,11 @@ export default function ReturnDetail() {
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex',
           alignItems: 'center', justifyContent: 'center', zIndex: 9999, cursor: 'zoom-out',
         }}>
-          <img src={mediaOpen} alt="evidence" style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: '12px', objectFit: 'contain' }} />
+          {mediaOpen.type === 'video' ? (
+            <video src={mediaOpen.url} controls autoPlay style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: '12px', objectFit: 'contain' }} onClick={e => e.stopPropagation()} />
+          ) : (
+            <img src={mediaOpen.url} alt="evidence" style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: '12px', objectFit: 'contain' }} />
+          )}
         </div>
       )}
 

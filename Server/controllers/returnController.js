@@ -259,7 +259,7 @@ const cancelOrder = async (req, res, next) => {
           refundAmount:      advancePaid,
           refundStatus:      "initiated",
           refundMode:        "razorpay",
-          manualRefundNotes: "Product value to be refunded manually offline",
+          manualRefundNotes: "Order cancelled before delivery. Advance paid online was refunded. Remaining product value COD amount was never collected, so no offline refund is required.",
         });
       } catch (rzpErr) {
         console.error("[Razorpay] Partial COD cancellation refund failed:", rzpErr.message);
@@ -270,10 +270,10 @@ const cancelOrder = async (req, res, next) => {
         orderId:           order.id,
         returnId:          null,
         razorpayRefundId:  null,
-        refundAmount:      parseFloat(order.totalAmount),
-        refundStatus:      "manual_pending",
+        refundAmount:      0,
+        refundStatus:      "manual_completed",
         refundMode:        "manual_offline",
-        manualRefundNotes: "Full COD order — refund manually",
+        manualRefundNotes: "Cancelled before delivery — no payment collected, nothing to refund.",
       });
     }
 
@@ -301,6 +301,18 @@ const getAllReturns = async (req, res, next) => {
       if (endDate)   where.createdAt[Op.lte] = new Date(new Date(endDate).setHours(23, 59, 59));
     }
 
+    if (search) {
+      const q = `%${search}%`;
+      where[Op.or] = [
+        { id: { [Op.like]: q } },
+        { referenceSlug: { [Op.like]: q } },
+        { '$user.name$': { [Op.like]: q } },
+        { '$user.email$': { [Op.like]: q } },
+        { '$order.referenceSlug$': { [Op.like]: q } },
+        { '$order.id$': { [Op.like]: q } },
+      ];
+    }
+
     // Compute stats for return statuses
     const statsQuery = await Return.findAll({
       attributes: [
@@ -324,23 +336,10 @@ const getAllReturns = async (req, res, next) => {
       limit:  parseInt(limit),
       offset,
       distinct: true,
+      subQuery: false,
     });
 
-    // Search filter (post-query for name/orderId)
-    let filtered = rows;
-    if (search) {
-      const q = search.toLowerCase();
-      filtered = rows.filter((r) =>
-        r.order?.referenceSlug?.toLowerCase().includes(q) ||
-        r.order?.id?.toString().includes(q) ||
-        r.user?.name?.toLowerCase().includes(q) ||
-        r.user?.email?.toLowerCase().includes(q) ||
-        r.referenceSlug?.toLowerCase().includes(q) ||
-        r.id?.toString().includes(q)
-      );
-    }
-
-    return res.json({ returns: filtered, total: count, page: parseInt(page), limit: parseInt(limit), stats });
+    return res.json({ returns: rows, total: count, page: parseInt(page), limit: parseInt(limit), stats });
   } catch (err) {
     next(err);
   }
@@ -468,20 +467,44 @@ const approveRefund = async (req, res, next) => {
       });
     } else if (paymentType === "PARTIAL_COD" && order.razorpayPaymentId) {
       const advancePaid = parseFloat(order.advancePaid || 0);
-      const rzpRefund = await razorpay.payments.refund(order.razorpayPaymentId, {
-        amount: Math.round(advancePaid * 100),
-        notes:  { reason: "Return Approved — Advance Refund", returnId: returnRequest.id },
-      });
-      refundRecord = await Refund.create({
-        orderId:           order.id,
-        returnId:          returnRequest.id,
-        razorpayRefundId:  rzpRefund.id,
-        refundAmount:      advancePaid,
-        refundStatus:      resolveRefundStatus(rzpRefund),
-        refundedAt:        rzpRefund?.status === 'processed' ? new Date() : null,
-        refundMode:        "razorpay",
-        manualRefundNotes: `Product value ₹${productValue.toFixed(2)} to be refunded manually offline`,
-      });
+      
+      const totalRefundedOnline = await Refund.sum("refundAmount", {
+        where: { orderId: order.id, refundMode: "razorpay" }
+      }) || 0;
+
+      const remainingOnlineBalance = Math.max(0, advancePaid - totalRefundedOnline);
+      const onlineRefundAmount = Math.min(productValue, remainingOnlineBalance);
+      const offlineRefundAmount = productValue - onlineRefundAmount;
+
+      if (onlineRefundAmount > 0) {
+        const rzpRefund = await razorpay.payments.refund(order.razorpayPaymentId, {
+          amount: Math.round(onlineRefundAmount * 100),
+          notes:  { reason: "Return Approved — Partial COD Refund", returnId: returnRequest.id },
+        });
+        
+        refundRecord = await Refund.create({
+          orderId:           order.id,
+          returnId:          returnRequest.id,
+          razorpayRefundId:  rzpRefund.id,
+          refundAmount:      productValue,
+          refundStatus:      resolveRefundStatus(rzpRefund),
+          refundedAt:        rzpRefund?.status === 'processed' ? new Date() : null,
+          refundMode:        "razorpay",
+          manualRefundNotes: offlineRefundAmount > 0 
+            ? `Online advance refund ₹${onlineRefundAmount.toFixed(2)} initiated. Remaining product value ₹${offlineRefundAmount.toFixed(2)} to be refunded manually offline.`
+            : `Online advance refund ₹${onlineRefundAmount.toFixed(2)} initiated (covers returned item value).`,
+        });
+      } else {
+        refundRecord = await Refund.create({
+          orderId:           order.id,
+          returnId:          returnRequest.id,
+          razorpayRefundId:  null,
+          refundAmount:      productValue,
+          refundStatus:      "manual_pending",
+          refundMode:        "manual_offline",
+          manualRefundNotes: `Online advance already fully refunded. Full product value ₹${productValue.toFixed(2)} to be refunded manually offline.`,
+        });
+      }
     } else {
       // FULL_COD or no payment ID
       refundRecord = await Refund.create({
@@ -732,8 +755,24 @@ const createReversePickup = async (req, res, next) => {
 
     let product = null;
     try {
-      product = await require("../models").Product.findByPk(orderItem.productId, { attributes: ["sku","name"] });
+      product = await require("../models").Product.findByPk(orderItem.productId, { attributes: ["sku","name","shippingWeight","shippingDimensions"] });
     } catch (_) {}
+
+    let variant = null;
+    if (orderItem.selectedVariantId) {
+      try {
+        variant = await require("../models").Variant.findByPk(orderItem.selectedVariantId, { attributes: ["id","sku","shippingWeight","shippingDimensions"] });
+      } catch (_) {}
+    }
+
+    const weight = parseFloat(variant?.shippingWeight) || parseFloat(product?.shippingWeight) || 0.5;
+    let dims = variant?.shippingDimensions || product?.shippingDimensions;
+    if (typeof dims === "string") {
+      try { dims = JSON.parse(dims); } catch (_) { dims = null; }
+    }
+    const length = dims?.length ? parseFloat(dims.length) : 10;
+    const breadth = dims?.breadth ? parseFloat(dims.breadth) : 10;
+    const height = dims?.height ? parseFloat(dims.height) : 10;
 
     let whAddress = process.env.WAREHOUSE_ADDRESS;
     let whCity    = process.env.WAREHOUSE_CITY;
@@ -782,6 +821,10 @@ const createReversePickup = async (req, res, next) => {
         units:         returnRequest.returnQuantity,
         selling_price: productPrice,
       }],
+      length: Math.round(length),
+      breadth: Math.round(breadth),
+      height: Math.round(height),
+      weight: parseFloat(weight.toFixed(3)),
     };
 
     const srResponse = await shiprocketPost("/orders/create/return", srPayload);

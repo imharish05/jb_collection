@@ -365,7 +365,8 @@ const getVariantLabel = (item) => {
     order.totalTax,
     splitGst
   ) ?? 0;
-const gstRate = firstAmount(order.gstRate, order.taxRate);
+  const gstRate = firstAmount(order.gstRate, order.taxRate);
+  const subtotalBeforeGst = itemsSubtotal - gstAmount;
 
 const couponCode =
   order.couponCode ||
@@ -447,8 +448,8 @@ const couponDiscount =
     },
     {
       key: "subtotal",
-      label: "Subtotal",
-      value: formatCurrency(itemsSubtotal),
+      label: "Subtotal (before GST)",
+      value: formatCurrency(subtotalBeforeGst),
     },
     gstAmount > 0 && {
       key: "gst",
@@ -691,12 +692,29 @@ const couponDiscount =
                                                 gap: "8px"
                                               }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                                                  <img
-                                                    src={p.image ? getImgUrl(p.image) : FALLBACK_IMG}
-                                                    alt={p.name}
-                                                    style={{ width: 30, height: 30, objectFit: "cover", borderRadius: 6, flexShrink: 0 }}
-                                                    onError={(e) => e.target.src = FALLBACK_IMG}
-                                                  />
+                                                  {(() => {
+                                                    const getSingleImg = (img) => {
+                                                      if (Array.isArray(img)) return img[0];
+                                                      if (typeof img === "string") {
+                                                        try {
+                                                          const parsed = JSON.parse(img);
+                                                          return Array.isArray(parsed) ? parsed[0] : img;
+                                                        } catch {
+                                                          return img;
+                                                        }
+                                                      }
+                                                      return null;
+                                                    };
+                                                    const resolvedImg = getSingleImg(p.image);
+                                                    return (
+                                                      <img
+                                                        src={resolvedImg ? getImgUrl(resolvedImg) : FALLBACK_IMG}
+                                                        alt={p.name}
+                                                        style={{ width: 30, height: 30, objectFit: "cover", borderRadius: 6, flexShrink: 0 }}
+                                                        onError={(e) => e.target.src = FALLBACK_IMG}
+                                                      />
+                                                    );
+                                                  })()}
                                                   <span style={{
                                                     fontSize: "12px",
                                                     fontWeight: 600,

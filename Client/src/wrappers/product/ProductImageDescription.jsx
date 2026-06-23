@@ -35,7 +35,11 @@ const ProductImageDescription = ({ spaceTopClass, spaceBottomClass, galleryType,
   const allVariantImgs = Array.isArray(product.Variants)
     ? product.Variants.map(v => v.image).filter(Boolean)
     : [];
-  const productImgs = Array.isArray(product.image) ? product.image.filter(Boolean) : [];
+  const productImgs = Array.isArray(product.image)
+    ? product.image.filter(Boolean)
+    : typeof product.image === "string"
+      ? (() => { try { const p = JSON.parse(product.image); return Array.isArray(p) ? p.filter(Boolean) : [product.image]; } catch { return [product.image]; } })()
+      : [];
 
   const buildGallery = () => {
     if (!variantImage) {

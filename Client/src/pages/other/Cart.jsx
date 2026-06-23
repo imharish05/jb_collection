@@ -42,16 +42,22 @@ const getVariantAttrs = (variant) => {
 const parseFallbackAttrs = (variantName) => {
   if (!variantName) return [];
   const seen = new Set();
-  return variantName.split(" · ").map(s => {
-    const [key, ...rest] = s.split(": ");
-    return { key: key?.trim(), value: rest.join(": ").trim() };
-  }).filter(a => {
-    if (!a.key || !a.value) return false;
-    const k = a.key.toLowerCase();
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  });
+  return String(variantName)
+    .split(/\s*(?:·|\||,|\/)\s*/)
+    .map(part => {
+      const idx = part.indexOf(":");
+      if (idx === -1) return null;
+      const key = part.slice(0, idx).trim();
+      const value = part.slice(idx + 1).trim();
+      return key && value ? { key, value } : null;
+    })
+    .filter(a => {
+      if (!a || !a.key || !a.value) return false;
+      const k = a.key.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
 };
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -539,7 +545,20 @@ const Cart = () => {
                               <div style={{ display: "flex", flexDirection: "column" }}>
                                 {Array.isArray(item.selectedProducts) && item.selectedProducts.length > 0 ? (
                                   item.selectedProducts.map((p, idx) => {
-                                    const productImgSrc = p.image ? getImgUrl(p.image) : "/assets/img/products/products-1.jpeg";
+                                    const getSingleImg = (img) => {
+                                      if (Array.isArray(img)) return img[0];
+                                      if (typeof img === "string") {
+                                        try {
+                                          const parsed = JSON.parse(img);
+                                          return Array.isArray(parsed) ? parsed[0] : img;
+                                        } catch {
+                                          return img;
+                                        }
+                                      }
+                                      return null;
+                                    };
+                                    const resolvedImg = getSingleImg(p.image);
+                                    const productImgSrc = resolvedImg ? getImgUrl(resolvedImg) : "/assets/img/products/products-1.jpeg";
                                     const pTags = (p.variantName || "")
                                       .split(/·|,/)
                                       .map(s => s.trim())

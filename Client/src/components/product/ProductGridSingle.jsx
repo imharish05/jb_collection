@@ -170,11 +170,17 @@ const ProductGridSingle = ({
             >
               <i className="pe-7s-like" />
             </button>
+            <button
+              onClick={() => setModalShow(true)}
+              title="Quick View"
+            >
+              <i className="pe-7s-look" />
+            </button>
           </div>
 
           {/* Add to Cart Overlay */}
           <div className="cart-action-overlay">
-            {product.stock && product.stock > 0 ? (
+            {(product.stock && product.stock > 0) || (Array.isArray(product.Variants) && product.Variants.length > 0) ? (
               Array.isArray(product.Variants) && product.Variants.length > 0 ? (
                 <button onClick={handleAddToCart}>
                   SELECT OPTIONS

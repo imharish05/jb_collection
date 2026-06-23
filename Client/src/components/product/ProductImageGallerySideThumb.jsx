@@ -32,7 +32,11 @@ const ProductImageGallerySideThumb = ({ product, thumbPosition }) => {
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex]             = useState(-1);
 
-  const images = product?.image || [];
+  const images = Array.isArray(product?.image)
+    ? product.image.filter(Boolean)
+    : typeof product?.image === "string"
+      ? (() => { try { const p = JSON.parse(product.image); return Array.isArray(p) ? p.filter(Boolean) : [product.image]; } catch { return [product.image]; } })()
+      : [];
 
   /* ── lightbox slides ── */
   const slides = images.map((img) => ({ src: getImgUrl(img) }));

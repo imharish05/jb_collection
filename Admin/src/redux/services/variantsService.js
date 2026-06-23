@@ -13,10 +13,23 @@ function buildPayload(data) {
     fd.append("status",      data.status || "Active");
     fd.append("attributes",  JSON.stringify(data.attributes || []));
     fd.append("image",       data.imageFile);
+    if (data.shippingWeight !== undefined && data.shippingWeight !== null) {
+      fd.append("shippingWeight", data.shippingWeight);
+    }
+    if (data.shippingDimensions !== undefined && data.shippingDimensions !== null) {
+      fd.append("shippingDimensions", typeof data.shippingDimensions === 'string' ? data.shippingDimensions : JSON.stringify(data.shippingDimensions));
+    }
     return { payload: fd, isMultipart: true };
   }
   const { imageFile, imagePreview, ...rest } = data;
-  return { payload: { ...rest, attributes: JSON.stringify(data.attributes || []) }, isMultipart: false };
+  return { 
+    payload: { 
+      ...rest, 
+      attributes: JSON.stringify(data.attributes || []),
+      shippingDimensions: data.shippingDimensions !== undefined ? (typeof data.shippingDimensions === 'string' ? data.shippingDimensions : JSON.stringify(data.shippingDimensions)) : undefined
+    }, 
+    isMultipart: false 
+  };
 }
 
 export const fetchVariants = () => async (dispatch) => {

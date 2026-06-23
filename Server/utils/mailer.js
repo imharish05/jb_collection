@@ -424,6 +424,7 @@ const buildOrderEmailHtml = ({ order, user, status, trackingDetails }) => {
   const shippingCharge = safeNumber(orderData.shippingCharge);
   const couponDiscount = safeNumber(orderData.couponDiscount);
   const taxAmount = safeNumber(orderData.taxAmount);
+  const subtotalBeforeGst = taxAmount > 0 ? itemsSubtotal - taxAmount : itemsSubtotal;
   const grandTotal = safeNumber(orderData.totalAmount);
   const couponCode = orderData.couponCode ? escapeHtml(orderData.couponCode) : "";
   const trackingUrl = getTrackingUrl(orderData, trackingDetails);
@@ -529,8 +530,8 @@ const buildOrderEmailHtml = ({ order, user, status, trackingDetails }) => {
       </h3>
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
-          <td style="padding:8px 0;font-size:13px;color:#666;">Items Subtotal</td>
-          <td style="padding:8px 0;font-size:13px;text-align:right;color:#333;">₹${itemsSubtotal.toFixed(2)}</td>
+          <td style="padding:8px 0;font-size:13px;color:#666;">Subtotal (before GST)</td>
+          <td style="padding:8px 0;font-size:13px;text-align:right;color:#333;">₹${subtotalBeforeGst.toFixed(2)}</td>
         </tr>
         ${shippingRow}
         ${couponRow}

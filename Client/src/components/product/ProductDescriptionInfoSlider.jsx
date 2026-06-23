@@ -215,7 +215,7 @@ const ProductDescriptionInfoSlider = ({
           </div>
         </div>
       )}
-      {product.category ? (
+      {Array.isArray(product.category) && product.category.length > 0 ? (
         <div className="pro-details-meta justify-content-center">
           <span>Categories :</span>
           <ul>
@@ -233,7 +233,7 @@ const ProductDescriptionInfoSlider = ({
       ) : (
         ""
       )}
-      {product.tag ? (
+      {Array.isArray(product.tag) && product.tag.length > 0 ? (
         <div className="pro-details-meta justify-content-center">
           <span>Tags :</span>
           <ul>

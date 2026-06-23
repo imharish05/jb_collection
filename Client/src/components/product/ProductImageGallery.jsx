@@ -11,7 +11,12 @@ import { getImgUrl } from "../../helpers/imageUrl";
 const ProductImageGalleryLeftThumb = ({ product, thumbPosition }) => {
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const [index, setIndex] = useState(-1);
-  const slides = product?.image.map((img, i) => ({
+  const images = Array.isArray(product?.image)
+    ? product.image.filter(Boolean)
+    : typeof product?.image === "string"
+      ? (() => { try { const p = JSON.parse(product.image); return Array.isArray(p) ? p.filter(Boolean) : [product.image]; } catch { return [product.image]; } })()
+      : [];
+  const slides = images.map((img, i) => ({
       src: getImgUrl(img),
       key: i,
   }));
@@ -71,9 +76,9 @@ const ProductImageGalleryLeftThumb = ({ product, thumbPosition }) => {
           style={{ paddingLeft: 5, paddingRight: 5 }}
         >
           <div className="product-small-image-wrapper product-small-image-wrapper--side-thumb">
-            {product?.image?.length ? (
+            {images.length ? (
               <Swiper options={thumbnailSwiperParams}>
-                {product.image.map((single, key) => (
+                {images.map((single, key) => (
                   <SwiperSlide key={key}>
                     <div className="single-image">
                       <img
@@ -109,9 +114,9 @@ const ProductImageGalleryLeftThumb = ({ product, thumbPosition }) => {
             ) : (
               ""
             )}
-            {product?.image?.length ? (
+            {images.length ? (
               <Swiper options={gallerySwiperParams}>
-                {product?.image.map((single, key) => (
+                {images.map((single, key) => (
                   <SwiperSlide key={key}>
                     <button className="lightgallery-button" onClick={() => setIndex(key)}>
                       <i className="pe-7s-expand1"></i>

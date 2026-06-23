@@ -83,7 +83,8 @@ const generateReceiptText = (state) => {
   const discount  = parseFloat(couponDiscount || 0);
   const shipping  = parseFloat(shippingCharge || partialCod?.shippingCharge || 0);
   const taxAmt    = parseFloat(tax || 0);
-  const grandTotal = subtotal - discount + shipping + taxAmt;
+  const subtotalBeforeGst = subtotal - taxAmt;
+  const grandTotal = subtotal - discount + shipping;
 
   const lines = [
     "=== KAMALI GIFTS — ORDER RECEIPT ===",
@@ -105,7 +106,7 @@ const generateReceiptText = (state) => {
     }),
     "",
     "--- PAYMENT BREAKDOWN ---",
-    `Subtotal   : ₹${subtotal.toFixed(2)}`,
+    `Subtotal   : ₹${subtotalBeforeGst.toFixed(2)}`,
     discount > 0 ? `Coupon (${couponCode})  : -₹${discount.toFixed(2)}` : null,
     `Shipping   : ₹${shipping.toFixed(2)}`,
     taxAmt > 0 ? `Tax/GST    : ₹${taxAmt.toFixed(2)}` : null,
@@ -156,7 +157,8 @@ const OrderConfirmation = () => {
   const tax            = parseFloat(state?.tax || 0);
 
   const subtotal   = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const grandTotal = subtotal - couponDiscount + shippingCharge + tax;
+  const subtotalBeforeGst = subtotal - tax;
+  const grandTotal = subtotal - couponDiscount + shippingCharge;
 
   const cartTotalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -464,12 +466,29 @@ useEffect(() => {
                                                     gap: "8px"
                                                   }}>
                                                     <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                                                      <img
-                                                        src={p.image ? getImgUrl(p.image) : "/assets/img/products/products-1.jpeg"}
-                                                        alt={p.name}
-                                                        style={{ width: 30, height: 30, objectFit: "cover", borderRadius: 6, flexShrink: 0 }}
-                                                        onError={(e) => e.target.src = "/assets/img/products/products-1.jpeg"}
-                                                      />
+                                                      {(() => {
+                                                         const getSingleImg = (img) => {
+                                                           if (Array.isArray(img)) return img[0];
+                                                           if (typeof img === "string") {
+                                                             try {
+                                                               const parsed = JSON.parse(img);
+                                                               return Array.isArray(parsed) ? parsed[0] : img;
+                                                             } catch {
+                                                               return img;
+                                                             }
+                                                           }
+                                                           return null;
+                                                         };
+                                                         const resolvedImg = getSingleImg(p.image);
+                                                         return (
+                                                           <img
+                                                             src={resolvedImg ? getImgUrl(resolvedImg) : "/assets/img/products/products-1.jpeg"}
+                                                             alt={p.name}
+                                                             style={{ width: 30, height: 30, objectFit: "cover", borderRadius: 6, flexShrink: 0 }}
+                                                             onError={(e) => e.target.src = "/assets/img/products/products-1.jpeg"}
+                                                           />
+                                                         );
+                                                       })()}
                                                       <span style={{
                                                         fontSize: "12px",
                                                         fontWeight: 600,
@@ -544,8 +563,8 @@ useEffect(() => {
                 <div style={{ marginTop: 12, paddingTop: 12 }}>
                   {/* Subtotal */}
                   <div style={breakdownRow}>
-                    <span style={breakdownLabel}>Subtotal</span>
-                    <span style={breakdownValue}>₹{subtotal.toFixed(2)}</span>
+                    <span style={breakdownLabel}>Subtotal (before GST)</span>
+                    <span style={breakdownValue}>₹{subtotalBeforeGst.toFixed(2)}</span>
                   </div>
                   {/* Coupon Discount */}
                   {couponDiscount > 0 && (

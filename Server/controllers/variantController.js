@@ -112,6 +112,8 @@ const syncProductVariants = async (productId) => {
       image: v.image,
       sku: v.sku,
       status: v.status,
+      shippingWeight: v.shippingWeight,
+      shippingDimensions: v.shippingDimensions,
     }));
 
     // Update product price (first variant salesPrice, or 0) and total stock
@@ -196,7 +198,7 @@ const getByProduct = async (req, res) => {
 // applied to every generated row.
 const add = async (req, res) => {
   try {
-    const { productId, mrp, salesPrice, stock, status, stockStatus, warningThreshold } = req.body;
+    const { productId, mrp, salesPrice, stock, status, stockStatus, warningThreshold, shippingWeight, shippingDimensions } = req.body;
     const image = buildImagePath(req.file);
 
     // ── Basic validation ──────────────────────────────────────────────────
@@ -207,6 +209,17 @@ const add = async (req, res) => {
     if (Number(salesPrice) <= 0) return res.status(400).json({ message: "Sales price must be greater than 0" });
     if (Number(salesPrice) > Number(mrp)) return res.status(400).json({ message: "Sales price cannot be greater than MRP" });
     if (stock !== undefined && Number(stock) < 0) return res.status(400).json({ message: "Stock cannot be negative" });
+
+    // Parse weight and dimensions
+    const weightVal = shippingWeight !== undefined && shippingWeight !== '' && shippingWeight !== null ? parseFloat(shippingWeight) : null;
+    let parsedDimensions = null;
+    if (shippingDimensions) {
+      if (typeof shippingDimensions === 'string') {
+        try { parsedDimensions = JSON.parse(shippingDimensions); } catch (e) { parsedDimensions = null; }
+      } else {
+        parsedDimensions = shippingDimensions;
+      }
+    }
 
     // ── Normalise incoming payloads to an array ───────────────────────────
     // Support both a single-variant body AND a batch body ({ variants: [...] })
@@ -226,8 +239,8 @@ const add = async (req, res) => {
     // ── Helper: build variantName from attribute combo ────────────────────
     const comboName = (attrs) =>
       attrs.filter(a => a.key && a.value && a.key !== "Custom Note")
-           .map(a => `${a.key}: ${a.value}`)
-           .join(" · ") || "Default";
+             .map(a => `${a.key}: ${a.value}`)
+             .join(" · ") || "Default";
 
     // ── Create one DB row per expanded combination ────────────────────────
     const created = [];
@@ -253,6 +266,8 @@ const add = async (req, res) => {
           attributes: combo,
           status:     status     || "Active",
           image,
+          shippingWeight: weightVal,
+          shippingDimensions: parsedDimensions,
         });
         created.push(row);
       }
@@ -280,7 +295,7 @@ const update = async (req, res) => {
     const variant = await Variant.findByPk(req.params.id);
     if (!variant) return res.status(404).json({ message: "Not found" });
 
-    const { productId, variantName, mrp, salesPrice, stock, attributes, status, stockStatus, warningThreshold } = req.body;
+    const { productId, variantName, mrp, salesPrice, stock, attributes, status, stockStatus, warningThreshold, shippingWeight, shippingDimensions } = req.body;
     const oldProductId = variant.productId;
     const parsedAttributes = attributes !== undefined ? parseAttributes(attributes) : undefined;
 
@@ -290,6 +305,19 @@ const update = async (req, res) => {
       return res.status(400).json({ message: "Sales price cannot be greater than MRP" });
     }
     if (stock !== undefined && Number(stock) < 0) return res.status(400).json({ message: "Stock cannot be negative" });
+
+    // Parse weight and dimensions
+    const weightVal = shippingWeight !== undefined ? (shippingWeight === '' || shippingWeight === null ? null : parseFloat(shippingWeight)) : undefined;
+    let parsedDimensions = undefined;
+    if (shippingDimensions !== undefined) {
+      if (shippingDimensions === null || shippingDimensions === '') {
+        parsedDimensions = null;
+      } else if (typeof shippingDimensions === 'string') {
+        try { parsedDimensions = JSON.parse(shippingDimensions); } catch (e) { parsedDimensions = null; }
+      } else {
+        parsedDimensions = shippingDimensions;
+      }
+    }
 
     const updates = {
       ...(productId   !== undefined && { productId }),
@@ -301,6 +329,8 @@ const update = async (req, res) => {
       ...(warningThreshold !== undefined && { warningThreshold: warningThreshold ? parseInt(warningThreshold) : 5 }),
       ...(parsedAttributes !== undefined && { attributes: parsedAttributes }),
       ...(status      !== undefined && { status }),
+      ...(weightVal   !== undefined && { shippingWeight: weightVal }),
+      ...(parsedDimensions !== undefined && { shippingDimensions: parsedDimensions }),
     };
 
     if (req.file) {

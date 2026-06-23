@@ -114,6 +114,13 @@ function variantToSku(v) {
     .filter(a => a.key && a.value && a.key !== 'Custom Note')
     .map(a => ({ key: a.key, value: a.value }));
 
+  let dims = v.shippingDimensions;
+  if (typeof dims === 'string') {
+    try { dims = JSON.parse(dims); } catch (e) { dims = {}; }
+  } else {
+    dims = dims || {};
+  }
+
   return {
     id: v.id,
     variantName: v.variantName || combo.map(c => `${c.key}: ${c.value}`).join(' · ') || 'Default',
@@ -125,6 +132,10 @@ function variantToSku(v) {
     imageFile:    null,
     imagePreview: v.image ? getImgSrc(v.image) : null,
     attributes:   finalAttrs,
+    shippingWeight: v.shippingWeight ? String(v.shippingWeight) : '',
+    shippingLength: dims.length ? String(dims.length) : '',
+    shippingBreadth: dims.breadth ? String(dims.breadth) : '',
+    shippingHeight: dims.height ? String(dims.height) : '',
   };
 }
 
@@ -387,6 +398,12 @@ export default function Variants({ showToast }) {
       const attrs = (editSku.attributes || []).filter(a => a.key && a.value);
       const variantName = attrs.map(a => `${a.key}: ${a.value}`).join(' · ') || 'Default';
 
+      const dims = (editSku.shippingLength || editSku.shippingBreadth || editSku.shippingHeight) ? {
+        length: editSku.shippingLength ? parseFloat(editSku.shippingLength) : 0,
+        breadth: editSku.shippingBreadth ? parseFloat(editSku.shippingBreadth) : 0,
+        height: editSku.shippingHeight ? parseFloat(editSku.shippingHeight) : 0,
+      } : null;
+
       await dispatch(editVariant({
         id: editingId,
         data: {
@@ -398,6 +415,8 @@ export default function Variants({ showToast }) {
           status:      editSku.status || 'Active',
           attributes:  attrs,
           imageFile:   editSku.imageFile || undefined,
+          shippingWeight: editSku.shippingWeight !== '' ? parseFloat(editSku.shippingWeight) : null,
+          shippingDimensions: dims,
         },
       }));
 
@@ -601,6 +620,50 @@ export default function Variants({ showToast }) {
                     </div>
                   )}
                   <ErrorMsg field="image" />
+                </div>
+              </div>
+
+              {/* Shipping Overrides (Weight & Dimensions) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Weight (kg)</label>
+                  <input
+                    style={inputStyle}
+                    type="number" step="0.001" min="0"
+                    placeholder="e.g. 0.5"
+                    value={editSku.shippingWeight || ''}
+                    onChange={e => setEditSku({ ...editSku, shippingWeight: e.target.value })}
+                  />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Length (cm)</label>
+                  <input
+                    style={inputStyle}
+                    type="number" step="0.1" min="0"
+                    placeholder="L"
+                    value={editSku.shippingLength || ''}
+                    onChange={e => setEditSku({ ...editSku, shippingLength: e.target.value })}
+                  />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Breadth (cm)</label>
+                  <input
+                    style={inputStyle}
+                    type="number" step="0.1" min="0"
+                    placeholder="B"
+                    value={editSku.shippingBreadth || ''}
+                    onChange={e => setEditSku({ ...editSku, shippingBreadth: e.target.value })}
+                  />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Height (cm)</label>
+                  <input
+                    style={inputStyle}
+                    type="number" step="0.1" min="0"
+                    placeholder="H"
+                    value={editSku.shippingHeight || ''}
+                    onChange={e => setEditSku({ ...editSku, shippingHeight: e.target.value })}
+                  />
                 </div>
               </div>
 

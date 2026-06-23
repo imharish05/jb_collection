@@ -299,8 +299,6 @@ export default function Products({ showToast }) {
 
   const subCategories = selectedCategory?.subcategories || selectedCategory?.subCategories || selectedCategory?.SubCategories || [];
 
-  console.log(selectedCategory, "This si the nsjn");
-
   // ── Scroll to VariantBuilder when tab forced to 'skus' on validation error ──
   useEffect(() => {
     if (variantTab === 'skus' && errors.variantErrors) {

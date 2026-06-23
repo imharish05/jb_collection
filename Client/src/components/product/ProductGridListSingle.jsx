@@ -40,7 +40,9 @@ const ProductGridListSingle = ({
 
   const images = Array.isArray(product.image)
     ? product.image.filter(Boolean)
-    : product.image ? [product.image] : [];
+    : typeof product.image === "string"
+      ? (() => { try { const p = JSON.parse(product.image); return Array.isArray(p) ? p.filter(Boolean) : [product.image]; } catch { return [product.image]; } })()
+      : [];
 
   // Fall back to variant images when product has no gallery images
   const variantImages = (product.Variants || []).map(v => v.image).filter(Boolean);
@@ -118,6 +120,13 @@ const ProductGridListSingle = ({
                   >
                     <i className="pe-7s-like " />
                   </button>
+                  <button
+                    className="list-icon-btn"
+                    onClick={() => setModalShow(true)}
+                    title="Quick View"
+                  >
+                    <i className="pe-7s-look" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -138,13 +147,19 @@ const ProductGridListSingle = ({
               {discountPct > 0 && <span className="badge-pink">-{discountPct}%</span>}
               {product.new === true && <span className="badge-navy">NEW</span>}
             </div>
-            <div className="premium-action-list">
+             <div className="premium-action-list">
               <button
                 onClick={handleWishlistClick}
                 className={isWishlisted ? "active" : ""}
                 title="Add to Wishlist"
               >
                 <i className="pe-7s-like" />
+              </button>
+              <button
+                onClick={() => setModalShow(true)}
+                title="Quick View"
+              >
+                <i className="pe-7s-look" />
               </button>
             </div>
             <div className="cart-action-overlay">

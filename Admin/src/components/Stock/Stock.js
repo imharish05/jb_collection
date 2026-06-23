@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
-import { fetchProducts } from '../../redux/services/productsService';
-import { editVariant } from '../../redux/services/variantsService';
+import { editVariant, fetchVariants } from '../../redux/services/variantsService';
 import { isHexColor } from '../Products/VariantBuilder';
 import { hasPermission } from '../../utils/authHelper';
 import { fetchInventorySettings } from '../../redux/services/notificationsService';
@@ -113,12 +112,6 @@ function VariantChips({ row, chipStyle = {}, labelStyle = {}, slashStyle = {} })
   );
 }
 
-function variantTitle(row) {
-  const parts = variantParts(row);
-  return parts.length
-    ? parts.map(part => `${part.key}: ${part.value}`).join(' / ')
-    : (row.variantName || row.unit || 'Default variant');
-}
 
 // ── Stock Adjust Modal ──────────────────────────────────────────────────────
 function StockModal({ variant, onClose, onDone, showToast }) {
@@ -210,37 +203,31 @@ function StockModal({ variant, onClose, onDone, showToast }) {
 // ── Main Component ──────────────────────────────────────────────────────────
 export default function Stock({ showToast }) {
   const dispatch = useDispatch();
-  const { items: products, loading } = useSelector(state => state.products);
+  const { items: variants, loading } = useSelector(state => state.variants);
   const { settings: invSettings } = useSelector(state => state.notifications);
   const [stockModal, setStockModal] = useState(null);
   // Flatten products → variant rows locally (no separate stock slice needed)
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
-    dispatch(fetchProducts());
+    dispatch(fetchVariants());
     dispatch(fetchInventorySettings());
-  }, []);
+  }, [dispatch]);
 
-  // Rebuild flat rows whenever products change
+  // Rebuild flat rows whenever variants change
   useEffect(() => {
-    const stockRows = [];
-    products.forEach(product => {
-      (product.Variants || []).forEach(variant => {
-        stockRows.push({
-          id: variant.id,
-          productId: product.id,
-          productName : product.name,
-          variantName: variant.variantName,
-          attributes: variant.attributes,
-          stock: Number(variant.stock) || 0,
-          soldQuantity: variant.soldQuantity || 0,
-          status: Number(variant.stock) > 0 ? 'Active' : 'Inactive',
-          
-        });
-      });
-    });
+    const stockRows = variants.map(variant => ({
+      id: variant.id,
+      productId: variant.productId,
+      productName: variant.product?.name || variant.productName || `Product #${variant.productId}`,
+      variantName: variant.variantName,
+      attributes: variant.attributes,
+      stock: Number(variant.stock) || 0,
+      soldQuantity: variant.soldQuantity || 0,
+      status: Number(variant.stock) > 0 ? 'Active' : 'Inactive',
+    }));
     setRows(stockRows);
-  }, [products]);
+  }, [variants]);
 
   const handleStockUpdated = (variantId, newStock) => {
     setRows(prev => prev.map(r =>

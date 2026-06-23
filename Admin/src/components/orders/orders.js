@@ -492,8 +492,14 @@ export default function Orders({ status = null }) {
 
                             {/* ── Order breakdown ── */}
                             <div className="km-payment-row">
-                              <span className="td-muted">Subtotal</span>
-                              <span>₹{safeNumber(order.subtotalAmount).toFixed(2)}</span>
+                              <span className="td-muted">Subtotal (before GST)</span>
+                              <span>
+                                ₹{safeNumber(
+                                  order.taxAmount > 0
+                                    ? order.subtotalAmount - order.taxAmount
+                                    : order.subtotalAmount
+                                ).toFixed(2)}
+                              </span>
                             </div>
 
                             <div className="km-payment-row">
