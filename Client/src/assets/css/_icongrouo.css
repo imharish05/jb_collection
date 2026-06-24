@@ -5,7 +5,8 @@
 .ig-wrap {
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: flex-end;
+  gap: 16px;
 }
 
 /* ══════════════════════
@@ -14,16 +15,17 @@
 .ig-search {
   display: flex;
   align-items: center;
-  height: 38px;
-  border-radius: 20px;
+  height: 36px;
+  border-radius: 18px;
   border: 1.5px solid transparent;
   background: transparent;
   transition: width 0.3s cubic-bezier(.4,0,.2,1),
               border-color 0.25s ease,
               background 0.25s ease;
   overflow: hidden;
-  width: 38px;
+  width: 36px;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .ig-search--open {
@@ -34,8 +36,8 @@
 
 .ig-search__icon-btn {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 33px;
+  height: 33px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -44,6 +46,7 @@
   cursor: pointer;
   color: #555;
   transition: color 0.15s;
+  box-sizing: border-box;
 }
 .ig-search__icon-btn:hover { color: #db1a5d; }
 
@@ -284,5 +287,57 @@
 }
 .ig-account__btn-outline:hover {
   background: #db1a5d;
+  color: #fff !important;
+}
+
+/* ── Same-style overrides for perfect alignment inside ig-wrap ── */
+.ig-wrap .same-style {
+  margin-left: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ig-wrap .same-style > a,
+.ig-wrap .same-style button {
+  width: 36px;
+  height: 36px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative;
+  font-size: 24px;
+  color: #333;
+  border: none;
+  background: transparent;
+  transition: color 0.15s;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.ig-wrap .same-style > a:hover,
+.ig-wrap .same-style button:hover {
+  color: #db1a5d;
+}
+
+/* Adjust count badges for the new centered flex box alignment */
+.ig-wrap .same-style > a span.count-style,
+.ig-wrap .same-style button span.count-style {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  width: 17px !important;
+  height: 17px !important;
+  line-height: 17px !important;
+  border-radius: 50% !important;
+  position: absolute !important;
+  top: 1px !important;
+  right: 1px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #000 !important;
   color: #fff !important;
 }

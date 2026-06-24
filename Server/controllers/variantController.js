@@ -21,11 +21,10 @@ const buildImagePath = (file) => {
 
 const deleteOldImage = (imagePath) => {
   if (!imagePath) return;
-  const absPath = path.join(__dirname, "..", imagePath);
   try {
-    if (process.env.DEBUG_DELETE === 'true') console.log('Attempting to delete variant image:', absPath);
-    if (fs.existsSync(absPath)) {
-      fs.unlink(absPath, (err) => { if (err) console.warn('Could not delete old variant image:', err.message); else if (process.env.DEBUG_DELETE === 'true') console.log('Deleted variant image:', absPath); });
+    // Preserve uploaded variant images to prevent breaking customer order history / order details pages.
+    if (process.env.DEBUG_DELETE === 'true' || true) {
+      console.log('Skipping physical deletion of variant image to preserve order history:', imagePath);
     }
   } catch (e) { console.warn('deleteOldImage error:', e.message); }
 };
@@ -360,8 +359,17 @@ const remove = async (req, res) => {
     if (!variant) return res.status(404).json({ message: "Not found" });
     const productId = variant.productId;
 
+    const CartItem = require("../models/CartItem");
+    const WishlistItem = require("../models/WishlistItem");
+
     // Clean up combo associations
     await ChildComboProduct.destroy({ where: { variantId: variant.id } });
+
+    // Clean up cart items
+    await CartItem.destroy({ where: { selectedVariantId: variant.id } });
+
+    // Clean up wishlist items
+    await WishlistItem.destroy({ where: { variantId: variant.id } });
 
     // delete variant image file if present
     try { deleteOldImage(variant.image); } catch (e) { /* continue */ }

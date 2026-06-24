@@ -50,7 +50,6 @@ const app = express();
 const allowedOrigins = [
   process.env.CLIENT_URL,   // e.g. https://kamaligifts.saitechnosolutions.co.in
   process.env.ADMIN_URL,    // e.g. https://admin.kamaligifts.saitechnosolutions.co.in
-  // Local development fallbacks (always allowed)
   "http://localhost:3000",
   "http://localhost:3001",
   "http://127.0.0.1:3000",
@@ -82,6 +81,8 @@ app.use(
     optionsSuccessStatus: 200,           // For legacy browser compatibility
   })
 );
+
+// app.use(cors())
 
 // ── Webhook raw-body parser (MUST be before express.json())
 // Razorpay webhook signature verification requires the raw, unparsed request body.

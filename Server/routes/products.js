@@ -10,7 +10,6 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
-  seedStockTestProducts,
 } = require("../controllers/productController");
 
 // ensure upload dir exists
@@ -34,7 +33,6 @@ const upload = multer({
 // GET /api/products/:id      — single product
 router.get("/",    getAllProducts);
 router.get("/:id", getProductById);
-router.post("/seed-stock-test", seedStockTestProducts);
 
 // ── Admin ────────────────────────────────────────────────────────────────────
 // POST   /api/products/add         — create

@@ -91,9 +91,9 @@ const ensureProductSlug = async (product) => {
 const deleteFileIfExists = (absPath) => {
   if (!absPath) return;
   try {
-    if (process.env.DEBUG_DELETE === 'true') console.log('Attempting to delete file:', absPath);
-    if (fs.existsSync(absPath)) {
-      fs.unlink(absPath, (err) => { if (err) console.warn('Could not delete file:', absPath, err.message); else if (process.env.DEBUG_DELETE === 'true') console.log('Deleted file:', absPath); });
+    // Preserve uploaded images to prevent breaking customer order history / order details pages.
+    if (process.env.DEBUG_DELETE === 'true' || true) {
+      console.log('Skipping physical deletion of product image to preserve order history:', absPath);
     }
   } catch (e) { console.warn('deleteFileIfExists error:', e.message); }
 };
@@ -472,10 +472,10 @@ const updateProduct = async (req, res, next) => {
       variation:        parsedVariants  || product.variation,
       shortDescription: shortDescription !== undefined ? shortDescription : product.shortDescription,
       fullDescription:  fullDescription  !== undefined ? fullDescription  : product.fullDescription,
-      categoryId:       categoryId       !== undefined ? categoryId        : product.categoryId,
-      subCategoryId:    subCategoryId    !== undefined ? subCategoryId     : product.subCategoryId,
-      brandId:          brandId          !== undefined ? brandId           : product.brandId,
-      comboId:          comboId          !== undefined ? comboId           : product.comboId,
+      categoryId:       categoryId       !== undefined ? (categoryId || null)        : product.categoryId,
+      subCategoryId:    subCategoryId    !== undefined ? (subCategoryId || null)     : product.subCategoryId,
+      brandId:          brandId          !== undefined ? (brandId || null)           : product.brandId,
+      comboId:          comboId          !== undefined ? (comboId || null)           : product.comboId,
       isPartialCodAvailable: isPartialCodAvailable !== undefined
                           ? (isPartialCodAvailable === "false" || isPartialCodAvailable === false ? false : true)
                           : product.isPartialCodAvailable,
@@ -562,7 +562,7 @@ const updateProduct = async (req, res, next) => {
 
         // 3. Clean up referencing wishlist items
         await WishlistItem.destroy({
-          where: { selectedVariantId: deletedIds }
+          where: { variantId: deletedIds }
         });
 
         // 4. Destroy deleted variants
@@ -659,160 +659,4 @@ const deleteProduct = async (req, res, next) => {
   }
 };
 
-const seedStockTestProducts = async (req, res, next) => {
-  try {
-    // Clean up any existing test seed products to keep it clean
-    await Product.destroy({ where: { sku: { [Op.like]: "SEED-TEST-%" } } });
-
-    const productsToSeed = [
-      {
-        sku: "SEED-TEST-INSTOCK",
-        name: "Test In Stock Mug",
-        price: 299.0,
-        stock: 12,
-        isActive: true,
-        category: ["gifts"],
-        image: ["/assets/img/products/products-1.jpeg"],
-        shortDescription: "A beautiful test mug that is fully in stock.",
-        fullDescription: "A beautiful test mug that is fully in stock for checking standard PDP features.",
-        warningThreshold: 5,
-        stockStatus: null
-      },
-      {
-        sku: "SEED-TEST-LOWSTOCK",
-        name: "Test Low Stock Keychain",
-        price: 149.0,
-        stock: 3,
-        isActive: true,
-        category: ["gifts"],
-        image: ["/assets/img/products/products-2.jpeg"],
-        shortDescription: "Only a few left of this test keychain.",
-        fullDescription: "Only a few left of this test keychain. Shows low stock warning.",
-        warningThreshold: 5,
-        stockStatus: null
-      },
-      {
-        sku: "SEED-TEST-OOS",
-        name: "Test Out of Stock Bowl",
-        price: 499.0,
-        stock: 0,
-        isActive: true,
-        category: ["gifts"],
-        image: ["/assets/img/products/products-3.jpeg"],
-        shortDescription: "This test bowl is completely out of stock.",
-        fullDescription: "This test bowl is completely out of stock. Testing notify me features.",
-        warningThreshold: 5,
-        stockStatus: null
-      },
-      {
-        sku: "SEED-TEST-UNAVAILABLE",
-        name: "Test Temporarily Unavailable Frame",
-        price: 899.0,
-        stock: 10,
-        isActive: true,
-        category: ["gifts"],
-        image: ["/assets/img/products/products-4.jpeg"],
-        shortDescription: "Temporarily unavailable test frame.",
-        fullDescription: "Temporarily unavailable test frame. Stock exists but status makes it unavailable.",
-        warningThreshold: 5,
-        stockStatus: "Temporarily Unavailable"
-      },
-      {
-        sku: "SEED-TEST-DISCONTINUED",
-        name: "Test Discontinued Box",
-        price: 1200.0,
-        stock: 0,
-        isActive: true,
-        category: ["gifts"],
-        image: ["/assets/img/products/products-5.jpeg"],
-        shortDescription: "Discontinued box that cannot be bought.",
-        fullDescription: "Discontinued box that cannot be bought. Testing discontinued state.",
-        warningThreshold: 5,
-        stockStatus: "Discontinued"
-      }
-    ];
-
-    const seeded = [];
-    for (const p of productsToSeed) {
-      const prod = await Product.create(p);
-      seeded.push(prod);
-    }
-
-    // Seed the variable product
-    const varProd = await Product.create({
-      sku: "SEED-TEST-VARPRODUCT",
-      name: "Test Variable T-Shirt",
-      price: 399.0,
-      stock: 27,
-      isActive: true,
-      category: ["gifts"],
-      image: ["/assets/img/products/products-6.jpeg"],
-      shortDescription: "A multi-attribute variable product for complex OOS testing.",
-      fullDescription: "Testing sizes and colors dynamic options filtering, invalid vs OOS combos, auto-recovery.",
-      warningThreshold: 5,
-    });
-
-    const variants = [
-      {
-        productId: varProd.id,
-        variantName: "Colour: Red · Size: S",
-        mrp: 599.0,
-        salesPrice: 399.0,
-        stock: 10,
-        stockStatus: "Temporarily Unavailable",
-        sku: "SEED-TEST-VAR-1",
-        attributes: [{ key: "Colour", value: "Red" }, { key: "Size", value: "S" }],
-        status: "Active"
-      },
-      {
-        productId: varProd.id,
-        variantName: "Colour: Red · Size: M",
-        mrp: 599.0,
-        salesPrice: 399.0,
-        stock: 0,
-        stockStatus: null,
-        sku: "SEED-TEST-VAR-2",
-        attributes: [{ key: "Colour", value: "Red" }, { key: "Size", value: "M" }],
-        status: "Active"
-      },
-      {
-        productId: varProd.id,
-        variantName: "Colour: Blue · Size: S",
-        mrp: 599.0,
-        salesPrice: 449.0,
-        stock: 2,
-        stockStatus: null,
-        sku: "SEED-TEST-VAR-3",
-        attributes: [{ key: "Colour", value: "Blue" }, { key: "Size", value: "S" }],
-        status: "Active"
-      },
-      {
-        productId: varProd.id,
-        variantName: "Colour: Blue · Size: M",
-        mrp: 599.0,
-        salesPrice: 449.0,
-        stock: 15,
-        stockStatus: null,
-        sku: "SEED-TEST-VAR-4",
-        attributes: [{ key: "Colour", value: "Blue" }, { key: "Size", value: "M" }],
-        status: "Active"
-      }
-    ];
-
-    for (const v of variants) {
-      await Variant.create(v);
-    }
-
-    // Call internal helper to sync variant info to Product table
-    await syncProductVariants(varProd.id);
-
-    const freshVar = await Product.findByPk(varProd.id, { include: PRODUCT_INCLUDE });
-    seeded.push(freshVar);
-
-    res.json({ success: true, message: "Stock test products seeded successfully!", count: seeded.length });
-  } catch (err) {
-    next(err);
-  }
-};
-
-module.exports = { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct, seedStockTestProducts };
+module.exports = { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct };

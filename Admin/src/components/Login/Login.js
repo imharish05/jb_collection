@@ -65,7 +65,7 @@ const Login = ({ onLoginSuccess }) => {
                 <label>Email Address</label>
                 <div className="input-with-icon">
                   <RiMailLine className="input-icon" />
-                  <input type="email" placeholder="admin@kamaligifts.com" value={email}
+                  <input type="email" placeholder="Enter email address" value={email}
                     onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors({ ...errors, email: null }); }} />
                 </div>
                 <ErrorMsg field="email" />

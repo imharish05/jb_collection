@@ -7,4 +7,4 @@ Disallow: /checkout
 Disallow: /account
 
 # Sitemap
-Sitemap: https://kamiligifts.com/sitemap.xml
+Sitemap: https://kamaligiftsfactory.com/sitemap.xml
