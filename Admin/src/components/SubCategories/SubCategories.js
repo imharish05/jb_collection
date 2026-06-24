@@ -3,6 +3,7 @@ import api from '../../api/axiosInstance';
 import DataTable from '../DataTable/DataTable';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 export default function SubCategories({ showToast }) {
   const [subcategories, setSubcategories] = useState([]);
@@ -41,6 +42,10 @@ export default function SubCategories({ showToast }) {
   };
 
   useEffect(() => { fetchAll(); }, []);
+
+  if (!hasPermission('subcategories_view')) {
+    return <AccessDenied moduleName="Sub-Categories" />;
+  }
 
   const resetForm = () => {
     setShowForm(false);

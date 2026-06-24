@@ -417,12 +417,27 @@ const couponDiscount =
       className: "breakdown-row--paid",
       footerClassName: "paid-line",
     },
+    order.codCollected && rawDueAmount > 0 && {
+      key: "cod-collected",
+      label: "Paid on Delivery (COD)",
+      value: formatCurrency(rawDueAmount),
+      className: "breakdown-row--paid",
+      footerClassName: "paid-line",
+    },
     showDueRow && {
       key: "due",
       label: dueLabel,
       value: formatCurrency(dueAmount),
       className: dueAmount > 0 ? "breakdown-row--due" : "breakdown-row--due-clear",
       footerClassName: dueAmount > 0 ? "due-line" : "due-line due-line--clear",
+    },
+    order.codCollected && paidAmount > 0 && {
+      key: "total-paid",
+      label: "Total Paid",
+      value: formatCurrency(paidAmount + rawDueAmount),
+      className: "breakdown-row--paid",
+      footerClassName: "paid-line",
+      valueClassName: "font-weight-bold",
     },
     refund && {
       key: "refund-status",
@@ -630,35 +645,57 @@ const couponDiscount =
                                           <div style={{ fontSize: "10px", fontWeight: 700, color: "#b45309", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
                                             🎨 Customisation:
                                           </div>
-                                          {Object.entries(custom).map(([key, val]) => {
-                                             if (!val) return null;
-                                             const label = key
-                                               .split('_')
-                                               .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                               .join(' ');
-                                             const isFont = key.toLowerCase().includes('font');
-                                             const isCol = key.toLowerCase().includes('color') || key.toLowerCase().includes('colour') || (typeof val === 'string' && val.startsWith('#'));
-                                             return (
-                                               <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, ...(isFont ? { fontFamily: val } : {}) }}>
-                                                 <span style={{ fontWeight: 600 }}>{label}:</span>
-                                                 {isCol ? (
-                                                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                                     <span style={{
-                                                       width: 12,
-                                                       height: 12,
-                                                       borderRadius: '50%',
-                                                       background: val,
-                                                       border: '1px solid rgba(0,0,0,0.15)',
-                                                       display: 'inline-block'
-                                                     }} />
-                                                     <code style={{ fontSize: 10, background: '#f3f4f6', padding: '1px 4px', borderRadius: 4 }}>{val}</code>
-                                                   </span>
-                                                 ) : (
-                                                   <span>{val} {isFont && "(Preview)"}</span>
-                                                 )}
-                                               </div>
-                                             );
-                                           })}
+                                          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px", alignItems: "center" }}>
+                                            {Object.entries(custom).map(([key, val]) => {
+                                               if (!val) return null;
+                                               const label = key
+                                                 .split('_')
+                                                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                                 .join(' ');
+                                               const isFont = key.toLowerCase().includes('font');
+                                               const isCol = key.toLowerCase().includes('color') || key.toLowerCase().includes('colour') || (typeof val === 'string' && val.startsWith('#'));
+                                               return (
+                                                 <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, ...(isFont ? { fontFamily: val } : {}) }}>
+                                                   <span style={{ fontWeight: 600 }}>{label}:</span>
+                                                   {isCol ? (
+                                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                                       <span style={{
+                                                         width: 12,
+                                                         height: 12,
+                                                         borderRadius: '50%',
+                                                         background: val,
+                                                         border: '1px solid rgba(0,0,0,0.15)',
+                                                         display: 'inline-block'
+                                                       }} />
+                                                       <code style={{ fontSize: 10, background: '#f3f4f6', padding: '1px 4px', borderRadius: 4 }}>{val}</code>
+                                                     </span>
+                                                   ) : (
+                                                     <span>
+                                                       {val} {isFont && (() => {
+                                                         const priorityKeys = ['name', 'text', 'custom_text', 'customisation_text', 'engraving_text'];
+                                                         let textVal = 'Preview';
+                                                         for (const pk of priorityKeys) {
+                                                           if (custom[pk]) { textVal = custom[pk]; break; }
+                                                         }
+                                                         if (textVal === 'Preview') {
+                                                           for (const [k, v] of Object.entries(custom)) {
+                                                             const kLower = k.toLowerCase();
+                                                             if (kLower.includes('font') || kLower.includes('size') || kLower.includes('color') || kLower.includes('colour')) continue;
+                                                             if (typeof v !== 'string') continue;
+                                                             const isColor = v.startsWith('#') || ['red', 'blue', 'green', 'yellow', 'gold', 'silver', 'black', 'white', 'rose gold', 'bronze', 'orange', 'pink', 'purple', 'grey', 'brown'].includes(v.toLowerCase());
+                                                             if (isColor) continue;
+                                                             textVal = v;
+                                                             break;
+                                                           }
+                                                         }
+                                                         return `(${textVal})`;
+                                                       })()}
+                                                     </span>
+                                                   )}
+                                                 </div>
+                                               );
+                                             })}
+                                          </div>
                                         </div>
                                       );
                                     }

@@ -9,6 +9,7 @@ import {
   removeOfferBanner,
 } from '../../redux/services/timelesstreasuresservice';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -158,6 +159,10 @@ export default function TimelessTreasures({ showToast }) {
       return () => URL.revokeObjectURL(objUrl);
     }
   }, [imageFile]);
+
+  if (!hasPermission('timeless_view')) {
+    return <AccessDenied moduleName="Timeless Treasures" />;
+  }
 
   const resetForm = () => {
     setShowForm(false);

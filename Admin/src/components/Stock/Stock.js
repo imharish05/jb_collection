@@ -5,6 +5,7 @@ import { editVariant, fetchVariants } from '../../redux/services/variantsService
 import { isHexColor } from '../Products/VariantBuilder';
 import { hasPermission } from '../../utils/authHelper';
 import { fetchInventorySettings } from '../../redux/services/notificationsService';
+import AccessDenied from '../AccessDenied';
 
 const isColourKey = (key) => /colou?r/i.test(key || '');
 
@@ -228,6 +229,10 @@ export default function Stock({ showToast }) {
     }));
     setRows(stockRows);
   }, [variants]);
+
+  if (!hasPermission('stock_view')) {
+    return <AccessDenied moduleName="Stock" />;
+  }
 
   const handleStockUpdated = (variantId, newStock) => {
     setRows(prev => prev.map(r =>

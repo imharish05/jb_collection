@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import DataTable from './DataTable/DataTable';
 import { fetchContacts, removeContact } from '../redux/services/contactsService';
 import { confirmDelete } from '../utils/sweetalert';
+import { hasPermission } from '../utils/authHelper';
+import AccessDenied from './AccessDenied';
 
 const KM = { orange: '#F15A24', blue: '#1A3A6B', teal: '#00B4D8', text: '#1A1A2E', muted: '#6B7280', border: '#E5E7EB' };
 const fmtDate = (iso) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -12,6 +14,10 @@ export default function AdminContacts() {
   const { items: contacts, loading, error } = useSelector(state => state.contacts);
 
   useEffect(() => { dispatch(fetchContacts()); }, []);
+
+  if (!hasPermission('contacts_view')) {
+    return <AccessDenied moduleName="Contact Requests" />;
+  }
 
   const deleteContact = async (id) => {
     confirmDelete({
@@ -43,7 +49,11 @@ export default function AdminContacts() {
         </div>
       ) : (
         <DataTable
-          columns={['#ID', 'Name', 'Email', 'Phone', 'Message', 'Date', 'Actions']}
+          columns={(() => {
+            const cols = ['#ID', 'Name', 'Email', 'Phone', 'Message', 'Date'];
+            if (hasPermission('contacts_delete')) cols.push('Actions');
+            return cols;
+          })()}
           initialRows={contacts}
           renderRow={(c) => (
             <tr key={c.id}>
@@ -53,9 +63,11 @@ export default function AdminContacts() {
               <td>{c.phone || '—'}</td>
               <td style={{ maxWidth: 260, fontSize: 13, color: '#374151' }}>{c.message}</td>
               <td className="td-muted">{fmtDate(c.createdAt)}</td>
-              <td>
-                <button className="action-btn btn-del" onClick={() => deleteContact(c.id)}>Delete</button>
-              </td>
+              {hasPermission('contacts_delete') && (
+                <td>
+                  <button className="action-btn btn-del" onClick={() => deleteContact(c.id)}>Delete</button>
+                </td>
+              )}
             </tr>
           )}
         />

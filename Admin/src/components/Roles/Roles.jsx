@@ -3,6 +3,7 @@ import DataTable from '../DataTable/DataTable';
 import api from '../../api/axiosInstance';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 const PERMISSION_GROUPS = [
   {
@@ -160,6 +161,10 @@ export default function Roles({ showToast }) {
     fetchRoles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (!hasPermission('roles_view')) {
+    return <AccessDenied moduleName="Roles & Permissions" />;
+  }
 
   const fetchRoles = async () => {
     setLoading(true);

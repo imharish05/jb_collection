@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import axios from '../../api.js';
 import toast from 'react-hot-toast';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 // ─────────────────────────────────────────────────────────────────────────────
 const STATUS_FLOW = {
@@ -128,6 +129,10 @@ export default function ReturnDetail() {
   }, [id]);
 
   useEffect(() => { fetchDetail(); }, [fetchDetail]);
+
+  if (!hasPermission('returns_view')) {
+    return <AccessDenied moduleName="Returns" />;
+  }
 
   const handleStatusUpdate = async () => {
     if (!newStatus) return toast.error('Select a status');

@@ -4,6 +4,7 @@ import DataTable from '../DataTable/DataTable';
 import { fetchCoupons, createCoupon, editCoupon, removeCoupon } from '../../redux/services/couponsService';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 export default function Coupons({ showToast }) {
   const dispatch = useDispatch();
@@ -19,6 +20,10 @@ export default function Coupons({ showToast }) {
   useEffect(() => {
     dispatch(fetchCoupons())
   }, []);
+
+  if (!hasPermission('coupons_view')) {
+    return <AccessDenied moduleName="Coupons" />;
+  }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

@@ -345,13 +345,13 @@ const ShopGridStandard = () => {
                   <ShopTopbar
                     getLayout={setLayout}
                     getFilterSortParams={(type, val) => { setFilterSortType(type); setFilterSortValue(val); }}
-                    productCount={products.length}
+                    productCount={sortedProducts.length}
                     sortedProductCount={currentData.length}
                   />
                 </div>
                 <div className="d-flex d-lg-none align-items-center mb-3" style={{ padding:'4px 0' }}>
                   <p style={{ margin:0, fontSize:13, color:'#888' }}>
-                    <strong style={{ color:'#222' }}>{currentData.length}</strong> of {products.length} products
+                    <strong style={{ color:'#222' }}>{currentData.length}</strong> of {sortedProducts.length} products
                   </p>
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16, justifyContent:"flex-end" }}>

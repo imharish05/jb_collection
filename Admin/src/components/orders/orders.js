@@ -6,6 +6,7 @@ import DataTable from '../DataTable/DataTable';
 import { fetchOrders, changeOrderStatus, changeOrderItemStatus } from '../../redux/services/ordersService';
 import { renderVariantLabel } from '../Products/VariantBuilder';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 // ✅ Removed 'returned' from STATUS_OPTIONS, added 'pending'
 const STATUS_OPTIONS = ['pending', 'confirmed', 'shipped', 'processing', 'delivered', 'cancelled'];
@@ -164,10 +165,63 @@ export default function Orders({ status = null }) {
     return byStatus;
   }, [allOrders, status]);
 
+  // Extract unique custom fonts from orders to load dynamically
+  const uniqueFonts = useMemo(() => {
+    const fonts = new Set();
+    rows.forEach(order => {
+      if (Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          let custom = item.customisationDetails;
+          if (typeof custom === 'string') {
+            try {
+              custom = JSON.parse(custom);
+              if (typeof custom === 'string') {
+                custom = JSON.parse(custom);
+              }
+            } catch {
+              custom = null;
+            }
+          }
+          if (custom && typeof custom === 'object') {
+            Object.entries(custom).forEach(([key, val]) => {
+              if (val && typeof val === 'string' && key.toLowerCase().includes('font')) {
+                const fontName = val.trim();
+                if (fontName) {
+                  fonts.add(fontName);
+                }
+              }
+            });
+          }
+        });
+      }
+    });
+    return Array.from(fonts);
+  }, [rows]);
+
+  // Dynamically load Google Font stylesheets
+  useEffect(() => {
+    if (uniqueFonts.length > 0) {
+      uniqueFonts.forEach(fontName => {
+        const fontId = `google-font-${fontName.replace(/\s+/g, '-').toLowerCase()}`;
+        if (!document.getElementById(fontId)) {
+          const link = document.createElement('link');
+          link.id = fontId;
+          link.rel = 'stylesheet';
+          link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@300;400;500;600;700&display=swap`;
+          document.head.appendChild(link);
+        }
+      });
+    }
+  }, [uniqueFonts]);
+
   useEffect(() => {
     setExpanded(null);
     dispatch(fetchOrders());
   }, [dispatch, status]);
+
+  if (!hasPermission('orders_view')) {
+    return <AccessDenied moduleName="Orders" />;
+  }
 
   const updateStatus = async (orderId, newStatus) => {
     const currentOrder = rows.find(order => order.id === orderId);
@@ -431,12 +485,45 @@ export default function Orders({ status = null }) {
                                               const isLongText = typeof val === 'string' && val.length > 30;
 
                                               if (isFont) {
+                                                const textFieldVal = (() => {
+                                                   const priorityKeys = ['name', 'text', 'custom_text', 'customisation_text', 'engraving_text'];
+                                                   for (const pk of priorityKeys) {
+                                                     if (custom[pk]) return custom[pk];
+                                                   }
+                                                   for (const [k, v] of Object.entries(custom)) {
+                                                     const kLower = k.toLowerCase();
+                                                     if (kLower.includes('font') || kLower.includes('color')) continue;
+                                                     if (typeof v !== 'string') continue;
+                                                     const isColor = v.startsWith('#') || ['red', 'blue', 'green', 'yellow', 'gold', 'silver', 'black', 'white', 'rose gold', 'bronze', 'orange', 'pink', 'purple', 'grey', 'brown'].includes(v.toLowerCase());
+                                                     if (isColor) continue;
+                                                     return v;
+                                                   }
+                                                   return '';
+                                                })();
+                                                const previewText = textFieldVal || 'Font Preview';
+
                                                 return (
-                                                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span style={{ fontSize: 10, fontWeight: 700, color: '#92400e', minWidth: 60 }}>{label}:</span>
-                                                    <span style={{ fontSize: 11, fontFamily: val, background: '#fff', border: '1px solid #fde68a', borderRadius: 4, padding: '1px 6px', color: '#333' }}>
-                                                      {val} — Aa Bb Cc
-                                                    </span>
+                                                  <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                      <span style={{ fontSize: 10, fontWeight: 700, color: '#92400e', minWidth: 60 }}>{label}:</span>
+                                                      <span style={{ fontSize: 11, fontWeight: 600, color: '#333' }}>
+                                                        {val}
+                                                      </span>
+                                                    </div>
+                                                    <div style={{
+                                                      marginLeft: 66,
+                                                      padding: '4px 10px',
+                                                      background: '#fff',
+                                                      borderRadius: 6,
+                                                      border: '1.5px dashed #fde68a',
+                                                      fontFamily: val,
+                                                      fontSize: 15,
+                                                      color: '#111',
+                                                      display: 'inline-block',
+                                                      alignSelf: 'flex-start',
+                                                    }}>
+                                                      {previewText}
+                                                    </div>
                                                   </div>
                                                 );
                                               }

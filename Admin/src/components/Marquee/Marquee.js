@@ -4,6 +4,7 @@ import DataTable from '../DataTable/DataTable';
 import { fetchMarquees, createMarquee, editMarquee, removeMarquee } from '../../redux/services/marqueeService';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 const KM = {
   orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B',
@@ -49,6 +50,10 @@ export default function Marquee({ showToast }) {
   useEffect(() => {
     dispatch(fetchMarquees());
   }, [dispatch]);
+
+  if (!hasPermission('marquee_view')) {
+    return <AccessDenied moduleName="Slider Messages" />;
+  }
 
   const resetForm = () => {
     setShowForm(false);

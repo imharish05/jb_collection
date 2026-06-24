@@ -520,9 +520,15 @@ exports.addComboToCart = async (req, res) => {
     if (child.type === "fixed") {
       for (const cp of child.comboProducts) {
         const v = cp.variantId ? cp.variant : null;
-        const stock = v ? v.stock : cp.product?.stock ?? 0;
-        if (stock < cp.quantity) {
+        const stock = Number(v ? v.stock : cp.product?.stock ?? 0);
+        const needed = cp.quantity * parseInt(quantity);
+        if (stock <= 0) {
           validationErrors.push(`${cp.product?.name || "Product"} is out of stock`);
+        } else if (needed > stock) {
+          const maxPossible = Math.floor(stock / cp.quantity);
+          validationErrors.push(
+            `Only ${maxPossible} combo${maxPossible === 1 ? "" : "s"} available for "${cp.product?.name || "Product"}" (${stock} in stock, ${cp.quantity} per combo)`
+          );
         }
       }
     } else {

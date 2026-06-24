@@ -10,6 +10,7 @@ import {
 } from '../../redux/services/herosliderservice';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -123,6 +124,10 @@ export default function HeroSlider({ showToast }) {
       return () => URL.revokeObjectURL(objUrl);
     }
   }, [imageFile]);
+
+  if (!hasPermission('banners_view')) {
+    return <AccessDenied moduleName="Banners" />;
+  }
 
   const resetForm = () => {
     setShowForm(false);

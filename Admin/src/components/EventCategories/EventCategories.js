@@ -4,6 +4,7 @@ import DataTable from '../DataTable/DataTable';
 import { fetchEvents, createEvent, editEvent, removeEvent } from '../../redux/services/eventService';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -141,6 +142,10 @@ export default function EventCategories({ showToast }) {
       return () => URL.revokeObjectURL(url);
     }
   }, [imageFile]);
+
+  if (!hasPermission('categories_view')) {
+    return <AccessDenied moduleName="Event Categories" />;
+  }
 
   const resetForm = () => {
     setShowForm(false); setEditingId(null);

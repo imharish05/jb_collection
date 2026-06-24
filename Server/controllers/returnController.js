@@ -10,11 +10,13 @@ const {
   Product,
   User,
   Address,
+  OrderStatusEmailAudit,
 } = require("../models");
 const { Op } = require("sequelize");
 const { shiprocketPost, getPickupLocations } = require("../utils/shiprocket");
-const { sendReturnNotificationEmail } = require("../utils/mailer");
+const { sendReturnNotificationEmail, sendOrderStatusEmail } = require("../utils/mailer");
 const { referenceWhere } = require("../utils/referenceSlugs");
+const { syncRefunds } = require("../utils/refundSync");
 
 const razorpay = new Razorpay({
   key_id:     process.env.RAZORPAY_KEY_ID,
@@ -170,6 +172,10 @@ const getMyReturns = async (req, res, next) => {
       include: returnInclude,
       order: [["createdAt", "DESC"]],
     });
+
+    // Sync refund status from Razorpay in case webhook was missed (e.g. localhost, delay)
+    await syncRefunds(returns);
+
     return res.json(returns);
   } catch (err) {
     next(err);
@@ -186,6 +192,10 @@ const getReturnById = async (req, res, next) => {
     if (!returnRequest) return res.status(404).json({ message: "Return not found" });
     if (returnRequest.userId !== req.user.id)
       return res.status(403).json({ message: "Access denied" });
+
+    // Sync refund status from Razorpay in case webhook was missed
+    await syncRefunds(returnRequest);
+
     return res.json(returnRequest);
   } catch (err) {
     next(err);
@@ -339,6 +349,9 @@ const getAllReturns = async (req, res, next) => {
       subQuery: false,
     });
 
+    // Sync refund status from Razorpay in case webhook was missed (e.g. localhost, delay)
+    await syncRefunds(rows);
+
     return res.json({ returns: rows, total: count, page: parseInt(page), limit: parseInt(limit), stats });
   } catch (err) {
     next(err);
@@ -371,6 +384,10 @@ const getReturnByIdAdmin = async (req, res, next) => {
       ],
     });
     if (!returnRequest) return res.status(404).json({ message: "Return not found" });
+
+    // Sync refund status from Razorpay in case webhook was missed
+    await syncRefunds(returnRequest);
+
     return res.json(returnRequest);
   } catch (err) {
     next(err);
@@ -889,61 +906,305 @@ const createReversePickup = async (req, res, next) => {
 };
 
 // ── POST /api/returns/webhook/shiprocket-return — Shiprocket auto-webhook ─────
+const mapShiprocketStatusToOrderStatus = (srStatus) => {
+  if (!srStatus) return null;
+  const statusLower = srStatus.toLowerCase();
+
+  // "delivered" -> delivered
+  if (statusLower.includes("delivered")) {
+    return "delivered";
+  }
+
+  // "out for delivery" or "out_for_delivery" -> processing (which displays as "Out for Delivery" in Admin UI)
+  if (statusLower.includes("out for delivery") || statusLower.includes("out_for_delivery")) {
+    return "processing";
+  }
+
+  // "shipped", "dispatched", "picked up", "picked_up", "in transit", "in_transit", "pickup done" -> shipped
+  if (
+    statusLower.includes("shipped") ||
+    statusLower.includes("dispatched") ||
+    statusLower.includes("picked up") ||
+    statusLower.includes("picked_up") ||
+    statusLower.includes("in transit") ||
+    statusLower.includes("in_transit") ||
+    statusLower.includes("pickup done")
+  ) {
+    return "shipped";
+  }
+
+  // "cancelled" or "canceled" -> cancelled
+  if (statusLower.includes("cancelled") || statusLower.includes("canceled")) {
+    return "cancelled";
+  }
+
+  // "rto" or "returned" -> returned
+  if (statusLower.includes("rto") || statusLower.includes("returned")) {
+    return "returned";
+  }
+
+  return null;
+};
+
+const recordOrderStatusEmailAuditHelper = async ({
+  orderId,
+  previousStatus,
+  newStatus,
+  emailSent,
+  emailSentAt = null,
+  errorMessage = null,
+}) => {
+  try {
+    await OrderStatusEmailAudit.create({
+      orderId,
+      previousStatus,
+      newStatus,
+      emailSent,
+      emailSentAt,
+      errorMessage,
+    });
+  } catch (auditErr) {
+    console.error("[Audit Webhook] Failed to record order status email audit:", auditErr.message);
+  }
+};
+
+// ── POST /api/returns/webhook/shiprocket-return — Shiprocket auto-webhook ─────
 const handleShiprocketReturnWebhook = async (req, res) => {
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const awb           = body?.awb || body?.data?.awb;
     const shiprocketStatus = body?.current_status || body?.data?.current_status || "";
+    const shiprocketOrderId = body?.order_id || body?.data?.order_id;
 
-    if (!awb) return res.status(200).json({ received: true });
-
-    // Find the ReverseShipment by AWB
-    const shipment = await ReverseShipment.findOne({ where: { awbCode: awb } });
-    if (!shipment) return res.status(200).json({ received: true, message: "AWB not found" });
-
-    const returnRequest = await Return.findByPk(shipment.returnId, {
-      include: [
-        { model: Order,    as: "order"    },
-        { model: OrderItem,as: "orderItem" },
-      ],
+    // Find the ReverseShipment by AWB or Shiprocket Return/Order ID
+    const shipment = await ReverseShipment.findOne({
+      where: {
+        [Op.or]: [
+          awb ? { awbCode: awb } : null,
+          shiprocketOrderId ? { shiprocketReturnId: String(shiprocketOrderId) } : null,
+        ].filter(Boolean),
+      },
     });
-    if (!returnRequest) return res.status(200).json({ received: true });
-
-    // Update pickup status on shipment
-    shipment.pickupStatus = shiprocketStatus;
-    await shipment.save();
-
-    // Map Shiprocket status to return status
-    const statusLower = shiprocketStatus.toLowerCase();
-    let newStatus = null;
-
-    if (statusLower.includes("pickup done") || statusLower.includes("picked up"))
-      newStatus = "picked_up";
-    else if (statusLower.includes("delivered") || statusLower.includes("rto delivered"))
-      newStatus = "inspection_completed";
-    else if (statusLower.includes("in transit"))
-      newStatus = returnRequest.status === "picked_up" ? null : "picked_up";
-
-    if (newStatus && newStatus !== returnRequest.status) {
-      returnRequest.status = newStatus;
-      await returnRequest.save();
-
-      // Email
-      try {
-        const user = await User.findByPk(returnRequest.userId, { attributes: ["name","email"] });
-        await sendReturnNotificationEmail({
-          returnRequest,
-          user,
-          order:     returnRequest.order,
-          orderItem: returnRequest.orderItem,
-          status:    newStatus,
-        });
-      } catch (emailErr) {
-        console.error("[Return Email] Webhook email failed:", emailErr.message);
+    
+    if (shipment) {
+      // If we matched by shiprocketReturnId and awbCode was not yet set, update it now
+      if (awb && shipment.awbCode !== awb) {
+        shipment.awbCode = awb;
+        shipment.trackingUrl = `https://shiprocket.co/tracking/${awb}`;
       }
+      const courier = body?.courier_name || body?.data?.courier_name;
+      if (courier && shipment.courierName !== courier) {
+        shipment.courierName = courier;
+      }
+
+      const returnRequest = await Return.findByPk(shipment.returnId, {
+        include: [
+          { model: Order,    as: "order"    },
+          { model: OrderItem,as: "orderItem" },
+        ],
+      });
+      if (!returnRequest) return res.status(200).json({ received: true });
+
+      // Update pickup status on shipment
+      shipment.pickupStatus = shiprocketStatus;
+      await shipment.save();
+
+      // Map Shiprocket status to return status
+      const statusLower = shiprocketStatus.toLowerCase();
+      let newStatus = null;
+
+      if (statusLower.includes("pickup done") || statusLower.includes("picked up") || statusLower.includes("picked_up") || statusLower.includes("pickup_done"))
+        newStatus = "picked_up";
+      else if (statusLower.includes("delivered") || statusLower.includes("rto delivered") || statusLower.includes("rto_delivered"))
+        newStatus = "inspection_completed";
+      else if (statusLower.includes("in transit") || statusLower.includes("in_transit"))
+        newStatus = returnRequest.status === "picked_up" ? null : "picked_up";
+
+      if (newStatus && newStatus !== returnRequest.status) {
+        returnRequest.status = newStatus;
+        await returnRequest.save();
+
+        // Email
+        try {
+          const user = await User.findByPk(returnRequest.userId, { attributes: ["name","email"] });
+          await sendReturnNotificationEmail({
+            returnRequest,
+            user,
+            order:     returnRequest.order,
+            orderItem: returnRequest.orderItem,
+            status:    newStatus,
+          });
+        } catch (emailErr) {
+          console.error("[Return Email] Webhook email failed:", emailErr.message);
+        }
+      }
+
+      return res.status(200).json({ received: true, type: "reverse_shipment", returnId: returnRequest.id });
     }
 
-    return res.status(200).json({ received: true });
+    // ── Forward Shipment (Order) Handling ──
+    const shiprocketShipmentId = body?.shipment_id || body?.data?.shipment_id;
+
+    if (!shiprocketOrderId && !shiprocketShipmentId) {
+      return res.status(200).json({ received: true, message: "No identifiers found for forward shipment" });
+    }
+
+    // Find the Order by shiprocketOrderId or shiprocketShipmentId
+    const order = await Order.findOne({
+      where: {
+        [Op.or]: [
+          shiprocketOrderId ? { shiprocketOrderId: String(shiprocketOrderId) } : null,
+          shiprocketShipmentId ? { shiprocketShipmentId: String(shiprocketShipmentId) } : null,
+        ].filter(Boolean),
+      },
+    });
+
+    if (!order) {
+      return res.status(200).json({ received: true, message: "Order not found" });
+    }
+
+    // Map shiprocketStatus to Order.status
+    const mappedStatus = mapShiprocketStatusToOrderStatus(shiprocketStatus);
+    const previousStatus = order.status;
+
+    // Update deliveryStatus if available
+    if (shiprocketStatus) {
+      order.deliveryStatus = shiprocketStatus;
+    }
+
+    // Helper: determine if order is a COD order
+    const isCodOrderCheck = (ord, webhookBody) => {
+      const paymentType = (ord.paymentType || "").toUpperCase();
+      const paymentMethod = (ord.paymentMethod || "").toLowerCase();
+      const webhookPaymentMethod = (webhookBody?.payment_method || webhookBody?.data?.payment_method || "").toUpperCase();
+      return (
+        paymentType === "FULL_COD" ||
+        paymentType === "PARTIAL_COD" ||
+        paymentMethod === "cod" ||
+        paymentMethod === "partial_cod" ||
+        webhookPaymentMethod === "COD"
+      );
+    };
+
+    // Edge case: Shiprocket says "delivered" but order was ALREADY delivered manually —
+    // still auto-mark COD as collected if not already done.
+    if (
+      mappedStatus === "delivered" &&
+      previousStatus === "delivered" &&
+      !order.codCollected &&
+      isCodOrderCheck(order, body)
+    ) {
+      order.codCollected = true;
+      order.paymentStatus = "paid";
+      await order.save();
+      console.log(`[Webhook] Auto-marked COD as collected for already-delivered order ${order.id}`);
+      return res.status(200).json({ received: true, type: "forward_shipment_cod_collected", orderId: order.id });
+    }
+
+    // If mappedStatus matches one of our allowed order statuses and is different from current status
+    if (mappedStatus && mappedStatus !== previousStatus) {
+      const transaction = await Order.sequelize.transaction();
+      let transactionCommitted = false;
+      try {
+        order.status = mappedStatus;
+
+        // If COD/Partial COD order is delivered, mark paymentStatus as paid and codCollected as true
+        if (mappedStatus === "delivered" && isCodOrderCheck(order, body)) {
+          order.codCollected = true;
+          order.paymentStatus = "paid";
+        }
+
+        // Handle inventory restoration if status changed to cancelled / returned / rto
+        const targetStatuses = ["cancelled", "returned", "rto"];
+        if (targetStatuses.includes(mappedStatus.toLowerCase())) {
+          if (order.inventoryProcessed && !order.inventoryRestored) {
+            const inventoryService = require("../services/inventoryService");
+            await inventoryService.restoreOrderStock(order.id, transaction, `Order Status Update (Auto) - ${mappedStatus}`);
+          }
+        }
+
+        await order.save({ transaction });
+
+        // Also update all OrderItem statuses
+        await OrderItem.update(
+          { status: mappedStatus },
+          {
+            where: {
+              orderId: order.id,
+              [Op.or]: [
+                { status: { [Op.notIn]: ["cancelled", "returned"] } },
+                { status: { [Op.is]: null } },
+              ],
+            },
+            transaction,
+          }
+        );
+
+        await transaction.commit();
+        transactionCommitted = true;
+      } catch (dbErr) {
+        if (!transactionCommitted) {
+          await transaction.rollback();
+        }
+        throw dbErr;
+      }
+
+      // Fetch updated order for email notification
+      const updatedOrder = await Order.findByPk(order.id, {
+        include: [
+          { model: OrderItem, as: "items" },
+          { model: Address, as: "shippingAddress" },
+          { model: Address, as: "billingAddress" },
+        ],
+      });
+
+      // Send Status Email Notification
+      const audit = {
+        orderId: order.id,
+        previousStatus,
+        newStatus: mappedStatus,
+        emailSent: false,
+        emailSentAt: null,
+        errorMessage: null,
+      };
+
+      try {
+        const userRecord = await User.findByPk(order.userId, {
+          attributes: ["name", "email"],
+        });
+
+        const trackingUrl = `https://shiprocket.co/tracking/${awb || ""}`;
+
+        const emailResult = await sendOrderStatusEmail({
+          order: updatedOrder,
+          user: {
+            name: userRecord?.name,
+            email: userRecord?.email,
+          },
+          status: mappedStatus,
+          trackingDetails: {
+            trackingUrl: trackingUrl,
+            shiprocketTrackingUrl: trackingUrl,
+            shiprocketOrderId: updatedOrder.shiprocketOrderId,
+            shiprocketShipmentId: updatedOrder.shiprocketShipmentId,
+          },
+        });
+
+        audit.emailSent = Boolean(emailResult?.sent);
+        audit.emailSentAt = emailResult?.sentAt || null;
+        audit.errorMessage = audit.emailSent ? null : (emailResult?.reason || "Email not sent");
+      } catch (emailErr) {
+        audit.errorMessage = emailErr?.message || "Failed to send status email";
+        console.error("[Mailer] Failed to send order status email on webhook auto-update:", audit.errorMessage);
+      }
+
+      await recordOrderStatusEmailAuditHelper(audit);
+    } else {
+      // If status didn't map to a new value but we updated deliveryStatus
+      await order.save();
+    }
+
+    return res.status(200).json({ received: true, type: "forward_shipment", orderId: order.id });
   } catch (err) {
     console.error("[Shiprocket Return Webhook] Error:", err.message);
     return res.status(200).json({ received: true }); // Always 200 to prevent Shiprocket retries

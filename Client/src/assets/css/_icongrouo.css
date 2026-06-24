@@ -95,6 +95,7 @@
 ══════════════════════ */
 .ig-account {
   position: relative;
+  flex-shrink: 0;
 }
 
 .ig-account__trigger {
@@ -109,6 +110,7 @@
   color: #555;
   border-radius: 50%;
   transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
 }
 .ig-account__trigger:hover,
 .ig-account--open .ig-account__trigger {
@@ -120,6 +122,7 @@
 .ig-account__avatar {
   width: 28px;
   height: 28px;
+  min-width: 28px;
   border-radius: 50%;
   background: #db1a5d;
   color: #fff;
@@ -129,6 +132,7 @@
   align-items: center;
   justify-content: center;
   letter-spacing: 0.5px;
+  flex-shrink: 0;
 }
 
 /* panel */

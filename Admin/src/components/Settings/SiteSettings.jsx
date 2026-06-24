@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ImageUploadField from '../ImageUploadField';
 import { hasPermission } from '../../utils/authHelper';
 import api from '../../api/axiosInstance';
+import AccessDenied from '../AccessDenied';
 
 const IMG_BASE_URL = process.env.REACT_APP_IMG_URL || 'http://localhost:5000';
 
@@ -301,14 +302,7 @@ export default function SiteSettings({ showToast }) {
   };
 
   if (!hasPermission('settings_view')) {
-    return (
-      <div className="categories-container">
-        <div className="section-header">
-          <div className="section-title">Access Denied</div>
-        </div>
-        <p className="km-loading">You do not have permission to view this page.</p>
-      </div>
-    );
+    return <AccessDenied moduleName="Site Settings" />;
   }
 
   if (loading) {

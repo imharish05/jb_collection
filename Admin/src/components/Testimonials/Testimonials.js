@@ -10,6 +10,7 @@ import {
 } from '../../redux/services/testimonialsService';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -102,6 +103,10 @@ export default function Testimonials({ showToast }) {
       return () => URL.revokeObjectURL(url);
     }
   }, [imageFile]);
+
+  if (!hasPermission('testimonials_view')) {
+    return <AccessDenied moduleName="Testimonials" />;
+  }
 
   const resetForm = () => {
     setShowForm(false); setEditingId(null);

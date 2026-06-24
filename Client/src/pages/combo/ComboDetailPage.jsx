@@ -252,7 +252,7 @@ function FixedProductCard({ cp }) {
     || (cp.variantId && Array.isArray(prod?.Variants)
       ? prod.Variants.find(v => String(v.id) === String(cp.variantId)) || null
       : null);
-  const img = getProductImg(prod);
+  const img = (variant && variant.image) ? getImgUrl(variant.image) : getProductImg(prod);
   const low = isLowStock(cp);
   const oos = isOutOfStock(cp);
   const qty = cp.quantity || 1;
@@ -454,13 +454,14 @@ function ProductSlider({ items, renderCard }) {
 // ── Mix & Match product grid card ─────────────────────────────────────────────
 function MixMatchCard({ cp, selected, onToggle }) {
   const prod = cp.product;
-  const img  = getProductImg(prod);
   
   // Get the variant for THIS combo product entry (not just the first variant)
   const variant = cp.variant
     || (cp.variantId && Array.isArray(prod?.Variants)
       ? prod.Variants.find(v => String(v.id) === String(cp.variantId))
       : null);
+      
+  const img = (variant && variant.image) ? getImgUrl(variant.image) : getProductImg(prod);
   
   const variantId = cp.variantId || null;
   const oos = isOutOfStock(cp);
@@ -561,7 +562,9 @@ const ComboDetailPage = () => {
         || (cp.variantId && Array.isArray(cp.product?.Variants)
           ? cp.product.Variants.find(x => String(x.id) === String(cp.variantId))
           : null);
-      return Number(v ? v.stock : cp.product?.stock ?? 0);
+      const stock = Number(v ? v.stock : cp.product?.stock ?? 0);
+      const reqQty = Number(cp.quantity) || 1;
+      return Math.floor(stock / reqQty);
     });
     return Math.min(...stocks);
   }, [child]);

@@ -488,64 +488,87 @@ const updateProduct = async (req, res, next) => {
 
     // replace variants if new ones supplied
     if (parsedVariants) {
-      // ── MAPPING COMBO VARIANTS ───────────────────────────────────────────
+      // Fetch existing variants
       const oldVariants = await Variant.findAll({ where: { productId: product.id } });
       const oldVariantImages = oldVariants.map(v => v.image).filter(Boolean);
-      const oldVariantNameMap = new Map();
+      
+      // Map old variants by name for easy lookup
+      const oldVariantMap = new Map();
       oldVariants.forEach(ov => {
-        if (ov.id && ov.variantName) {
-          oldVariantNameMap.set(ov.id, ov.variantName);
+        if (ov.variantName) {
+          oldVariantMap.set(ov.variantName.trim().toLowerCase(), ov);
         }
       });
 
-      const affectedComboProds = await ChildComboProduct.findAll({
-        where: { productId: product.id }
-      });
-      // ─────────────────────────────────────────────────────────────────────
-
-      await Variant.destroy({ where: { productId: product.id } });
+      // Keep track of which existing variant IDs are kept
+      const activeVariantIds = new Set();
       const createdVariantImages = [];
+
       for (let i = 0; i < parsedVariants.length; i++) {
         const v = parsedVariants[i];
         const vImgFile = req.files ? req.files.find(f => f.fieldname === `variantImage_${i}`) : null;
         const vImage   = vImgFile ? `uploads/products/${vImgFile.filename}` : (v.image || null);
         if (vImage) createdVariantImages.push(vImage);
-        await Variant.create({
-          productId:   product.id,
-          variantName: v.variantName,
-          unit:        v.unit,
-          mrp:         v.mrp,
-          salesPrice:  v.salesPrice,
-          stock:       v.stock || 0,
-          sku:         v.sku || generateSku("KMV"),
-          attributes:  v.attributes || [],
-          status:      v.status || "Active",
-          image:       vImage,
-        });
+
+        const vNameKey = v.variantName ? v.variantName.trim().toLowerCase() : '';
+        const existingVariant = oldVariantMap.get(vNameKey);
+
+        if (existingVariant) {
+          // Update existing variant (keeps same ID)
+          await existingVariant.update({
+            unit:        v.unit,
+            mrp:         v.mrp,
+            salesPrice:  v.salesPrice,
+            stock:       v.stock || 0,
+            sku:         v.sku || existingVariant.sku || generateSku("KMV"),
+            status:      v.status || "Active",
+            attributes:  v.attributes || [],
+            image:       vImage,
+          });
+          activeVariantIds.add(existingVariant.id);
+        } else {
+          // Create new variant
+          const newVar = await Variant.create({
+            productId:   product.id,
+            variantName: v.variantName,
+            unit:        v.unit,
+            mrp:         v.mrp,
+            salesPrice:  v.salesPrice,
+            stock:       v.stock || 0,
+            sku:         v.sku || generateSku("KMV"),
+            attributes:  v.attributes || [],
+            status:      v.status || "Active",
+            image:       vImage,
+          });
+          activeVariantIds.add(newVar.id);
+        }
       }
 
-      // ── RESOLVING COMBO VARIANTS MAPPING ──────────────────────────────────
-      if (affectedComboProds.length > 0) {
-        const newVariants = await Variant.findAll({ where: { productId: product.id } });
-        const newVariantIdMap = new Map();
-        newVariants.forEach(nv => {
-          if (nv.variantName && nv.id) {
-            newVariantIdMap.set(nv.variantName, nv.id);
-          }
+      // Identify which variants were deleted
+      const deletedVariants = oldVariants.filter(ov => !activeVariantIds.has(ov.id));
+      
+      if (deletedVariants.length > 0) {
+        const deletedIds = deletedVariants.map(dv => dv.id);
+
+        // 1. Clean up referencing combo products
+        await ChildComboProduct.destroy({
+          where: { variantId: deletedIds }
         });
 
-        for (const cp of affectedComboProds) {
-          if (cp.variantId) {
-            const oldName = oldVariantNameMap.get(cp.variantId);
-            const newId = oldName ? newVariantIdMap.get(oldName) : null;
-            if (newId) {
-              await cp.update({ variantId: newId });
-            } else {
-              // The variant was deleted, so clean it up from the combo
-              await cp.destroy();
-            }
-          }
-        }
+        // 2. Clean up referencing cart items
+        await CartItem.destroy({
+          where: { selectedVariantId: deletedIds }
+        });
+
+        // 3. Clean up referencing wishlist items
+        await WishlistItem.destroy({
+          where: { selectedVariantId: deletedIds }
+        });
+
+        // 4. Destroy deleted variants
+        await Variant.destroy({
+          where: { id: deletedIds }
+        });
       }
       // delete old variant images that are no longer referenced by new variants or product images
       try {

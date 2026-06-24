@@ -149,6 +149,29 @@ const startServer = async () => {
         await adminUser.save();
         console.log(`✅ User ${adminUser.email} mapped to 'Super Admin' role`);
       }
+
+      // Seed default Super Admin user if no admin exists
+      const adminCount = await User.count({ where: { role: "admin" } });
+      if (adminCount === 0) {
+        const adminEmail = process.env.ADMIN_EMAIL || "admin@kamaligifts.com";
+        const adminPassword = process.env.ADMIN_PASSWORD || "Admin@123";
+        const adminName = process.env.ADMIN_NAME || "Super Admin";
+
+        await User.create({
+          name: adminName,
+          email: adminEmail,
+          password: adminPassword,
+          role: "admin",
+          roleId: superAdminRole.id,
+          status: "active",
+        });
+        console.log("------------------------------------------------------------------");
+        console.log(`✅ Created default Super Admin user:`);
+        console.log(`   Email:    ${adminEmail}`);
+        console.log(`   Password: ${adminPassword}`);
+        console.log("   (You can change these in your .env or after logging in)");
+        console.log("------------------------------------------------------------------");
+      }
     } catch (seedRoleErr) {
       console.error("❌ Failed to seed default roles:", seedRoleErr.message);
     }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from '../../api.js';
 import toast from 'react-hot-toast';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const TYPE_LABELS  = { refund: 'Return (Refund)', replacement: 'Replacement' };
@@ -87,6 +88,10 @@ export default function ReturnsDashboard({ showToast }) {
 
   useEffect(() => { fetchReturns(); }, [fetchReturns]);
   useEffect(() => { setPage(1); }, [activeTab, statusFilter, search]);
+
+  if (!hasPermission('returns_view')) {
+    return <AccessDenied moduleName="Returns" />;
+  }
 
   const handleQuickStatus = async (id, newStatus) => {
     const tid = toast.loading('Updating…');

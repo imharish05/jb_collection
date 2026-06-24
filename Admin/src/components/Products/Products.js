@@ -10,6 +10,7 @@ import VariantBuilder, { renderVariantLabel } from './VariantBuilder'; // ← ma
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
 import API from '../../api/axiosInstance';
+import AccessDenied from '../AccessDenied';
 
 const BASE_URL = process.env.REACT_APP_API_URL;
 const IMG_URL = process.env.REACT_APP_IMG_URL;
@@ -327,6 +328,10 @@ export default function Products({ showToast }) {
   const rows = isLowStock
     ? [...(allProducts || [])].filter(p => totalStock(p) < 50).sort((a, b) => totalStock(a) - totalStock(b))
     : (allProducts || []);
+
+  if (!hasPermission('products_view')) {
+    return <AccessDenied moduleName="Products" />;
+  }
 
   // ── Image handlers ────────────────────────────────────────────────────────
   const handleFileChange = (e) => {
@@ -746,9 +751,17 @@ export default function Products({ showToast }) {
             <button className="action-btn" onClick={() => window.location.href = '/products'}
               style={{ background: '#eee', color: '#333' }}>Clear Filter</button>
           )}
-          <button className="action-btn btn-edit" onClick={() => showForm ? handleCancel() : setShowForm(true)}>
-            {showForm ? 'Close' : '+ Add Product'}
-          </button>
+          {showForm ? (
+            <button className="action-btn btn-edit" onClick={handleCancel}>
+              Close
+            </button>
+          ) : (
+            hasPermission('products_create') && (
+              <button className="action-btn btn-edit" onClick={() => setShowForm(true)}>
+                + Add Product
+              </button>
+            )
+          )}
         </div>
       </div>
 

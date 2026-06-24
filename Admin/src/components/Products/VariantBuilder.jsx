@@ -83,6 +83,7 @@ export const INPUT_TYPE_PRESETS = ['Color', 'Size', 'Text', 'Custom List'];
 //    'Color' (case-insensitive) → color picker widget
 //    'Custom List' (case-insensitive) → dropdown from customListValues
 //    everything else → plain text input (Size, Text, Engraving, Pincode, Date, …)
+
 export const getRenderAs = (inputType) => {
   if (!inputType) return 'text';
   const t = inputType.trim().toLowerCase();

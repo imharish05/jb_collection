@@ -6,6 +6,7 @@ import { fetchProducts } from '../../redux/services/productsService';
 import VariantBuilder, { renderVariantLabel, AttributeRow, normalizeOptionKey } from '../Products/VariantBuilder';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 const IMG_URL = process.env.REACT_APP_IMG_URL || '';
 const getImgSrc = (p) => {
@@ -208,6 +209,10 @@ export default function Variants({ showToast }) {
     });
     setExistingKeys([...keys]);
   }, [productId, rows]);
+
+  if (!hasPermission('variants_view')) {
+    return <AccessDenied moduleName="Variants" />;
+  }
 
   const handleEditImageChange = (e) => {
     const file = e.target.files?.[0];

@@ -18,6 +18,7 @@ const { shiprocketPost, resolveShiprocketPaymentMethod } = require("../utils/shi
 const inventoryService = require("../services/inventoryService");
 const { referenceWhere, getDisplayReference } = require("../utils/referenceSlugs");
 const { createOrderNotification } = require("../services/inventoryService");
+const { syncRefunds } = require("../utils/refundSync");
 
 // ─── KGF Order Number Generator ──────────────────────────────────────────────
 // Generates a unique, sequential order number like KGF-000001.
@@ -280,6 +281,10 @@ const getMyOrders = async (req, res, next) => {
       ],
       order: [["createdAt", "DESC"]],
     });
+
+    // Sync refund status from Razorpay in case webhook was missed (e.g. localhost, delay)
+    await syncRefunds(orders);
+
     return res.json(orders);
   } catch (err) {
     next(err);
@@ -305,6 +310,10 @@ const getOrderById = async (req, res, next) => {
       ],
     });
     if (!order) return res.status(404).json({ message: "Order not found" });
+
+    // Sync refund status from Razorpay in case webhook was missed
+    await syncRefunds(order);
+
     return res.json(order);
   } catch (err) {
     next(err);

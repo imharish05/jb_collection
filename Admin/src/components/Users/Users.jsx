@@ -4,6 +4,7 @@ import api from '../../api/axiosInstance';
 import { confirmDelete } from '../../utils/sweetalert';
 import { RiEyeLine, RiEyeOffLine } from 'react-icons/ri';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 export default function Users({ showToast }) {
   const [users, setUsers] = useState([]);
@@ -26,6 +27,10 @@ export default function Users({ showToast }) {
     fetchRoles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (!hasPermission('users_view')) {
+    return <AccessDenied moduleName="User Management" />;
+  }
 
   const fetchUsers = async () => {
     setLoading(true);

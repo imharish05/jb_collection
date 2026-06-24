@@ -5,6 +5,7 @@ import ImageUploadField from '../ImageUploadField';
 import { fetchBrands, createBrand, editBrand, removeBrand } from '../../redux/services/brandsService';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -87,6 +88,10 @@ export default function Brands({ showToast }) {
       return () => URL.revokeObjectURL(url);
     }
   }, [logoFile]);
+
+  if (!hasPermission('brands_view')) {
+    return <AccessDenied moduleName="Brands" />;
+  }
 
   const resetForm = () => {
     setShowForm(false);

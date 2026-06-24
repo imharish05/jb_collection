@@ -5,6 +5,7 @@ import ImageUploadField from '../ImageUploadField';
 import { fetchCategories, createCategory, editCategory, removeCategory } from '../../redux/services/categoriesService';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
@@ -112,6 +113,10 @@ export default function Categories({ showToast }) {
       return () => URL.revokeObjectURL(url);
     }
   }, [imageFile]);
+
+  if (!hasPermission('categories_view')) {
+    return <AccessDenied moduleName="Categories" />;
+  }
 
   const handleEditClick = (cat) => {
     setEditingId(cat.id);

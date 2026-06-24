@@ -13,6 +13,7 @@ import {
 import { fetchProducts } from "../../redux/services/productsService";
 import { confirmDelete } from "../../utils/sweetalert";
 import { hasPermission } from "../../utils/authHelper";
+import AccessDenied from "../AccessDenied";
 
 const IMG_URL = process.env.REACT_APP_IMG_URL || "";
 
@@ -1388,6 +1389,10 @@ export default function NewCombos({ showToast }) {
     dispatch(fetchRootCombos());
     dispatch(fetchProducts());
   }, []);
+
+  if (!hasPermission('combos_view')) {
+    return <AccessDenied moduleName="Combos" />;
+  }
 
   const handleDeleteRoot = (root) => {
     confirmDelete({

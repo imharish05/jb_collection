@@ -480,7 +480,27 @@ const Cart = () => {
                                               <code style={{ fontSize: 10, background: '#f3f4f6', padding: '1px 4px', borderRadius: 4 }}>{val}</code>
                                             </span>
                                           ) : (
-                                            <span>{val} {isFont && "(Preview)"}</span>
+                                            <span>
+                                              {val} {isFont && (() => {
+                                                const priorityKeys = ['name', 'text', 'custom_text', 'customisation_text', 'engraving_text'];
+                                                let textVal = 'Preview';
+                                                for (const pk of priorityKeys) {
+                                                  if (custom[pk]) { textVal = custom[pk]; break; }
+                                                }
+                                                if (textVal === 'Preview') {
+                                                  for (const [k, v] of Object.entries(custom)) {
+                                                    const kLower = k.toLowerCase();
+                                                    if (kLower.includes('font') || kLower.includes('size') || kLower.includes('color') || kLower.includes('colour')) continue;
+                                                    if (typeof v !== 'string') continue;
+                                                    const isColor = v.startsWith('#') || ['red', 'blue', 'green', 'yellow', 'gold', 'silver', 'black', 'white', 'rose gold', 'bronze', 'orange', 'pink', 'purple', 'grey', 'brown'].includes(v.toLowerCase());
+                                                    if (isColor) continue;
+                                                    textVal = v;
+                                                    break;
+                                                  }
+                                                }
+                                                return `(${textVal})`;
+                                              })()}
+                                            </span>
                                           )}
                                           {idx < validEntries.length - 1 && (
                                             <span style={{ marginLeft: 6, color: '#b45309', opacity: 0.5 }}>|</span>

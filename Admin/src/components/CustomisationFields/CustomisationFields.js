@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DataTable from '../DataTable/DataTable';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 import { confirmDelete } from '../../utils/sweetalert';
 import API from '../../api/axiosInstance';
 
@@ -139,14 +140,7 @@ export default function CustomisationFields({ showToast }) {
   const inputTypeIcon = { text: '📝', textarea: '📄', color: '🎨', font: '🔤', select: '📋' };
 
   if (!hasPermission('customisation_fields_view')) {
-    return (
-      <div className="categories-container">
-        <div className="section-header">
-          <div className="section-title">Access Denied</div>
-        </div>
-        <p className="km-loading">You do not have permission to view this page.</p>
-      </div>
-    );
+    return <AccessDenied moduleName="Customisation Fields" />;
   }
 
   return (

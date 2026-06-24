@@ -3,14 +3,15 @@
    ═══════════════════════════════════════════════ */
 /* ── Catalogue trigger ── */
 .kg-catalogue-trigger {
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
-  gap: 5px;
+  /* gap: 6px; */
 }
 .kg-chevron {
   display: inline-flex;
   align-items: center;
   transition: transform 0.25s ease;
+  margin-left: 6px;
 }
 .kg-catalogue-item--open .kg-chevron,
 .kg-catalogue-item:hover .kg-chevron {

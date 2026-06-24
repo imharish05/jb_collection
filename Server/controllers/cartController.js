@@ -184,12 +184,60 @@ const increaseQuantity = async (req, res, next) => {
     if (!item) return res.status(404).json({ message: "Cart item not found" });
 
     // Stock validation before increase
-    const variant = item.selectedVariantId
-      ? (item.product?.Variants || item.product?.variants || []).find(v => String(v.id) === String(item.selectedVariantId))
-      : null;
-    const maxStock = variant ? Number(variant.stock) : Number(item.product?.stock ?? 999);
-    if (item.quantity >= maxStock) {
-      return res.status(400).json({ message: "Exceeds available stock" });
+    const isCombo = item.productSnapshot?.isCombo === true;
+    if (isCombo) {
+      const childComboId = item.productSnapshot.childComboId;
+      const { ChildCombo, ChildComboProduct } = require("../models");
+      const child = await ChildCombo.findByPk(childComboId, {
+        include: [{
+          model: ChildComboProduct,
+          as: "comboProducts",
+          include: [
+            { model: Product, as: "product", include: [{ model: Variant, as: "Variants" }] },
+            { model: Variant, as: "variant" }
+          ]
+        }]
+      });
+
+      if (!child || !child.isActive) {
+        return res.status(400).json({ message: "This combo is no longer active." });
+      }
+
+      const nextQuantity = item.quantity + 1;
+
+      if (child.type === "fixed") {
+        for (const cp of child.comboProducts) {
+          const v = cp.variantId ? cp.variant : null;
+          const stock = Number(v ? v.stock : cp.product?.stock ?? 0);
+          const needed = cp.quantity * nextQuantity;
+          if (stock < needed) {
+            return res.status(400).json({ message: `Insufficient stock for constituent product "${cp.product?.name || 'product'}".` });
+          }
+        }
+      } else {
+        // Mix & Match combo validation
+        const selections = item.productSnapshot.products || [];
+        for (const sel of selections) {
+          const cp = child.comboProducts.find(c => String(c.productId) === String(sel.productId));
+          if (!cp) continue;
+          const v = sel.variantId
+            ? cp.product?.Variants?.find(x => String(x.id) === String(sel.variantId))
+            : null;
+          const stock = Number(v ? v.stock : cp.product?.stock ?? 0);
+          const needed = (sel.quantity || 1) * nextQuantity;
+          if (stock < needed) {
+            return res.status(400).json({ message: `Insufficient stock for selected product "${cp.product?.name || 'product'}".` });
+          }
+        }
+      }
+    } else {
+      const variant = item.selectedVariantId
+        ? (item.product?.Variants || item.product?.variants || []).find(v => String(v.id) === String(item.selectedVariantId))
+        : null;
+      const maxStock = variant ? Number(variant.stock) : Number(item.product?.stock ?? 999);
+      if (item.quantity >= maxStock) {
+        return res.status(400).json({ message: "Exceeds available stock" });
+      }
     }
 
     item.quantity += 1;

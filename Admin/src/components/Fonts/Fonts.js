@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DataTable from '../DataTable/DataTable';
 import { hasPermission } from '../../utils/authHelper';
+import AccessDenied from '../AccessDenied';
 import { confirmDelete } from '../../utils/sweetalert';
 import API from '../../api/axiosInstance';
 
@@ -64,6 +65,10 @@ export default function Fonts({ showToast }) {
       document.head.appendChild(link);
     }
   }, [name]);
+
+  if (!hasPermission('fonts_view')) {
+    return <AccessDenied moduleName="Font Management" />;
+  }
 
   const resetForm = () => {
     setShowForm(false);
