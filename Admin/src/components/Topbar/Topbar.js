@@ -13,10 +13,10 @@ export default function Topbar({ title, addBtn, addLabel, onAdd }) {
 
   // Fetch notifications on mount and poll every 5 seconds for real-time updates
   useEffect(() => {
-    dispatch(fetchNotifications(5));
+    dispatch(fetchNotifications());
 
     const interval = setInterval(() => {
-      dispatch(fetchNotifications(5));
+      dispatch(fetchNotifications());
     }, 5000);
 
     return () => clearInterval(interval);

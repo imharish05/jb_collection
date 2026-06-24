@@ -222,6 +222,7 @@ const getTrackingUrl = (order, trackingDetails = {}) => {
     details.shiprocketTrackingUrl ||
     details.shiprocket_tracking_url ||
     details.url ||
+    (orderData.awbCode ? `https://shiprocket.co/tracking/${orderData.awbCode}` : "") ||
     orderData.trackingUrl ||
     orderData.tracking_url ||
     orderData.shiprocketTrackingUrl ||

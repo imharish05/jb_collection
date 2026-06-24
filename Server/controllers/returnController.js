@@ -254,6 +254,15 @@ const cancelOrder = async (req, res, next) => {
         });
       } catch (rzpErr) {
         console.error("[Razorpay] Cancellation refund failed:", rzpErr.message);
+        await Refund.create({
+          orderId:          order.id,
+          returnId:         null,
+          razorpayRefundId: null,
+          refundAmount:     parseFloat(order.totalAmount),
+          refundStatus:     "failed",
+          refundMode:       "razorpay",
+          manualRefundNotes: `Automatic refund failed: ${rzpErr.message}`,
+        });
       }
     } else if (paymentType === "PARTIAL_COD" && order.razorpayPaymentId) {
       try {
@@ -273,6 +282,15 @@ const cancelOrder = async (req, res, next) => {
         });
       } catch (rzpErr) {
         console.error("[Razorpay] Partial COD cancellation refund failed:", rzpErr.message);
+        await Refund.create({
+          orderId:           order.id,
+          returnId:          null,
+          razorpayRefundId:  null,
+          refundAmount:      parseFloat(order.advancePaid || 0),
+          refundStatus:      "failed",
+          refundMode:        "razorpay",
+          manualRefundNotes: `Automatic refund failed: ${rzpErr.message}`,
+        });
       }
     } else {
       // FULL_COD — manual offline
@@ -318,7 +336,7 @@ const getAllReturns = async (req, res, next) => {
         { referenceSlug: { [Op.like]: q } },
         { '$user.name$': { [Op.like]: q } },
         { '$user.email$': { [Op.like]: q } },
-        { '$order.referenceSlug$': { [Op.like]: q } },
+        { '$order.reference_slug$': { [Op.like]: q } },
         { '$order.id$': { [Op.like]: q } },
       ];
     }
@@ -861,14 +879,31 @@ const createReversePickup = async (req, res, next) => {
     const srResponse = await shiprocketPost("/orders/create/return", srPayload);
 
     // Save or update ReverseShipment
+    let awbCode     = srResponse?.awb_code || null;
+    let courierName = srResponse?.courier_name || null;
+
+    if (srResponse?.shipment_id && !awbCode) {
+      try {
+        console.log(`[Shiprocket] Auto-assigning AWB for reverse pickup shipment ${srResponse.shipment_id}...`);
+        const awbResponse = await shiprocketPost("/courier/assign/awb", {
+          shipment_id: String(srResponse.shipment_id),
+        });
+        awbCode     = awbResponse?.response?.data?.awb_code || null;
+        courierName = awbResponse?.response?.data?.courier_name || null;
+        console.log(`[Shiprocket] Reverse pickup AWB auto-assigned: ${awbCode} via ${courierName}`);
+      } catch (awbErr) {
+        console.error("[Shiprocket] Reverse pickup AWB assignment failed:", awbErr.message);
+      }
+    }
+
     let shipmentRecord = returnRequest.reverseShipment;
     const newData = {
       shiprocketReturnId: srResponse?.order_id ? String(srResponse.order_id) : null,
-      awbCode:            srResponse?.awb_code   || null,
-      courierName:        srResponse?.courier_name || null,
+      awbCode:            awbCode,
+      courierName:        courierName,
       pickupStatus:       "scheduled",
-      trackingUrl:        srResponse?.awb_code
-        ? `https://shiprocket.co/tracking/${srResponse.awb_code}`
+      trackingUrl:        awbCode
+        ? `https://shiprocket.co/tracking/${awbCode}`
         : null,
     };
 
@@ -976,17 +1011,78 @@ const handleShiprocketReturnWebhook = async (req, res) => {
     const shiprocketStatus = body?.current_status || body?.data?.current_status || "";
     const shiprocketOrderId = body?.order_id || body?.data?.order_id;
 
-    // Find the ReverseShipment by AWB or Shiprocket Return/Order ID
+    // Find the ReverseShipment by AWB or Shiprocket Return/Order ID (check both reverse and replacement fields)
     const shipment = await ReverseShipment.findOne({
       where: {
         [Op.or]: [
           awb ? { awbCode: awb } : null,
+          awb ? { replacementAwb: awb } : null,
           shiprocketOrderId ? { shiprocketReturnId: String(shiprocketOrderId) } : null,
+          shiprocketOrderId ? { replacementShiprocketOrderId: String(shiprocketOrderId) } : null,
         ].filter(Boolean),
       },
     });
     
     if (shipment) {
+      const isReplacement = (awb && shipment.replacementAwb === awb) || 
+                            (shiprocketOrderId && shipment.replacementShiprocketOrderId === String(shiprocketOrderId));
+
+      if (isReplacement) {
+        if (awb && shipment.replacementAwb !== awb) {
+          shipment.replacementAwb = awb;
+          shipment.replacementTrackingUrl = `https://shiprocket.co/tracking/${awb}`;
+        }
+        const courier = body?.courier_name || body?.data?.courier_name;
+        if (courier && shipment.replacementCourier !== courier) {
+          shipment.replacementCourier = courier;
+        }
+        await shipment.save();
+
+        const returnRequest = await Return.findByPk(shipment.returnId, {
+          include: [
+            { model: Order,    as: "order"    },
+            { model: OrderItem,as: "orderItem" },
+          ],
+        });
+        if (!returnRequest) return res.status(200).json({ received: true });
+
+        const statusLower = shiprocketStatus.toLowerCase();
+        let newStatus = null;
+
+        if (statusLower.includes("delivered")) {
+          newStatus = "replacement_delivered";
+        } else if (
+          statusLower.includes("shipped") ||
+          statusLower.includes("dispatched") ||
+          statusLower.includes("picked up") ||
+          statusLower.includes("picked_up") ||
+          statusLower.includes("in transit") ||
+          statusLower.includes("in_transit") ||
+          statusLower.includes("pickup done")
+        ) {
+          newStatus = "replacement_shipped";
+        }
+
+        if (newStatus && newStatus !== returnRequest.status) {
+          returnRequest.status = newStatus;
+          await returnRequest.save();
+
+          try {
+            const user = await User.findByPk(returnRequest.userId, { attributes: ["name","email"] });
+            await sendReturnNotificationEmail({
+              returnRequest,
+              user,
+              order:     returnRequest.order,
+              orderItem: returnRequest.orderItem,
+              status:    newStatus,
+            });
+          } catch (emailErr) {
+            console.error("[Replacement Email] Webhook email failed:", emailErr.message);
+          }
+        }
+        return res.status(200).json({ received: true, type: "replacement_shipment", returnId: returnRequest.id });
+      }
+
       // If we matched by shiprocketReturnId and awbCode was not yet set, update it now
       if (awb && shipment.awbCode !== awb) {
         shipment.awbCode = awb;
@@ -1070,6 +1166,19 @@ const handleShiprocketReturnWebhook = async (req, res) => {
     // Update deliveryStatus if available
     if (shiprocketStatus) {
       order.deliveryStatus = shiprocketStatus;
+    }
+    if (awb && order.awbCode !== awb) {
+      order.awbCode = awb;
+    }
+    const courierName = body?.courier_name || body?.data?.courier_name;
+    if (courierName && order.courier !== courierName) {
+      order.courier = courierName;
+    }
+
+    // Save if changed but no status update (otherwise status update transaction below will save it)
+    const statusChanged = mappedStatus && mappedStatus !== previousStatus;
+    if (!statusChanged && order.changed()) {
+      await order.save();
     }
 
     // Helper: determine if order is a COD order

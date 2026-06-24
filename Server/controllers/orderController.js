@@ -10,6 +10,7 @@ const {
   Coupon,
   OrderStatusEmailAudit,
   Role,
+  Refund,
 } = require("../models");
 const sequelize = require("../config/database");
 const { Op } = require("sequelize");
@@ -19,6 +20,11 @@ const inventoryService = require("../services/inventoryService");
 const { referenceWhere, getDisplayReference } = require("../utils/referenceSlugs");
 const { createOrderNotification } = require("../services/inventoryService");
 const { syncRefunds } = require("../utils/refundSync");
+const Razorpay = require("razorpay");
+const razorpay = new Razorpay({
+  key_id:     process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 // ─── KGF Order Number Generator ──────────────────────────────────────────────
 // Generates a unique, sequential order number like KGF-000001.
@@ -671,6 +677,8 @@ const getAllOrders = async (req, res, next) => {
         { model: OrderItem, as: "items" },
         { model: Address, as: "shippingAddress" },
         { model: Address, as: "billingAddress" },
+        // Include refund info so admin can see refund status on cancelled/prepaid orders
+        { model: Refund, as: "refunds" },
       ],
     });
     return res.json({ orders });
@@ -696,6 +704,7 @@ const getOrdersByStatus = async (req, res, next) => {
         { model: OrderItem, as: "items" },
         { model: Address, as: "shippingAddress" },
         { model: Address, as: "billingAddress" },
+        { model: Refund, as: "refunds" },
       ],
     });
     return res.json(orders);
@@ -766,11 +775,86 @@ const updateOrderStatus = async (req, res, next) => {
     await transaction.commit();
     transactionCommitted = true;
 
+    if (statusChanged && newStatus.toLowerCase() === "cancelled") {
+      const existingRefund = await Refund.findOne({ where: { orderId: order.id, returnId: null } });
+      if (!existingRefund) {
+        const paymentType = (order.paymentType || "").toUpperCase();
+        if (paymentType === "PREPAID" && order.razorpayPaymentId) {
+          try {
+            const rzpRefund = await razorpay.payments.refund(order.razorpayPaymentId, {
+              amount: Math.round(parseFloat(order.totalAmount) * 100),
+              notes: { reason: "Order Cancelled by Admin", orderId: order.id },
+            });
+            await Refund.create({
+              orderId:          order.id,
+              returnId:         null,
+              razorpayRefundId: rzpRefund.id,
+              refundAmount:     parseFloat(order.totalAmount),
+              refundStatus:     "initiated",
+              refundMode:       "razorpay",
+              manualRefundNotes: "Cancelled by Admin.",
+            });
+          } catch (rzpErr) {
+            console.error("[Razorpay] Admin cancellation refund failed:", rzpErr.message);
+            await Refund.create({
+              orderId:          order.id,
+              returnId:         null,
+              razorpayRefundId: null,
+              refundAmount:     parseFloat(order.totalAmount),
+              refundStatus:     "failed",
+              refundMode:       "razorpay",
+              manualRefundNotes: `Automatic refund failed: ${rzpErr.message}`,
+            });
+          }
+        } else if (paymentType === "PARTIAL_COD" && order.razorpayPaymentId) {
+          try {
+            const advancePaid = parseFloat(order.advancePaid || 0);
+            const rzpRefund = await razorpay.payments.refund(order.razorpayPaymentId, {
+              amount: Math.round(advancePaid * 100),
+              notes: { reason: "Order Cancelled by Admin — Advance Refund", orderId: order.id },
+            });
+            await Refund.create({
+              orderId:           order.id,
+              returnId:          null,
+              razorpayRefundId:  rzpRefund.id,
+              refundAmount:      advancePaid,
+              refundStatus:      "initiated",
+              refundMode:        "razorpay",
+              manualRefundNotes: "Order cancelled by Admin. Advance paid online was refunded. Remaining product value COD amount was never collected.",
+            });
+          } catch (rzpErr) {
+            console.error("[Razorpay] Admin partial COD cancellation refund failed:", rzpErr.message);
+            await Refund.create({
+              orderId:           order.id,
+              returnId:          null,
+              razorpayRefundId:  null,
+              refundAmount:      parseFloat(order.advancePaid || 0),
+              refundStatus:      "failed",
+              refundMode:        "razorpay",
+              manualRefundNotes: `Automatic refund failed: ${rzpErr.message}`,
+            });
+          }
+        } else {
+          // FULL_COD or no razorpayPaymentId — manual offline
+          await Refund.create({
+            orderId:           order.id,
+            returnId:          null,
+            razorpayRefundId:  null,
+            refundAmount:      0,
+            refundStatus:      "manual_completed",
+            refundMode:        "manual_offline",
+            manualRefundNotes: "Cancelled by Admin before delivery — no payment collected, nothing to refund.",
+          });
+        }
+      }
+    }
+
     const updatedOrder = await Order.findByPk(order.id, {
       include: [
         { model: OrderItem, as: "items" },
         { model: Address, as: "shippingAddress" },
         { model: Address, as: "billingAddress" },
+        { model: Refund, as: "refunds" },
       ],
     });
 

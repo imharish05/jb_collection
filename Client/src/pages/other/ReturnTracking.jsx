@@ -149,7 +149,7 @@ const ReturnTracking = () => {
                         Return ID: <strong>#{returnReq.referenceSlug || returnReq.id}</strong>
                       </p>
                       <p style={{ margin: "0 0 6px 0", fontSize: "14px" }}>
-                        Order ID: <strong>#{returnReq.order?.referenceSlug || returnReq.orderId}</strong>
+                        Order ID: <strong>{returnReq.order?.referenceSlug || returnReq.orderId}</strong>
                       </p>
                       <p style={{ margin: "0 0 6px 0", fontSize: "14px" }}>
                         Product: <strong>{returnReq.orderItem?.productName || "Product"}</strong>

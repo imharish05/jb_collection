@@ -44,7 +44,44 @@ const seed = require("./seeders/seed");
 
 const app = express();
 
-app.use(cors());
+// ── CORS Configuration ───────────────────────────────────────────────────────
+// Allowed origins are read from .env — no code change needed when you go live.
+// Just update CLIENT_URL and ADMIN_URL in your .env file.
+const allowedOrigins = [
+  process.env.CLIENT_URL,   // e.g. https://kamaligifts.saitechnosolutions.co.in
+  process.env.ADMIN_URL,    // e.g. https://admin.kamaligifts.saitechnosolutions.co.in
+  // Local development fallbacks (always allowed)
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
+].filter(Boolean); // removes undefined entries if env vars are not set
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      if (process.env.NODE_ENV !== "production") {
+        // Development: allow everything for easy local testing
+        return callback(null, true);
+      }
+
+      // Production: only allow listed origins
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      return callback(new Error(`CORS policy: origin '${origin}' is not allowed`));
+    },
+    credentials: true,                   // Allow cookies / Authorization headers
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200,           // For legacy browser compatibility
+  })
+);
 
 // ── Webhook raw-body parser (MUST be before express.json())
 // Razorpay webhook signature verification requires the raw, unparsed request body.
@@ -111,6 +148,7 @@ const startServer = async () => {
       await sequelize.query("ALTER TABLE users ADD COLUMN role_id CHAR(36) BINARY NULL;").catch(() => {});
       await sequelize.query("ALTER TABLE users ADD COLUMN status ENUM('active', 'inactive') DEFAULT 'active';").catch(() => {});
       await sequelize.query("ALTER TABLE products ADD COLUMN is_partial_cod_available TINYINT(1) DEFAULT 1;").catch(() => {});
+      await sequelize.query("ALTER TABLE orders ADD COLUMN awb_code VARCHAR(100) NULL;").catch(() => {});
       await sequelize.query("ALTER TABLE products ADD COLUMN customisation_fields JSON NULL;").catch(() => {});
       await sequelize.query("ALTER TABLE cart_items ADD COLUMN customisation_details JSON NULL;").catch(() => {});
       await sequelize.query("ALTER TABLE order_items ADD COLUMN customisation_details JSON NULL;").catch(() => {});

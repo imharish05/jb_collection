@@ -246,7 +246,7 @@ useEffect(() => {
                 letterSpacing: 1,
               }}
             >
-              Order ID: #{referenceSlug}
+              Order ID: {referenceSlug}
             </div>
           </div>
 

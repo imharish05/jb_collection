@@ -70,15 +70,19 @@ export default function NotificationDropdown({ onClose }) {
 
   // Load on mount — fetch 20 so the full unread list is visible
   useEffect(() => {
-    dispatch(fetchNotifications(20));
+    dispatch(fetchNotifications(20, true));
     dispatch(fetchInventorySummary());
     dispatch(fetchInventorySettings());
+    return () => {
+      // Reset limit back to 5 when dropdown closes
+      dispatch(fetchNotifications(5));
+    };
   }, []);
 
   const handleLoadMore = () => {
     const newLimit = limit + 20;
     setLimit(newLimit);
-    dispatch(fetchNotifications(newLimit));
+    dispatch(fetchNotifications(newLimit, true));
   };
 
   // Close on outside click — but not when the settings modal is open

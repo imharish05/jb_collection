@@ -8,11 +8,20 @@ import {
 } from "../slices/notificationsSlice";
 import { fetchRecentVariants } from "./dashboardService";
 
-export const fetchNotifications = (limit = 5) => async (dispatch) => {
-  dispatch(setLoading());
+export const fetchNotifications = (limit = null, showLoading = false) => async (dispatch, getState) => {
+  const state = getState().notifications || {};
+  const currentLimit = limit !== null ? limit : (state.limit || 5);
+  
+  if (showLoading && (!state.items || state.items.length === 0)) {
+    dispatch(setLoading());
+  }
   try {
-    const res = await api.get(`/notifications?limit=${limit}`);
-    dispatch(setNotifications(res.data));
+    const res = await api.get(`/notifications?limit=${currentLimit}`);
+    dispatch(setNotifications({
+      notifications: res.data.notifications,
+      unreadCount: res.data.unreadCount,
+      limit: currentLimit
+    }));
   } catch (e) {
     console.error("[Notifications] fetch error:", e);
   }

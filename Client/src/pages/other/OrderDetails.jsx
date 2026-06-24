@@ -519,7 +519,7 @@ const couponDiscount =
                             Courier Partner: <strong>{order.courier || "Shiprocket"}</strong>
                           </p>
                           <a
-                            href={`https://shiprocket.co/tracking/${order.shiprocketShipmentId}`}
+                            href={order.awbCode ? `https://shiprocket.co/tracking/${order.awbCode}` : `https://shiprocket.co/tracking/${order.shiprocketShipmentId}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -552,7 +552,7 @@ const couponDiscount =
                       </div>
                       <div className="info-group">
                         <label>Order ID</label>
-                        <p className="text-dark font-weight-bold">#{order.referenceSlug || order.orderNumber || order.id}</p>
+                        <p className="text-dark font-weight-bold">{order.referenceSlug || order.orderNumber || order.id}</p>
                       </div>
                     </div>
 

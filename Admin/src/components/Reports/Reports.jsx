@@ -322,7 +322,7 @@ export default function Reports() {
           loading={isLoading}
           renderRow={(o) => (
             <tr key={o.id}>
-              <td className="td-id">#{o.referenceSlug || o.id}</td>
+              <td className="td-id">{o.referenceSlug || o.id}</td>
               <td>{o.User?.name || o.user?.name || '—'}</td>
               <td>{statusBadge(o.status)}</td>
               <td className="td-price">₹{Number(o.totalAmount || 0).toFixed(2)}</td>

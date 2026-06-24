@@ -139,6 +139,11 @@ const Order = sequelize.define(
       allowNull: true,
       field: "delivery_status",
     },
+    awbCode: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      field: "awb_code",
+    },
 
     // ── Legacy / existing fields (kept for backward compat) ─────────────────
 

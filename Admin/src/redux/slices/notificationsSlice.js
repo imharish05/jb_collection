@@ -6,6 +6,7 @@ const notificationsSlice = createSlice({
     items: [],
     unreadCount: 0,
     loading: false,
+    limit: 5,
     settings: { highStockThreshold: 51, mediumStockThreshold: 11, lowStockThreshold: 1 },
     settingsLoading: false,
     summary: { total: 0, high: 0, medium: 0, low: 0, out_of_stock: 0 },
@@ -17,6 +18,9 @@ const notificationsSlice = createSlice({
       s.loading     = false;
       s.items       = a.payload.notifications;
       s.unreadCount = a.payload.unreadCount;
+      if (a.payload.limit !== undefined) {
+        s.limit = a.payload.limit;
+      }
     },
     setUnreadCount: (s, a) => { s.unreadCount = a.payload; },
     markItemRead:   (s, a) => {

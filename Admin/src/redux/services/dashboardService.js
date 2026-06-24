@@ -23,9 +23,10 @@ export const fetchDashboardData = () => async (dispatch) => {
         });
         dispatch(setDashboardData({ stats, recentProducts, totalStock }));
     } catch (err) {
-        const msg = err.response?.data?.message || "Failed to load dashboard";
+        const msg = err.response?.data?.message || "Failed to load dashboard stats";
         dispatch(setError(msg));
-        throw err;
+        // Show toast — no throw, so no fallback error screen
+        toast.error(msg, { id: "dash-stats-err" });
     }
 };
 
@@ -34,18 +35,24 @@ export const fetchRecentVariants = () => async (dispatch) => {
         const res = await api.get("/dashboard/recent-variants");
         dispatch(setRecentVariants({ variants: res.data.variants, thresholds: res.data.thresholds }));
     } catch (err) {
-        console.error("[Dashboard] fetchRecentVariants error:", err);
+        // Silent fail — variants are non-critical, no toast needed
+        console.warn("[Dashboard] fetchRecentVariants failed:", err?.message);
     }
 };
 
 export const fetchOrderCounts = () => async (dispatch) => {
-    const statuses = ["new", "confirmed", "shipped", "delivery", "delivered", "cancelled", "returned"];
-    const results = await Promise.allSettled(statuses.map(s => api.get(`/orders/status/${s}`)));
-    const counts = {};
-    results.forEach((r, i) => {
-        counts[statuses[i]] = r.status === "fulfilled" && Array.isArray(r.value.data) ? r.value.data.length : 0;
-    });
-    dispatch(setOrderCounts(counts));
+    try {
+        const statuses = ["new", "confirmed", "shipped", "delivery", "delivered", "cancelled", "returned"];
+        const results = await Promise.allSettled(statuses.map(s => api.get(`/orders/status/${s}`)));
+        const counts = {};
+        results.forEach((r, i) => {
+            counts[statuses[i]] = r.status === "fulfilled" && Array.isArray(r.value.data) ? r.value.data.length : 0;
+        });
+        dispatch(setOrderCounts(counts));
+    } catch (err) {
+        // Promise.allSettled never throws — safety net only
+        console.warn("[Dashboard] fetchOrderCounts failed:", err?.message);
+    }
 };
 
 export const fetchMonthlyOrders = (year) => async (dispatch) => {
@@ -59,7 +66,8 @@ export const fetchMonthlyOrders = (year) => async (dispatch) => {
         dispatch(setMonthlySalesData(salesRes.data));
     } catch (err) {
         dispatch(setGraphError());
-        throw err;
+        // Show toast — no throw, chart just stays empty
+        toast.error("Failed to load chart data. Please refresh.", { id: "dash-chart-err" });
     }
 };
 
@@ -70,7 +78,8 @@ export const fetchQuarterlySales = (year) => async (dispatch) => {
         dispatch(setQuarterlySalesData(res.data));
     } catch (err) {
         dispatch(setQuarterlyError());
-        throw err;
+        // Show toast — no throw
+        toast.error("Failed to load quarterly data. Please refresh.", { id: "dash-quarterly-err" });
     }
 };
 
@@ -79,17 +88,15 @@ export const loadDashboard = (dispatch) => {
     dashboardLoaded = true;
 
     const year = new Date().getFullYear();
-    toast.promise(
-        Promise.all([
-            dispatch(fetchDashboardData()),
-            dispatch(fetchRecentVariants()),
-            dispatch(fetchOrderCounts()),
-            dispatch(fetchMonthlyOrders(year)),
-            dispatch(fetchQuarterlySales(year)),
-        ]),
-        { error: "Failed to load dashboard" },
-        { id: 1 }
-    );
+
+    // Each fetch is independent — one failure won't block others.
+    // Success is silent (dashboard just loads normally).
+    // Errors show as individual toasts.
+    dispatch(fetchDashboardData());
+    dispatch(fetchRecentVariants());
+    dispatch(fetchOrderCounts());
+    dispatch(fetchMonthlyOrders(year));
+    dispatch(fetchQuarterlySales(year));
 };
 
 export const loadChart = (dispatch, year) => {

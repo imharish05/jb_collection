@@ -82,11 +82,37 @@ const AddressBlock = ({ addr, fallbackPhone, email }) => {
   );
 };
 
+const REFUND_STATUS_LABEL = {
+  pending:          { label: 'Refund Pending',   bg: '#fff8e1', color: '#e65100' },
+  initiated:        { label: 'Refund Initiated', bg: '#e3f2fd', color: '#1565c0' },
+  completed:        { label: 'Refunded ✓',       bg: '#e8f5e9', color: '#2e7d32' },
+  failed:           { label: 'Refund Failed',    bg: '#ffebee', color: '#c62828' },
+  manual_pending:   { label: 'Manual Refund Pending',   bg: '#fff8e1', color: '#e65100' },
+  manual_completed: { label: 'Manual Refund Done ✓',    bg: '#e8f5e9', color: '#2e7d32' },
+};
+
+// Helper: get the most relevant refund from order.refunds[]
+const getOrderRefund = (order) => {
+  const refunds = Array.isArray(order.refunds) ? order.refunds : [];
+  // Prefer order-level refunds (returnId == null means it's a cancellation refund)
+  const cancelRefund = refunds.find(r => !r.returnId);
+  return cancelRefund || refunds[0] || null;
+};
+
 const renderPaymentStatus = (order) => {
   if (order.status === 'cancelled') {
+    const refund = getOrderRefund(order);
+    const wasPaidOnline = order.paymentMethod !== 'cod' && order.paymentMethod !== 'FULL_COD';
+    const hadAdvance = safeNumber(order.advancePaid) > 0;
+
+    if (refund && (wasPaidOnline || hadAdvance)) {
+      const cfg = REFUND_STATUS_LABEL[refund.refundStatus] || { label: refund.refundStatus, bg: '#f3f4f6', color: '#4b5563' };
+      return <span className="status-pill" style={{ background: cfg.bg, color: cfg.color, padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>{cfg.label}</span>;
+    }
+    // COD cancelled — nothing to refund
     return <span className="status-pill" style={{ background: '#ffebee', color: '#c62828', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>Cancelled</span>;
   }
-  
+
   const status = order.paymentStatus;
   if (status === 'paid') {
     return <span className="status-pill" style={{ background: '#e8f5e9', color: '#2e7d32', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>Paid</span>;
@@ -99,6 +125,7 @@ const renderPaymentStatus = (order) => {
   }
   return <span className="status-pill" style={{ background: '#fff3e0', color: '#e65100', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>Pending</span>;
 };
+
 
 export default function Orders({ status = null }) {
   const dispatch = useDispatch();
@@ -270,7 +297,7 @@ export default function Orders({ status = null }) {
             return (
               <>
                 <tr key={order.id}>
-                  <td className="td-id">#{order.referenceSlug || order.id}</td>
+                  <td className="td-id">{order.referenceSlug || order.id}</td>
                   <td>
                     <div className="td-name" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <span>{order.customer_name || '—'}</span>
@@ -350,7 +377,7 @@ export default function Orders({ status = null }) {
                           <div className="km-form-header-icon">📦</div>
                           <div>
                             <div className="km-form-header-title" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                              <span>Order #{order.referenceSlug || order.id} — {order.customer_name}</span>
+                              <span>Order {order.referenceSlug || order.id} — {order.customer_name}</span>
                               {order.customerType && order.customerType.toLowerCase() !== 'registered customer' && (
                                 <span style={{
                                   fontSize: 10,
@@ -580,6 +607,32 @@ export default function Orders({ status = null }) {
                               )}
                             </div>
                             <AddressBlock addr={shippingAddr} fallbackPhone={!sameAddress ? order.customer_phone : null} email={null} />
+                            
+                            {order.awbCode && (
+                              <div style={{ marginTop: 10, padding: '10px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8 }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: '#166534', display: 'flex', alignItems: 'center', gap: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>🚚 Shipment Tracking</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginTop: 6 }}>
+                                  <span className="td-muted">AWB Code</span>
+                                  <strong style={{ fontFamily: 'monospace', color: '#166534' }}>{order.awbCode}</strong>
+                                </div>
+                                {order.courier && (
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginTop: 4 }}>
+                                    <span className="td-muted">Courier Partner</span>
+                                    <strong style={{ color: '#374151' }}>{order.courier}</strong>
+                                  </div>
+                                )}
+                                <a
+                                  href={`https://shiprocket.co/tracking/${order.awbCode}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ display: 'block', textAlign: 'center', background: '#166534', color: '#fff', fontSize: 11, fontWeight: 700, padding: '6px 12px', borderRadius: 6, marginTop: 8, textDecoration: 'none', transition: 'background 0.2s' }}
+                                  onMouseEnter={(e) => e.target.style.background = '#14532d'}
+                                  onMouseLeave={(e) => e.target.style.background = '#166534'}
+                                >
+                                  Track Package
+                                </a>
+                              </div>
+                            )}
                           </div>
                           <div>
                             <div className="km-detail-section-title">Payment Summary</div>
@@ -864,7 +917,70 @@ export default function Orders({ status = null }) {
                             })()}
 
                             {order.notes && <div className="km-order-notes">{order.notes}</div>}
-                          </div>
+
+                            {/* ── Refund Info (for cancelled online-paid orders) ── */}
+                            {order.status === 'cancelled' && (() => {
+                              const refund = getOrderRefund(order);
+                              const wasPaidOnline = order.paymentMethod !== 'cod' && order.paymentMethod !== 'FULL_COD';
+                              const hadAdvance = safeNumber(order.advancePaid) > 0;
+                              if (!refund || (!wasPaidOnline && !hadAdvance)) return null;
+                              const cfg = REFUND_STATUS_LABEL[refund.refundStatus] || { label: refund.refundStatus, bg: '#f3f4f6', color: '#4b5563' };
+                              return (
+                                <div style={{ marginTop: 14, borderTop: '1px solid #fde8e8', paddingTop: 12 }}>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: '#c62828', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Refund Details</div>
+
+                                  <div className="km-payment-row">
+                                    <span className="td-muted">Refund Status</span>
+                                    <span style={{ background: cfg.bg, color: cfg.color, padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: 11 }}>{cfg.label}</span>
+                                  </div>
+
+                                  <div className="km-payment-row">
+                                    <span className="td-muted">Refund Amount</span>
+                                    <span style={{ fontWeight: 700, color: refund.refundStatus === 'completed' || refund.refundStatus === 'manual_completed' ? '#2e7d32' : '#374151' }}>
+                                      ₹{safeNumber(refund.refundAmount).toFixed(2)}
+                                    </span>
+                                  </div>
+
+                                  {refund.razorpayRefundId && (
+                                    <div className="km-payment-row">
+                                      <span className="td-muted">Razorpay Refund ID</span>
+                                      <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#1565c0', background: '#e3f2fd', padding: '2px 6px', borderRadius: 4 }}>
+                                        {refund.razorpayRefundId}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {!refund.razorpayRefundId && refund.refundMode === 'razorpay' && (
+                                    <div className="km-payment-row">
+                                      <span className="td-muted">Razorpay Refund ID</span>
+                                      <span style={{ color: '#9ca3af', fontSize: 11, fontStyle: 'italic' }}>Not yet assigned</span>
+                                    </div>
+                                  )}
+
+                                  {refund.refundMode === 'manual_offline' && refund.manualRefundNotes && (
+                                    <div className="km-payment-row" style={{ alignItems: 'flex-start' }}>
+                                      <span className="td-muted">Refund Notes</span>
+                                      <span style={{ fontSize: 11, color: '#374151', textAlign: 'right', maxWidth: '55%' }}>{refund.manualRefundNotes}</span>
+                                    </div>
+                                  )}
+
+                                  {refund.refundedAt && (
+                                    <div className="km-payment-row">
+                                      <span className="td-muted">Refunded On</span>
+                                      <span style={{ fontSize: 11 }}>{new Date(refund.refundedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                                    </div>
+                                  )}
+
+                                  {order.razorpayPaymentId && (
+                                    <div className="km-payment-row">
+                                      <span className="td-muted">Original Payment ID</span>
+                                      <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#6b7280' }}>{order.razorpayPaymentId}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+          </div>
                         </div>
                       </div>
                     </td>

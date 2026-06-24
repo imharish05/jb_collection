@@ -534,7 +534,7 @@ const toggleVisibility = (field) => {
                           <div className="order-main-card" key={order.id}>
                             <div className="order-card-header">
                               <div className="header-left">
-                                <span className="order-label">Order <strong style={{ fontFamily: 'monospace', fontSize: '12px' }}>#{order.referenceSlug || order.id}</strong></span>
+                                <span className="order-label">Order <strong style={{ fontFamily: 'monospace', fontSize: '12px' }}>{order.referenceSlug || order.id}</strong></span>
                               </div>
                               <div className="header-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                                 <span className={`status-pill ${orderStatusLow || 'pending'}`}>{order.status || 'Pending'}</span>
