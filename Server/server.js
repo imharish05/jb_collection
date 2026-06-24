@@ -93,6 +93,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ── Routes ────────────────────────────────────────────────────────────────────
+app.get("/api/test-server", (req, res) => {
+  res.json({
+    status: "success",
+    message: "Server is up and running!",
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || "development"
+  });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/nav", navRoutes);
 app.use("/api/products", productRoutes);
