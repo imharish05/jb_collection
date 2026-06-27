@@ -432,7 +432,7 @@ const toggleVisibility = (field) => {
                                 className="full-input" 
                                 value={formData.name} 
                                 onChange={handleProfileChange}
-                                style={errors.name ? { borderColor: "#db1a5d" } : {}}
+                                style={errors.name ? { borderColor: "#b60410" } : {}}
                               />
                               <ErrorMsg field="name" />
                             </div>
@@ -449,7 +449,7 @@ const toggleVisibility = (field) => {
                                 placeholder="10-digit number" 
                                 value={formData.phone} 
                                 onChange={handleProfileChange}
-                                style={errors.phone ? { borderColor: "#db1a5d" } : {}}
+                                style={errors.phone ? { borderColor: "#b60410" } : {}}
                               />
                               <ErrorMsg field="phone" />
                             </div>
@@ -490,7 +490,7 @@ const toggleVisibility = (field) => {
                               text: "This action cannot be undone.",
                               icon: "warning",
                               showCancelButton: true,
-                              confirmButtonColor: "#db1a5d",
+                              confirmButtonColor: "#b60410",
                               cancelButtonColor: "#6c757d",
                               confirmButtonText: "Yes, cancel order",
                               cancelButtonText: "No, keep it",
@@ -515,7 +515,7 @@ const toggleVisibility = (field) => {
                                     title: "Success!",
                                     text: "Order cancelled successfully!",
                                     icon: "success",
-                                    confirmButtonColor: "#db1a5d",
+                                    confirmButtonColor: "#b60410",
                                   });
                                 } catch (err) {
                                   const errorMsg = err?.response?.data?.message || "Failed to cancel order";
@@ -523,7 +523,7 @@ const toggleVisibility = (field) => {
                                     title: "Error",
                                     text: errorMsg,
                                     icon: "error",
-                                    confirmButtonColor: "#db1a5d",
+                                    confirmButtonColor: "#b60410",
                                   });
                                 }
                               },
@@ -650,7 +650,7 @@ const toggleVisibility = (field) => {
                                   key={addr.id}
                                   onClick={() => handleSelectActive(addr.id)}
                                   style={{
-                                    border: `2px solid ${isActive ? "#db1a5d" : "#e8e8e8"}`,
+                                    border: `2px solid ${isActive ? "#b60410" : "#e8e8e8"}`,
                                     borderRadius: 10,
                                     padding: "16px 18px",
                                     cursor: "pointer",
@@ -660,7 +660,7 @@ const toggleVisibility = (field) => {
                                   }}
                                 >
                                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                                    <span style={{ fontSize: 11, fontWeight: 700, background: isActive ? "#db1a5d" : "#f0f0f0", color: isActive ? "#fff" : "#555", padding: "2px 10px", borderRadius: 20 }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, background: isActive ? "#b60410" : "#f0f0f0", color: isActive ? "#fff" : "#555", padding: "2px 10px", borderRadius: 20 }}>
                                       {addr.addressType || "Home"}
                                     </span>
                                     {isDef && (
@@ -669,7 +669,7 @@ const toggleVisibility = (field) => {
                                       </span>
                                     )}
                                     {isActive && (
-                                      <span style={{ marginLeft: "auto", color: "#db1a5d" }}>
+                                      <span style={{ marginLeft: "auto", color: "#b60410" }}>
                                         <i className="fa fa-check-circle"></i>
                                       </span>
                                     )}
@@ -831,7 +831,7 @@ const toggleVisibility = (field) => {
                                   name="isDefault"
                                   checked={form.isDefault}
                                   onChange={handleFormChange}
-                                  style={{ width: 16, height: 16, accentColor: "#db1a5d", cursor: "pointer" }}
+                                  style={{ width: 16, height: 16, accentColor: "#b60410", cursor: "pointer" }}
                                 />
                                 Set as default address
                               </label>

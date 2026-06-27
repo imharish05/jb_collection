@@ -1,4 +1,4 @@
-/* updated */
+﻿/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -10,7 +10,7 @@
   letter-spacing: 1rem;
   line-height: 1.1;
   margin-bottom: 30px;
-  color: #db1a5d;
+  color: #b60410;
 }
 @media only screen and (min-width: 992px) and (max-width: 1199px) {
   .error h1 {
@@ -52,7 +52,7 @@
   padding: 0 10px;
   border: none;
   border-radius: 0;
-  background-color: #db1a5d;
+  background-color: #b60410;
   display: inline-block;
 }
 .error-btn:after {
@@ -62,7 +62,7 @@
   bottom: -6px;
   height: 3px;
   width: 100%;
-  background-color: #db1a5d;
+  background-color: #b60410;
   transition: all 0.3s;
 }
 .error-btn:hover {
@@ -86,7 +86,7 @@
 }
 .searchform button {
   border: none;
-  background-color: #db1a5d;
+  background-color: #b60410;
   width: 70px;
   color: #fff;
   cursor: pointer;

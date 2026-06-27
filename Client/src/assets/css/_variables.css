@@ -9,7 +9,7 @@
    --font-size-xl: 18px    card/page subheadings
 */
 :root {
-  --theme-color: #db1a5d;
+  --theme-color: #b60410;
   --theme-color-2: #0d1b40;
   --font-size-2xs: 10px;
   --font-size-xs: 11px;
@@ -18,21 +18,32 @@
   --font-size-base: 14px;
   --font-size-lg: 16px;
   --font-size-xl: 18px;
+
+  /* ── Dark Theme ── */
+  --bg-primary:    #0d0d0d;
+  --bg-secondary:  #141414;
+  --bg-card:       #1c1c1c;
+  --bg-input:      #222222;
+  --border-dark:   #2a2a2a;
+  --text-primary:  #f0ead6;
+  --text-secondary:#c8bfb0;
+  --text-muted:    #888880;
+  --accent:        #b60410;
 }
         
 /* Alternate theme classes */
 .theme-pink {
-  --theme-color: #db1a5d;
+  --theme-color: #b60410;
   --theme-color-2: #0d1b40;
 }
         
 .theme-green {
-  --theme-color: #db1a5d;
+  --theme-color: #b60410;
   --theme-color-2: #0d1b40;
 }
         
 .theme-blue {
-  --theme-color: #db1a5d;
+  --theme-color: #b60410;
   --theme-color-2: #0d1b40;
 }
         

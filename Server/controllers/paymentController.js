@@ -5,7 +5,7 @@ const { Order, CartItem, User, Refund, Return } = require('../models');
 const sequelize = require('../config/database');
 const inventoryService = require('../services/inventoryService');
 const { sendOrderConfirmationEmail, sendAdminNewOrderEmail } = require('../utils/mailer');
-const { pushOrderToShiprocket } = require('./orderController');
+
 
 const razorpay = new Razorpay({
   key_id:     process.env.RAZORPAY_KEY_ID,
@@ -234,12 +234,7 @@ const processSuccessfulPayment = async (orderId, paymentId, paymentSource, isDel
           console.error('[Mailer] Failed to send admin email notification:', adminEmailErr.message);
         }
 
-        try {
-          console.log(`[Shiprocket] Auto-pushing order ${orderId} after successful payment...`);
-          await pushOrderToShiprocket(orderId, userEmail);
-        } catch (srErr) {
-          console.error('[Shiprocket] Auto-push failed after successful payment:', srErr.message);
-        }
+
       } catch (postErr) {
         console.error('[Post-Payment] Error in post-commit operations:', postErr.message);
       }
@@ -912,9 +907,7 @@ const verifyAndCreateOrder = async (req, res, next) => {
         try {
           await sendAdminNewOrderEmail(freshOrder, { name: userRecord?.name, email: userRecord?.email || '' });
         } catch (e) { console.error('[verifyAndCreateOrder] Admin email failed:', e.message); }
-        try {
-          await pushOrderToShiprocket(orderId, userRecord?.email || '');
-        } catch (e) { console.error('[verifyAndCreateOrder] Shiprocket push failed:', e.message); }
+
       } catch (e) {
         console.error('[verifyAndCreateOrder] Post-commit error:', e.message);
       }

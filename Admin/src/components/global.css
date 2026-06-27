@@ -72,7 +72,7 @@
   --dark-3: #323d4e;
 
   /* Brand accent (Teal) */
-  --brand: #db1a5d;
+  --brand: #b60410;
 
   /* Semantic aliases */
   --base:                #fff;
@@ -130,6 +130,12 @@ body {
   min-height: 100vh;
   font-size: 1rem;
   line-height: 1.7;
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
 }
 
 /* ── Layout ── */
@@ -550,7 +556,7 @@ body {
 
 .km-coupon-stripe {
   width: 12px;
-  background: linear-gradient(180deg, #F15A24 0%, #e03e08 100%);
+  background: linear-gradient(180deg, #b60410 0%, #e03e08 100%);
   flex-shrink: 0;
 }
 
@@ -566,7 +572,7 @@ body {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.15em;
-  color: #F15A24;
+  color: #b60410;
   text-transform: uppercase;
   margin-bottom: 2px;
 }
@@ -583,7 +589,7 @@ body {
 .km-coupon-value {
   font-size: 20px;
   font-weight: 700;
-  color: #F15A24;
+  color: #b60410;
   margin-top: 2px;
 }
 

@@ -1,4 +1,4 @@
-/* 1. The Parent: This must be exactly the width of the screen */
+﻿/* 1. The Parent: This must be exactly the width of the screen */
 .header-offer {
   width: 100%;
   overflow: hidden; /* CRITICAL: This hides the scrollbar */

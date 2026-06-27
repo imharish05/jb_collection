@@ -146,8 +146,8 @@
 
 .kco-add-new-btn {
   background: none;
-  border: 1.5px solid #db1a5d;
-  color: #db1a5d;
+  border: 1.5px solid #b60410;
+  color: #b60410;
   border-radius: 8px;
   padding: 7px 15px;
   font-size: 13px;
@@ -157,7 +157,7 @@
 }
 
 .kco-add-new-btn:hover {
-  background: #db1a5d;
+  background: #b60410;
   color: #fff;
 }
 
@@ -299,12 +299,12 @@
 }
 
 .kco-same-billing-pill:hover {
-  border-color: #db1a5d;
+  border-color: #b60410;
   background: #fff5f8;
 }
 
 .kco-same-billing-pill input {
-  accent-color: #db1a5d;
+  accent-color: #b60410;
   width: 15px;
   height: 15px;
   flex-shrink: 0;
@@ -329,7 +329,7 @@
 }
 
 .kco-addr-card.selected {
-  border-color: #db1a5d;
+  border-color: #b60410;
   background: #fff5f8;
   box-shadow: 0 2px 12px rgba(219,26,93,0.12);
 }
@@ -348,14 +348,14 @@
 }
 
 .kco-addr-card.selected .kco-radio-outer {
-  border-color: #db1a5d;
+  border-color: #b60410;
 }
 
 .kco-radio-dot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #db1a5d;
+  background: #b60410;
 }
 
 .kco-addr-body {
@@ -400,7 +400,7 @@
 .kco-mirrored-badge {
   font-size: 10px;
   background: #fce7f3;
-  color: #db1a5d;
+  color: #b60410;
   border-radius: 5px;
   padding: 2px 8px;
   font-weight: 700;
@@ -432,7 +432,7 @@
 
 /* ── New Address Form ─────────────────────────────── */
 .kco-new-addr-form {
-  border: 1.5px dashed #db1a5d;
+  border: 1.5px dashed #b60410;
   border-radius: 14px;
   padding: 22px;
   margin-top: 16px;
@@ -467,9 +467,9 @@
 }
 
 .kco-type-btn.active {
-  background: #db1a5d;
+  background: #b60410;
   color: #fff;
-  border-color: #db1a5d;
+  border-color: #b60410;
 }
 
 .kco-field-grid {
@@ -507,7 +507,7 @@
 }
 
 .kco-input:focus {
-  border-color: #db1a5d;
+  border-color: #b60410;
 }
 
 .kco-input.error {
@@ -536,7 +536,7 @@
 }
 
 .kco-save-addr-btn {
-  background: linear-gradient(135deg, #db1a5d, #c01550);
+  background: linear-gradient(135deg, #b60410, #c01550);
   color: #fff;
   border: none;
   border-radius: 9px;
@@ -612,7 +612,7 @@
 .kco-next-btn {
   display: block;
   width: 100%;
-  background: linear-gradient(135deg, #db1a5d, #c01550);
+  background: linear-gradient(135deg, #b60410, #c01550);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -673,7 +673,7 @@
 }
 
 .kco-pay-card.selected {
-  border-color: #db1a5d;
+  border-color: #b60410;
   background: #fff5f8;
   box-shadow: 0 2px 12px rgba(219,26,93,0.12);
 }
@@ -733,7 +733,7 @@
 .kco-edit-link {
   background: none;
   border: none;
-  color: #db1a5d;
+  color: #b60410;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -769,7 +769,7 @@
 
 .kco-place-order-btn {
   flex: 1;
-  background: linear-gradient(135deg, #db1a5d, #c01550);
+  background: linear-gradient(135deg, #b60410, #c01550);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -1024,9 +1024,9 @@
 
 .kco-coupon-chip:hover,
 .kco-coupon-chip.active {
-  border-color: #db1a5d;
+  border-color: #b60410;
   background: #fff5f8;
-  color: #db1a5d;
+  color: #b60410;
 }
 
 .kco-coupon-chip span {
@@ -1064,14 +1064,14 @@
 }
 
 .kco-coupon-input:focus {
-  border-color: #db1a5d;
+  border-color: #b60410;
 }
 
 .kco-coupon-apply-btn {
   height: 40px;
   border: none;
   border-radius: 10px;
-  background: #db1a5d;
+  background: #b60410;
   color: #fff;
   padding: 0 16px;
   font-size: var(--font-size-md);
@@ -1129,7 +1129,7 @@
   right: -7px;
   width: 20px;
   height: 20px;
-  background: #db1a5d;
+  background: #b60410;
   color: #fff;
   border-radius: 50%;
   font-size: 10px;
@@ -1210,7 +1210,7 @@
 }
 
 .kco-add-first-btn {
-  background: linear-gradient(135deg, #db1a5d, #c01550);
+  background: linear-gradient(135deg, #b60410, #c01550);
   color: #fff;
   border: none;
   border-radius: 9px;
@@ -1319,7 +1319,7 @@
 .kco-success-btn-primary {
   display: inline-flex;
   align-items: center;
-  background: linear-gradient(135deg, #db1a5d, #c01550);
+  background: linear-gradient(135deg, #b60410, #c01550);
   color: #fff;
   text-decoration: none;
   border-radius: 10px;
@@ -1473,7 +1473,7 @@
 }
 
 .kco-default-check-row input {
-  accent-color: #db1a5d;
+  accent-color: #b60410;
   width: 15px;
   height: 15px;
   flex-shrink: 0;
@@ -1570,7 +1570,7 @@
 }
 
 .kco-courier-item.active {
-  border-color: #f15a24;
+  border-color: #b60410;
   background: #fff8f5;
 }
 
@@ -1599,7 +1599,7 @@
 .kco-courier-price {
   font-size: 15px;
   font-weight: 800;
-  color: #f15a24;
+  color: #b60410;
 }
 
 .kco-modal-footer {
@@ -1611,7 +1611,7 @@
 }
 
 .kco-modal-btn {
-  background: #f15a24;
+  background: #b60410;
   color: #fff;
   border: none;
   border-radius: 8px;

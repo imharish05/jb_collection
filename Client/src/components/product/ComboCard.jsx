@@ -37,8 +37,8 @@ const ComboCard = ({ combo, spaceBottomClass }) => {
   const detailUrl = process.env.PUBLIC_URL + "/combo/root/" + (combo.slug || combo.rootComboId) + "?type=" + combo.type;
 
   const typeBadgeStyle = combo.type === "fixed"
-    ? { background: "#EFF6FF", color: "#1A3A6B" }
-    : { background: "#fefce8", color: "#b45309" };
+    ? { background: "rgba(30, 58, 138, 0.3)", color: "#93c5fd" }
+    : { background: "rgba(180, 83, 9, 0.3)", color: "#fde047" };
 
   const typeLabel = combo.type === "fixed" ? "Fixed Combo" : "Mix & Match";
 
@@ -51,12 +51,12 @@ const ComboCard = ({ combo, spaceBottomClass }) => {
           ) : (
             <div style={{
               width: "100%", paddingTop: "100%", position: "relative",
-              background: "#F9FAFB", display: "flex", alignItems: "center",
+              background: "#1e1e1e", display: "flex", alignItems: "center",
               justifyContent: "center",
             }}>
               <span style={{
                 position: "absolute", top: "50%", left: "50%",
-                transform: "translate(-50%, -50%)", fontSize: 48, color: "#e5e7eb",
+                transform: "translate(-50%, -50%)", fontSize: 48, color: "#383838",
               }}>🎁</span>
             </div>
           )}

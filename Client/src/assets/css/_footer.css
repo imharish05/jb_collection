@@ -26,13 +26,13 @@
 }
 .copyright p {
   letter-spacing: 0.9px;
-  color: #313131;
+  color: #888880;
 }
 .copyright p a {
-  color: #313131;
+  color: #888880;
 }
 .copyright p a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 .copyright.copyright-white p {
   color: #fff;
@@ -41,7 +41,7 @@
   color: #fff;
 }
 .copyright.copyright-white p a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 
 .footer-widget .footer-title h3 {
@@ -49,7 +49,7 @@
   font-weight: 500;
   line-height: 1;
   margin: 0 0 16px;
-  color: #313131;
+  color: #ffffff;
 }
 .footer-widget .footer-list ul li {
   margin: 0 0 11px;
@@ -62,7 +62,7 @@
   color: #5d5d5d;
 }
 .footer-widget .footer-list ul li a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 .footer-widget .subscribe-style p {
   margin: 0 0 20px;
@@ -93,8 +93,8 @@
   background: none;
 }
 .footer-widget .subscribe-style .subscribe-form .clear button:hover {
-  color: #db1a5d;
-  border-bottom: 2px solid #db1a5d;
+  color: #b60410;
+  border-bottom: 2px solid #b60410;
 }
 .footer-widget .subscribe-style.subscribe-style-white p {
   color: #e6e6e6;
@@ -110,8 +110,8 @@
 }
 .footer-widget .subscribe-style.subscribe-style-white .subscribe-form .clear input:hover,
 .footer-widget .subscribe-style.subscribe-style-white .subscribe-form .clear button:hover {
-  color: #db1a5d;
-  border-bottom: 2px solid #db1a5d;
+  color: #b60410;
+  border-bottom: 2px solid #b60410;
 }
 @media only screen and (min-width: 1366px) and (max-width: 1600px) {
   .footer-widget.ml-95 {
@@ -184,7 +184,7 @@
   color: #e6e6e6;
 }
 .footer-widget.footer-widget-white .footer-list ul li a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 
 @media only screen and (min-width: 768px) and (max-width: 991px) {
@@ -347,7 +347,7 @@
   color: #e5e5e5;
 }
 .footer-top .footer-social ul li a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 .footer-top .footer-social.footer-social-white ul li:before {
   background-color: #fff;
@@ -377,7 +377,7 @@
   color: #fff;
 }
 .copyright-2 p a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 .copyright-2.copyright-white-border {
   border-top: 1px solid #cccccc;
@@ -390,7 +390,7 @@
   color: #848484;
 }
 .copyright-2.copyright-gray p a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 
 .footer-white .footer-top p {
@@ -400,7 +400,7 @@
   color: #000;
 }
 .footer-white .footer-top .footer-social ul li a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 .footer-white .copyright-2 {
   margin-top: 0;

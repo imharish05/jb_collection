@@ -77,7 +77,7 @@ export default function Reviews() {
               <td style={{ fontSize: 12, color: '#374151' }}>
                 {row.childCombo ? (
                   <>
-                    <span style={{ fontWeight: 700, color: '#F15A24' }}>Combo</span>
+                    <span style={{ fontWeight: 700, color: '#b60410' }}>Combo</span>
                     <div>{row.childCombo.name}</div>
                   </>
                 ) : row.product ? (

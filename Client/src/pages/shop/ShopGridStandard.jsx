@@ -470,10 +470,10 @@ const ShopGridStandard = () => {
                       step={Math.max(1, Math.floor((priceMax - priceMin) / 100))}
                       value={sliderVal}
                       onChange={val => setDraftPrice({ min: val[0], max: val[1] })}
-                      trackStyle={[{ backgroundColor: "#db1a5d", height: 3 }]}
+                      trackStyle={[{ backgroundColor: "#b60410", height: 3 }]}
                       handleStyle={[
-                        { borderColor:"#db1a5d", backgroundColor:"#fff", width:20, height:20, marginTop:-8.5, boxShadow:"0 1px 6px rgba(219,26,93,0.4)", opacity:1 },
-                        { borderColor:"#db1a5d", backgroundColor:"#fff", width:20, height:20, marginTop:-8.5, boxShadow:"0 1px 6px rgba(219,26,93,0.4)", opacity:1 },
+                        { borderColor:"#b60410", backgroundColor:"#fff", width:20, height:20, marginTop:-8.5, boxShadow:"0 1px 6px rgba(219,26,93,0.4)", opacity:1 },
+                        { borderColor:"#b60410", backgroundColor:"#fff", width:20, height:20, marginTop:-8.5, boxShadow:"0 1px 6px rgba(219,26,93,0.4)", opacity:1 },
                       ]}
                       railStyle={{ backgroundColor:"#e8e8e8", height:3 }}
                     />

@@ -6,7 +6,7 @@ import { confirmDelete } from '../utils/sweetalert';
 import { hasPermission } from '../utils/authHelper';
 import AccessDenied from './AccessDenied';
 
-const KM = { orange: '#F15A24', blue: '#1A3A6B', teal: '#00B4D8', text: '#1A1A2E', muted: '#6B7280', border: '#E5E7EB' };
+const KM = { orange: '#b60410', blue: '#1A3A6B', teal: '#00B4D8', text: '#1A1A2E', muted: '#6B7280', border: '#E5E7EB' };
 const fmtDate = (iso) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
 export default function AdminContacts() {

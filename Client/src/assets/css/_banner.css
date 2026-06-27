@@ -1,4 +1,4 @@
-/* updated */
+﻿/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -43,7 +43,7 @@
   }
 }
 .single-banner .banner-content h3 {
-  font-family: "Cormorant Garamond";
+  font-family: 'Playfair Display', serif;
   font-size: 36px;
   font-weight: 600;
   margin: 0;
@@ -60,7 +60,7 @@
   }
 }
 .single-banner .banner-content h4 {
-  font-family: "Cormorant Garamond";
+  font-family: 'Playfair Display', serif;
   font-size: 18px;
   font-weight: 600;
   margin: 3px 0 58px;
@@ -109,16 +109,16 @@
   line-height: 25px;
 }
 .single-banner .banner-content a:hover {
-  color: #db1a5d;
-  border: 2px solid #db1a5d;
+  color: #b60410;
+  border: 2px solid #b60410;
 }
 .single-banner .banner-content.banner-pink a {
-  color: #db1a5d;
-  border: 2px solid #db1a5d;
+  color: #b60410;
+  border: 2px solid #b60410;
 }
 .single-banner .banner-content.banner-pink a:hover {
-  color: #db1a5d;
-  border: 2px solid #db1a5d;
+  color: #b60410;
+  border: 2px solid #b60410;
 }
 .single-banner .banner-content--style2 h3 {
   color: #1c1c1c;
@@ -316,22 +316,22 @@
   border-radius: 100%;
 }
 .single-banner .banner-content-3 > a:hover {
-  color: #db1a5d;
-  border: 2px solid #db1a5d;
+  color: #b60410;
+  border: 2px solid #b60410;
 }
 .single-banner .banner-content-3.pink-banner p {
   color: #010101;
 }
 .single-banner .banner-content-3.pink-banner p span {
-  color: #db1a5d;
+  color: #b60410;
 }
 .single-banner .banner-content-3.pink-banner > a {
-  color: #db1a5d;
-  border: 2px solid #db1a5d;
+  color: #b60410;
+  border: 2px solid #b60410;
 }
 .single-banner .banner-content-3.pink-banner > a:hover {
-  color: #db1a5d;
-  border: 2px solid #db1a5d;
+  color: #b60410;
+  border: 2px solid #b60410;
 }
 .single-banner .banner-content-4 span {
   font-size: 18px;
@@ -405,19 +405,19 @@
   background-color: #6eab49;
 }
 .single-banner .banner-content-4 > a:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .single-banner .banner-content-4.pink-banner span {
-  color: #db1a5d;
+  color: #b60410;
 }
 .single-banner .banner-content-4.pink-banner h2 {
-  color: #db1a5d;
+  color: #b60410;
 }
 .single-banner .banner-content-4.pink-banner > a {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .single-banner .banner-content-4.pink-banner > a:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .single-banner .banner-content-5 {
   position: absolute;
@@ -459,7 +459,7 @@
   }
 }
 .single-banner .banner-content-5 h3 {
-  font-family: "Cormorant Garamond";
+  font-family: 'Playfair Display', serif;
   font-size: 36px;
   font-weight: 600;
   margin: 9px 0 62px;
@@ -499,8 +499,8 @@
   border-radius: 100%;
 }
 .single-banner .banner-content-5 a:hover {
-  color: #db1a5d;
-  border: 2px solid #db1a5d;
+  color: #b60410;
+  border: 2px solid #b60410;
 }
 .single-banner .banner-content-5.banner-content-5-white h3 {
   color: #fff;
@@ -520,7 +520,7 @@
   background-color: #e90042;
 }
 .single-banner .banner-content-6 a:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .single-banner .banner-content-7 {
   position: absolute;
@@ -598,8 +598,8 @@
   border-radius: 100%;
 }
 .single-banner .banner-content-7 > a:hover {
-  color: #db1a5d;
-  border: 2px solid #db1a5d;
+  color: #b60410;
+  border: 2px solid #b60410;
 }
 .single-banner .banner-content-8 {
   position: absolute;
@@ -642,7 +642,7 @@
   }
 }
 .single-banner .banner-content-8 h2 {
-  font-family: "Abril Fatface", cursive;
+  font-family: 'Playfair Display', serif;
   font-size: 64px;
   line-height: 50px;
   margin: 10px 0 4px;
@@ -674,7 +674,7 @@
   }
 }
 .single-banner .banner-content-8 p {
-  font-family: "Abril Fatface", cursive;
+  font-family: 'Playfair Display', serif;
   font-size: 20px;
   line-height: 1;
   margin: 0 0 48px;
@@ -712,8 +712,8 @@
   border-radius: 100%;
 }
 .single-banner .banner-content-8 > a:hover {
-  color: #db1a5d;
-  border: 2px solid #db1a5d;
+  color: #b60410;
+  border: 2px solid #b60410;
 }
 .single-banner .banner-content-33 {
   position: absolute;
@@ -992,7 +992,7 @@
   }
 }
 .single-banner-2 .banner-content-2 h3 {
-  font-family: "Cormorant Garamond";
+  font-family: 'Playfair Display', serif;
   font-size: 48px;
   margin: 0;
   color: #915342;
@@ -1008,7 +1008,7 @@
   }
 }
 .single-banner-2 .banner-content-2 h4 {
-  font-family: "Cormorant Garamond";
+  font-family: 'Playfair Display', serif;
   font-size: 24px;
   font-weight: 500;
   margin: 22px 0 94px;
@@ -1107,8 +1107,8 @@
   border-color: #ab87cd;
 }
 .single-banner-2 .banner-content-2--style2--pink a {
-  color: #db1a5d;
-  border-color: #db1a5d;
+  color: #b60410;
+  border-color: #b60410;
 }
 .single-banner-2 .banner-content-2--style3 h3 {
   font-size: 36px;
@@ -1169,7 +1169,7 @@
   left: 50%;
 }
 .single-banner-3 .banner-content-3 h4 {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 30px;
   font-weight: bold;
   line-height: 1.4em;
@@ -1191,7 +1191,7 @@
   }
 }
 .single-banner-3 .banner-content-3 a {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 18px;
   font-weight: 400;
   position: relative;
@@ -1281,10 +1281,10 @@
   display: inline-block;
   padding: 13px 40px 15px;
   color: #fff;
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .save-money-content .save-money-btn a:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 
 .medical-contact-area {
@@ -1292,7 +1292,7 @@
 }
 
 .medical-contact-text h3 {
-  font-family: "Lobster", cursive;
+  font-family: 'Playfair Display', serif;
   font-size: 29px;
   font-style: italic;
   margin: 0 0 11px;
@@ -1394,7 +1394,7 @@
 }
 
 .cta-content .title {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 48px;
   font-weight: 700;
   line-height: 1.3;

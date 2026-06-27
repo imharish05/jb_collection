@@ -1,4 +1,4 @@
-/* updated */
+﻿/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -14,7 +14,7 @@
   }
 }
 .video-popup__content .title {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 36px;
   font-weight: 700;
   margin-left: -120px;
@@ -35,7 +35,7 @@
   color: #313131;
 }
 .video-popup__content .link {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 16px;
   font-weight: 5000;
 }
@@ -103,7 +103,7 @@
   }
 }
 .video-popup-2__content .title {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 48px;
   font-weight: 700;
   line-height: 1.5;
@@ -119,7 +119,7 @@
   font-weight: 400;
 }
 .video-popup-2__content .link a {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 18px;
   line-height: 1;
   position: relative;

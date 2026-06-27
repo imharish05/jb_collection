@@ -72,7 +72,7 @@
   --dark-3: #323d4e;
 
   /* Brand accent (Teal) */
-  --brand: #db1a5d;
+  --brand: #b60410;
 
   /* Semantic aliases */
   --base:                #fff;
@@ -130,6 +130,12 @@ body {
   min-height: 100vh;
   font-size: 1rem;
   line-height: 1.7;
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
 }
 
 /* ── Layout ── */

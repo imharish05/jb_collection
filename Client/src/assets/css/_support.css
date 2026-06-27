@@ -269,7 +269,7 @@
 }
 
 .support-wrap-5 .support-content-5 h5 {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 24px;
   line-height: 24px;
   margin: 15px 0 15px;
@@ -371,7 +371,7 @@
   transition: all 0.3s ease 0s;
 }
 .support-wrap-7 .support-content-7 h5 {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 18px;
   font-weight: 500;
   margin-bottom: 0;
@@ -421,10 +421,10 @@
 
 /* The Card Design */
 .support-wrap-28 {
-    background: rgba(255, 255, 255, 0.4); /* White Transparency */
+    background: rgba(30, 30, 30, 0.9);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(205, 131, 62, 0.15);
     border-radius: 20px;
     padding: 40px 25px;
     text-align: center;
@@ -433,7 +433,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 
@@ -441,15 +441,15 @@
 .support-icon-28 {
     width: 50px;
     height: 50px;
-    background: #fff;
+    background: #252525;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 25px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    box-shadow: none;
     transition: all 0.5s ease;
-    border: 1px solid #fce4ec;
+    border: 1px solid #383838;
 }
 
 
@@ -462,7 +462,7 @@
 
 /* Text Styling */
 .support-content-28 h5 {
-    color: #001d3d; /* Professional Navy */
+    color: #ffffff;
     font-size: 18px;
     font-weight: 700;
     margin-bottom: 12px;
@@ -471,7 +471,7 @@
 }
 
 .support-content-28 p {
-    color: #4a5568;
+    color: #c8bfb0;
     font-size: 14px;
     line-height: 1.6;
     margin: 0;

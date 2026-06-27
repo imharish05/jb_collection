@@ -145,10 +145,10 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
               value={sliderValue}
               onChange={handlePriceChange}
               onAfterChange={handlePriceAfterChange}
-              trackStyle={[{ backgroundColor: "#db1a5d", height: 3 }]}
+              trackStyle={[{ backgroundColor: "#b60410", height: 3 }]}
               handleStyle={[
-                { borderColor: "#db1a5d", backgroundColor: "#fff", width: 18, height: 18, marginTop: -7.5, boxShadow: "0 1px 4px rgba(219, 26, 93,0.35)", opacity: 1 },
-                { borderColor: "#db1a5d", backgroundColor: "#fff", width: 18, height: 18, marginTop: -7.5, boxShadow: "0 1px 4px rgba(219, 26, 93,0.35)", opacity: 1 },
+                { borderColor: "#b60410", backgroundColor: "#fff", width: 18, height: 18, marginTop: -7.5, boxShadow: "0 1px 4px rgba(219, 26, 93,0.35)", opacity: 1 },
+                { borderColor: "#b60410", backgroundColor: "#fff", width: 18, height: 18, marginTop: -7.5, boxShadow: "0 1px 4px rgba(219, 26, 93,0.35)", opacity: 1 },
               ]}
               railStyle={{ backgroundColor: "#e8e8e8", height: 3 }}
             />
@@ -360,7 +360,7 @@ const styles = {
   },
   mobileChevron: { fontSize: 10, color: "#bbb" },
   clearBtn: {
-    background: "none", border: "none", color: "#db1a5d",
+    background: "none", border: "none", color: "#b60410",
     fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, textDecoration: "underline",
   },
   priceBadgeRow: { display: "flex", alignItems: "center", gap: 8, marginBottom: 16 },

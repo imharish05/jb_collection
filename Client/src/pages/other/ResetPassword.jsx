@@ -110,13 +110,13 @@ const ResetPassword = () => {
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     border: "2px solid rgba(219,26,93,0.2)"
                   }}>
-                    <Lock size={32} color="#db1a5d" />
+                    <Lock size={32} color="#b60410" />
                   </div>
                   <h3 style={{ margin: "12px 0 4px", fontSize: "18px", fontWeight: "700", color: "#2c2c2c" }}>
                     Create New Password
                   </h3>
                   <p style={{ margin: 0, fontSize: "13px", color: "#777" }}>
-                    For account <strong style={{ color: "#db1a5d" }}>{email}</strong>
+                    For account <strong style={{ color: "#b60410" }}>{email}</strong>
                   </p>
                 </div>
 
@@ -189,7 +189,7 @@ const ResetPassword = () => {
                 <div style={{ textAlign: "center", marginTop: "20px" }}>
                   <Link
                     to="/login"
-                    style={{ color: "#db1a5d", fontSize: "13px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: "600" }}
+                    style={{ color: "#b60410", fontSize: "13px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: "600" }}
                   >
                     <ArrowLeft size={14} /> Back to Sign In
                   </Link>

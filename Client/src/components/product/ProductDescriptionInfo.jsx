@@ -262,8 +262,8 @@ function CustomNoteSection({ variant }) {
   const attrs = safeAttrs(variant.attributes).filter(a => a.key === "Custom Note");
   if (!attrs.length) return null;
   return (
-    <div style={{ marginTop: 14, padding: "14px 18px", background: "#fdf8f5", border: "1px solid #f5e4db", borderRadius: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#9c4a22", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+    <div style={{ marginTop: 14, padding: "14px 18px", background: "#1e1e1e", border: "1px solid #2a2a2a", borderRadius: 12 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#b60410", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
         <span>✏️</span> Customisation Info
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -274,12 +274,12 @@ function CustomNoteSection({ variant }) {
               const k = part.slice(0, ci).trim();
               const val = part.slice(ci + 1).trim();
               return (
-                <span key={`${i}-${j}`} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, padding: "4px 12px", borderRadius: 8, background: "#fff", border: "1px solid #ebd1c5", color: "#6e3316", fontWeight: 500 }}>
-                  <span style={{ color: "#de1a67", fontWeight: 700 }}>{k}:</span>{val}
+                <span key={`${i}-${j}`} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, padding: "4px 12px", borderRadius: 8, background: "#252525", border: "1px solid #383838", color: "#f0ead6", fontWeight: 500 }}>
+                  <span style={{ color: "#b60410", fontWeight: 700 }}>{k}:</span>{val}
                 </span>
               );
             }
-            return <span key={`${i}-${j}`} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 8, background: "#fff", border: "1px solid #ebd1c5", color: "#6e3316" }}>{part}</span>;
+            return <span key={`${i}-${j}`} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 8, background: "#252525", border: "1px solid #383838", color: "#f0ead6" }}>{part}</span>;
           })
         )}
       </div>
@@ -1093,9 +1093,9 @@ const handleBuyNow = async () => {
           padding: "8px 12px", 
           borderRadius: 8, 
           marginBottom: 16, 
-          background: stockState.state === STOCK_STATES.LOW_STOCK ? "#fff7ed" : stockState.state === STOCK_STATES.IN_STOCK ? "#f0fdf4" : "#fef2f2",
-          color: stockState.state === STOCK_STATES.LOW_STOCK ? "#ea580c" : stockState.state === STOCK_STATES.IN_STOCK ? "#15803d" : "#b91c1c",
-          border: `1px solid ${stockState.state === STOCK_STATES.LOW_STOCK ? "#ffedd5" : stockState.state === STOCK_STATES.IN_STOCK ? "#dcfce7" : "#fee2e2"}`
+          background: stockState.state === STOCK_STATES.LOW_STOCK ? "rgba(234, 88, 12, 0.15)" : stockState.state === STOCK_STATES.IN_STOCK ? "rgba(21, 128, 61, 0.15)" : "rgba(185, 28, 28, 0.15)",
+          color: stockState.state === STOCK_STATES.LOW_STOCK ? "#f97316" : stockState.state === STOCK_STATES.IN_STOCK ? "#4ade80" : "#f87171",
+          border: `1px solid ${stockState.state === STOCK_STATES.LOW_STOCK ? "rgba(234, 88, 12, 0.3)" : stockState.state === STOCK_STATES.IN_STOCK ? "rgba(21, 128, 61, 0.3)" : "rgba(185, 28, 28, 0.3)"}`
         }}>
           {stockState.state === STOCK_STATES.LOW_STOCK ? "⚡ " : stockState.state === STOCK_STATES.IN_STOCK ? "✓ " : "⚠️ "}
           {stockState.message}
@@ -1161,10 +1161,10 @@ const handleBuyNow = async () => {
           return (
             <div style={{
               margin: '0 0 18px 0', padding: '16px 18px',
-              background: 'linear-gradient(135deg, #fff7ed 0%, #fef0e8 100%)',
-              borderRadius: 12, border: '1px solid #fed7aa',
+              background: '#1e1e1e',
+              borderRadius: 12, border: '1px solid #2a2a2a',
             }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#9a3412', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#b60410', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
                 🎨 Personalise Your Product
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -1174,7 +1174,7 @@ const handleBuyNow = async () => {
                     <div key={field.key}>
                       {field.inputType === 'text' && (
                         <div>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#f0ead6', display: 'block', marginBottom: 4 }}>
                             {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
                             {field.label}
                             {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
@@ -1208,7 +1208,7 @@ const handleBuyNow = async () => {
 
                       {field.inputType === 'color' && (
                         <div>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#f0ead6', display: 'block', marginBottom: 4 }}>
                             {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
                             {field.label}
                             {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
@@ -1216,10 +1216,10 @@ const handleBuyNow = async () => {
 
                           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 4 }}>
                             {/* Color Picker box */}
-                            <div style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, overflow: 'hidden', border: '1px solid #d1d5db', cursor: 'pointer', flexShrink: 0 }}>
+                            <div style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, overflow: 'hidden', border: '1px solid #383838', cursor: 'pointer', flexShrink: 0 }}>
                               <input
                                 type="color"
-                                value={customisationDetails[field.key] && customisationDetails[field.key].startsWith('#') ? customisationDetails[field.key] : '#f15a24'}
+                                value={customisationDetails[field.key] && customisationDetails[field.key].startsWith('#') ? customisationDetails[field.key] : '#b60410'}
                                 onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
                                 style={{ position: 'absolute', top: -5, left: -5, width: 50, height: 50, border: 0, padding: 0, cursor: 'pointer' }}
                               />
@@ -1229,7 +1229,7 @@ const handleBuyNow = async () => {
                               placeholder={field.placeholder || "Choose a color or enter code (e.g. #ff0000)"}
                               value={customisationDetails[field.key] || ''}
                               onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
-                              style={{ flex: 1, padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                              style={{ flex: 1, padding: '8px 12px', border: '1px solid #383838', borderRadius: 8, fontSize: 13, outline: 'none', background: '#252525', color: '#f0ead6', boxSizing: 'border-box' }}
                             />
                           </div>
 
@@ -1248,10 +1248,10 @@ const handleBuyNow = async () => {
                                       alignItems: 'center',
                                       gap: 6,
                                       padding: '5px 10px',
-                                      border: isSelected ? '2px solid #F15A24' : '1px solid #d1d5db',
+                                      border: isSelected ? '2px solid #b60410' : '1px solid #383838',
                                       borderRadius: 20,
-                                      background: isSelected ? '#FEF0EB' : '#fff',
-                                      color: isSelected ? '#F15A24' : '#374151',
+                                      background: isSelected ? 'rgba(205, 131, 62, 0.15)' : '#252525',
+                                      color: isSelected ? '#b60410' : '#c8bfb0',
                                       fontSize: 12,
                                       fontWeight: 500,
                                       cursor: 'pointer',
@@ -1259,7 +1259,7 @@ const handleBuyNow = async () => {
                                     }}
                                   >
                                     {toHex(opt) && (
-                                      <span style={{ width: 12, height: 12, borderRadius: '50%', background: toHex(opt), border: '1px solid rgba(0,0,0,0.1)' }} />
+                                      <span style={{ width: 12, height: 12, borderRadius: '50%', background: toHex(opt), border: '1px solid rgba(255,255,255,0.2)' }} />
                                     )}
                                     {opt}
                                   </button>
@@ -1272,7 +1272,7 @@ const handleBuyNow = async () => {
 
                       {field.inputType === 'font' && (
                         <div>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#f0ead6', display: 'block', marginBottom: 4 }}>
                             {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
                             {field.label}
                             {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
@@ -1280,7 +1280,7 @@ const handleBuyNow = async () => {
                           <select
                             value={customisationDetails[field.key] || ''}
                             onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
-                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #383838', borderRadius: 8, fontSize: 13, outline: 'none', background: '#252525', color: '#f0ead6', boxSizing: 'border-box' }}
                           >
                             <option value="">-- Select a font --</option>
                             {availableFonts.map(f => (
@@ -1288,7 +1288,7 @@ const handleBuyNow = async () => {
                             ))}
                           </select>
                           {customisationDetails[field.key] && (
-                            <div style={{ marginTop: 6, padding: '6px 10px', background: '#fff', borderRadius: 6, border: '1px solid #e5e7eb', fontFamily: customisationDetails[field.key], fontSize: 16 }}>
+                            <div style={{ marginTop: 6, padding: '6px 10px', background: '#252525', borderRadius: 6, border: '1px solid #383838', color: '#ffffff', fontFamily: customisationDetails[field.key], fontSize: 16 }}>
                               {(() => {
                                 const textField = activeFields.find(f => f.inputType === 'text');
                                 const previewText = textField ? (customisationDetails[textField.key] || '') : '';
@@ -1301,7 +1301,7 @@ const handleBuyNow = async () => {
 
                       {field.inputType === 'select' && (
                         <div>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#f0ead6', display: 'block', marginBottom: 4 }}>
                             {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
                             {field.label}
                             {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
@@ -1309,7 +1309,7 @@ const handleBuyNow = async () => {
                           <select
                             value={customisationDetails[field.key] || ''}
                             onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
-                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #383838', borderRadius: 8, fontSize: 13, outline: 'none', background: '#252525', color: '#f0ead6', boxSizing: 'border-box' }}
                           >
                             <option value="">{field.placeholder || "-- Select an option --"}</option>
                             {Array.isArray(field.options) && field.options.map(opt => (
@@ -1330,7 +1330,7 @@ const handleBuyNow = async () => {
                   href="https://wa.me/7338814319?text=Hello! I want to enquire about customisation details for my order."
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: '#9a3412', textDecoration: 'underline', fontWeight: 600 }}
+                  style={{ color: '#b60410', textDecoration: 'underline', fontWeight: 600 }}
                 >
                   Contact our team via WhatsApp
                 </a>{' '}
@@ -1344,19 +1344,19 @@ const handleBuyNow = async () => {
           {stockState.state !== STOCK_STATES.DISCONTINUED && (
             <div className="pdp-product-actions-top" style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "18px" }}>
               {/* Quantity Selector */}
-              <div className="pdp-qty pdp-info__purchase-cell pdp-info__purchase-cell--qty" style={{ display: "flex", alignItems: "center", border: "1.5px solid #e5e7eb", borderRadius: "8px", backgroundColor: "#fff", height: "46px", maxWidth: "140px", transition: "all 0.2s ease" }}>
+              <div className="pdp-qty pdp-info__purchase-cell pdp-info__purchase-cell--qty" style={{ display: "flex", alignItems: "center", border: "1.5px solid #383838", borderRadius: "8px", backgroundColor: "#252525", height: "46px", maxWidth: "140px", transition: "all 0.2s ease" }}>
                 <button
                   className="pdp-qty__btn"
                   onClick={() => setQuantityCount(q => Math.max(1, q - 1))}
                   disabled={quantityCount <= 1 || !stockState.isPurchasable}
-                  style={{ width: "40px", height: "100%", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", transition: "all 0.2s ease" }}
+                  style={{ width: "40px", height: "100%", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#c8bfb0", transition: "all 0.2s ease" }}
                   title="Decrease quantity"
                 >
                   <svg width="14" height="2" viewBox="0 0 14 2">
                     <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="2"/>
                   </svg>
                 </button>
-                <span className="pdp-qty__count" style={{ minWidth: "50px", textAlign: "center", fontSize: "15px", fontWeight: 600, color: "#111827", borderLeft: "1px solid #e5e7eb", borderRight: "1px solid #e5e7eb", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flex: 1, background: "#fafbfc" }}>
+                <span className="pdp-qty__count" style={{ minWidth: "50px", textAlign: "center", fontSize: "15px", fontWeight: 600, color: "#ffffff", borderLeft: "1px solid #383838", borderRight: "1px solid #383838", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flex: 1, background: "#1e1e1e" }}>
                   {stockState.isPurchasable ? quantityCount : 0}
                 </span>
                 <button
@@ -1366,7 +1366,7 @@ const handleBuyNow = async () => {
                     setQuantityCount(q => q < maxStock - productCartQty ? q + 1 : q);
                   }}
                   disabled={!stockState.isPurchasable || quantityCount >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock) - productCartQty}
-                  style={{ width: "40px", height: "100%", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", transition: "all 0.2s ease" }}
+                  style={{ width: "40px", height: "100%", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#c8bfb0", transition: "all 0.2s ease" }}
                   title="Increase quantity"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14">
@@ -1382,7 +1382,7 @@ const handleBuyNow = async () => {
                 onClick={handleWishlist}
                 disabled={isAuthenticated && isInWishlist}
                 title={isInWishlist ? "In your wishlist" : "Add to wishlist"}
-                style={{ width: "46px", height: "46px", padding: "0", borderRadius: "8px", background: "#fff", color: isInWishlist ? "#de1a67" : "#9ca3af", border: "1.5px solid " + (isInWishlist ? "#fbcfe8" : "#e5e7eb"), cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease", flexShrink: 0 }}
+                style={{ width: "46px", height: "46px", padding: "0", borderRadius: "8px", background: "#252525", color: isInWishlist ? "#de1a67" : "#c8bfb0", border: "1.5px solid " + (isInWishlist ? "#b60410" : "#383838"), cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease", flexShrink: 0 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill={isInWishlist ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -1398,7 +1398,7 @@ const handleBuyNow = async () => {
                 {isAuthenticated && productCartQty > 0 ? (
                   <>
                   <div className="col-12 pdp-info__purchase-cell pdp-info__purchase-cell--primary">
-                    <Link to="/cart" style={{ width: "100%", height: "46px", background: "#111827", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none" }} onMouseEnter={(e) => e.currentTarget.style.background = "#1f2937"} onMouseLeave={(e) => e.currentTarget.style.background = "#111827"}>
+                    <Link to="/cart" style={{ width: "100%", height: "46px", background: "#b60410", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none" }} onMouseEnter={(e) => e.currentTarget.style.background = "#e8974d"} onMouseLeave={(e) => e.currentTarget.style.background = "#b60410"}>
                       View Cart
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
@@ -1409,7 +1409,7 @@ const handleBuyNow = async () => {
                     <button
                       onClick={handleBuyNow}
                       disabled={isAddingToCart || isBuyingNow || (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))}
-                      style={{ width: "100%", height: "46px", background: "#f16e35", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(241,110,53,0.2)" }}
+                      style={{ width: "100%", height: "46px", background: "#b60410", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(205,131,62,0.25)" }}
                       title="Buy this product now"
                     >
                       {isBuyingNow ? (
@@ -1434,7 +1434,7 @@ const handleBuyNow = async () => {
                       <button
                         onClick={handleAddToCart}
                         disabled={isAddingToCart || isBuyingNow || (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))}
-                        style={{ width: "100%", height: "46px", background: "#de1a67", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(222,26,103,0.2)" }}
+                        style={{ width: "100%", height: "46px", background: "#b60410", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(205,131,62,0.25)" }}
                         title="Add this product to your cart"
                       >
                         {isAddingToCart ? (
@@ -1457,7 +1457,7 @@ const handleBuyNow = async () => {
                       <button
                         onClick={handleBuyNow}
                         disabled={isAddingToCart || isBuyingNow || (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))}
-                        style={{ width: "100%", height: "46px", background: "#f16e35", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(241,110,53,0.2)" }}
+                        style={{ width: "100%", height: "46px", background: "#b60410", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(205,131,62,0.25)" }}
                         title="Buy this product now"
                       >
                         {isBuyingNow ? (
@@ -1480,7 +1480,7 @@ const handleBuyNow = async () => {
               </>
             ) : (
               <div className="col-12 pdp-info__purchase-cell pdp-info__purchase-cell--full">
-                <button style={{ width: "100%", height: "46px", background: "#e5e7eb", color: "#9ca3af", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px", border: "none", cursor: "not-allowed" }}>
+                <button style={{ width: "100%", height: "46px", background: "#2a2a2a", color: "#888880", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px", border: "none", cursor: "not-allowed" }}>
                   {stockState.buttonText}
                 </button>
               </div>

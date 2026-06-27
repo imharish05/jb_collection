@@ -40,7 +40,7 @@
 .kg-cart-badge {
   font-size: 13px;
   font-weight: 700;
-  background: linear-gradient(135deg, #db1a5d, #c01550);
+  background: linear-gradient(135deg, #b60410, #c01550);
   color: #fff;
   border-radius: 20px;
   padding: 3px 12px;
@@ -118,7 +118,7 @@
 
 .kg-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #db1a5d, #ff6b35);
+  background: linear-gradient(90deg, #b60410, #ff6b35);
   border-radius: 10px;
   transition: width 0.5s ease;
 }
@@ -176,7 +176,7 @@
   position: absolute;
   top: 7px;
   left: 7px;
-  background: linear-gradient(135deg, #db1a5d, #c01550);
+  background: linear-gradient(135deg, #b60410, #c01550);
   color: #fff;
   font-size: 10px;
   font-weight: 800;
@@ -220,7 +220,7 @@
 }
 
 .kg-item-name:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 
 .kg-variant-row {
@@ -257,7 +257,7 @@
 .kg-price-final {
   font-size: 16px;
   font-weight: 800;
-  color: #db1a5d;
+  color: #b60410;
 }
 
 /* ── Item Actions ────────────────────────────────── */
@@ -345,7 +345,7 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #db1a5d;
+  color: #b60410;
   text-decoration: none;
   font-weight: 600;
   padding: 4px 0;
@@ -468,12 +468,12 @@
   left: 0;
   width: 3px;
   height: 100%;
-  background: linear-gradient(180deg, #db1a5d, #ff6b35);
+  background: linear-gradient(180deg, #b60410, #ff6b35);
   border-radius: 2px 0 0 2px;
 }
 
 .kg-coupon-card:hover {
-  border-color: #db1a5d;
+  border-color: #b60410;
   background: #fff5f8;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(219,26,93,0.12);
@@ -491,7 +491,7 @@
 .kg-coupon-card-code {
   font-size: 14px;
   font-weight: 800;
-  color: #db1a5d;
+  color: #b60410;
   letter-spacing: 0.5px;
   font-family: 'Courier New', monospace;
   margin-bottom: 4px;
@@ -516,7 +516,7 @@
 
 .kg-coupon-card-tap {
   font-size: 10px;
-  color: #db1a5d;
+  color: #b60410;
   font-weight: 600;
   margin-top: 8px;
   display: flex;
@@ -553,7 +553,7 @@
 }
 
 .kg-coupon-input:focus {
-  border-color: #db1a5d;
+  border-color: #b60410;
 }
 
 .kg-coupon-apply-btn {
@@ -649,7 +649,7 @@
 .kg-checkout-btn {
   display: block;
   width: 100%;
-  background: linear-gradient(135deg, #db1a5d, #c01550);
+  background: linear-gradient(135deg, #b60410, #c01550);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -752,7 +752,7 @@
 }
 
 .kg-shop-btn {
-  background: linear-gradient(135deg, #db1a5d, #c01550);
+  background: linear-gradient(135deg, #b60410, #c01550);
   color: #fff;
   text-decoration: none;
   border-radius: 12px;

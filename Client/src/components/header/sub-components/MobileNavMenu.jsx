@@ -137,17 +137,17 @@ const MobileNavMenu = () => {
           </Link>
         </li>
 
-        {/* Catalogue */}
+        {/* Collections */}
         <li className={`mob-nav__item mob-nav__item--parent${catalogueOpen ? " mob-nav__item--open" : ""}`}>
           <div className="mob-nav__row">
-            <Link to={process.env.PUBLIC_URL + "/catalogue"} className={`mob-nav__link${isActive(process.env.PUBLIC_URL + "/catalogue") ? " active" : ""}`} onClick={closeMenu}>
-              Catalogue
+            <Link to={S} className={`mob-nav__link${isActive(S) ? " active" : ""}`} onClick={closeMenu}>
+              Collections
             </Link>
             <button
               className="mob-nav__expand"
               onClick={() => setCatalogueOpen(o => !o)}
               aria-expanded={catalogueOpen}
-              aria-label="Toggle catalogue"
+              aria-label="Toggle collections"
             >
               <svg className={`mob-nav__arrow${catalogueOpen ? " mob-nav__arrow--open" : ""}`}
                 width="12" height="7" viewBox="0 0 12 7" fill="none">
@@ -159,7 +159,7 @@ const MobileNavMenu = () => {
           {catalogueOpen && (
             <div className="mob-catalogue-panel">
 
-                          <SectionLabel title="Products" accent="#db1a5d" />
+                          <SectionLabel title="Products" accent="#b60410" />
               <div className="mob-list-row mob-list-row--all-products">
                 <span className="mob-thumb mob-thumb--all">
                   <span className="mob-thumb__fallback" style={{ display: "flex" }}>✨</span>
@@ -171,7 +171,7 @@ const MobileNavMenu = () => {
 
               {categories.length > 0 && (
                 <>
-                  <SectionLabel title="Categories" accent="#db1a5d" />
+                  <SectionLabel title="Categories" accent="#b60410" />
                   
                   {categories.map(cat => (
                     <CategoryRow key={cat.value ?? cat.id} item={cat} closeMenu={closeMenu} />
@@ -212,11 +212,11 @@ const MobileNavMenu = () => {
               )}
 
               <Link
-                to={process.env.PUBLIC_URL + "/catalogue"}
+                to={S}
                 className="mob-catalogue-cta"
                 onClick={closeMenu}
               >
-                View full catalogue →
+                View all products →
               </Link>
             </div>
           )}

@@ -109,7 +109,7 @@ const toRelativePath = (url) => {
   return url.replace(/^\//, '');
 };
 const KM = {
-  orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B',
+  orange: '#b60410', orangeLight: '#FEF0EB', blue: '#1A3A6B',
   green: '#39B54A', teal: '#00B4D8', border: '#E5E7EB',
   text: '#1A1A2E', muted: '#6B7280', bg: '#F9FAFB',
 };
@@ -1018,63 +1018,7 @@ export default function Products({ showToast }) {
                 </div>
               </div>
 
-              {/* ── Shipping Details (for Shiprocket) ── */}
-              <div style={{
-                gridColumn: 'span 2',
-                display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14,
-                padding: '14px 16px',
-                background: '#fff',
-                border: `1px solid ${KM.border}`,
-                borderRadius: 10,
-              }}>
-                <div style={{ gridColumn: 'span 4', fontSize: 12, fontWeight: 700, color: KM.blue, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  📦 Shipping & Dimensions (For Shiprocket)
-                </div>
-                <div style={fieldStyle}>
-                  <label style={labelStyle}>Weight (kg)</label>
-                  <input
-                    style={inputStyle}
-                    type="number" step="0.001" min="0.001"
-                    value={formData.shippingWeight || ''}
-                    placeholder="0.5"
-                    onChange={e => setFormData({ ...formData, shippingWeight: e.target.value })}
-                  />
-                  <ErrorMsg field="shippingWeight" />
-                </div>
-                <div style={fieldStyle}>
-                  <label style={labelStyle}>Length (cm)</label>
-                  <input
-                    style={inputStyle}
-                    type="number" step="1" min="1"
-                    value={formData.shippingLength || ''}
-                    placeholder="10"
-                    onChange={e => setFormData({ ...formData, shippingLength: e.target.value })}
-                  />
-                  <ErrorMsg field="shippingLength" />
-                </div>
-                <div style={fieldStyle}>
-                  <label style={labelStyle}>Breadth (cm)</label>
-                  <input
-                    style={inputStyle}
-                    type="number" step="1" min="1"
-                    value={formData.shippingBreadth || ''}
-                    placeholder="10"
-                    onChange={e => setFormData({ ...formData, shippingBreadth: e.target.value })}
-                  />
-                  <ErrorMsg field="shippingBreadth" />
-                </div>
-                <div style={fieldStyle}>
-                  <label style={labelStyle}>Height (cm)</label>
-                  <input
-                    style={inputStyle}
-                    type="number" step="1" min="1"
-                    value={formData.shippingHeight || ''}
-                    placeholder="10"
-                    onChange={e => setFormData({ ...formData, shippingHeight: e.target.value })}
-                  />
-                  <ErrorMsg field="shippingHeight" />
-                </div>
-              </div>
+
 
               <div style={{ gridColumn: 'span 2', display: 'flex', gap: 20, flexWrap: 'wrap', padding: '12px 14px', background: KM.orangeLight, borderRadius: 8 }}>
                 {[

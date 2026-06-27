@@ -1,4 +1,4 @@
-/* Core Branding Color: #db1a5d */
+﻿/* Core Branding Color: #b60410 */
 
   :root {
 
@@ -75,7 +75,7 @@
 }
 
 .custom-tab-row button.active {
-  color: #db1a5d; /* Accent color for active tab */
+  color: #b60410; /* Accent color for active tab */
 }
 
 .custom-tab-row button.active::after {
@@ -85,7 +85,7 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background: #db1a5d;
+  background: #b60410;
 }
 
 /* Form Inputs */
@@ -101,7 +101,7 @@
 }
 
 .vibrant-input-group:focus-within {
-  border-color: #db1a5d;
+  border-color: #b60410;
 }
 
 .vibrant-input-group input {
@@ -114,7 +114,7 @@
 }
 
 .vibrant-input-group svg {
-  color: #db1a5d; /* Branding color for icons */
+  color: #b60410; /* Branding color for icons */
 }
 
 /* Submit Button */
@@ -160,7 +160,7 @@
 }
 
 .auth-utility a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 
 

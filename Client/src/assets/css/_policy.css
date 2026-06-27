@@ -1,12 +1,12 @@
-
+﻿
   .policy-page {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     color: #444;
     background: #fff;
   }
 
   .policy-hero {
-    background: linear-gradient(135deg, #0d1b40 0%, #1a2e6b 60%, #db1a5d22 100%);
+    background: linear-gradient(135deg, #0d1b40 0%, #1a2e6b 60%, #b6041022 100%);
     padding: 60px 0 50px;
     text-align: center;
     position: relative;
@@ -19,7 +19,7 @@
     width: 320px;
     height: 320px;
     border-radius: 50%;
-    background: radial-gradient(circle, #db1a5d22 0%, transparent 70%);
+    background: radial-gradient(circle, #b6041022 0%, transparent 70%);
     top: -80px;
     right: -60px;
   }
@@ -27,13 +27,13 @@
   .policy-hero-icon {
     width: 64px;
     height: 64px;
-    background: linear-gradient(135deg, #db1a5d, #f04e8a);
+    background: linear-gradient(135deg, #b60410, #f04e8a);
     border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 20px;
-    box-shadow: 0 8px 24px #db1a5d44;
+    box-shadow: 0 8px 24px #b6041044;
   }
 
   .policy-hero-icon svg {
@@ -57,8 +57,8 @@
 
   .policy-hero-badge {
     display: inline-block;
-    background: #db1a5d22;
-    border: 1px solid #db1a5d55;
+    background: #b6041022;
+    border: 1px solid #b6041055;
     color: #ff8ab5;
     font-size: 11px;
     font-weight: 600;
@@ -78,7 +78,7 @@
   .policy-toc {
     background: #fafafa;
     border: 1px solid #f0e0e7;
-    border-left: 4px solid #db1a5d;
+    border-left: 4px solid #b60410;
     border-radius: 10px;
     padding: 24px 28px;
     margin-bottom: 48px;
@@ -103,7 +103,7 @@
   }
 
   .policy-toc a {
-    color: #db1a5d;
+    color: #b60410;
     font-size: 13px;
     text-decoration: none;
     font-weight: 500;
@@ -130,7 +130,7 @@
   .policy-section-num {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, #db1a5d, #f04e8a);
+    background: linear-gradient(135deg, #b60410, #f04e8a);
     color: #fff;
     border-radius: 10px;
     display: flex;
@@ -151,7 +151,7 @@
   .policy-section h3 {
     font-size: 15px;
     font-weight: 600;
-    color: #db1a5d;
+    color: #b60410;
     margin: 20px 0 10px;
   }
 
@@ -183,7 +183,7 @@
     top: 13px;
     width: 8px;
     height: 8px;
-    background: #db1a5d;
+    background: #b60410;
     border-radius: 50%;
     opacity: 0.7;
   }
@@ -226,7 +226,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #db1a5d;
+    background: #b60410;
     flex-shrink: 0;
   }
 
@@ -249,7 +249,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #db1a5d;
+    color: #b60410;
     margin-bottom: 6px;
   }
 

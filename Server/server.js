@@ -56,38 +56,41 @@ const allowedOrigins = [
   "http://127.0.0.1:3001",
 ].filter(Boolean); // removes undefined entries if env vars are not set
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, curl, server-to-server)
-      if (!origin) return callback(null, true);
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       // Allow requests with no origin (mobile apps, Postman, curl, server-to-server)
+//       if (!origin) return callback(null, true);
 
-      if (process.env.NODE_ENV !== "production") {
-        // Development: allow everything for easy local testing
-        return callback(null, true);
-      }
+//       if (process.env.NODE_ENV !== "production") {
+//         // Development: allow everything for easy local testing
+//         return callback(null, true);
+//       }
 
-      // Production: only allow listed origins
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+//       // Production: only allow listed origins
+//       if (allowedOrigins.includes(origin)) {
+//         return callback(null, true);
+//       }
 
-      console.warn(`[CORS] Blocked request from origin: ${origin}`);
-      return callback(new Error(`CORS policy: origin '${origin}' is not allowed`));
-    },
-    credentials: true,                   // Allow cookies / Authorization headers
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200,           // For legacy browser compatibility
-  })
-);
+//       console.warn(`[CORS] Blocked request from origin: ${origin}`);
+//       return callback(new Error(`CORS policy: origin '${origin}' is not allowed`));
+//     },
+//     credentials: true,                   // Allow cookies / Authorization headers
+//     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//     optionsSuccessStatus: 200,           // For legacy browser compatibility
+//   })
+// );
 
 // app.use(cors())
 
 // ── Webhook raw-body parser (MUST be before express.json())
 // Razorpay webhook signature verification requires the raw, unparsed request body.
+
+
+app.use(cors())
+
 app.use("/api/payment/webhook", express.raw({ type: "*/*" }));
-app.use("/api/returns/webhook/shiprocket-return", express.raw({ type: "*/*" }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

@@ -186,7 +186,7 @@ const LoginRegister = () => {
 
                   {isLogin && (
                     <div className="auth-utility">
-                      <Link to="/forgot-password" style={{ color: "#db1a5d", fontSize: "13px", fontWeight: "600", textDecoration: "none" }}>Forgot password?</Link>
+                      <Link to="/forgot-password" style={{ color: "#b60410", fontSize: "13px", fontWeight: "600", textDecoration: "none" }}>Forgot password?</Link>
                     </div>
                   )}
 

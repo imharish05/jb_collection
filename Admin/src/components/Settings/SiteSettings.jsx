@@ -7,7 +7,7 @@ import AccessDenied from '../AccessDenied';
 const IMG_BASE_URL = process.env.REACT_APP_IMG_URL || 'http://localhost:5000';
 
 const KM = {
-  orange: '#F15A24',
+  orange: '#b60410',
   orangeLight: '#FEF0EB',
   blue: '#1A3A6B',
   green: '#39B54A',

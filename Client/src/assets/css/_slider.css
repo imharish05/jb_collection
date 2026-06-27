@@ -1,4 +1,4 @@
-/* updated */
+﻿/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -146,7 +146,7 @@
 }
 .single-slider .slider-content .slider-btn a:hover {
   color: #fff;
-  border: 1px solid #db1a5d;
+  border: 1px solid #b60410;
 }
 .single-slider .slider-content.slider-content-10 {
   padding-top: 0;
@@ -327,7 +327,7 @@
   }
 }
 .nav-style-1 .ht-swiper-button-nav:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 .nav-style-1 .ht-swiper-button-nav.swiper-button-next {
   right: 80px;
@@ -606,7 +606,7 @@
 }
 .slider-content-2 .slider-btn a:hover {
   color: #fff;
-  border: 1px solid #db1a5d;
+  border: 1px solid #b60410;
 }
 .slider-content-2 .slider-btn--style2 a {
   background-color: transparent;
@@ -654,7 +654,7 @@
 }
 .slider-content-2.slider-content-fruits .slider-btn a:hover {
   color: #fff;
-  border: 1px solid #db1a5d;
+  border: 1px solid #b60410;
 }
 .slider-content-2.slider-content-fruits--style2 h3 {
   color: #ab87cd;
@@ -715,7 +715,7 @@
 }
 .slider-content-2.slider-content-flower .slider-btn a:hover {
   color: #fff;
-  border: 1px solid #db1a5d;
+  border: 1px solid #b60410;
 }
 .slider-content-2--style2 h1 {
   margin-bottom: 5px;
@@ -869,7 +869,7 @@
 }
 .slider-content-3 .slider-btn a:hover {
   color: #fff;
-  border: 1px solid #db1a5d;
+  border: 1px solid #b60410;
 }
 .slider-content-3.slider-content-4 {
   margin-left: 112px;
@@ -999,7 +999,7 @@
   }
 }
 .slider-content-3.slider-content-3-white .slider-btn a:hover {
-  border: 1px solid #db1a5d;
+  border: 1px solid #b60410;
 }
 
 /* slider hm4 */
@@ -1247,7 +1247,7 @@
 .nav-style-2.owl-carousel > .owl-nav div:hover,
 .nav-style-2 .ht-swiper-button-nav:hover {
   color: #fff;
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .nav-style-2.owl-carousel > .owl-nav div.owl-next,
 .nav-style-2 .ht-swiper-button-nav.owl-next {
@@ -1385,7 +1385,7 @@
 .nav-style-3.owl-carousel > .owl-nav:hover,
 .nav-style-3 .ht-swiper-button-nav:hover {
   color: #fff;
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 
 .nav-style-3--blue.owl-carousel > .owl-nav:hover,
@@ -1528,7 +1528,7 @@
 }
 .slider-content-7 .slider-btn-9 a:hover {
   color: #fff;
-  border: 1px solid #db1a5d;
+  border: 1px solid #b60410;
 }
 .slider-content-7.slider-content-mrg-hm17 {
   width: 590px;
@@ -2178,7 +2178,7 @@
 }
 
 .slider-content-15 h1 {
-  font-family: "Abril Fatface", cursive;
+  font-family: 'Playfair Display', serif;
   font-size: 90px;
   line-height: 115px;
   margin: 0;
@@ -2306,7 +2306,7 @@
   }
 }
 .slider-btn-12 a:hover {
-  border: 1px solid #db1a5d;
+  border: 1px solid #b60410;
 }
 
 @media only screen and (max-width: 767px) {
@@ -2480,7 +2480,7 @@
   }
 }
 .slider-content-medical h3 {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 18px;
   font-weight: 600;
   line-height: 1;
@@ -2488,7 +2488,7 @@
   color: #fff;
 }
 .slider-content-medical h1 {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 72px;
   font-weight: bold;
   line-height: 82px;
@@ -2519,7 +2519,7 @@
 }
 
 .slider-btn-medical a {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 16px;
   font-weight: bold;
   line-height: 1;
@@ -2549,7 +2549,7 @@
   }
 }
 .slider-content-red h3 {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 18px;
   font-weight: 600;
   line-height: 1;
@@ -2557,7 +2557,7 @@
   color: #ff0000;
 }
 .slider-content-red h1 {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 72px;
   font-weight: bold;
   line-height: 82px;
@@ -2588,7 +2588,7 @@
 }
 
 .slider-btn-red a {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 16px;
   font-weight: bold;
   line-height: 1;
@@ -2668,7 +2668,7 @@
 }
 
 .slider-btn-brown a {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 16px;
   font-weight: bold;
   line-height: 1;
@@ -2851,7 +2851,7 @@
   width: auto;
 }
 .slider-content-32 h1 {
-  font-family: "Lobster", cursive;
+  font-family: 'Playfair Display', serif;
   font-size: 70px;
   line-height: 90px;
   margin: 12px 0 50px;
@@ -2986,7 +2986,7 @@
 
 .kg-slide__title em,
 .kg-slide__title span {
-  color: #db1a5d;
+  color: #b60410;
   font-style: normal;
 }
 
@@ -3005,10 +3005,10 @@
   font-weight: 600;
   letter-spacing: 0.5px;
   color: #fff;
-  background: #db1a5d;
+  background: #b60410;
   border-radius: 40px;
   text-decoration: none;
-  border: 2px solid #db1a5d;
+  border: 2px solid #b60410;
   transition: background 0.22s, color 0.22s, transform 0.22s;
 }
 
@@ -3065,7 +3065,7 @@
 .kg-hero__nav--next { right: 14px; }
 
 .kg-hero__nav:hover {
-  color: #db1a5d;
+  color: #b60410;
   background: none;
   border: none;
 }
@@ -3096,7 +3096,7 @@
 .kg-hero__dot--active {
   width: 24px;
   border-radius: 4px;
-  background: #db1a5d;
+  background: #b60410;
 }
 
 /* ── Responsive ── */

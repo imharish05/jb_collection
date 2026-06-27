@@ -70,8 +70,8 @@
   opacity: 0;
 }
 .sidebar-widget .sidebar-widget-list ul li .sidebar-widget-list-left input:checked ~ .checkmark {
-  border: 2px solid #db1a5d;
-  background-color: #db1a5d;
+  border: 2px solid #b60410;
+  background-color: #b60410;
 }
 .sidebar-widget .sidebar-widget-list ul li .sidebar-widget-list-left input:checked ~ .checkmark::after {
   display: block;
@@ -81,9 +81,9 @@
   left: 0;
   width: 15px;
   height: 15px;
-  border: 2px solid #888888;
+  border: 2px solid #383838;
   border-radius: 3px;
-  background-color: #fff;
+  background-color: #252525;
 }
 .sidebar-widget .sidebar-widget-list ul li .sidebar-widget-list-left .checkmark::after {
   position: absolute;
@@ -136,13 +136,13 @@
 .sidebar-widget .sidebar-widget-list ul li button:hover span,
 .sidebar-widget .sidebar-widget-list ul li button.active span {
   color: #fff;
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .sidebar-widget .sidebar-widget-list ul li a:hover > .checkmark, .sidebar-widget .sidebar-widget-list ul li a.active > .checkmark,
 .sidebar-widget .sidebar-widget-list ul li button:hover > .checkmark,
 .sidebar-widget .sidebar-widget-list ul li button.active > .checkmark {
-  border-color: #db1a5d;
-  background-color: #db1a5d;
+  border-color: #b60410;
+  background-color: #b60410;
 }
 .sidebar-widget .sidebar-widget-list ul li a:hover > .checkmark:after, .sidebar-widget .sidebar-widget-list ul li a.active > .checkmark:after,
 .sidebar-widget .sidebar-widget-list ul li button:hover > .checkmark:after,
@@ -183,7 +183,7 @@
 .sidebar-widget .sidebar-widget-tag ul li button:hover,
 .sidebar-widget .sidebar-widget-tag ul li button.active {
   color: #fff;
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 
 .pro-sidebar-search .pro-sidebar-search-form {
@@ -214,7 +214,7 @@
   background: transparent none repeat scroll 0 0;
 }
 .pro-sidebar-search .pro-sidebar-search-form button:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 
 .single-sidebar-blog {

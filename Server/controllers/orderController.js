@@ -15,7 +15,6 @@ const {
 const sequelize = require("../config/database");
 const { Op } = require("sequelize");
 const { sendOrderConfirmationEmail, sendOrderStatusEmail, sendAdminNewOrderEmail } = require("../utils/mailer");
-const { shiprocketPost, resolveShiprocketPaymentMethod } = require("../utils/shiprocket");
 const inventoryService = require("../services/inventoryService");
 const { referenceWhere, getDisplayReference } = require("../utils/referenceSlugs");
 const { createOrderNotification } = require("../services/inventoryService");
@@ -44,170 +43,7 @@ const razorpay = new Razorpay({
 // sub_total is ALWAYS the full order value (Shiprocket uses it for declared value).
 // ─────────────────────────────────────────────────────────────────────────────
 const pushOrderToShiprocket = async (orderId, userEmail = "") => {
-  try {
-    const order = await Order.findByPk(orderId, {
-      include: [
-        {
-          model: OrderItem,
-          as: "items",
-          include: [
-            { model: Product, as: "product" },
-            { model: Variant, as: "variant" }
-          ],
-        },
-        { model: Address, as: "shippingAddress" },
-      ],
-    });
-
-    if (!order || !order.shippingAddress) {
-      console.warn(`[Shiprocket] Order or shipping address not found for order ${orderId}`);
-      return;
-    }
-
-    const addr = order.shippingAddress;
-    const orderRef = getDisplayReference(order, order.id);
-
-    // Build line items for Shiprocket
-    const srItems = order.items.map((item) => ({
-      name: item.productName,
-      sku: String(item.selectedVariantId || item.productId),
-      units: item.quantity,
-      selling_price: parseFloat(item.salesPrice || item.price || 0),
-      discount: parseFloat(item.discount || 0),
-      tax: 0,
-      hsn: 0,
-    }));
-
-    // ── KEY FIX: resolve payment method + COD amount ──────────────────────────
-    const { payment_method, cod_amount } = resolveShiprocketPaymentMethod(order);
-
-    console.log(
-      `[Shiprocket] Order ${orderRef} | paymentType=${order.paymentType} | ` +
-      `payment_method=${payment_method} | cod_amount=${cod_amount} | ` +
-      `sub_total=${order.totalAmount}`
-    );
-
-    // Calculate total weight and dimensions dynamically
-    let totalWeight = 0;
-    let maxLength = 10;
-    let maxBreadth = 10;
-    let maxHeight = 10;
-    let hasCustomDims = false;
-
-    order.items.forEach((item) => {
-      const prod = item.product;
-      const variant = item.variant;
-      const qty = parseInt(item.quantity) || 1;
-      
-      const w = parseFloat(variant?.shippingWeight) || parseFloat(prod?.shippingWeight) || 0.2;
-      totalWeight += w * qty;
-
-      let dims = variant?.shippingDimensions || prod?.shippingDimensions;
-      if (typeof dims === "string") {
-        try {
-          dims = JSON.parse(dims);
-        } catch {
-          dims = null;
-        }
-      }
-
-      if (dims && typeof dims === "object") {
-        if (dims.length || dims.breadth || dims.height) {
-          hasCustomDims = true;
-          maxLength = Math.max(maxLength, parseFloat(dims.length) || 10);
-          maxBreadth = Math.max(maxBreadth, parseFloat(dims.breadth) || 10);
-          // heights accumulate if stacked
-          maxHeight += (parseFloat(dims.height) || 10) * qty;
-        }
-      }
-    });
-
-    if (!hasCustomDims) {
-      if (totalWeight > 3.0) {
-        maxLength = 35;
-        maxBreadth = 25;
-        maxHeight = 20;
-      } else if (totalWeight > 1.0) {
-        maxLength = 25;
-        maxBreadth = 20;
-        maxHeight = 15;
-      } else {
-        maxLength = 15;
-        maxBreadth = 15;
-        maxHeight = 10;
-      }
-    }
-    if (totalWeight <= 0) {
-      totalWeight = 0.2;
-    }
-
-    // sub_total = full order value (NOT just what was paid online).
-    // Shiprocket uses this for insurance / declared value.
-    // For COD/Partial COD, this is the full product cost.
-    const subTotal = parseFloat(order.totalAmount) - parseFloat(order.shippingCharge || 0);
-
-    const srPayload = {
-      order_id: String(orderRef),
-      order_date: new Date(order.createdAt).toISOString().slice(0, 19).replace("T", " "),
-      pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
-
-      // Billing details
-      billing_customer_name: addr.firstName || addr.fullName || "",
-      billing_last_name: addr.lastName || "",
-      billing_address: `${addr.street}${addr.apartment ? ", " + addr.apartment : ""}`,
-      billing_city: addr.city,
-      billing_pincode: String(addr.pincode),
-      billing_state: addr.state,
-      billing_country: addr.country || "India",
-      billing_email: userEmail || "",
-      billing_phone: String(addr.phone),
-
-      // Shipping = billing (same address)
-      shipping_is_billing: true,
-
-      // Order items
-      order_items: srItems,
-
-      // ── CRITICAL: COD fields ──────────────────────────────────────────────
-      payment_method,          // "COD" or "Prepaid"
-      sub_total: subTotal,     // Full declared value of goods
-
-      // cod_amount: amount courier will collect at delivery.
-      //   PARTIAL_COD → remaining balance (totalAmount - advancePaid)
-      //   FULL_COD    → full totalAmount
-      //   PREPAID     → 0 (omitted / not collected)
-      ...(payment_method === "COD" && { cod_amount: cod_amount }),
-
-      // Package dimensions (calculated dynamically or default fallback)
-      length: Math.round(maxLength),
-      breadth: Math.round(maxBreadth),
-      height: Math.round(maxHeight),
-      weight: parseFloat(totalWeight.toFixed(3)),
-    };
-
-    const srResponse = await shiprocketPost("/orders/create/adhoc", srPayload);
-    console.log(
-      "[Shiprocket] Order created | SR order_id:", srResponse?.order_id,
-      "| shipment_id:", srResponse?.shipment_id,
-      "| channel_order_id:", srResponse?.channel_order_id
-    );
-
-    if (srResponse?.order_id) {
-      await Order.update(
-        {
-          shiprocketOrderId: String(srResponse.order_id),
-          shiprocketShipmentId: srResponse.shipment_id ? String(srResponse.shipment_id) : null,
-        },
-        { where: { id: order.id } }
-      );
-    }
-  } catch (srErr) {
-    // Log full Shiprocket error response for debugging
-    console.error(
-      "[Shiprocket] Failed to create order:",
-      srErr?.response?.data || srErr.message
-    );
-  }
+  // Shiprocket integration is disabled
 };
 
 // Dashboard status map: dashboard param → DB ENUM
@@ -643,13 +479,7 @@ const createOrder = async (req, res, next) => {
           console.error("[Mailer] Failed to send admin email notification:", adminMailErr.message);
         }
 
-        try {
-          console.log(`[Shiprocket] Auto-pushing COD order ${createdOrder.id} to Shiprocket...`);
-          await pushOrderToShiprocket(createdOrder.id, userRecord?.email || "");
-        } catch (srErr) {
-          console.error("[Shiprocket] Auto-push failed for COD order:", srErr.message);
-        }
-      } catch (emailErr) {
+    } catch (emailErr) {
         console.error("[Mailer] Failed to send confirmation:", emailErr.message);
       }
     }
@@ -885,12 +715,6 @@ const updateOrderStatus = async (req, res, next) => {
           trackingDetails: {
             ...incomingTrackingDetails,
             trackingUrl: req.body.trackingUrl || req.body.tracking_url || incomingTrackingDetails.trackingUrl,
-            shiprocketTrackingUrl:
-              req.body.shiprocketTrackingUrl ||
-              req.body.shiprocket_tracking_url ||
-              incomingTrackingDetails.shiprocketTrackingUrl,
-            shiprocketOrderId: updatedOrder.shiprocketOrderId,
-            shiprocketShipmentId: updatedOrder.shiprocketShipmentId,
           },
         });
 
@@ -904,21 +728,7 @@ const updateOrderStatus = async (req, res, next) => {
 
       await recordOrderStatusEmailAudit(audit);
 
-      // Push to Shiprocket if confirming for the first time
-      if (newStatus === "confirmed" && !updatedOrder.shiprocketOrderId) {
-        try {
-          const userRecord = await User.findByPk(order.userId, { attributes: ["email"] });
-          await pushOrderToShiprocket(order.id, userRecord?.email || "");
-          const freshOrder = await Order.findByPk(order.id, { attributes: ["shiprocketOrderId", "shiprocketShipmentId"] });
-          if (freshOrder) {
-            updatedOrder.shiprocketOrderId = freshOrder.shiprocketOrderId;
-            updatedOrder.shiprocketShipmentId = freshOrder.shiprocketShipmentId;
-          }
-        } catch (srErr) {
-          console.error("[Shiprocket] Failed to push order on status confirmation:", srErr.message);
-        }
       }
-    }
 
     return res.json(updatedOrder);
   } catch (err) {

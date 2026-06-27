@@ -198,7 +198,7 @@ export default function ReturnDetail() {
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-      <div style={{ width: '48px', height: '48px', border: '4px solid #e5e7eb', borderTopColor: '#db1a5d', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: '48px', height: '48px', border: '4px solid #e5e7eb', borderTopColor: '#b60410', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
@@ -384,7 +384,7 @@ export default function ReturnDetail() {
               <InfoRow label="Status"              value={reverseShipment.pickupStatus} />
               <InfoRow label="Tracking URL"
                 value={reverseShipment.trackingUrl
-                  ? <a href={reverseShipment.trackingUrl} target="_blank" rel="noreferrer" style={{ color: '#db1a5d', fontWeight: 600 }}>Track Shipment</a>
+                  ? <a href={reverseShipment.trackingUrl} target="_blank" rel="noreferrer" style={{ color: '#b60410', fontWeight: 600 }}>Track Shipment</a>
                   : null}
               />
               <InfoRow label="Created" value={fmt(reverseShipment.createdAt)} />
@@ -451,7 +451,7 @@ export default function ReturnDetail() {
                 <button
                   onClick={handleStatusUpdate} disabled={submitting || !newStatus}
                   style={{
-                    background: submitting || !newStatus ? '#e5e7eb' : '#db1a5d',
+                    background: submitting || !newStatus ? '#e5e7eb' : '#b60410',
                     color: submitting || !newStatus ? '#9ca3af' : '#fff', border: 'none', borderRadius: '8px', padding: '11px',
                     fontWeight: 700, cursor: submitting || !newStatus ? 'not-allowed' : 'pointer',
                     fontSize: '14px', transition: 'background .2s',
@@ -459,53 +459,7 @@ export default function ReturnDetail() {
                   {submitting ? 'Updating…' : 'Update Status'}
                 </button>
 
-                {/* ── Schedule Pickup via Shiprocket (approved status only) ── */}
-                {r?.status === 'approved' && !reverseShipment && (
-                  <div style={{ marginTop: '8px', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '16px', background: '#eff6ff' }}>
-                    <div style={{ fontSize: '12px', color: '#1e40af', fontWeight: 700, marginBottom: '4px' }}>🚚 Shiprocket Reverse Pickup</div>
-                    <div style={{ fontSize: '12px', color: '#374151', marginBottom: '12px', lineHeight: 1.5 }}>
-                      Return approved! Click below to create a reverse pickup order in Shiprocket.
-                      A courier will be assigned and will pick up the product from the customer's address.
-                    </div>
-                    <button
-                      onClick={() => {
-                        toast(
-                          (t) => (
-                            <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                              <strong>Schedule Pickup for Return #{r.referenceSlug || r.id}?</strong>
-                              <span style={{ fontSize: 12, color: '#6b7280' }}>
-                                This will create a reverse pickup order in Shiprocket.
-                                A courier will be dispatched to pick up the product from the customer.
-                              </span>
-                              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                                <button
-                                  onClick={async () => { toast.dismiss(t.id); handleSchedulePickup(); }}
-                                  style={{ padding: '6px 16px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
-                                >🚚 Yes, Schedule</button>
-                                <button
-                                  onClick={() => toast.dismiss(t.id)}
-                                  style={{ padding: '6px 14px', background: '#374151', color: '#d1d5db', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
-                                >Cancel</button>
-                              </div>
-                            </span>
-                          ),
-                          { duration: Infinity }
-                        );
-                      }}
-                      disabled={submitting}
-                      style={{
-                        width: '100%', background: submitting ? '#d1d5db' : '#1d4ed8',
-                        color: '#fff', border: 'none', borderRadius: '8px', padding: '11px',
-                        fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer',
-                        fontSize: '14px', transition: 'background .2s',
-                      }}
-                      onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = '#1e40af'; }}
-                      onMouseLeave={e => { if (!submitting) e.currentTarget.style.background = '#1d4ed8'; }}
-                    >
-                      {submitting ? 'Processing…' : '🚚 Schedule Pickup via Shiprocket'}
-                    </button>
-                  </div>
-                )}
+
 
                 {/* ── Initiate Refund Button (inspection_completed + refund type only) ── */}
                 {r?.returnType === 'refund' && r?.status === 'inspection_completed' && !r?.refund && (
@@ -619,8 +573,8 @@ export default function ReturnDetail() {
 
           {/* ── Reverse Shipment Info ── */}
           {reverseShipment && (
-            <Section title="Reverse Shipment (Shiprocket)">
-              <InfoRow label="Shiprocket Order ID" value={reverseShipment.shiprocketReturnId || '—'} />
+            <Section title="Reverse Shipment">
+              {reverseShipment.shiprocketReturnId && <InfoRow label="Shipment ID" value={reverseShipment.shiprocketReturnId} />}
               <InfoRow label="AWB Code"            value={reverseShipment.awbCode || '—'} />
               <InfoRow label="Courier"             value={reverseShipment.courierName || '—'} />
               <InfoRow label="Pickup Status"       value={reverseShipment.pickupStatus || '—'} />
@@ -633,7 +587,7 @@ export default function ReturnDetail() {
                     rel="noopener noreferrer"
                     style={{ color: '#1d4ed8', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}
                   >
-                    🔗 Track on Shiprocket ↗
+                    🔗 Track Shipment ↗
                   </a>
                 </div>
               )}

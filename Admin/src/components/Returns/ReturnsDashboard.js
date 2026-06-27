@@ -138,7 +138,7 @@ export default function ReturnsDashboard({ showToast }) {
               style={{
                 padding: '8px 18px', borderRadius: '8px', border: activeTab === t.key ? 'none' : '1px solid #d1d5db', cursor: 'pointer',
                 fontWeight: 600, fontSize: '13px', transition: 'all .2s',
-                background: activeTab === t.key ? '#db1a5d' : '#ffffff',
+                background: activeTab === t.key ? '#b60410' : '#ffffff',
                 color: activeTab === t.key ? '#fff' : '#4b5563',
               }}
             >{t.label}</button>
@@ -169,7 +169,7 @@ export default function ReturnsDashboard({ showToast }) {
           </select>
           <button onClick={fetchReturns}
             style={{
-              background: '#db1a5d', color: '#fff', border: 'none', borderRadius: '8px',
+              background: '#b60410', color: '#fff', border: 'none', borderRadius: '8px',
               padding: '8px 16px', fontWeight: 600, cursor: 'pointer', fontSize: '13px',
             }}
           >Refresh</button>
@@ -189,7 +189,7 @@ export default function ReturnsDashboard({ showToast }) {
           <tbody>
             {loading ? (
               <tr><td colSpan={9} style={{ textAlign: 'center', padding: '60px', color: '#6b7280' }}>
-                <div style={{ display: 'inline-block', width: '36px', height: '36px', border: '3px solid #e5e7eb', borderTopColor: '#db1a5d', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <div style={{ display: 'inline-block', width: '36px', height: '36px', border: '3px solid #e5e7eb', borderTopColor: '#b60410', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               </td></tr>
             ) : returns.length === 0 ? (
               <tr><td colSpan={9} style={{ textAlign: 'center', padding: '60px', color: '#6b7280', fontSize: '14px' }}>No records found</td></tr>
@@ -289,7 +289,7 @@ export default function ReturnsDashboard({ showToast }) {
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
             <button key={p} onClick={() => setPage(p)}
               style={{
-                background: page === p ? '#db1a5d' : '#ffffff', color: page === p ? '#fff' : '#4b5563',
+                background: page === p ? '#b60410' : '#ffffff', color: page === p ? '#fff' : '#4b5563',
                 border: page === p ? 'none' : '1px solid #d1d5db', padding: '8px 14px', borderRadius: '8px', cursor: 'pointer',
                 fontWeight: 700,
               }}>

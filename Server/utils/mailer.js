@@ -216,19 +216,24 @@ const normalizeStatusKey = (status) => {
 const getTrackingUrl = (order, trackingDetails = {}) => {
   const details = asPlain(trackingDetails);
   const orderData = asPlain(order);
-  return (
+  
+  const directUrl =
     details.trackingUrl ||
     details.tracking_url ||
-    details.shiprocketTrackingUrl ||
-    details.shiprocket_tracking_url ||
     details.url ||
-    (orderData.awbCode ? `https://shiprocket.co/tracking/${orderData.awbCode}` : "") ||
     orderData.trackingUrl ||
-    orderData.tracking_url ||
-    orderData.shiprocketTrackingUrl ||
-    orderData.shiprocket_tracking_url ||
-    ""
-  );
+    orderData.tracking_url;
+
+  if (directUrl) return directUrl;
+
+  const awb = orderData.awbCode || details.awbCode;
+  const courier = orderData.courier || details.courier;
+  if (awb) {
+    return courier
+      ? `https://www.google.com/search?q=${encodeURIComponent(courier)}+tracking+${encodeURIComponent(awb)}`
+      : `https://www.google.com/search?q=tracking+${encodeURIComponent(awb)}`;
+  }
+  return "";
 };
 
 const buildItemRows = (items) => {

@@ -440,7 +440,7 @@ function ProductSlider({ items, renderCard }) {
               onClick={() => setOffset(i)}
               style={{
                 width: i === dotIdx ? 16 : 6, height: 6, borderRadius: 3,
-                background: i === dotIdx ? "#F15A24" : "#D1D5DB",
+                background: i === dotIdx ? "#b60410" : "#D1D5DB",
                 border: "none", cursor: "pointer", padding: 0, transition: "all 0.2s",
               }}
             />
@@ -473,7 +473,7 @@ function MixMatchCard({ cp, selected, onToggle }) {
     <div
       onClick={() => !oos && onToggle(cp, variantId)}
       style={{
-        border: `2px solid ${selected ? "#F15A24" : "#E5E7EB"}`,
+        border: `2px solid ${selected ? "#b60410" : "#E5E7EB"}`,
         borderRadius: 10, overflow: "hidden", cursor: oos ? "not-allowed" : "pointer",
         background: selected ? "#FEF0EB" : "#fff",
         opacity: oos ? 0.5 : 1,
@@ -482,7 +482,7 @@ function MixMatchCard({ cp, selected, onToggle }) {
       }}
     >
       {selected && (
-        <div style={{ position: "absolute", top: 6, right: 6, width: 20, height: 20, borderRadius: "50%", background: "#F15A24", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, zIndex: 1 }}>✓</div>
+        <div style={{ position: "absolute", top: 6, right: 6, width: 20, height: 20, borderRadius: "50%", background: "#b60410", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, zIndex: 1 }}>✓</div>
       )}
       <div style={{ paddingTop: "75%", position: "relative", background: "#F9FAFB", overflow: "hidden" }}>
         {img
@@ -755,7 +755,7 @@ const ComboDetailPage = () => {
         <div style={{ padding: "120px 0", textAlign: "center", color: "#6B7280" }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🎁</div>
           <div style={{ fontSize: 18, fontWeight: 600, color: "#1A1A2E", marginBottom: 8 }}>Combo not found</div>
-          <Link to={`${process.env.PUBLIC_URL}/shop`} style={{ color: "#F15A24", fontWeight: 600 }}>← Back to Shop</Link>
+          <Link to={`${process.env.PUBLIC_URL}/shop`} style={{ color: "#b60410", fontWeight: 600 }}>← Back to Shop</Link>
         </div>
       </LayoutOne>
     );
@@ -766,7 +766,7 @@ const ComboDetailPage = () => {
       <LayoutOne headerTop="visible">
         <div style={{ padding: "120px 0", textAlign: "center", color: "#6B7280" }}>
           <p>No items in this combo yet.</p>
-          <Link to={`${process.env.PUBLIC_URL}/shop`} style={{ color: "#F15A24" }}>← Shop</Link>
+          <Link to={`${process.env.PUBLIC_URL}/shop`} style={{ color: "#b60410" }}>← Shop</Link>
         </div>
       </LayoutOne>
     );
@@ -1048,7 +1048,7 @@ const ComboDetailPage = () => {
 
                   {/* Price block — same classes as PDP */}
                   <div className="product-details-price" style={{ marginBottom: 16 }}>
-                    <span className="final-price" style={{ fontSize: 30, fontWeight: 900, color: "#F15A24" }}>
+                    <span className="final-price" style={{ fontSize: 30, fontWeight: 900, color: "#b60410" }}>
                       ₹{comboPrice.toLocaleString("en-IN")}
                     </span>
                     {originalPrice && originalPrice > comboPrice && (
@@ -1096,9 +1096,9 @@ const ComboDetailPage = () => {
                         {/* Progress indicator */}
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                           <div style={{ flex: 1, height: 6, background: "#E5E7EB", borderRadius: 3, overflow: "hidden" }}>
-                            <div style={{ height: "100%", width: `${Math.min(100, progressPct)}%`, background: canAdd ? "#22c55e" : "#F15A24", borderRadius: 3, transition: "width 0.3s" }} />
+                            <div style={{ height: "100%", width: `${Math.min(100, progressPct)}%`, background: canAdd ? "#22c55e" : "#b60410", borderRadius: 3, transition: "width 0.3s" }} />
                           </div>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: canAdd ? "#22c55e" : "#F15A24", flexShrink: 0 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: canAdd ? "#22c55e" : "#b60410", flexShrink: 0 }}>
                             {totalSel} / {minQty} selected
                           </span>
                         </div>
@@ -1215,7 +1215,7 @@ const ComboDetailPage = () => {
                                               <div style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, overflow: 'hidden', border: '1px solid #d1d5db', cursor: 'pointer', flexShrink: 0 }}>
                                                 <input
                                                   type="color"
-                                                  value={customisationDetails[errorKey] && customisationDetails[errorKey].startsWith('#') ? customisationDetails[errorKey] : '#f15a24'}
+                                                  value={customisationDetails[errorKey] && customisationDetails[errorKey].startsWith('#') ? customisationDetails[errorKey] : '#b60410'}
                                                   onChange={e => setCustomisationDetails(prev => ({ ...prev, [errorKey]: e.target.value }))}
                                                   style={{ position: 'absolute', top: -5, left: -5, width: 50, height: 50, border: 0, padding: 0, cursor: 'pointer' }}
                                                 />
@@ -1244,10 +1244,10 @@ const ComboDetailPage = () => {
                                                         alignItems: 'center',
                                                         gap: 6,
                                                         padding: '5px 10px',
-                                                        border: isSelected ? '2px solid #F15A24' : '1px solid #d1d5db',
+                                                        border: isSelected ? '2px solid #b60410' : '1px solid #d1d5db',
                                                         borderRadius: 20,
                                                         background: isSelected ? '#FEF0EB' : '#fff',
-                                                        color: isSelected ? '#F15A24' : '#374151',
+                                                        color: isSelected ? '#b60410' : '#374151',
                                                         fontSize: 12,
                                                         fontWeight: 500,
                                                         cursor: 'pointer',
@@ -1652,7 +1652,7 @@ const ComboDetailPage = () => {
           transition: all 0.15s;
           flex: 1;
         }
-        .pdp-qty__btn:hover:not(:disabled) { background: #f3f4f6; color: #db1a5d; }
+        .pdp-qty__btn:hover:not(:disabled) { background: #f3f4f6; color: #b60410; }
         .pdp-qty__btn:disabled { opacity: 0.3; cursor: not-allowed; }
         .pdp-qty__count {
           min-width: 40px;
@@ -1688,7 +1688,7 @@ const ComboDetailPage = () => {
           font-family: inherit;
         }
         .pdp-btn--primary {
-          background: #db1a5d;
+          background: #b60410;
           color: #fff;
           box-shadow: 0 4px 12px rgba(219,26,93,0.2);
           flex: 1;
@@ -1701,7 +1701,7 @@ const ComboDetailPage = () => {
           color: #fff;
         }
         .pdp-btn--buy {
-          background: #F15A24;
+          background: #b60410;
           color: #fff;
           box-shadow: 0 4px 12px rgba(241,90,36,0.2);
           flex: 1;

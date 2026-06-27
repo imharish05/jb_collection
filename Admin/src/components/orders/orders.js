@@ -454,7 +454,7 @@ export default function Orders({ status = null }) {
                                     }
                                     if (Array.isArray(selectedProducts) && selectedProducts.length > 0) {
                                       return (
-                                        <div style={{ marginTop: 8, paddingLeft: 12, borderLeft: '2px solid #db1a5d', background: '#fafafa', borderRadius: 4, padding: '6px 10px' }}>
+                                        <div style={{ marginTop: 8, paddingLeft: 12, borderLeft: '2px solid #b60410', background: '#fafafa', borderRadius: 4, padding: '6px 10px' }}>
                                           <div style={{ fontSize: 10, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
                                             Combo Included Products:
                                           </div>
@@ -463,7 +463,7 @@ export default function Orders({ status = null }) {
                                               <div key={idx} style={{ fontSize: 11, color: '#333', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                                 <span style={{ fontWeight: 600 }}>• {p.name}</span>
                                                 {p.variantName && (
-                                                  <span style={{ fontSize: 9, background: '#fff0f6', color: '#db1a5d', border: '1px solid #ffd6e7', borderRadius: 3, padding: '1px 5px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                                  <span style={{ fontSize: 9, background: '#fff0f6', color: '#b60410', border: '1px solid #ffd6e7', borderRadius: 3, padding: '1px 5px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                                                     {renderVariantLabel(p.variantName, 9, 3)}
                                                   </span>
                                                 )}
@@ -622,7 +622,7 @@ export default function Orders({ status = null }) {
                                   </div>
                                 )}
                                 <a
-                                  href={`https://shiprocket.co/tracking/${order.awbCode}`}
+                                  href={order.courier ? `https://www.google.com/search?q=${encodeURIComponent(order.courier)}+tracking+${encodeURIComponent(order.awbCode)}` : `https://www.google.com/search?q=tracking+${encodeURIComponent(order.awbCode)}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   style={{ display: 'block', textAlign: 'center', background: '#166534', color: '#fff', fontSize: 11, fontWeight: 700, padding: '6px 12px', borderRadius: 6, marginTop: 8, textDecoration: 'none', transition: 'background 0.2s' }}
@@ -751,7 +751,7 @@ export default function Orders({ status = null }) {
                                               html: `<p style="margin:0;font-size:14px;color:#555">Confirm that <strong>₹${codDueAmt?.toFixed(2) ?? order.codAmount?.toFixed(2)}</strong> cash has been collected at the door.</p>`,
                                               icon: 'question',
                                               showCancelButton: true,
-                                              confirmButtonColor: '#db1a5d',
+                                              confirmButtonColor: '#b60410',
                                               cancelButtonColor: '#6b7280',
                                               confirmButtonText: '💵 Yes, Mark Collected',
                                               cancelButtonText: 'Cancel',
@@ -770,7 +770,7 @@ export default function Orders({ status = null }) {
                                             marginTop: 10,
                                             width: '100%',
                                             padding: '8px 12px',
-                                            background: '#db1a5d',
+                                            background: '#b60410',
                                             color: '#fff',
                                             border: 'none',
                                             borderRadius: 6,
@@ -780,7 +780,7 @@ export default function Orders({ status = null }) {
                                             transition: 'background 0.2s',
                                           }}
                                           onMouseEnter={(e) => e.target.style.background = '#b8124b'}
-                                          onMouseLeave={(e) => e.target.style.background = '#db1a5d'}
+                                          onMouseLeave={(e) => e.target.style.background = '#b60410'}
                                         >
                                           💵 Mark COD as Collected
                                         </button>
@@ -847,7 +847,7 @@ export default function Orders({ status = null }) {
                                               html: `<p style="margin:0;font-size:14px;color:#555">Confirm that <strong>₹${codDueAmt?.toFixed(2) ?? order.codAmount?.toFixed(2)}</strong> cash has been collected at the door.</p>`,
                                               icon: 'question',
                                               showCancelButton: true,
-                                              confirmButtonColor: '#db1a5d',
+                                              confirmButtonColor: '#b60410',
                                               cancelButtonColor: '#6b7280',
                                               confirmButtonText: '💵 Yes, Mark Collected',
                                               cancelButtonText: 'Cancel',
@@ -866,7 +866,7 @@ export default function Orders({ status = null }) {
                                             marginTop: 10,
                                             width: '100%',
                                             padding: '8px 12px',
-                                            background: '#db1a5d',
+                                            background: '#b60410',
                                             color: '#fff',
                                             border: 'none',
                                             borderRadius: 6,
@@ -876,7 +876,7 @@ export default function Orders({ status = null }) {
                                             transition: 'background 0.2s',
                                           }}
                                           onMouseEnter={(e) => e.target.style.background = '#b8124b'}
-                                          onMouseLeave={(e) => e.target.style.background = '#db1a5d'}
+                                          onMouseLeave={(e) => e.target.style.background = '#b60410'}
                                         >
                                           💵 Mark COD as Collected
                                         </button>

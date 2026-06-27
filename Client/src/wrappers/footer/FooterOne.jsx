@@ -18,9 +18,9 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
       <style>{`
         /* ── Kamali Footer ── */
         .km-footer {
-          background: #fff;
+          // background: #fff;
           padding: 72px 0 0;
-          border-top: 1px solid #eee;
+          // border-top: 1px solid #eee;
         }
 
         /* ── Main grid ── */
@@ -250,7 +250,6 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
                  <li><Link to="/my-account">My Account</Link></li>
                 <li><Link to="/">Home</Link></li>
                 <li><Link to="/about">About</Link></li>
-                <li><Link to="/catalogue">Catalogue</Link></li>
                 <li><Link to="/shop">Shop</Link></li>
                 <li><Link to="/contact">Contact</Link></li>
               </ul>

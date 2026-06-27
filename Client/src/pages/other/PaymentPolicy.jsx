@@ -145,7 +145,7 @@ const PaymentPolicy = () => {
                 <li>3D Secure (OTP-based) authentication is enforced for all card transactions as per RBI mandates</li>
                 <li>UPI transactions are authorized via your UPI app PIN — this PIN never leaves your device</li>
                 <li>Payment confirmation is communicated to Kamali Gifts via Razorpay's secure webhook; your order enters production only after payment is fully authorized</li>
-                <li>Razorpay's own <a href="https://razorpay.com/privacy/" target="_blank" rel="noopener noreferrer" style={{ color: "#db1a5d" }}>Privacy Policy</a> and <a href="https://razorpay.com/terms/" target="_blank" rel="noopener noreferrer" style={{ color: "#db1a5d" }}>Terms of Service</a> govern the payment processing portion of your transaction</li>
+                <li>Razorpay's own <a href="https://razorpay.com/privacy/" target="_blank" rel="noopener noreferrer" style={{ color: "#b60410" }}>Privacy Policy</a> and <a href="https://razorpay.com/terms/" target="_blank" rel="noopener noreferrer" style={{ color: "#b60410" }}>Terms of Service</a> govern the payment processing portion of your transaction</li>
               </ul>
             </div>
 

@@ -100,7 +100,7 @@ const OrderDetails = () => {
       text: "This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#db1a5d",
+      confirmButtonColor: "#b60410",
       cancelButtonColor: "#6c757d",
       confirmButtonText: "Yes, cancel order",
       cancelButtonText: "No, keep it",
@@ -126,7 +126,7 @@ const OrderDetails = () => {
             title: "Success!",
             text: "Order cancelled successfully!",
             icon: "success",
-            confirmButtonColor: "#db1a5d",
+            confirmButtonColor: "#b60410",
           });
         } catch (err) {
           console.error(err);
@@ -135,7 +135,7 @@ const OrderDetails = () => {
             title: "Error",
             text: errorMsg,
             icon: "error",
-            confirmButtonColor: "#db1a5d",
+            confirmButtonColor: "#b60410",
           });
         }
       },
@@ -198,7 +198,7 @@ const OrderDetails = () => {
             Return Status: {statusLabels[activeReturn.status] || activeReturn.status}
           </span>
           <div style={{ marginTop: "6px" }}>
-            <Link to={`/return-tracking/${activeReturn.referenceSlug || activeReturn.id}`} style={{ color: "#db1a5d", fontWeight: 600, fontSize: "13px" }}>
+            <Link to={`/return-tracking/${activeReturn.referenceSlug || activeReturn.id}`} style={{ color: "#b60410", fontWeight: 600, fontSize: "13px" }}>
               <i className="fa fa-map-marker"></i> Track Return
             </Link>
           </div>
@@ -509,17 +509,22 @@ const couponDiscount =
                       {renderCancelButton()}
                     </div>
 
-                    {order.shiprocketShipmentId && ["shipped", "processing", "delivery", "delivered"].includes(order.status?.toLowerCase()) && (
+                    {(order.awbCode || order.shiprocketShipmentId) && ["shipped", "processing", "delivery", "delivered"].includes(order.status?.toLowerCase()) && (
                       <div className="side-card info-summary" style={{ marginTop: "12px", border: "1px solid #bfdbfe", background: "#f0f7ff" }}>
                         <div className="info-group" style={{ margin: 0 }}>
                           <label style={{ color: "#1e3a8a", fontWeight: 700, fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
                             🚚 Shipping & Tracking
                           </label>
                           <p style={{ fontSize: "13px", color: "#374151", marginTop: "6px", marginBottom: "8px" }}>
-                            Courier Partner: <strong>{order.courier || "Shiprocket"}</strong>
+                            Courier Partner: <strong>{order.courier || "Standard Shipping"}</strong>
                           </p>
+                          {order.awbCode && (
+                            <p style={{ fontSize: "13px", color: "#374151", marginBottom: "8px" }}>
+                              AWB Code: <strong style={{ fontFamily: "monospace" }}>{order.awbCode}</strong>
+                            </p>
+                          )}
                           <a
-                            href={order.awbCode ? `https://shiprocket.co/tracking/${order.awbCode}` : `https://shiprocket.co/tracking/${order.shiprocketShipmentId}`}
+                            href={order.courier ? `https://www.google.com/search?q=${encodeURIComponent(order.courier)}+tracking+${encodeURIComponent(order.awbCode || order.shiprocketShipmentId)}` : `https://www.google.com/search?q=tracking+${encodeURIComponent(order.awbCode || order.shiprocketShipmentId)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{

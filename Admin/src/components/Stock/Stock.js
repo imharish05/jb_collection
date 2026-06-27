@@ -10,7 +10,7 @@ import AccessDenied from '../AccessDenied';
 const isColourKey = (key) => /colou?r/i.test(key || '');
 
 const pillClass = { Active: 'pill-active', Inactive: 'pill-inactive' };
-const KM = { orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B', green: '#39B54A', teal: '#00B4D8', border: '#E5E7EB', text: '#1A1A2E', muted: '#6B7280', bg: '#F9FAFB' };
+const KM = { orange: '#b60410', orangeLight: '#FEF0EB', blue: '#1A3A6B', green: '#39B54A', teal: '#00B4D8', border: '#E5E7EB', text: '#1A1A2E', muted: '#6B7280', bg: '#F9FAFB' };
 
 function safeAttrs(raw) {
   if (Array.isArray(raw)) return raw;

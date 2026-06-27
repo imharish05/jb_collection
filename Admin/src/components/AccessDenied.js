@@ -50,7 +50,7 @@ export default function AccessDenied({ moduleName }) {
         onClick={() => window.location.href = '/dashboard'}
         style={{
           padding: '11px 24px',
-          background: 'var(--brand, #db1a5d)',
+          background: 'var(--brand, #b60410)',
           color: '#fff',
           border: 'none',
           borderRadius: 8,
@@ -68,7 +68,7 @@ export default function AccessDenied({ moduleName }) {
           e.target.style.boxShadow = '0 6px 16px rgba(219, 26, 93, 0.35)';
         }}
         onMouseOut={(e) => {
-          e.target.style.background = 'var(--brand, #db1a5d)';
+          e.target.style.background = 'var(--brand, #b60410)';
           e.target.style.transform = 'translateY(0)';
           e.target.style.boxShadow = '0 4px 12px rgba(219, 26, 93, 0.25)';
         }}

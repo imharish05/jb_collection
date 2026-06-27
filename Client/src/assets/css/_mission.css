@@ -1,14 +1,12 @@
 .premium-elevated-card {
   position: relative;
-  background: #ffffff;
+  background: #1e1e1e;
   border-radius: 16px;
-  /* Soft, multi-layered shadow to make it pop on white */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 
-              0 10px 20px -5px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
   height: 100%;
   transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
   overflow: hidden;
-  border: 1px solid #f0f0f0; /* Very faint border for definition */
+  border: 1px solid #2a2a2a;
 }
 
 /* Color accent that appears on hover */
@@ -18,7 +16,7 @@
   left: 0;
   width: 100%;
   height: 4px;
-  background: #db1a5d; /* Your primary theme color */
+  background: #b60410; /* Your primary theme color */
   transform: scaleX(0);
   transition: transform 0.4s ease;
   transform-origin: left;
@@ -46,8 +44,8 @@
 .icon-box {
   width: 55px;
   height: 55px;
-  background: #e8f5f1; /* Extremely light version of your accent color */
-  color: #db1a5d;
+  background: rgba(205, 131, 62, 0.12);
+  color: #b60410;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -58,20 +56,20 @@
 }
 
 .premium-elevated-card:hover .icon-box {
-  background: #db1a5d;
+  background: #b60410;
   color: #ffffff;
 }
 
 .text-content h3 {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #ffffff;
   margin-bottom: 15px;
 }
 
 .text-content p {
   text-align: justify;
-  color: #666;
+  color: #c8bfb0;
   font-size: 15px;
   line-height: 1.6;
   margin-bottom: 0;
@@ -91,14 +89,14 @@
 .cta-text {
   font-weight: 600;
   font-size: 14px;
-  color: #1a1a1a;
+  color: #b60410;
 }
 
 .icon-circle-small {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #f0f0f0;
+  background: #2a2a2a;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -111,7 +109,7 @@
 }
 
 .premium-elevated-card:hover .icon-circle-small {
-  background: #db1a5d;
+  background: #b60410;
   color: #fff;
   transform: rotate(-45deg);
 }

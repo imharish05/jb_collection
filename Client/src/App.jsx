@@ -43,7 +43,6 @@ const BlogDetailsStandard = lazy(() => import("./pages/blog/BlogDetailsStandard"
 
 // Other pages
 const About = lazy(() => import("./pages/other/About"));
-const Catalogue = lazy(() => import("./pages/other/Catalogue"));
 const Contact = lazy(() => import("./pages/other/Contact"));
 const MyAccount = lazy(() => import("./pages/other/MyAccount"));
 const LoginRegister = lazy(() => import("./pages/other/LoginRegister"));
@@ -208,7 +207,6 @@ useEffect(() => {
 
             {/* Other public */}
             <Route path={process.env.PUBLIC_URL + "/about"} element={<About />} />
-            <Route path={process.env.PUBLIC_URL + "/catalogue"} element={<Catalogue />} />
             <Route path={process.env.PUBLIC_URL + "/contact"} element={<Contact />} />
             <Route path={process.env.PUBLIC_URL + "/privacy-policy"} element={<PrivacyPolicy />} />
             <Route path={process.env.PUBLIC_URL + "/terms-conditions"} element={<TermsConditions />} />

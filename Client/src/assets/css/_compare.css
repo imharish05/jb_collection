@@ -1,4 +1,4 @@
-/* updated */
+﻿/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -67,7 +67,7 @@
   padding-right: 5px;
 }
 .compare-table .table tbody tr td.product-image-title .compare-remove a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 .compare-table .table tbody tr td.product-image-title .compare-remove button {
   background: none;
@@ -92,7 +92,7 @@
 .compare-table .table tbody tr td.product-image-title .category {
   float: left;
   clear: both;
-  color: #db1a5d;
+  color: #b60410;
   text-transform: capitalize;
   letter-spacing: 0.5px;
 }
@@ -111,14 +111,14 @@
   width: 100%;
 }
 .compare-table .table tbody tr td.product-image-title .product-title > a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 .compare-table .table tbody tr td.product-image-title .compare-btn {
   margin: 14px 0 0;
 }
 .compare-table .table tbody tr td.product-image-title .compare-btn a,
 .compare-table .table tbody tr td.product-image-title .compare-btn button {
-  background-color: #db1a5d;
+  background-color: #b60410;
   padding: 10px 15px;
   border-radius: 50px;
   color: #fff;

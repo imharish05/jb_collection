@@ -8,7 +8,7 @@
 /*  1. Template default CSS
 /*----------------------------------------*/
 /*-- Google Font --*/
-@import url("https://fonts.googleapis.com/css?family=Cormorant+Garamond:300,400,500,600,700|Poppins:300,400,500,600,700,800,900|Josefin+Sans:wght@300;400;500;600;700|Abril+Fatface|Great+Vibe|Lobster&display=swap");
+/* Fonts loaded via index.html preconnect: Playfair Display + Inter */
 /*-- Common Style --*/
 *,
 *::after,
@@ -22,13 +22,13 @@ body {
 }
 
 body {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 400;
   font-style: normal;
   line-height: 24px;
-  color: #000;
-  background-color: #ffffff;
+  color: #f0ead6;
+  background-color: #0d0d0d;
 }
 
 h1,
@@ -37,19 +37,19 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: "Poppins", sans-serif;
-  font-weight: 400;
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
   margin-top: 0;
-  color: #0d1b40;
+  color: #ffffff;
 }
 
 p {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 24px;
   margin-bottom: 15px;
-  color: #333;
+  color: #c8bfb0;
 }
 
 h1 {
@@ -91,7 +91,7 @@ button {
   line-height: inherit;
   cursor: pointer;
   text-decoration: none;
-  color: #000;
+  color: #f0ead6;
 }
 
 button,
@@ -172,7 +172,7 @@ ul {
 }
 
 a:hover {
-  color: #db1a5d;
+  color: #b60410;
 }
 
 /*************************
@@ -1680,7 +1680,7 @@ textarea:focus {
   border: none;
   border-radius: 50px;
   background: none;
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 @media only screen and (max-width: 767px) {
   .scroll-top {
@@ -1839,7 +1839,7 @@ textarea:focus {
 .btn-hover a:hover,
 .btn-hover button:hover {
   color: #fff;
-  border: 1px solid #db1a5d;
+  border: 1px solid #b60410;
 }
 .btn-hover a::before, .btn-hover a::after,
 .btn-hover button::before,
@@ -1858,7 +1858,7 @@ textarea:focus {
   right: 0;
   left: auto;
   width: 0;
-  background: #db1a5d;
+  background: #b60410;
 }
 .btn-hover a:hover::after,
 .btn-hover button:hover::after {
@@ -1987,7 +1987,7 @@ a.default-btn {
 }
 .item-empty-area__text a:hover {
   color: #ffffff;
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 
 .fullpage-slider-wrapper .Navigation .Navigation-Anchor {

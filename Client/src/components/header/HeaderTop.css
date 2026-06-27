@@ -1,11 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&family=Bodoni+Moda:ital,wght@1,400;1,500&display=swap');
 
 :root {
-  --grad-linear: linear-gradient(90deg, #ffffff 0%, #fff0f3 50%, #fce4ec 100%);
+  --grad-linear: linear-gradient(90deg, #ffffff 0%, #fbf5ee 50%, #f5e6d3 100%);
   --glass-bg: rgba(255, 255, 255, 0.4);
-  --glass-border: rgba(251, 111, 146, 0.15);
+  --glass-border: rgba(205, 131, 62, 0.15);
   --navy-text: #001d3d;
-  --rose-vibrant: #fb6f92;
+  --rose-vibrant: #b60410;
 
   /* Social Brand Colors */
   --whatsapp-green: #25D366;
@@ -21,8 +21,8 @@
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 40px;
+  justify-content: center;
+  padding: 0;
   overflow: hidden;
   border-bottom: 1px solid var(--glass-border);
   font-family: 'Montserrat', sans-serif;
@@ -55,36 +55,44 @@
   font-weight: 700;
 }
 
-/* Content Slider (Center) */
-.content-slider {
-  flex: 1;
-  height: 100%;
+/* Continuous Scrolling Marquee (Center) */
+.marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
   display: flex;
-  justify-content: center;
   align-items: center;
-  position: relative;
+  flex: 1;
+  width: 100%;
 }
 
-.promo-message {
-  position: absolute;
+.marquee-track {
+  display: inline-flex;
+  animation: marquee-scroll 25s linear infinite;
+}
+
+.marquee-text {
+  padding-right: 80px;
   color: var(--navy-text);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1);
   white-space: nowrap;
 }
-.promo-message.active {
-  opacity: 1;
-  transform: translateY(0);
-}
-.promo-message em {
+
+.marquee-text em {
   font-family: 'Bodoni Moda', serif;
   color: var(--rose-vibrant);
   font-size: 16px;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 /* Social Icons (Right) */
@@ -106,23 +114,10 @@
   height: 18px;
 }
 
-.fb-icon {
-  fill: var(--fb-blue);
-}
 .ig-icon {
   fill: #bc1888; /* Fallback, SVG uses the gradient def */
 }
-.x-icon {
-  fill: var(--x-black);
-}
 
-.timer-line {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--navy-text), var(--rose-vibrant));
-}
 
 @media (max-width: 768px) {
   .luxury-top-bar {

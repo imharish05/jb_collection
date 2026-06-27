@@ -160,13 +160,13 @@ const VerifyOtp = () => {
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     border: "2px solid rgba(219,26,93,0.2)"
                   }}>
-                    <ShieldCheck size={32} color="#db1a5d" />
+                    <ShieldCheck size={32} color="#b60410" />
                   </div>
                   <h3 style={{ margin: "12px 0 4px", fontSize: "18px", fontWeight: "700", color: "#2c2c2c" }}>
                     Enter Verification Code
                   </h3>
                   <p style={{ margin: 0, fontSize: "13px", color: "#777" }}>
-                    OTP sent to <strong style={{ color: "#db1a5d" }}>{email}</strong>
+                    OTP sent to <strong style={{ color: "#b60410" }}>{email}</strong>
                   </p>
                 </div>
 
@@ -194,9 +194,9 @@ const VerifyOtp = () => {
                           background: "#fafafa", color: "#2c2c2c",
                           transition: "border-color 0.2s",
                           fontFamily: "'Courier New', monospace",
-                          caretColor: "#db1a5d",
+                          caretColor: "#b60410",
                         }}
-                        onFocus={(e) => { e.target.style.borderColor = "#db1a5d"; }}
+                        onFocus={(e) => { e.target.style.borderColor = "#b60410"; }}
                         onBlur={(e) => { if (!errors.otp) e.target.style.borderColor = "#e5e5e5"; }}
                       />
                     ))}
@@ -212,7 +212,7 @@ const VerifyOtp = () => {
                     {!canResend ? (
                       <p style={{ fontSize: "13px", color: "#888", margin: 0 }}>
                         Resend OTP in{" "}
-                        <span style={{ color: "#db1a5d", fontWeight: "700", fontFamily: "monospace" }}>
+                        <span style={{ color: "#b60410", fontWeight: "700", fontFamily: "monospace" }}>
                           {formatTime(countdown)}
                         </span>
                       </p>
@@ -223,7 +223,7 @@ const VerifyOtp = () => {
                         disabled={resending}
                         style={{
                           background: "none", border: "none", cursor: "pointer",
-                          color: "#db1a5d", fontSize: "13px", fontWeight: "600",
+                          color: "#b60410", fontSize: "13px", fontWeight: "600",
                           display: "inline-flex", alignItems: "center", gap: "4px",
                           opacity: resending ? 0.6 : 1,
                         }}
@@ -247,7 +247,7 @@ const VerifyOtp = () => {
                 <div style={{ textAlign: "center", marginTop: "20px" }}>
                   <Link
                     to="/forgot-password"
-                    style={{ color: "#db1a5d", fontSize: "13px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: "600" }}
+                    style={{ color: "#b60410", fontSize: "13px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: "600" }}
                   >
                     <ArrowLeft size={14} /> Use a different email
                   </Link>

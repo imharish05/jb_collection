@@ -33,7 +33,7 @@
   width: 80px;
   height: 2px;
   content: "";
-  background-color: #000;
+  background-color: #b60410;
 }
 @media only screen and (max-width: 767px) {
   .section-title h2::before {
@@ -48,7 +48,7 @@
   width: 80px;
   height: 2px;
   content: "";
-  background-color: #000;
+  background-color: #b60410;
 }
 @media only screen and (max-width: 767px) {
   .section-title h2::after {
@@ -83,7 +83,7 @@
   display: inline-block;
   margin: 0 0 15px;
   padding: 0 0 15px;
-  color: #000000;
+  color: #ffffff;
 }
 .section-title-2 h2:before {
   position: absolute;
@@ -94,11 +94,11 @@
   height: 2px;
   margin: 0 auto;
   content: "";
-  background-color: #000000;
+  background-color: #b60410;
 }
 .section-title-2 p {
   margin: 0;
-  color: #333;
+  color: #c8bfb0;
 }
 @media only screen and (max-width: 767px) {
   .section-title-2.mb-60 {
@@ -109,7 +109,7 @@
 .section-title-3 h4 {
   font-size: 24px;
   font-weight: 500;
-  color: #000000;
+  color: #ffffff;
 }
 @media only screen and (max-width: 767px) {
   .section-title-3.mb-40 {
@@ -167,7 +167,7 @@
   font-size: 48px;
   line-height: 38px;
   margin: 0;
-  color: #010101;
+  color: #ffffff;
 }
 @media only screen and (min-width: 768px) and (max-width: 991px) {
   .section-title-5 h2 {
@@ -187,12 +187,12 @@
 }
 
 .section-title-6 h2 {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 24px;
   font-weight: bold;
   margin-bottom: 0;
   text-transform: uppercase;
-  color: #010101;
+  color: #ffffff;
 }
 
 .section-title-7 h2 {
@@ -204,7 +204,7 @@
 }
 
 .section-title-8 h2 {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 36px;
   font-weight: 600;
   color: #010101;
@@ -227,7 +227,7 @@
   height: 1px;
   content: "";
   transform: translateX(-50%);
-  background-color: #000;
+  background-color: #b60410;
 }
 
 

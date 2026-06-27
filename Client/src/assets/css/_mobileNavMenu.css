@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════
    Kamali Gifts — Mobile Nav Menu
    ═══════════════════════════════════════════ */
 
@@ -31,13 +31,13 @@
   flex: 1;
   transition: color 0.15s;
 }
-.mob-nav__link:hover { color: #db1a5d; }
+.mob-nav__link:hover { color: #b60410; }
 
 .mob-nav__link.active {
-  color: #db1a5d;
+  color: #b60410;
   font-weight: 700;
   background: rgba(219, 26, 93, 0.04);
-  border-left: 3px solid #db1a5d;
+  border-left: 3px solid #b60410;
   padding-left: 17px;
 }
 
@@ -76,7 +76,7 @@
   font-weight: 700;
   letter-spacing: 1.2px;
   text-transform: uppercase;
-  color: var(--accent, #db1a5d);
+  color: var(--accent, #b60410);
   padding: 14px 20px 6px;
 }
 
@@ -127,7 +127,7 @@
   text-decoration: none;
   transition: color 0.15s;
 }
-.mob-list-row__label:hover { color: #db1a5d; }
+.mob-list-row__label:hover { color: #b60410; }
 
 .mob-list-row__chevron {
   background: none;
@@ -139,7 +139,7 @@
   align-items: center;
   flex-shrink: 0;
 }
-.mob-list-row__chevron:hover { color: #db1a5d; }
+.mob-list-row__chevron:hover { color: #b60410; }
 
 .mob-chevron-svg { transition: transform 0.2s ease; }
 .mob-chevron-svg--open { transform: rotate(180deg); }
@@ -164,11 +164,11 @@
   transition: background 0.12s, color 0.12s;
 }
 .mob-subcat-list__item:last-child { border-bottom: none; }
-.mob-subcat-list__item:hover { background: #fdf2f6; color: #db1a5d; }
+.mob-subcat-list__item:hover { background: #fdf2f6; color: #b60410; }
 
 .mob-subcat-list__item--all {
   font-weight: 600;
-  color: #db1a5d;
+  color: #b60410;
 }
 .mob-subcat-list__item--all:hover { background: #fdf2f6; }
 
@@ -179,15 +179,15 @@
   padding: 10px 16px;
   font-size: 13px;
   font-weight: 600;
-  color: #db1a5d;
+  color: #b60410;
   text-decoration: none;
-  border: 1.5px solid #db1a5d;
+  border: 1.5px solid #b60410;
   border-radius: 20px;
   text-align: center;
   transition: background 0.15s, color 0.15s;
 }
 .mob-catalogue-cta:hover,
-.mob-catalogue-cta:active { background: #db1a5d; color: #fff; }
+.mob-catalogue-cta:active { background: #b60410; color: #fff; }
 
 /* ── Account dropdown ── */
 .mob-account-dropdown {
@@ -222,8 +222,8 @@
   color: #888;
   transition: color 0.15s;
 }
-.mob-account-dropdown__item:hover { background: #fdf2f6; color: #db1a5d; }
-.mob-account-dropdown__item:hover i { color: #db1a5d; }
+.mob-account-dropdown__item:hover { background: #fdf2f6; color: #b60410; }
+.mob-account-dropdown__item:hover i { color: #b60410; }
 
 .mob-account-dropdown__item--logout { color: #e53e3e; }
 .mob-account-dropdown__item--logout i { color: #e53e3e; }

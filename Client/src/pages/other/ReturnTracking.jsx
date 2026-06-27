@@ -271,7 +271,7 @@ const ReturnTracking = () => {
                           AWB Code: <strong>{returnReq.reverseShipment.awbCode}</strong>
                         </p>
                         <p style={{ margin: "0 0 8px 0", fontSize: "13px" }}>
-                          Courier Partner: <strong>{returnReq.reverseShipment.courierName || "Shiprocket"}</strong>
+                          Courier Partner: <strong>{returnReq.reverseShipment.courierName || "Courier Partner"}</strong>
                         </p>
                         {returnReq.reverseShipment.trackingUrl && (
                           <a
@@ -302,7 +302,7 @@ const ReturnTracking = () => {
                           Replacement AWB: <strong>{returnReq.reverseShipment.replacementAwb}</strong>
                         </p>
                         <p style={{ margin: "0 0 8px 0", fontSize: "13px" }}>
-                          Courier: <strong>{returnReq.reverseShipment.replacementCourier || "Shiprocket"}</strong>
+                          Courier: <strong>{returnReq.reverseShipment.replacementCourier || "Courier Partner"}</strong>
                         </p>
                         <p style={{ margin: "0 0 12px 0", fontSize: "12px", fontStyle: "italic", color: "#1e3a8a" }}>
                           * Delivery charge paid by Kamali Gifts (Customer pays ₹0)
@@ -313,7 +313,7 @@ const ReturnTracking = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              backgroundColor: "#db1a5d",
+                              backgroundColor: "#b60410",
                               color: "#fff",
                               padding: "6px 16px",
                               fontSize: "12px",

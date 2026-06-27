@@ -125,7 +125,7 @@ function findMatchingVariant(variants, selections) {
   return best;
 }
 
-const ORANGE = "#F15A24";
+const ORANGE = "#b60410";
 const ORANGE_LIGHT = "#FEF0EB";
 
 // ─── AttributeGroup — identical UI to ProductDescriptionInfo ─────────────────

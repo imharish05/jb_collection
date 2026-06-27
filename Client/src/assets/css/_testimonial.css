@@ -1,10 +1,10 @@
 /* =========================================
    TESTIMONIAL — Card Stack Design
-   Brand: #db1a5d | Fully responsive
+   Brand: #b60410 | Fully responsive
    ========================================= */
 
 .testimonial-section {
-  background: #fafafa;
+  background: #0d0d0d;
   overflow: hidden;
 }
 
@@ -12,14 +12,14 @@
 .testimonial-section .section-title h2 {
   font-size: 36px;
   font-weight: 800;
-  color: #111;
+  color: #ffffff;
   margin-bottom: 10px;
   letter-spacing: -0.5px;
 }
 
 .testimonial-section .section-title p {
   font-size: 16px;
-  color: #888;
+  color: #c8bfb0;
   font-weight: 400;
 }
 
@@ -35,9 +35,9 @@
 .testimonial-slick-wrapper .slick-next {
   width: 44px;
   height: 44px;
-  background: #fff;
+  background: #1e1e1e;
   border-radius: 50%;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
   z-index: 10;
   transition: background 0.2s, box-shadow 0.2s;
 }
@@ -45,12 +45,12 @@
 .testimonial-slick-wrapper .slick-next { right: -54px; }
 .testimonial-slick-wrapper .slick-prev:hover,
 .testimonial-slick-wrapper .slick-next:hover {
-  background: #db1a5d;
+  background: #b60410;
   box-shadow: 0 6px 20px rgba(219,26,93,0.3);
 }
 .testimonial-slick-wrapper .slick-prev::before,
 .testimonial-slick-wrapper .slick-next::before {
-  color: #333;
+  color: #c8bfb0;
   font-size: 16px;
   opacity: 1;
 }
@@ -69,21 +69,22 @@
   opacity: 1;
 }
 .testimonial-slick-wrapper .slick-dots li.slick-active button::before {
-  color: #db1a5d;
+  color: #b60410;
 }
 
 /* ── CARD ── */
 .testimonial-card {
-  background: #fff;
+  background: #1e1e1e;
   border-radius: 24px;
   padding: 48px 48px 40px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.07);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  border: 1px solid #2a2a2a;
   display: flex !important;
   flex-direction: column;
   gap: 28px;
   position: relative;
   overflow: hidden;
-  transition: box-shadow 0.3s;
+  transition: box-shadow 0.3s, border-color 0.3s;
 }
 
 /* Decorative accent strip at top */
@@ -92,7 +93,7 @@
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #db1a5d, #ff6b9d);
+  background: linear-gradient(90deg, #b60410, #ff6b9d);
   border-radius: 24px 24px 0 0;
 }
 
@@ -104,9 +105,9 @@
   right: 36px;
   font-size: 140px;
   line-height: 1;
-  color: #db1a5d;
+  color: #b60410;
   opacity: 0.06;
-  font-family: Georgia, serif;
+  font-family: 'Playfair Display', serif;
   pointer-events: none;
 }
 
@@ -127,7 +128,7 @@
 .tc-quote {
   font-size: 17px;
   line-height: 1.75;
-  color: #444;
+  color: #c8bfb0;
   font-style: italic;
   margin: 0;
   position: relative;
@@ -160,14 +161,14 @@
 .tc-name {
   font-size: 16px;
   font-weight: 800;
-  color: #111;
+  color: #ffffff;
   margin: 0;
   letter-spacing: 0.2px;
 }
 
 .tc-designation {
   font-size: 13px;
-  color: #db1a5d;
+  color: #b60410;
   font-weight: 600;
 }
 

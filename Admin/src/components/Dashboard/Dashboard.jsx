@@ -562,7 +562,7 @@ export default function Dashboard() {
               <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#9ca3af' }}>Live overview of return requests</p>
             </div>
             <a href="/returns" style={{
-              fontSize: '12px', fontWeight: 700, color: '#db1a5d',
+              fontSize: '12px', fontWeight: 700, color: '#b60410',
               textDecoration: 'none', padding: '6px 14px',
               border: '1px solid #fce7f3', borderRadius: '8px',
               background: '#fff0f6',

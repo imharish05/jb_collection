@@ -1,4 +1,4 @@
-/* updated */
+﻿/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -110,7 +110,7 @@
   color: #696969;
 }
 .subscribe-style-3--title-style2 h2 {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 36px;
 }
 .subscribe-style-3 .subscribe-form-3 input {
@@ -144,7 +144,7 @@
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3 input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3 button:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.hover-red input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.hover-red button:hover {
@@ -156,7 +156,7 @@
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.red-subscribe input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.red-subscribe button:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.green-subscribe input,
 .subscribe-style-3 .subscribe-form-3 .clear-3.green-subscribe button {
@@ -164,7 +164,7 @@
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.green-subscribe input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.green-subscribe button:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-red-subscribe input,
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-red-subscribe button {
@@ -173,7 +173,7 @@
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-red-subscribe input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-red-subscribe button:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-blue-subscribe input,
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-blue-subscribe button {
@@ -190,25 +190,25 @@
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.red-2-subscribe input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.red-2-subscribe button:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.pink-subscribe input,
 .subscribe-style-3 .subscribe-form-3 .clear-3.pink-subscribe button {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.pink-subscribe input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.pink-subscribe button:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .subscribe-style-3--blue h2 {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 36px;
   font-weight: 700;
   line-height: 1.3;
   color: #053399;
 }
 .subscribe-style-3--blue p {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 18px;
   font-weight: 700;
   text-transform: uppercase;
@@ -235,13 +235,13 @@
   border: none;
 }
 .subscribe-style-3.subscribe-style-3-white .subscribe-form-3 .clear-3 input:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 .subscribe-style-3.subscribe-style-3-white .subscribe-form-3 .clear-3.red-2-subscribe input {
   background-color: #e90042;
 }
 .subscribe-style-3.subscribe-style-3-white .subscribe-form-3 .clear-3.red-2-subscribe input:hover {
-  background-color: #db1a5d;
+  background-color: #b60410;
 }
 
 

@@ -16,7 +16,7 @@ const getImgSrc = (p) => {
 };
 
 const KM = {
-  orange: '#F15A24', orangeLight: '#FEF0EB', blue: '#1A3A6B',
+  orange: '#b60410', orangeLight: '#FEF0EB', blue: '#1A3A6B',
   green: '#39B54A', teal: '#00B4D8', border: '#E5E7EB',
   text: '#1A1A2E', muted: '#6B7280', bg: '#F9FAFB',
   red: '#EF4444', redLight: '#FEF2F2',

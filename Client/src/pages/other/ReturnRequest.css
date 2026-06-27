@@ -68,7 +68,7 @@
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  color: #db1a5d;
+  color: #b60410;
   letter-spacing: 0.5px;
   display: block;
   margin-bottom: 2px;
@@ -126,14 +126,14 @@
 }
 
 .rr-type-card.active {
-  border-color: #db1a5d;
+  border-color: #b60410;
   background: #fdf2f8;
 }
 
 .rr-type-radio {
   width: 18px;
   height: 18px;
-  accent-color: #db1a5d;
+  accent-color: #b60410;
   margin-top: 3px;
   cursor: pointer;
   flex-shrink: 0;
@@ -180,7 +180,7 @@
 }
 
 .rr-select:focus {
-  border-color: #db1a5d;
+  border-color: #b60410;
 }
 
 .rr-input {
@@ -197,7 +197,7 @@
 }
 
 .rr-input:focus {
-  border-color: #db1a5d;
+  border-color: #b60410;
 }
 
 .rr-input--narrow {
@@ -220,7 +220,7 @@
 }
 
 .rr-textarea:focus {
-  border-color: #db1a5d;
+  border-color: #b60410;
 }
 
 .rr-upload-section {
@@ -262,7 +262,7 @@
 }
 
 .rr-upload-zone:hover {
-  border-color: #db1a5d;
+  border-color: #b60410;
   background: #fff5f8;
 }
 
@@ -381,7 +381,7 @@
 }
 
 .rr-submit-btn {
-  background: linear-gradient(135deg, #db1a5d, #c01550);
+  background: linear-gradient(135deg, #b60410, #c01550);
   color: #fff;
   padding: 14px 44px;
   font-size: 14px;

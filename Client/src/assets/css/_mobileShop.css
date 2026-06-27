@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════
    Kamali Gifts — Mobile Shop UX  (max-width 991px only)
    Desktop layout is completely untouched.
    ═══════════════════════════════════════════════════════ */
@@ -27,7 +27,7 @@
     transition: border-color 0.2s;
   }
   .mobile-shop-search:focus-within {
-    border-color: #db1a5d;
+    border-color: #b60410;
     box-shadow: 0 2px 14px rgba(219,26,93,0.12);
   }
   .mobile-shop-search input {
@@ -42,7 +42,7 @@
   }
   .mobile-shop-search input::placeholder { color: #aaa; }
   .mobile-shop-search button {
-    background: #db1a5d;
+    background: #b60410;
     border: none;
     color: #fff;
     width: 44px;
@@ -90,10 +90,10 @@
     display: inline-block;
   }
   .mobile-cat-pills .cat-pill:active,
-  .mobile-cat-pills .cat-pill:hover { background: #fdf2f6; border-color: #db1a5d; color: #db1a5d; }
+  .mobile-cat-pills .cat-pill:hover { background: #fdf2f6; border-color: #b60410; color: #b60410; }
   .mobile-cat-pills .cat-pill.active {
-    background: #db1a5d;
-    border-color: #db1a5d;
+    background: #b60410;
+    border-color: #b60410;
     color: #fff;
     font-weight: 600;
   }
@@ -176,7 +176,7 @@
     transition: all 0.15s;
   }
   .mobile-filter-bar__btn--filter {
-    background: #db1a5d;
+    background: #b60410;
     color: #fff;
   }
   .mobile-filter-bar__btn--filter:active { background: #b5164e; }
@@ -188,7 +188,7 @@
   .mobile-filter-bar__btn--sort:active { background: #e8e8e8; }
   .filter-bar-badge {
     background: #fff;
-    color: #db1a5d;
+    color: #b60410;
     border-radius: 50%;
     width: 18px;
     height: 18px;
@@ -330,8 +330,8 @@
 }
 .drawer-chip:active { transform: scale(0.97); }
 .drawer-chip.active {
-  background: #db1a5d;
-  border-color: #db1a5d;
+  background: #b60410;
+  border-color: #b60410;
   color: #fff;
   font-weight: 600;
 }
@@ -362,7 +362,7 @@
 }
 .drawer-sort-option:active { transform: scale(0.98); }
 .drawer-sort-option.active {
-  border-color: #db1a5d;
+  border-color: #b60410;
   background: #fff7f9;
   box-shadow: 0 2px 12px rgba(219,26,93,0.10);
 }
@@ -393,7 +393,7 @@
   transition: color 0.15s;
 }
 .drawer-sort-option.active .sort-opt-label {
-  color: #db1a5d;
+  color: #b60410;
   font-weight: 600;
 }
 .sort-opt-check {
@@ -410,8 +410,8 @@
   color: transparent;
 }
 .sort-opt-check--active {
-  background: #db1a5d;
-  border-color: #db1a5d;
+  background: #b60410;
+  border-color: #b60410;
   color: #fff;
 }
 
@@ -437,13 +437,13 @@
   cursor: pointer;
   transition: border-color 0.15s;
 }
-.drawer-footer__clear:active { border-color: #db1a5d; color: #db1a5d; }
+.drawer-footer__clear:active { border-color: #b60410; color: #b60410; }
 .drawer-footer__apply {
   flex: 2;
   padding: 12px;
   border-radius: 20px;
   border: none;
-  background: #db1a5d;
+  background: #b60410;
   color: #fff;
   font-size: 14px;
   font-weight: 700;

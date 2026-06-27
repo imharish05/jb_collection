@@ -172,7 +172,7 @@ const Wishlist = () => {
                   </Link>
                   <button
                     onClick={() => deleteAllFromWishlistService()}
-                    style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"10px 20px", background:"#fff5f8", border:"1.5px solid #fca5a5", borderRadius:10, fontSize:13, fontWeight:700, color:"#db1a5d", cursor:"pointer" }}
+                    style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"10px 20px", background:"#fff5f8", border:"1.5px solid #fca5a5", borderRadius:10, fontSize:13, fontWeight:700, color:"#b60410", cursor:"pointer" }}
                   >
                     🗑 Clear Wishlist
                   </button>
@@ -334,7 +334,7 @@ const Wishlist = () => {
             <p style={{ fontSize:14, color:"#888", margin:0 }}>Save items you love and come back to them anytime.</p>
             <Link
               to={process.env.PUBLIC_URL + "/shop"}
-              style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"13px 28px", background:"linear-gradient(135deg,#db1a5d,#c01550)", color:"#fff", borderRadius:12, fontSize:14, fontWeight:700, textDecoration:"none", boxShadow:"0 4px 14px rgba(219,26,93,0.28)", marginTop:4 }}
+              style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"13px 28px", background:"linear-gradient(135deg,#b60410,#c01550)", color:"#fff", borderRadius:12, fontSize:14, fontWeight:700, textDecoration:"none", boxShadow:"0 4px 14px rgba(219,26,93,0.28)", marginTop:4 }}
             >
               Explore Products →
             </Link>
