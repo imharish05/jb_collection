@@ -24,7 +24,7 @@ const HomeFashion = () => {
         {/* hero slider */}
         <HeroSliderFour/>
 
-        <CategoryEvent/>
+        {/* <CategoryEvent/> */}
         {/* feature icons */}
 
 

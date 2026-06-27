@@ -74,11 +74,11 @@ const NAV_ITEMS = [
           <path d="M8 12h8M8 16h6"/>
         </svg>
       )},
-      { id: 'event_categories', label: 'Event Categories', icon: (
+      /* { id: 'event_categories', label: 'Event Categories', icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M4 19h16M4 14h16M4 9h16M4 4h16" />
         </svg>
-      )},
+      )}, */
       { id: 'brands', label: 'Brands', icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>

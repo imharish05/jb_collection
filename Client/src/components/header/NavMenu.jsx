@@ -3,6 +3,123 @@ import { Link, useLocation } from "react-router-dom";
 import clsx from "clsx";
 import { useSelector } from "react-redux";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
+
+const IMG_BASE = process.env.REACT_APP_IMG_URL || 'http://localhost:5000';
+const imgSrc = (path) => {
+  if (!path) return null;
+  const cleanBase = IMG_BASE.endsWith('/') ? IMG_BASE : `${IMG_BASE}/`;
+  let cleanPath = path.trim().replace(/^\//, '');
+  if (!cleanPath.startsWith('uploads/')) {
+    cleanPath = `uploads/${cleanPath}`;
+  }
+  return `${cleanBase}${cleanPath}`;
+};
+
+/* ─── Portal wrapper — positions the dropdown via fixed coords ─── */
+const PortalDropdown = ({ anchorRef, open, onMouseEnter, onMouseLeave, children }) => {
+  const [style, setStyle] = useState({});
+
+  const reposition = useCallback(() => {
+    if (!anchorRef.current) return;
+    const rect = anchorRef.current.getBoundingClientRect();
+    setStyle({
+      position: "fixed",
+      top: rect.bottom + 2,
+      left: rect.left,
+    });
+  }, [anchorRef]);
+
+  useEffect(() => {
+    if (!open) return;
+    reposition();
+    window.addEventListener("scroll", reposition, { passive: true });
+    window.addEventListener("resize", reposition, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", reposition);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, reposition]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      className={clsx("kg-collections-panel", open && "kg-collections-panel--open")}
+      style={style}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {children}
+    </div>,
+    document.body
+  );
+};
+
+/* ─── Subcategory flyout panel (floating box next to row) ─── */
+const SubFlyoutPanel = ({ cat, shopBase }) => {
+  const subs = cat.subcategories || [];
+  return (
+    <div className="kg-sub-flyout-panel" onMouseEnter={(e) => e.stopPropagation()}>
+      <div className="kg-col-sub-list">
+        {subs.map((sub) => (
+          <Link
+            key={sub.id}
+            to={sub.value ? `${shopBase}?subcategory=${sub.value}` : `${shopBase}?category=${cat.value}`}
+            className="kg-col-sub-pill"
+          >
+            {sub.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ─── Category row (left column) ─── */
+const CategoryRow = ({ cat, isHovered, onHover, shopBase }) => {
+  const hasSubs = cat.subcategories && cat.subcategories.length > 0;
+  return (
+    <div
+      className={clsx("kg-col-cat-row", isHovered && "kg-col-cat-row--active")}
+      onMouseEnter={() => onHover(cat.id)}
+    >
+      {/* Category image thumbnail (only shown if present) */}
+      {cat.image && (
+        <span className="kg-col-cat-row__icon">
+          <img
+            src={imgSrc(cat.image)}
+            alt={cat.label}
+            className="kg-col-cat-row__img"
+            onError={(e) => { e.target.parentNode.style.display = "none"; }}
+          />
+        </span>
+      )}
+
+      {/* Category name */}
+      <Link
+        to={cat.value ? `${shopBase}?category=${cat.value}` : shopBase}
+        className="kg-col-cat-row__name"
+      >
+        {cat.label}
+      </Link>
+
+      {/* Arrow indicator when subs exist */}
+      {hasSubs && (
+        <span className="kg-col-cat-row__arrow">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      )}
+
+      {/* Render subcategories flyout box inline next to row if hovered */}
+      {isHovered && hasSubs && (
+        <SubFlyoutPanel cat={cat} shopBase={shopBase} />
+      )}
+    </div>
+  );
+};
 
 /* ─── Main NavMenu ─── */
 const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
@@ -10,9 +127,10 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
   const location = useLocation();
   const S = process.env.PUBLIC_URL + "/shop";
 
-  const scrollRef = useRef(null);
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(false);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const [hoveredCatId, setHoveredCatId] = useState(null);
+  const closeTimer = useRef(null);
+  const anchorRef = useRef(null);
 
   const isActive = (path) => {
     const basePath = process.env.PUBLIC_URL || "";
@@ -21,33 +139,21 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
     return currentPath === targetPath || currentPath === targetPath + "/";
   };
 
-  const checkScroll = useCallback(() => {
-    if (!scrollRef.current || sidebarMenu) return;
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-    setShowLeftArrow(scrollLeft > 5);
-    setShowRightArrow(scrollWidth - scrollLeft - clientWidth > 5);
-  }, [sidebarMenu]);
+  const openPanel = useCallback(() => {
+    clearTimeout(closeTimer.current);
+    setCollectionsOpen(true);
+  }, []);
 
-  const scroll = (direction) => {
-    if (!scrollRef.current) return;
-    const offset = direction === "left" ? -180 : 180;
-    scrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
-  };
+  const scheduleClose = useCallback(() => {
+    closeTimer.current = setTimeout(() => {
+      setCollectionsOpen(false);
+      setHoveredCatId(null);
+    }, 180);
+  }, []);
 
-  useEffect(() => {
-    checkScroll();
-    const el = scrollRef.current;
-    if (el) {
-      el.addEventListener("scroll", checkScroll, { passive: true });
-    }
-    window.addEventListener("resize", checkScroll);
-    return () => {
-      if (el) el.removeEventListener("scroll", checkScroll);
-      window.removeEventListener("resize", checkScroll);
-    };
-  }, [categories, checkScroll]);
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
 
-  // If sidebar menu (mobile/side navigation drawer), render a simplified vertical layout
+  // Sidebar mobile menu display
   if (sidebarMenu) {
     return (
       <div className="sidebar-menu kg-nav">
@@ -59,16 +165,18 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
             <li className={isActive(process.env.PUBLIC_URL + "/about") ? "active" : ""}>
               <Link to={process.env.PUBLIC_URL + "/about"}>About</Link>
             </li>
-            {categories.map((cat) => {
-              const hasSubs = cat.subcategories && cat.subcategories.length > 0;
-              return (
-                <li key={cat.id} className={clsx(hasSubs && "kg-dropdown-item")}>
-                  <Link to={`${S}?category=${cat.value}`}>
-                    {cat.label}
-                  </Link>
-                </li>
-              );
-            })}
+            <li className={clsx(categories.length > 0 && "kg-dropdown-item")}>
+              <Link to={S}>Collections</Link>
+              {categories.length > 0 && (
+                <ul className="kg-sub-dropdown">
+                  {categories.map((cat) => (
+                    <li key={cat.id}>
+                      <Link to={`${S}?category=${cat.value}`}>{cat.label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
             <li className={isActive(process.env.PUBLIC_URL + "/contact") ? "active" : ""}>
               <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
             </li>
@@ -80,95 +188,60 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
 
   return (
     <div className={clsx(`main-menu ${menuWhiteClass || ""}`, "kg-nav")}>
-      <nav className="kg-scroll-nav-wrapper">
-        {/* Scroll Left Button */}
-        {showLeftArrow && (
-          <button
-            type="button"
-            onClick={() => scroll("left")}
-            className="kg-nav-scroll-btn kg-nav-scroll-btn--left"
-            aria-label="Scroll menu left"
+      <nav>
+        <ul>
+          <li className={isActive(process.env.PUBLIC_URL + "/") ? "active" : ""}>
+            <Link to={process.env.PUBLIC_URL + "/"}>Home</Link>
+          </li>
+          <li className={isActive(process.env.PUBLIC_URL + "/about") ? "active" : ""}>
+            <Link to={process.env.PUBLIC_URL + "/about"}>About</Link>
+          </li>
+
+          {/* Collections dropdown list */}
+          <li
+            ref={anchorRef}
+            className={clsx(
+              "kg-catalogue-item",
+              collectionsOpen && "kg-catalogue-item--open",
+              isActive(S) ? "active" : ""
+            )}
+            onMouseEnter={openPanel}
+            onMouseLeave={scheduleClose}
           >
-            ‹
-          </button>
-        )}
+            <Link to={S} className="kg-catalogue-trigger">
+              Collections
+              <span className="kg-chevron">
+                <svg width="12" height="7" viewBox="0 0 12 7" fill="none">
+                  <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </Link>
 
-        <div className="kg-scroll-nav-container" ref={scrollRef}>
-          <ul className="kg-scroll-nav-list">
-            {/* Home */}
-            <li className={isActive(process.env.PUBLIC_URL + "/") ? "active" : ""}>
-              <Link to={process.env.PUBLIC_URL + "/"}>Home</Link>
-            </li>
+            <PortalDropdown
+              anchorRef={anchorRef}
+              open={collectionsOpen}
+              onMouseEnter={openPanel}
+              onMouseLeave={scheduleClose}
+            >
+              {/* Categories list */}
+              <div className="kg-col-left">
+                {categories.map((cat) => (
+                  <CategoryRow
+                    key={cat.id}
+                    cat={cat}
+                    isHovered={hoveredCatId === cat.id}
+                    onHover={setHoveredCatId}
+                    shopBase={S}
+                  />
+                ))}
+              </div>
+            </PortalDropdown>
+          </li>
 
-            {/* About */}
-            <li className={isActive(process.env.PUBLIC_URL + "/about") ? "active" : ""}>
-              <Link to={process.env.PUBLIC_URL + "/about"}>About</Link>
-            </li>
-
-            {/* Render Category Menus Dynamically */}
-            {categories.map((cat) => {
-              const subs = cat.subcategories || [];
-              const hasSubs = subs.length > 0;
-              const catUrl = `${S}?category=${cat.value}`;
-
-              return (
-                <li
-                  key={cat.id}
-                  className={clsx(
-                    hasSubs && "kg-dropdown-item",
-                    location.search.includes(`category=${cat.value}`) && "active"
-                  )}
-                >
-                  <Link to={catUrl} className="kg-category-trigger">
-                    {cat.label}
-                    {hasSubs && (
-                      <span className="kg-chevron">
-                        <svg width="9" height="6" viewBox="0 0 9 6" fill="none">
-                          <path d="M1 1l3.5 3.5L8 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                    )}
-                  </Link>
-
-                  {/* Standard clean hover dropdown for subcategories */}
-                  {hasSubs && (
-                    <ul className="kg-sub-dropdown">
-                      <li>
-                        <Link to={catUrl} style={{ fontWeight: 600 }}>
-                          View All
-                        </Link>
-                      </li>
-                      {subs.map((sub) => (
-                        <li key={sub.id}>
-                          <Link to={`${S}?subcategory=${sub.value}`}>
-                            {sub.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              );
-            })}
-
-            {/* Contact Us */}
-            <li className={isActive(process.env.PUBLIC_URL + "/contact") ? "active" : ""}>
-              <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
-            </li>
-          </ul>
-        </div>
-
-        {/* Scroll Right Button */}
-        {showRightArrow && (
-          <button
-            type="button"
-            onClick={() => scroll("right")}
-            className="kg-nav-scroll-btn kg-nav-scroll-btn--right"
-            aria-label="Scroll menu right"
-          >
-            ›
-          </button>
-        )}
+          <li className={isActive(process.env.PUBLIC_URL + "/contact") ? "active" : ""}>
+            <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
+          </li>
+        </ul>
       </nav>
     </div>
   );

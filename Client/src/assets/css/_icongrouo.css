@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════════════
    Kamali Gifts — IconGroup: Search + Account
    ═══════════════════════════════════════════════ */
 
@@ -44,7 +44,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #555;
+  color: #f0ead6;
   transition: color 0.15s;
   box-sizing: border-box;
 }
@@ -110,7 +110,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #555;
+  color: #f0ead6;
   border-radius: 50%;
   transition: color 0.15s, background 0.15s;
   flex-shrink: 0;
@@ -338,6 +338,6 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background-color: #000 !important;
+  background-color: #b60410 !important;
   color: #fff !important;
 }
