@@ -435,3 +435,165 @@
   .kcat-row-card__left { width: 100%; border-right: none; border-bottom: 1.5px solid #f5f5f5; align-self: auto; }
   .kcat-simple-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ── Scrollable Category Nav Bar in Header ── */
+.kg-scroll-nav-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0 10px;
+}
+
+.kg-scroll-nav-container {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  width: 100%;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE 10+ */
+}
+
+.kg-scroll-nav-container::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+.kg-scroll-nav-list {
+  display: flex;
+  align-items: center;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none;
+  width: auto;
+}
+
+.kg-scroll-nav-list > li {
+  display: inline-block;
+  position: relative;
+  margin: 0 15px;
+  flex-shrink: 0;
+}
+
+.kg-scroll-nav-list > li > a {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 18px 0;
+  color: #f0ead6;
+  position: relative;
+}
+
+.kg-scroll-nav-list > li.active > a,
+.kg-scroll-nav-list > li > a:hover {
+  color: #b60410 !important;
+}
+
+/* ── Navigation scroll arrows ── */
+.kg-nav-scroll-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #252525;
+  border: 1px solid #383838;
+  color: #f0ead6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  font-size: 16px;
+  line-height: 1;
+  transition: all 0.2s ease;
+  padding: 0 0 2px 0;
+}
+
+.kg-nav-scroll-btn:hover {
+  background: #b60410;
+  color: #fff;
+  border-color: #b60410;
+}
+
+.kg-nav-scroll-btn--left {
+  left: -8px;
+}
+
+.kg-nav-scroll-btn--right {
+  right: -8px;
+}
+
+/* ── Subcategory classic dropdown ── */
+.kg-dropdown-item {
+  position: relative;
+}
+
+.kg-sub-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  min-width: 180px;
+  padding: 8px 0;
+  margin: 0;
+  list-style: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  z-index: 1000;
+  text-align: left;
+}
+
+.kg-dropdown-item:hover .kg-sub-dropdown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.kg-sub-dropdown li {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.kg-sub-dropdown li a {
+  display: block;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #c8bfb0 !important;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.kg-sub-dropdown li a:hover {
+  background: rgba(182, 4, 16, 0.15) !important; /* brand red */
+  color: #b60410 !important;
+}
+
+.kg-category-trigger {
+  display: inline-flex;
+  align-items: center;
+}
+
+.kg-chevron {
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.25s ease;
+  margin-left: 5px;
+}
+
+.kg-dropdown-item:hover .kg-chevron {
+  transform: rotate(180deg);
+}

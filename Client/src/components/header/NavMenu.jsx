@@ -3,146 +3,16 @@ import { Link, useLocation } from "react-router-dom";
 import clsx from "clsx";
 import { useSelector } from "react-redux";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
-
-const IMG_BASE = process.env.REACT_APP_IMG_URL + "/uploads/";
-const imgSrc = (path) =>
-  path ? `${IMG_BASE}${path.replace(/^\/?( uploads\/)?/, "")}` : null;
-
-/* ─── Portal wrapper — positions the dropdown via fixed coords ─── */
-const PortalDropdown = ({ anchorRef, open, onMouseEnter, onMouseLeave, children }) => {
-  const [style, setStyle] = useState({});
-
-  const reposition = useCallback(() => {
-    if (!anchorRef.current) return;
-    const rect = anchorRef.current.getBoundingClientRect();
-    setStyle({
-      position: "fixed",
-      top: rect.bottom + 2,
-      left: rect.left,
-    });
-  }, [anchorRef]);
-
-  useEffect(() => {
-    if (!open) return;
-    reposition();
-    window.addEventListener("scroll", reposition, { passive: true });
-    window.addEventListener("resize", reposition, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", reposition);
-      window.removeEventListener("resize", reposition);
-    };
-  }, [open, reposition]);
-
-  if (!open) return null;
-
-  return createPortal(
-    <div
-      className={clsx("kg-collections-panel", open && "kg-collections-panel--open")}
-      style={style}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
-      {children}
-    </div>,
-    document.body
-  );
-};
-
-/* ─── Category row (left column) ─── */
-const CategoryRow = ({ cat, isHovered, onHover, shopBase }) => {
-  const hasSubs = cat.subcategories && cat.subcategories.length > 0;
-  return (
-    <div
-      className={clsx("kg-col-cat-row", isHovered && "kg-col-cat-row--active")}
-      onMouseEnter={() => onHover(cat.id)}
-    >
-      {/* Category image */}
-      <span className="kg-col-cat-row__icon">
-        {cat.image ? (
-          <img
-            src={imgSrc(cat.image)}
-            alt={cat.label}
-            className="kg-col-cat-row__img"
-            onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
-          />
-        ) : null}
-        <span className="kg-col-cat-row__emoji" style={{ display: cat.image ? "none" : "flex" }}>🗂️</span>
-      </span>
-
-      {/* Category name — clicking navigates */}
-      <Link
-        to={cat.value ? `${shopBase}?category=${cat.value}` : shopBase}
-        className="kg-col-cat-row__name"
-      >
-        {cat.label}
-      </Link>
-
-      {/* Arrow indicator when subs exist */}
-      {hasSubs && (
-        <span className="kg-col-cat-row__arrow">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-      )}
-    </div>
-  );
-};
-
-/* ─── Subcategory panel (right column) ─── */
-const SubPanel = ({ cat, shopBase }) => {
-  if (!cat) return null;
-  const subs = cat.subcategories || [];
-  return (
-    <div className="kg-col-sub-panel">
-      <p className="kg-col-sub-panel__heading">
-        <span className="kg-col-sub-panel__heading-dot" />
-        {cat.label}
-      </p>
-
-      {subs.length === 0 ? (
-        <Link
-          to={cat.value ? `${shopBase}?category=${cat.value}` : shopBase}
-          className="kg-col-sub-pill kg-col-sub-pill--all"
-        >
-          View All Products
-        </Link>
-      ) : (
-        <div className="kg-col-sub-list">
-          {/* "View All" shortcut */}
-          <Link
-            to={cat.value ? `${shopBase}?category=${cat.value}` : shopBase}
-            className="kg-col-sub-pill kg-col-sub-pill--all"
-          >
-            View All
-          </Link>
-          {subs.map((sub) => (
-            <Link
-              key={sub.id}
-              to={sub.value ? `${shopBase}?subcategory=${sub.value}` : `${shopBase}?category=${cat.value}`}
-              className="kg-col-sub-pill"
-            >
-              {sub.label}
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 
 /* ─── Main NavMenu ─── */
 const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
   const { categories = [] } = useSelector((state) => state.navMenu || {});
   const location = useLocation();
   const S = process.env.PUBLIC_URL + "/shop";
-  const C = process.env.PUBLIC_URL + "/catalogue";
 
-  const [collectionsOpen, setCollectionsOpen] = useState(false);
-  const [hoveredCatId, setHoveredCatId] = useState(null);
-  const closeTimer = useRef(null);
-  const anchorRef = useRef(null);
+  const scrollRef = useRef(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
 
   const isActive = (path) => {
     const basePath = process.env.PUBLIC_URL || "";
@@ -151,100 +21,154 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
     return currentPath === targetPath || currentPath === targetPath + "/";
   };
 
-  const openPanel = useCallback(() => {
-    clearTimeout(closeTimer.current);
-    setCollectionsOpen(true);
-    // Auto-hover first category
-    if (categories.length > 0 && hoveredCatId === null) {
-      setHoveredCatId(categories[0].id);
-    }
-  }, [categories, hoveredCatId]);
+  const checkScroll = useCallback(() => {
+    if (!scrollRef.current || sidebarMenu) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    setShowLeftArrow(scrollLeft > 5);
+    setShowRightArrow(scrollWidth - scrollLeft - clientWidth > 5);
+  }, [sidebarMenu]);
 
-  const scheduleClose = useCallback(() => {
-    closeTimer.current = setTimeout(() => {
-      setCollectionsOpen(false);
-      setHoveredCatId(null);
-    }, 180);
-  }, []);
+  const scroll = (direction) => {
+    if (!scrollRef.current) return;
+    const offset = direction === "left" ? -180 : 180;
+    scrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
+  };
 
-  useEffect(() => () => clearTimeout(closeTimer.current), []);
-
-  // Set first category as default hover when panel opens
   useEffect(() => {
-    if (collectionsOpen && categories.length > 0 && hoveredCatId === null) {
-      setHoveredCatId(categories[0].id);
+    checkScroll();
+    const el = scrollRef.current;
+    if (el) {
+      el.addEventListener("scroll", checkScroll, { passive: true });
     }
-  }, [collectionsOpen, categories, hoveredCatId]);
+    window.addEventListener("resize", checkScroll);
+    return () => {
+      if (el) el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, [categories, checkScroll]);
 
-  const activeCat = categories.find((c) => c.id === hoveredCatId) || categories[0] || null;
+  // If sidebar menu (mobile/side navigation drawer), render a simplified vertical layout
+  if (sidebarMenu) {
+    return (
+      <div className="sidebar-menu kg-nav">
+        <nav>
+          <ul>
+            <li className={isActive(process.env.PUBLIC_URL + "/") ? "active" : ""}>
+              <Link to={process.env.PUBLIC_URL + "/"}>Home</Link>
+            </li>
+            <li className={isActive(process.env.PUBLIC_URL + "/about") ? "active" : ""}>
+              <Link to={process.env.PUBLIC_URL + "/about"}>About</Link>
+            </li>
+            {categories.map((cat) => {
+              const hasSubs = cat.subcategories && cat.subcategories.length > 0;
+              return (
+                <li key={cat.id} className={clsx(hasSubs && "kg-dropdown-item")}>
+                  <Link to={`${S}?category=${cat.value}`}>
+                    {cat.label}
+                  </Link>
+                </li>
+              );
+            })}
+            <li className={isActive(process.env.PUBLIC_URL + "/contact") ? "active" : ""}>
+              <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    );
+  }
 
   return (
-    <div className={clsx(sidebarMenu ? "sidebar-menu" : `main-menu ${menuWhiteClass || ""}`, "kg-nav")}>
-      <nav>
-        <ul>
-          <li className={isActive(process.env.PUBLIC_URL + "/") ? "active" : ""}>
-            <Link to={process.env.PUBLIC_URL + "/"}>Home</Link>
-          </li>
-          <li className={isActive(process.env.PUBLIC_URL + "/about") ? "active" : ""}>
-            <Link to={process.env.PUBLIC_URL + "/about"}>About</Link>
-          </li>
-
-          {/* Collections with two-level flyout */}
-          <li
-            ref={anchorRef}
-            className={clsx(
-              "kg-catalogue-item",
-              collectionsOpen && "kg-catalogue-item--open",
-              isActive(S) ? "active" : ""
-            )}
-            onMouseEnter={openPanel}
-            onMouseLeave={scheduleClose}
+    <div className={clsx(`main-menu ${menuWhiteClass || ""}`, "kg-nav")}>
+      <nav className="kg-scroll-nav-wrapper">
+        {/* Scroll Left Button */}
+        {showLeftArrow && (
+          <button
+            type="button"
+            onClick={() => scroll("left")}
+            className="kg-nav-scroll-btn kg-nav-scroll-btn--left"
+            aria-label="Scroll menu left"
           >
-            <Link to={S} className="kg-catalogue-trigger">
-              Collections
-              <span className="kg-chevron">
-                <svg width="12" height="7" viewBox="0 0 12 7" fill="none">
-                  <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-            </Link>
+            ‹
+          </button>
+        )}
 
-            {!sidebarMenu && (
-              <PortalDropdown
-                anchorRef={anchorRef}
-                open={collectionsOpen}
-                onMouseEnter={openPanel}
-                onMouseLeave={scheduleClose}
-              >
-                {/* Left: category list */}
-                <div className="kg-col-left">
-                  {categories.map((cat) => (
-                    <CategoryRow
-                      key={cat.id}
-                      cat={cat}
-                      isHovered={hoveredCatId === cat.id}
-                      onHover={setHoveredCatId}
-                      shopBase={S}
-                    />
-                  ))}
-                  {/* View all link */}
-                  <Link to={S} className="kg-col-view-all">
-                    View all collections →
+        <div className="kg-scroll-nav-container" ref={scrollRef}>
+          <ul className="kg-scroll-nav-list">
+            {/* Home */}
+            <li className={isActive(process.env.PUBLIC_URL + "/") ? "active" : ""}>
+              <Link to={process.env.PUBLIC_URL + "/"}>Home</Link>
+            </li>
+
+            {/* About */}
+            <li className={isActive(process.env.PUBLIC_URL + "/about") ? "active" : ""}>
+              <Link to={process.env.PUBLIC_URL + "/about"}>About</Link>
+            </li>
+
+            {/* Render Category Menus Dynamically */}
+            {categories.map((cat) => {
+              const subs = cat.subcategories || [];
+              const hasSubs = subs.length > 0;
+              const catUrl = `${S}?category=${cat.value}`;
+
+              return (
+                <li
+                  key={cat.id}
+                  className={clsx(
+                    hasSubs && "kg-dropdown-item",
+                    location.search.includes(`category=${cat.value}`) && "active"
+                  )}
+                >
+                  <Link to={catUrl} className="kg-category-trigger">
+                    {cat.label}
+                    {hasSubs && (
+                      <span className="kg-chevron">
+                        <svg width="9" height="6" viewBox="0 0 9 6" fill="none">
+                          <path d="M1 1l3.5 3.5L8 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    )}
                   </Link>
-                </div>
 
-                {/* Right: subcategory flyout */}
-                {activeCat && (
-                  <SubPanel cat={activeCat} shopBase={S} />
-                )}
-              </PortalDropdown>
-            )}
-          </li>
+                  {/* Standard clean hover dropdown for subcategories */}
+                  {hasSubs && (
+                    <ul className="kg-sub-dropdown">
+                      <li>
+                        <Link to={catUrl} style={{ fontWeight: 600 }}>
+                          View All
+                        </Link>
+                      </li>
+                      {subs.map((sub) => (
+                        <li key={sub.id}>
+                          <Link to={`${S}?subcategory=${sub.value}`}>
+                            {sub.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
 
-          <li className={isActive(process.env.PUBLIC_URL + "/contact") ? "active" : ""}>
-            <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
-          </li>
-        </ul>
+            {/* Contact Us */}
+            <li className={isActive(process.env.PUBLIC_URL + "/contact") ? "active" : ""}>
+              <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
+            </li>
+          </ul>
+        </div>
+
+        {/* Scroll Right Button */}
+        {showRightArrow && (
+          <button
+            type="button"
+            onClick={() => scroll("right")}
+            className="kg-nav-scroll-btn kg-nav-scroll-btn--right"
+            aria-label="Scroll menu right"
+          >
+            ›
+          </button>
+        )}
       </nav>
     </div>
   );
