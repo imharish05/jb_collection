@@ -265,7 +265,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
 
             {/* ── Quick Links (Policies + Support merged) ── */}
                       <div>
-              <p className="km-col-title">Quick Links</p>
+              <p className="km-col-title">Help</p>
               <ul className="km-links">
                
                

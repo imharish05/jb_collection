@@ -257,7 +257,7 @@ const OfferBanner = () => {
 
       <div className="container">
               <div className="section-title text-center mb-50">
-          <h2 className="event-title pb-2">Timeless Treasure</h2>
+          <h2 className="event-title pb-2">Signature Collection</h2>
           <div className="event-subtitle">Handpicked offers for your most cherished moments</div>
         </div>
 

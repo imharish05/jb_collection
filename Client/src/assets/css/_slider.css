@@ -2978,7 +2978,7 @@
   font-size: 56px;
   font-weight: 700;
   line-height: 1.1;
-  color: #fff;
+  color: #fff !important;
   margin: 0 0 32px;
   opacity: 0;
   animation: kgFadeUp 0.7s 0.35s forwards;

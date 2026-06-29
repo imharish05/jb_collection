@@ -172,9 +172,9 @@ const ShopGridStandard = () => {
     if (showAll || currentData.length >= sortedProducts.length) return;
     
     const handleScroll = () => {
-      // If user scrolled near the bottom (within 600px) and not already fetching
+      // If user scrolled near the bottom (within 1400px, to trigger BEFORE reaching footer on mobile)
       if (
-        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 600 &&
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 1400 &&
         !isFetchingRef.current
       ) {
         isFetchingRef.current = true;
@@ -387,21 +387,6 @@ const ShopGridStandard = () => {
                   <p style={{ margin:0, fontSize:13, color:'#888' }}>
                     <strong style={{ color:'#222' }}>{currentData.length}</strong> of {sortedProducts.length} products
                   </p>
-                </div>
-                
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16, justifyContent:"flex-end" }}>
-                  <span style={{ fontSize:13, color:"#666" }}>Show:</span>
-                  {PAGE_SIZES.map(size => (
-                    <button key={size} onClick={() => {
-                      if (size === "All") { setShowAll(true); setDisplayCount(sortedProducts.length); }
-                      else { setShowAll(false); setPageLimit(size); setDisplayCount(size); }
-                    }} style={{
-                      padding:"4px 14px", borderRadius:20, border:"1.5px solid", fontSize:13, fontWeight:500, cursor:"pointer",
-                      borderColor: (showAll && size==="All")||(!showAll && size===pageLimit) ? "#c0622a":"#ddd",
-                      background: (showAll && size==="All")||(!showAll && size===pageLimit) ? "#c0622a":"#fff",
-                      color: (showAll && size==="All")||(!showAll && size===pageLimit) ? "#fff":"#555",
-                    }}>{size}</button>
-                  ))}
                 </div>
 
                 <ShopProducts 

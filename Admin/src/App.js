@@ -68,7 +68,7 @@ const PAGE_CONFIG = {
   contacts:            { title: 'Contact Requests' },
   // ── Marketing ───────────────────────────────────────────────
   banners:             { title: 'Banners' },
-  timeless_treasures:  { title: 'Timeless Treasures' },
+  timeless_treasures:  { title: 'Signature Collection' },
   marquee:             { title: 'Slider Messages' },
   testimonials:        { title: 'Testimonials' },
   timeline:            { title: 'Timeline Milestones' },

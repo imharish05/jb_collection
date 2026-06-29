@@ -161,7 +161,7 @@ export default function TimelessTreasures({ showToast }) {
   }, [imageFile]);
 
   if (!hasPermission('timeless_view')) {
-    return <AccessDenied moduleName="Timeless Treasures" />;
+    return <AccessDenied moduleName="Signature Collection" />;
   }
 
   const resetForm = () => {
@@ -298,7 +298,7 @@ export default function TimelessTreasures({ showToast }) {
     <div className="tt-container">
       {/* ── Section Header ── */}
       <div className="section-header">
-        <div className="section-title">Timeless Treasures Banners</div>
+        <div className="section-title">Signature Collection Banners</div>
         {hasPermission('timeless_create') && (
           <button
             className="action-btn btn-edit"

@@ -1022,7 +1022,7 @@ export default function Products({ showToast }) {
 
               <div style={{ gridColumn: 'span 2', display: 'flex', gap: 20, flexWrap: 'wrap', padding: '12px 14px', background: KM.orangeLight, borderRadius: 8 }}>
                 {[
-                  { key: 'isCustomisable', label: '🎨 Customisable' },
+                  /* { key: 'isCustomisable', label: '🎨 Customisable' }, */
                   { key: 'isNewArrival', label: '✨ New Arrival' },
                   { key: 'isHotDeal', label: '🔥 Hot Deal' },
                   { key: 'isPartialCodAvailable', label: '💳 Allow Partial COD' },
@@ -1035,7 +1035,7 @@ export default function Products({ showToast }) {
                 ))}
               </div>
 
-              {/* Customisation Fields — visible only when Customisable is checked */}
+              {/* Customisation Fields — visible only when Customisable is checked 
               {formData.isCustomisable && (
                 <div style={{ gridColumn: 'span 2', padding: '12px 14px', background: '#F0FDF4', borderRadius: 8, border: '1px solid #BBF7D0' }}>
                   <div style={{ fontSize: 11, fontWeight: 600, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Customisation Input Fields</div>
@@ -1060,6 +1060,7 @@ export default function Products({ showToast }) {
                   <div style={{ fontSize: 11, color: '#166534', marginTop: 8 }}>Selected fields will appear as input fields on the product page for customers to fill in.</div>
                 </div>
               )}
+              */}
 
               {/* Hidden file input - product images handled per-variant */}
               <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif"
