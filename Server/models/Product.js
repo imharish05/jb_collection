@@ -41,11 +41,6 @@ const Product = sequelize.define(
       defaultValue: false,
       field: "is_new",
     },
-    isCustomisable: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-      field: "is_customisable",
-    },
     isNonReturnable: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
@@ -132,12 +127,6 @@ const Product = sequelize.define(
       allowNull: true,
       field: "brand_id",
     },
-    // FK → combos.id  (UUID, matches combos table primary key)
-    comboId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      field: "combo_id",
-    },
 
     // ── Shipping (optional; used for logistics calculation) ──────────────────
     shippingWeight: {
@@ -167,12 +156,6 @@ const Product = sequelize.define(
       allowNull: false,
       defaultValue: true,
       field: "is_partial_cod_available",
-    },
-    // JSON array of customisation field configs e.g. [{type:'name'},{type:'font'},{type:'color'},{type:'note'}]
-    customisationFields: {
-      type: DataTypes.JSON,
-      allowNull: true,
-      field: "customisation_fields",
     },
   },
   {

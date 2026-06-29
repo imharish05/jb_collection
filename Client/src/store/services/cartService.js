@@ -38,7 +38,7 @@ const addToCartBaseService = async (dispatchOrProduct, optionalProduct, silent =
       selectedProductSize: product.selectedProductSize || null,
       selectedVariantId: product.selectedVariantId || null,
       selectedVariantName: product.selectedVariantName || null,
-      customisationDetails: product.customisationDetails || null,
+
     };
 
     const res = await api.post("/cart/add", payload);
@@ -68,7 +68,7 @@ const addToCartBaseService = async (dispatchOrProduct, optionalProduct, silent =
       stock: resolvedStock,
       Variants: variants,
       isPartialCodAvailable: cartItem.product?.isPartialCodAvailable !== false,
-      customisationDetails: cartItem.customisationDetails || null,
+
       customisationFields: cartItem.product?.customisationFields || null,
       shippingWeight: matchedVariant?.shippingWeight ?? cartItem.product?.shippingWeight ?? null,
       shippingDimensions: matchedVariant?.shippingDimensions ?? cartItem.product?.shippingDimensions ?? null,

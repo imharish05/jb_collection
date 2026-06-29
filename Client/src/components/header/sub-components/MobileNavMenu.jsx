@@ -92,7 +92,7 @@ const SectionLabel = ({ title, accent }) => (
 );
 
 const MobileNavMenu = () => {
-  const { categories = [], events = [], rootCombos = [] } = useSelector((s) => s.navMenu || {});
+  const { categories = [], events = [] } = useSelector((s) => s.navMenu || {});
   const { isAuthenticated } = useSelector((s) => s.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -194,22 +194,6 @@ const MobileNavMenu = () => {
                   ))}
                 </>
               )}
-
-              {/* {rootCombos.length > 0 && (
-                <>
-                  <SectionLabel title="Combos" accent="#10b981" />
-                  {rootCombos.map(c => (
-                    <SimpleRow
-                      key={c.id}
-                      item={c}
-                      to={`${S}?combo=${c.id}`}
-                      label={c.name}
-                      img={c.image}
-                      closeMenu={closeMenu}
-                    />
-                  ))}
-                </>
-              )} */}
 
               <Link
                 to={S}

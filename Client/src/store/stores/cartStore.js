@@ -118,7 +118,7 @@ export const cartStore = {
           childComboId: snap.childComboId || null,
           selectedProducts: snap.products || null,
           isPartialCodAvailable: cartItem.product?.isPartialCodAvailable !== false,
-          customisationDetails: cartItem.customisationDetails || null,
+
           customisationFields: cartItem.product?.customisationFields || null,
           shippingWeight: matchedVariant?.shippingWeight ?? cartItem.product?.shippingWeight ?? null,
           shippingDimensions: matchedVariant?.shippingDimensions ?? cartItem.product?.shippingDimensions ?? null,

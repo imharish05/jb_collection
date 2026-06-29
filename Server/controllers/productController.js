@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { Product, Variant, Category, Brand, SubCategory, Combo, ChildComboProduct, CartItem, WishlistItem, Review, ChildCombo, RootCombo } = require("../models");
+const { Product, Variant, Category, Brand, SubCategory, CartItem, WishlistItem, Review } = require("../models");
 const { Op }    = require("sequelize");
 const sequelize = require("../config/database");
 const { syncProductVariants } = require("./variantController");
@@ -23,12 +23,6 @@ const PRODUCT_INCLUDE = [
     model: SubCategory,
     as: "SubCategory",
     attributes: ["id", "label", "value"],
-    required: false,
-  },
-  {
-    model: Combo,
-    as: "Combo",
-    attributes: ["id", "name", "label", "value", "productIds", "price", "discountedPrice", "image", "description"],
     required: false,
   },
 ];
@@ -173,122 +167,7 @@ const getAllProducts = async (req, res, next) => {
 
     const products = await Product.findAll({ where, order, include: PRODUCT_INCLUDE });
     const mappedProducts = products.map(shape);
-
-    let combosList = [];
-    if (includeCombos === 'true') {
-      const childCombos = await ChildCombo.findAll({
-        where: { isActive: true },
-        include: [
-          {
-            model: RootCombo,
-            as: "rootCombo",
-            attributes: ["id", "slug"],
-          },
-          {
-            model: ChildComboProduct,
-            as: "comboProducts",
-            include: [
-              {
-                model: Product,
-                as: "product",
-                attributes: ["id", "name", "category", "tag", "image"],
-                include: [
-                  {
-                    model: Variant,
-                    as: "Variants",
-                    attributes: ["id", "image"]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      });
-
-      combosList = childCombos.map(cc => {
-        const catSet = new Set();
-        const tagSet = new Set();
-        let firstProdImage = null;
-
-        if (Array.isArray(cc.comboProducts)) {
-          cc.comboProducts.forEach(cp => {
-            if (cp.product) {
-              const prodCat = safeParse(cp.product.category, []);
-              prodCat.forEach(cVal => catSet.add(cVal));
-              
-              const prodTag = safeParse(cp.product.tag, []);
-              prodTag.forEach(tVal => tagSet.add(tVal));
-
-              if (!firstProdImage) {
-                if (Array.isArray(cp.product.Variants) && cp.product.Variants[0]?.image) {
-                  firstProdImage = cp.product.Variants[0].image;
-                } else {
-                  const pImgs = safeParse(cp.product.image, []);
-                  if (pImgs[0]) firstProdImage = pImgs[0];
-                }
-              }
-            }
-          });
-        }
-
-        const comboImg = cc.image || firstProdImage || null;
-        const imagesList = comboImg ? [comboImg] : [];
-        const comboPrice = parseFloat(cc.comboPrice || 0);
-        const originalPrice = parseFloat(cc.originalPrice || 0);
-        const discountPct = originalPrice > comboPrice && comboPrice > 0
-          ? Math.round(((originalPrice - comboPrice) / originalPrice) * 100)
-          : 0;
-
-        return {
-          id: cc.id,
-          name: cc.name,
-          price: comboPrice,
-          originalPrice: originalPrice,
-          discount: discountPct,
-          image: imagesList,
-          shortDescription: cc.shortDescription || "",
-          description: cc.description || cc.fullDescription || "",
-          isCombo: true,
-          type: cc.type,
-          rootComboId: cc.rootComboId,
-          comboId: cc.rootComboId,
-          isActive: cc.isActive,
-          category: Array.from(catSet),
-          tag: Array.from(tagSet),
-          rating: 5.0,
-          saleCount: 0,
-          Variants: [],
-          slug: cc.rootCombo?.slug || cc.rootComboId,
-          comboProducts: cc.comboProducts
-        };
-      });
-
-      // JS level filter for combos
-      if (search) {
-        const q = search.toLowerCase();
-        combosList = combosList.filter(c =>
-          c.name.toLowerCase().includes(q) ||
-          c.shortDescription.toLowerCase().includes(q) ||
-          c.description.toLowerCase().includes(q)
-        );
-      }
-      if (minPrice) {
-        const minVal = parseFloat(minPrice);
-        combosList = combosList.filter(c => c.price >= minVal);
-      }
-      if (maxPrice) {
-        const maxVal = parseFloat(maxPrice);
-        combosList = combosList.filter(c => c.price <= maxVal);
-      }
-      if (category && !isAllCategory(category)) {
-        combosList = combosList.filter(c => c.category.includes(category));
-      }
-      if (tag) {
-        combosList = combosList.filter(c => c.tag.includes(tag));
-      }
-    }
-
-    const merged = [...mappedProducts, ...combosList];
+    const merged = [...mappedProducts];
 
     // JS level sort for combined items
     if (sort === "price_asc") {
@@ -336,10 +215,10 @@ const getProductById = async (req, res, next) => {
 const createProduct = async (req, res, next) => {
   try {
     const {
-      productName, categoryId, subCategoryId, brandId, comboId,
-      isNewArrival, isCustomisable, isHotDeal, discount, offerEnd, tag,
+      productName, categoryId, subCategoryId, brandId,
+      isNewArrival, isHotDeal, discount, offerEnd, tag,
       shortDescription, fullDescription, variants,
-      isPartialCodAvailable, customisationFields,
+      isPartialCodAvailable,
       shippingWeight, shippingDimensions,
     } = req.body;
 
@@ -367,7 +246,6 @@ const createProduct = async (req, res, next) => {
       discount:        discount    ? parseInt(discount)    : 0,
       offerEnd:        offerEnd    || null,
       isNew:           isNewArrival === "true" || isNewArrival === true,
-      isCustomisable:  isCustomisable === "true" || isCustomisable === true,
       isHotDeal:       isHotDeal === "true" || isHotDeal === true,
       category:        categoryId  ? [String(categoryId)] : [],
       tag:             parsedTags,
@@ -377,9 +255,7 @@ const createProduct = async (req, res, next) => {
       categoryId:      categoryId    || null,
       subCategoryId:   subCategoryId || null,
       brandId:         brandId       || null,
-      comboId:         comboId       || null,
       isPartialCodAvailable: isPartialCodAvailable === "false" || isPartialCodAvailable === false ? false : true,
-      customisationFields: customisationFields ? safeParse(customisationFields, null) : null,
       shippingWeight:  shippingWeight ? parseFloat(shippingWeight) : null,
       shippingDimensions: shippingDimensions ? safeParse(shippingDimensions, null) : null,
     });
@@ -424,10 +300,10 @@ const updateProduct = async (req, res, next) => {
     if (!product) return res.status(404).json({ message: "Product not found" });
 
     const {
-      productName, categoryId, subCategoryId, brandId, comboId,
-      isNewArrival, isCustomisable, isHotDeal, discount, offerEnd, tag,
+      productName, categoryId, subCategoryId, brandId,
+      isNewArrival, isHotDeal, discount, offerEnd, tag,
       shortDescription, fullDescription, variants,
-      isPartialCodAvailable, customisationFields,
+      isPartialCodAvailable,
       shippingWeight, shippingDimensions,
     } = req.body;
 
@@ -461,9 +337,6 @@ const updateProduct = async (req, res, next) => {
       isNew:            isNewArrival    !== undefined
                           ? (isNewArrival === "true" || isNewArrival === true)
                           : product.isNew,
-      isCustomisable:   isCustomisable  !== undefined
-                          ? (isCustomisable === "true" || isCustomisable === true)
-                          : product.isCustomisable,
       isHotDeal:        isHotDeal       !== undefined
                           ? (isHotDeal === "true" || isHotDeal === true)
                           : product.isHotDeal,
@@ -475,13 +348,9 @@ const updateProduct = async (req, res, next) => {
       categoryId:       categoryId       !== undefined ? (categoryId || null)        : product.categoryId,
       subCategoryId:    subCategoryId    !== undefined ? (subCategoryId || null)     : product.subCategoryId,
       brandId:          brandId          !== undefined ? (brandId || null)           : product.brandId,
-      comboId:          comboId          !== undefined ? (comboId || null)           : product.comboId,
       isPartialCodAvailable: isPartialCodAvailable !== undefined
                           ? (isPartialCodAvailable === "false" || isPartialCodAvailable === false ? false : true)
                           : product.isPartialCodAvailable,
-      customisationFields: customisationFields !== undefined
-                          ? safeParse(customisationFields, null)
-                          : product.customisationFields,
       shippingWeight:   shippingWeight !== undefined ? (shippingWeight ? parseFloat(shippingWeight) : null) : product.shippingWeight,
       shippingDimensions: shippingDimensions !== undefined ? (shippingDimensions ? safeParse(shippingDimensions, null) : null) : product.shippingDimensions,
     });

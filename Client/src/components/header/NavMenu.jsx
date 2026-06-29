@@ -95,7 +95,7 @@ const PortalMegaPanel = ({ anchorRef, open, onMouseEnter, onMouseLeave, children
 };
 
 const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
-  const { categories = [], events = [], rootCombos = [] } = useSelector(
+  const { categories = [], events = [] } = useSelector(
     (state) => state.navMenu || {}
   );
   const location = useLocation();
@@ -189,21 +189,6 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
                       />
                     )}
                   />
-
-                  {/* <MegaSection
-                    title="Combos"
-                    accent="#10b981"
-                    items={rootCombos}
-                    renderItem={(combo) => (
-                      <CatalogueCard
-                        key={combo.id}
-                        to={`${S}?combo=${combo.id}`}
-                        image={combo.image}
-                        label={combo.name}
-                        emoji="🎁"
-                      />
-                    )}
-                  /> */}
 
                   {/* CTA strip */}
                   <div className="kg-mega-cta">

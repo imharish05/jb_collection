@@ -148,11 +148,7 @@ const OrderDetails = () => {
     const orderStatusLower = order.status?.toLowerCase();
     const nonCancellable = ["confirmed", "shipped", "processing", "delivered", "cancelled"];
     
-    // Check if customised items in production
-    const hasCustom = order.items?.some(i => i.product?.isCustomisable || (i.customisationDetails && Object.keys(i.customisationDetails).length > 0));
-    const isProductionCustom = hasCustom && orderStatusLower !== "pending";
-
-    const cancellable = hours < 24 && !nonCancellable.includes(orderStatusLower) && !isProductionCustom;
+    const cancellable = hours < 24 && !nonCancellable.includes(orderStatusLower);
 
     if (!cancellable) return null;
 
@@ -172,7 +168,7 @@ const OrderDetails = () => {
 
     const deliveredAt = order.updatedAt;
     const hours = hoursSince(deliveredAt);
-    const isReturnable = item.product ? (!item.product.isNonReturnable && !item.product.isCustomisable) : true;
+    const isReturnable = item.product ? (!item.product.isNonReturnable) : true;
     
     const returns = item.returns || [];
     const activeReturn = returns[0];
@@ -621,242 +617,10 @@ const couponDiscount =
                                 <div className="prod-info">
                                   <h6>{cleanProductName(item.productName)}</h6>
                                   <p>{getVariantLabel(item)}</p>
-                                   {(() => {
-                                     let custom = item.customisationDetails;
-                                     if (typeof custom === 'string') {
-                                       try {
-                                         custom = JSON.parse(custom);
-                                         if (typeof custom === 'string') {
-                                           custom = JSON.parse(custom);
-                                         }
-                                       } catch {
-                                         custom = null;
-                                       }
-                                     }
-                                     if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
-                                      return (
-                                        <div style={{
-                                          marginTop: 6,
-                                          padding: "6px 10px",
-                                          background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
-                                          border: "1px solid #fde68a",
-                                          borderRadius: "6px",
-                                          fontSize: "11px",
-                                          color: "#78350f",
-                                          width: "fit-content",
-                                          minWidth: "220px",
-                                          marginBottom: 8
-                                        }}>
-                                          <div style={{ fontSize: "10px", fontWeight: 700, color: "#b45309", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
-                                            🎨 Customisation:
-                                          </div>
-                                          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px", alignItems: "center" }}>
-                                            {Object.entries(custom).map(([key, val]) => {
-                                               if (!val) return null;
-                                               const label = key
-                                                 .split('_')
-                                                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                                 .join(' ');
-                                               const isFont = key.toLowerCase().includes('font');
-                                               const isCol = key.toLowerCase().includes('color') || key.toLowerCase().includes('colour') || (typeof val === 'string' && val.startsWith('#'));
-                                               return (
-                                                 <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, ...(isFont ? { fontFamily: val } : {}) }}>
-                                                   <span style={{ fontWeight: 600 }}>{label}:</span>
-                                                   {isCol ? (
-                                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                                       <span style={{
-                                                         width: 12,
-                                                         height: 12,
-                                                         borderRadius: '50%',
-                                                         background: val,
-                                                         border: '1px solid rgba(0,0,0,0.15)',
-                                                         display: 'inline-block'
-                                                       }} />
-                                                       <code style={{ fontSize: 10, background: '#f3f4f6', padding: '1px 4px', borderRadius: 4 }}>{val}</code>
-                                                     </span>
-                                                   ) : (
-                                                     <span>
-                                                       {val} {isFont && (() => {
-                                                         const priorityKeys = ['name', 'text', 'custom_text', 'customisation_text', 'engraving_text'];
-                                                         let textVal = 'Preview';
-                                                         for (const pk of priorityKeys) {
-                                                           if (custom[pk]) { textVal = custom[pk]; break; }
-                                                         }
-                                                         if (textVal === 'Preview') {
-                                                           for (const [k, v] of Object.entries(custom)) {
-                                                             const kLower = k.toLowerCase();
-                                                             if (kLower.includes('font') || kLower.includes('size') || kLower.includes('color') || kLower.includes('colour')) continue;
-                                                             if (typeof v !== 'string') continue;
-                                                             const isColor = v.startsWith('#') || ['red', 'blue', 'green', 'yellow', 'gold', 'silver', 'black', 'white', 'rose gold', 'bronze', 'orange', 'pink', 'purple', 'grey', 'brown'].includes(v.toLowerCase());
-                                                             if (isColor) continue;
-                                                             textVal = v;
-                                                             break;
-                                                           }
-                                                         }
-                                                         return `(${textVal})`;
-                                                       })()}
-                                                     </span>
-                                                   )}
-                                                 </div>
-                                               );
-                                             })}
-                                          </div>
-                                        </div>
-                                      );
-                                    }
-                                    return null;
-                                  })()}
                                   {renderItemActions(item)}
                                 </div>
                                 <div className="prod-price">₹{itemPrice(item).toFixed(2)}</div>
                               </div>
-
-                              {/* ── Included Products: separate div, below the main row ── */}
-                              {Array.isArray(selectedProducts) && selectedProducts.length > 0 && (
-                                <div style={{ marginTop: "10px" }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleIncluded(index)}
-                                      style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "6px",
-                                        background: "none",
-                                        border: "none",
-                                        padding: 0,
-                                        cursor: "pointer",
-                                        fontSize: "10px",
-                                        fontWeight: 700,
-                                        color: "#6b7280",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.06em"
-                                      }}
-                                    >
-                                      <span>Included Products ({selectedProducts.length})</span>
-                                      <span style={{
-                                        display: "inline-block",
-                                        transition: "transform 0.15s ease",
-                                        transform: openIncluded[index] ? "rotate(180deg)" : "rotate(0deg)",
-                                        fontSize: "9px"
-                                      }}>▼</span>
-                                    </button>
-
-                                    {openIncluded[index] && (
-                                      <div style={{
-                                        marginTop: "8px",
-                                        border: "1px solid #e5e7eb",
-                                        borderRadius: "8px",
-                                        overflow: "hidden"
-                                      }}>
-                                        {selectedProducts.map((p, idx) => {
-                                          const pTags = (p.variantName || "")
-                                            .split(/·|,/)
-                                            .map(s => s.trim())
-                                            .filter(Boolean)
-                                            .map(part => {
-                                              if (part.includes(":")) {
-                                                const [k, ...rest] = part.split(":");
-                                                return { key: k.trim(), val: rest.join(":").trim() };
-                                              }
-                                              return { key: "Variant", val: part };
-                                            });
-                                          return (
-                                            <div key={idx} style={{
-                                              padding: "8px 10px",
-                                              borderBottom: idx < selectedProducts.length - 1 ? "1px solid #f0f0f0" : "none",
-                                              background: "#fff"
-                                            }}>
-                                              <div style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "space-between",
-                                                gap: "8px"
-                                              }}>
-                                                <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                                                  {(() => {
-                                                    const getSingleImg = (img) => {
-                                                      if (Array.isArray(img)) return img[0];
-                                                      if (typeof img === "string") {
-                                                        try {
-                                                          const parsed = JSON.parse(img);
-                                                          return Array.isArray(parsed) ? parsed[0] : img;
-                                                        } catch {
-                                                          return img;
-                                                        }
-                                                      }
-                                                      return null;
-                                                    };
-                                                    const resolvedImg = getSingleImg(p.image);
-                                                    return (
-                                                      <img
-                                                        src={resolvedImg ? getImgUrl(resolvedImg) : FALLBACK_IMG}
-                                                        alt={p.name}
-                                                        style={{ width: 30, height: 30, objectFit: "cover", borderRadius: 6, flexShrink: 0 }}
-                                                        onError={(e) => e.target.src = FALLBACK_IMG}
-                                                      />
-                                                    );
-                                                  })()}
-                                                  <span style={{
-                                                    fontSize: "12px",
-                                                    fontWeight: 600,
-                                                    color: "#111",
-                                                    whiteSpace: "nowrap",
-                                                    overflow: "hidden",
-                                                    textOverflow: "ellipsis"
-                                                  }}>
-                                                    {p.name}
-                                                  </span>
-                                                </div>
-                                                {p.quantity >= 1 && (
-                                                  <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 600, flexShrink: 0 }}>
-                                                    × {p.quantity}
-                                                  </span>
-                                                )}
-                                              </div>
-                                              {pTags.length > 0 && (
-                                                <div style={{
-                                                  display: "flex",
-                                                  flexWrap: "wrap",
-                                                  alignItems: "center",
-                                                  gap: "5px",
-                                                  marginTop: "4px",
-                                                  fontSize: "11px",
-                                                  color: "#6b7280"
-                                                }}>
-                                                  {pTags.map((tag, ti) => {
-                                                    const isCol = isColourKey(tag.key);
-                                                    const hasPreview = isCol && isHexColor(tag.val);
-                                                    return (
-                                                      <span key={ti} style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
-                                                        <span>{tag.key}:</span>
-                                                        {hasPreview ? (
-                                                          <span
-                                                            title={tag.val.toUpperCase()}
-                                                            style={{
-                                                              width: 10,
-                                                              height: 10,
-                                                              borderRadius: "50%",
-                                                              border: "1px solid #dcdcdc",
-                                                              backgroundColor: tag.val,
-                                                              display: "inline-block"
-                                                            }}
-                                                          />
-                                                        ) : (
-                                                          <span>{tag.val}</span>
-                                                        )}
-                                                        {ti < pTags.length - 1 && <span style={{ color: "#d1d5db" }}>,</span>}
-                                                      </span>
-                                                    );
-                                                  })}
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-                                </div>
-                              )}
                             </div>
                           );
                         })

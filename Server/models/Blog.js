@@ -29,7 +29,7 @@ const Blog = sequelize.define(
     },
     author: {
       type: DataTypes.STRING,
-      defaultValue: "Kamali Gifts",
+      defaultValue: "JB House of Fashion",
     },
     // MySQL uses JSON (not JSONB)
     tags: {

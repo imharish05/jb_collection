@@ -77,7 +77,7 @@ const createReturnRequest = async (req, res, next) => {
 
     // 5. Check product eligibility
     const product = await Product.findByPk(orderItem.productId);
-    if (product && (product.isNonReturnable || product.isCustomisable))
+    if (product && product.isNonReturnable)
       return res.status(400).json({ message: "This product is not eligible for return" });
 
     // 6. No existing active return for this item
@@ -223,7 +223,6 @@ const cancelOrder = async (req, res, next) => {
     if (order.status !== "pending" && order.items) {
       const hasCustom = order.items.some(
         (item) => 
-          (item.product && item.product.isCustomisable) ||
           (item.customisationDetails && Object.keys(item.customisationDetails).length > 0)
       );
       if (hasCustom)
@@ -391,7 +390,7 @@ const getReturnByIdAdmin = async (req, res, next) => {
         {
           model: OrderItem, as: "orderItem",
           include: [
-            { model: Product, as: "product", attributes: ["id","name","sku","isNonReturnable","isCustomisable"] },
+            { model: Product, as: "product", attributes: ["id","name","sku","isNonReturnable"] },
           ],
         },
         { model: User,            as: "user",           attributes: ["id","name","email","phone"] },

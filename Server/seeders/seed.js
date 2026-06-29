@@ -96,7 +96,7 @@ const seed = async () => {
           id: "a9062eb5-2b02-47ab-a1db-449e3ccb8882",
           name: "Rajesh Sen",
           designation: "Father of Diya (8 yrs)",
-          text: "The customized wooden pencil case with Diya's custom cartoon sketch is her new favorite possession. She keeps showing it to all her school friends. Kamali Gifts has the best personalized stationary collection for kids.",
+          text: "The customized wooden pencil case with Diya's custom cartoon sketch is her new favorite possession. She keeps showing it to all her school friends. JB House of Fashion has the best personalized stationary collection for kids.",
           image: "uploads/testimonials/1781004680993.png",
           sortOrder: 2
         }

@@ -14,7 +14,7 @@ const getPasswordResetEmailTemplate = (userName, otp) => {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reset Your Password – Kamali Gifts</title>
+  <title>Reset Your Password – JB House of Fashion</title>
 </head>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:'Segoe UI',Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 0;">
@@ -25,7 +25,7 @@ const getPasswordResetEmailTemplate = (userName, otp) => {
       <!-- ── Header ─────────────────────────────────────────────────────── -->
       <tr>
         <td style="background:linear-gradient(135deg,rgba(219,26,93,0.15) 0%,rgb(255,232,214) 100%);padding:36px 40px;text-align:center;">
-          <h1 style="margin:0;color:#db1a5d;font-size:26px;font-weight:700;letter-spacing:0.5px;">🎁 Kamali Gifts</h1>
+          <h1 style="margin:0;color:#db1a5d;font-size:26px;font-weight:700;letter-spacing:0.5px;">🎁 JB House of Fashion</h1>
           <p style="margin:8px 0 0;color:#555;font-size:14px;">Password Reset Request</p>
         </td>
       </tr>
@@ -38,7 +38,7 @@ const getPasswordResetEmailTemplate = (userName, otp) => {
             Hi ${firstName},
           </h2>
           <p style="margin:0;color:#666;font-size:15px;line-height:1.6;">
-            We received a request to reset your Kamali Gifts account password.<br/>
+            We received a request to reset your JB House of Fashion account password.<br/>
             Use the OTP below to proceed.
           </p>
         </td>
@@ -90,7 +90,7 @@ const getPasswordResetEmailTemplate = (userName, otp) => {
                 <p style="margin:0;font-size:13px;color:#92400e;line-height:1.6;">
                   ⚠️ <strong>Didn't request this?</strong> If you didn't request a password reset,
                   you can safely ignore this email. Your account remains secure.
-                  Never share this OTP with anyone — Kamali Gifts will never ask for it.
+                  Never share this OTP with anyone — JB House of Fashion will never ask for it.
                 </p>
               </td>
             </tr>
@@ -105,7 +105,7 @@ const getPasswordResetEmailTemplate = (userName, otp) => {
             Need help? Contact us at
             <a href="mailto:support@kamilagifts.com" style="color:#db1a5d;">support@kamilagifts.com</a>
           </p>
-          <p style="margin:0;font-size:12px;color:#bbb;">© ${year} Kamali Gifts. All rights reserved.</p>
+          <p style="margin:0;font-size:12px;color:#bbb;">© ${year} JB House of Fashion. All rights reserved.</p>
         </td>
       </tr>
 

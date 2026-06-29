@@ -154,24 +154,40 @@ const IconGroup = ({ iconWhiteClass }) => {
       </div>
 
       {/* ── Wishlist ── */}
-      <div className="same-style header-wishlist">
-        <Link to={process.env.PUBLIC_URL + "/wishlist"}>
-          <i className="pe-7s-like" />
-          <span className="count-style">{wishlistItems?.length || 0}</span>
+      <div className="same-style header-wishlist" style={{ display: 'flex', alignItems: 'center' }}>
+        <Link to={process.env.PUBLIC_URL + "/wishlist"} style={{ position: 'relative', display: 'flex', alignItems: 'center', color: '#333', padding: '5px' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "stroke 0.3s" }}>
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+          <span style={{ position: 'absolute', top: '0px', right: '-4px', backgroundColor: '#e11d48', color: '#fff', fontSize: '10px', fontWeight: 'bold', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: '2px solid #fff' }}>
+            {wishlistItems?.length || 0}
+          </span>
         </Link>
       </div>
 
       {/* ── Cart ── */}
-      <div className="same-style cart-wrap d-none d-lg-block">
-        <Link to={process.env.PUBLIC_URL + "/cart"}>
-          <i className="pe-7s-shopbag" />
-          <span className="count-style">{cartItems?.length || 0}</span>
+      <div className="same-style cart-wrap d-none d-lg-flex" style={{ alignItems: 'center' }}>
+        <Link to={process.env.PUBLIC_URL + "/cart"} style={{ position: 'relative', display: 'flex', alignItems: 'center', color: '#333', padding: '5px' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "stroke 0.3s" }}>
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+          <span style={{ position: 'absolute', top: '0px', right: '-4px', backgroundColor: 'var(--theme-color, #10b981)', color: '#fff', fontSize: '10px', fontWeight: 'bold', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: '2px solid #fff' }}>
+            {cartItems?.length || 0}
+          </span>
         </Link>
       </div>
-      <div className="same-style cart-wrap d-block d-lg-none">
-        <Link to={process.env.PUBLIC_URL + "/cart"}>
-          <i className="pe-7s-shopbag" />
-          <span className="count-style">{cartItems?.length || 0}</span>
+      <div className="same-style cart-wrap d-flex d-lg-none" style={{ alignItems: 'center' }}>
+        <Link to={process.env.PUBLIC_URL + "/cart"} style={{ position: 'relative', display: 'flex', alignItems: 'center', color: '#333', padding: '5px' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "stroke 0.3s" }}>
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+          <span style={{ position: 'absolute', top: '0px', right: '-4px', backgroundColor: 'var(--theme-color, #10b981)', color: '#fff', fontSize: '10px', fontWeight: 'bold', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: '2px solid #fff' }}>
+            {cartItems?.length || 0}
+          </span>
         </Link>
       </div>
 

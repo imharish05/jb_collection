@@ -356,59 +356,7 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, oosS
   );
 }
 
-function ComboProductsSection({ combo, allProducts }) {
-  if (!combo) return null;
-  const productIds = Array.isArray(combo.productIds) ? combo.productIds : [];
-  const comboProducts = productIds.length > 0
-    ? productIds.map(id => allProducts.find(p => String(p.id) === String(id))).filter(Boolean)
-    : allProducts.filter(p => p.comboId && String(p.comboId) === String(combo.id));
-  if (!comboProducts.length) return null;
-  const discounted = combo.discountedPrice && parseFloat(combo.discountedPrice) > 0;
-  const saving = discounted ? Math.round(((parseFloat(combo.price) - parseFloat(combo.discountedPrice)) / parseFloat(combo.price)) * 100) : null;
 
-  return (
-    <div className="pdp-combo">
-      <div className="pdp-combo__header">
-        <div className="pdp-combo__title">
-          <span>🎁</span>
-          <span>{combo.name || combo.label} — Combo Pack</span>
-          <span className="pdp-combo__count">{comboProducts.length} items</span>
-        </div>
-        <div className="pdp-combo__price">
-          {discounted ? (
-            <>
-              <span className="pdp-combo__price-old">₹{parseFloat(combo.price).toLocaleString("en-IN")}</span>
-              <span className="pdp-combo__price-new">₹{parseFloat(combo.discountedPrice).toLocaleString("en-IN")}</span>
-              {saving > 0 && <span className="pdp-combo__saving">{saving}% OFF</span>}
-            </>
-          ) : (
-            <span className="pdp-combo__price-new">₹{parseFloat(combo.price).toLocaleString("en-IN")}</span>
-          )}
-        </div>
-      </div>
-      {combo.description && <div className="pdp-combo__desc">{combo.description}</div>}
-      <div className="pdp-combo__grid">
-        {comboProducts.map((p, idx) => {
-          const img = Array.isArray(p.image) ? p.image[0] : p.image;
-          const variants = Array.isArray(p.Variants) ? p.Variants : [];
-          const price = variants.length > 0 ? parseFloat(variants[0].salesPrice || 0) : parseFloat(p.price || 0);
-          return (
-            <Link key={p.id} to={`${process.env.PUBLIC_URL}/product/${p.slug || p.id}`} className="pdp-combo__item">
-              <div className="pdp-combo__item-num">{idx + 1}</div>
-              <div className="pdp-combo__item-img">
-                {img ? (
-                  <img src={getImgUrl(img)} alt={p.name} onError={e => { e.target.style.display = "none"; }} />
-                ) : <span>🎁</span>}
-              </div>
-              <div className="pdp-combo__item-name">{p.name}</div>
-              {price > 0 && <div className="pdp-combo__item-price">₹{price.toLocaleString("en-IN")}</div>}
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -607,58 +555,6 @@ const ProductDescriptionInfo = ({
   const [errors, setErrors] = useState({});
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
-  // Customisation fields state — driven by product.customisationFields
-  const [customisationDetails, setCustomisationDetails] = useState({});
-  const [availableFonts, setAvailableFonts] = useState([]);
-  const [customisationTemplates, setCustomisationTemplates] = useState([]);
-
-  const parsedCustomisationFields = useMemo(() => {
-    let cf = localProduct?.customisationFields;
-    if (typeof cf === 'string') {
-      try { return JSON.parse(cf); } catch { return {}; }
-    }
-    return cf || {};
-  }, [localProduct?.customisationFields]);
-
-  useEffect(() => {
-    api.get('/customisation-fields?active=true')
-      .then(r => {
-        const fields = Array.isArray(r.data) ? r.data : [];
-        const parsed = fields.map(f => {
-          let opts = f.options;
-          if (typeof opts === 'string') {
-            try { opts = JSON.parse(opts); } catch { opts = null; }
-          }
-          return { ...f, options: opts };
-        });
-        setCustomisationTemplates(parsed);
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (localProduct?.isCustomisable) {
-      api.get('/fonts').then(r => setAvailableFonts(r.data || [])).catch(() => {});
-    }
-  }, [localProduct?.id, localProduct?.isCustomisable]);
-
-  // Dynamically load Google Font stylesheets
-  useEffect(() => {
-    if (availableFonts && availableFonts.length > 0) {
-      availableFonts.forEach(font => {
-        const fontName = font.name?.trim();
-        if (!fontName) return;
-        const fontId = `google-font-${fontName.replace(/\s+/g, '-').toLowerCase()}`;
-        if (!document.getElementById(fontId)) {
-          const link = document.createElement('link');
-          link.id = fontId;
-          link.rel = 'stylesheet';
-          link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@300;400;500;600;700&display=swap`;
-          document.head.appendChild(link);
-        }
-      });
-    }
-  }, [availableFonts]);
 
   const effectiveStock = selectedVariant ? Number(selectedVariant.stock ?? 0) : productStock;
 
@@ -744,14 +640,7 @@ const ProductDescriptionInfo = ({
           : "You already have all available stock in your cart";
       }
     }
-    if (localProduct?.isCustomisable) {
-      const activeFields = customisationTemplates.filter(t => !!parsedCustomisationFields[t.key]);
-      activeFields.forEach(field => {
-        if (field.isRequired && (!customisationDetails[field.key] || !String(customisationDetails[field.key]).trim())) {
-          next[field.key] = `${field.label} is required`;
-        }
-      });
-    }
+
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -785,7 +674,6 @@ const ProductDescriptionInfo = ({
         selectedProductSize: variantSize,
         price: selectedVariant ? parseFloat(selectedVariant.salesPrice) : (localProduct.price || 0),
         quantity: quantityCount,
-        customisationDetails: localProduct?.isCustomisable ? customisationDetails : null,
       });
     } catch (err) {
       console.error("Failed to add to cart:", err);
@@ -908,8 +796,6 @@ const handleBuyNow = async () => {
         stock: resolvedStock,
         Variants: localProduct.Variants || [],
         isPartialCodAvailable: localProduct.isPartialCodAvailable !== false,
-        customisationDetails: localProduct?.isCustomisable ? customisationDetails : null,
-        customisationFields: parsedCustomisationFields || null,
       };
 
       dispatch(createBuyNowCheckout(buyNowItem));
@@ -986,8 +872,6 @@ const handleBuyNow = async () => {
       <div className="pdp-info__divider" />
 
       {/* ── Combo ── */}
-      {product.Combo && <ComboProductsSection combo={product.Combo} allProducts={allProducts} />}
-
       {/* ── Backend variant selector ── */}
       {hasNewVar && (
         <div className="pdp-info__variants">
@@ -1152,193 +1036,7 @@ const handleBuyNow = async () => {
 </button>
       ) : (
         <>
-        {/* ── Customisation Fields Panel ── */}
-        {(() => {
-          if (!localProduct.isCustomisable || !parsedCustomisationFields) return null;
-          const activeFields = customisationTemplates.filter(t => !!parsedCustomisationFields[t.key]);
-          if (activeFields.length === 0) return null;
 
-          return (
-            <div style={{
-              margin: '0 0 18px 0', padding: '16px 18px',
-              background: '#1e1e1e',
-              borderRadius: 12, border: '1px solid #2a2a2a',
-            }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--theme-color)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
-                🎨 Personalise Your Product
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {activeFields.map(field => {
-                  const errorKey = field.key;
-                  return (
-                    <div key={field.key}>
-                      {field.inputType === 'text' && (
-                        <div>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#f0ead6', display: 'block', marginBottom: 4 }}>
-                            {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
-                            {field.label}
-                            {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
-                          </label>
-                          <input
-                            type="text"
-                            placeholder={field.placeholder || "Enter details..."}
-                            value={customisationDetails[field.key] || ''}
-                            onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
-                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
-                          />
-                        </div>
-                      )}
-
-                      {field.inputType === 'textarea' && (
-                        <div>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
-                            {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
-                            {field.label}
-                            {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
-                          </label>
-                          <textarea
-                            placeholder={field.placeholder || "Any special instructions..."}
-                            value={customisationDetails[field.key] || ''}
-                            onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
-                            rows={2}
-                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                          />
-                        </div>
-                      )}
-
-                      {field.inputType === 'color' && (
-                        <div>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#f0ead6', display: 'block', marginBottom: 4 }}>
-                            {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
-                            {field.label}
-                            {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
-                          </label>
-
-                          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 4 }}>
-                            {/* Color Picker box */}
-                            <div style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, overflow: 'hidden', border: '1px solid #383838', cursor: 'pointer', flexShrink: 0 }}>
-                              <input
-                                type="color"
-                                value={customisationDetails[field.key] && customisationDetails[field.key].startsWith('#') ? customisationDetails[field.key] : 'var(--theme-color)'}
-                                onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
-                                style={{ position: 'absolute', top: -5, left: -5, width: 50, height: 50, border: 0, padding: 0, cursor: 'pointer' }}
-                              />
-                            </div>
-                            <input
-                              type="text"
-                              placeholder={field.placeholder || "Choose a color or enter code (e.g. #ff0000)"}
-                              value={customisationDetails[field.key] || ''}
-                              onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
-                              style={{ flex: 1, padding: '8px 12px', border: '1px solid #383838', borderRadius: 8, fontSize: 13, outline: 'none', background: '#252525', color: '#f0ead6', boxSizing: 'border-box' }}
-                            />
-                          </div>
-
-                          {Array.isArray(field.options) && field.options.length > 0 && (
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                              {field.options.map(opt => {
-                                const hexVal = toHex(opt) || opt;
-                                const isSelected = customisationDetails[field.key] === hexVal || customisationDetails[field.key] === opt;
-                                return (
-                                  <button
-                                    key={opt}
-                                    type="button"
-                                    onClick={() => setCustomisationDetails(prev => ({ ...prev, [field.key]: hexVal }))}
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: 6,
-                                      padding: '5px 10px',
-                                      border: isSelected ? '2px solid var(--theme-color)' : '1px solid #383838',
-                                      borderRadius: 20,
-                                      background: isSelected ? 'rgba(205, 131, 62, 0.15)' : '#252525',
-                                      color: isSelected ? 'var(--theme-color)' : '#c8bfb0',
-                                      fontSize: 12,
-                                      fontWeight: 500,
-                                      cursor: 'pointer',
-                                      transition: 'all 0.2s',
-                                    }}
-                                  >
-                                    {toHex(opt) && (
-                                      <span style={{ width: 12, height: 12, borderRadius: '50%', background: toHex(opt), border: '1px solid rgba(255,255,255,0.2)' }} />
-                                    )}
-                                    {opt}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {field.inputType === 'font' && (
-                        <div>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#f0ead6', display: 'block', marginBottom: 4 }}>
-                            {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
-                            {field.label}
-                            {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
-                          </label>
-                          <select
-                            value={customisationDetails[field.key] || ''}
-                            onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
-                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #383838', borderRadius: 8, fontSize: 13, outline: 'none', background: '#252525', color: '#f0ead6', boxSizing: 'border-box' }}
-                          >
-                            <option value="">-- Select a font --</option>
-                            {availableFonts.map(f => (
-                              <option key={f.id} value={f.name} style={{ fontFamily: f.name }}>{f.name}</option>
-                            ))}
-                          </select>
-                          {customisationDetails[field.key] && (
-                            <div style={{ marginTop: 6, padding: '6px 10px', background: '#252525', borderRadius: 6, border: '1px solid #383838', color: '#ffffff', fontFamily: customisationDetails[field.key], fontSize: 16 }}>
-                              {(() => {
-                                const textField = activeFields.find(f => f.inputType === 'text');
-                                const previewText = textField ? (customisationDetails[textField.key] || '') : '';
-                                return previewText || 'Font Preview';
-                              })()}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {field.inputType === 'select' && (
-                        <div>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#f0ead6', display: 'block', marginBottom: 4 }}>
-                            {field.icon && <span style={{ marginRight: 4 }}>{field.icon}</span>}
-                            {field.label}
-                            {field.isRequired && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
-                          </label>
-                          <select
-                            value={customisationDetails[field.key] || ''}
-                            onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
-                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #383838', borderRadius: 8, fontSize: 13, outline: 'none', background: '#252525', color: '#f0ead6', boxSizing: 'border-box' }}
-                          >
-                            <option value="">{field.placeholder || "-- Select an option --"}</option>
-                            {Array.isArray(field.options) && field.options.map(opt => (
-                              <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
-                      <ErrorMsg field={errorKey} />
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ fontSize: 11, color: '#9a3412', marginTop: 8, opacity: 0.8 }}>
-                * Customisation details will be added to your order. Please{' '}
-                <a
-                  href="https://wa.me/9500848860?text=Hello! I want to enquire about customisation details for my order."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: 'var(--theme-color)', textDecoration: 'underline', fontWeight: 600 }}
-                >
-                  Contact our team via WhatsApp
-                </a>{' '}
-                for detailed information.
-              </div>
-            </div>
-          );
-        })()}
         <div className={`pdp-info__actions pdp-info__actions--product${stockState.state === STOCK_STATES.DISCONTINUED ? " is-discontinued" : ""}`}>
           {/* Quantity & Wishlist Row */}
           {stockState.state !== STOCK_STATES.DISCONTINUED && (

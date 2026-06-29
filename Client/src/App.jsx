@@ -19,10 +19,6 @@ import { fetchSettings } from "./store/services/settingsService";
 // Main home
 const HomeFashion = lazy(() => import("./pages/home/HomeFashion"));
 
-// Combo page
-// const ComboPage = lazy(() => import("./pages/combo/ComboPage"));
-const ComboDetailPage = lazy(() => import("./pages/combo/ComboDetailPage"));
-const CombosPage = lazy(() => import("./pages/combo/CombosPage"));
 
 // Shop pages
 const ShopGridStandard = lazy(() => import("./pages/shop/ShopGridStandard"));
@@ -130,16 +126,8 @@ useEffect(() => {
           stock: matched?.stock ?? cartItem.product?.stock ?? 999,
           Variants: variants,
           selectedVariant: matched || null,
-          // Combo specific fields
-          isCombo: snap.isCombo || false,
-          rootComboId: snap.rootComboId || null,
-          comboSlug: snap.comboSlug || null,
-          childComboId: snap.childComboId || null,
-          selectedProducts: snap.products || null,
-          comboType: snap.comboType || null,
           isPartialCodAvailable: cartItem.product?.isPartialCodAvailable !== false,
-          customisationDetails: cartItem.customisationDetails || null,
-          customisationFields: cartItem.product?.customisationFields || null,
+
           shippingWeight: matched?.shippingWeight ?? cartItem.product?.shippingWeight ?? null,
           shippingDimensions: matched?.shippingDimensions ?? cartItem.product?.shippingDimensions ?? null,
         };
@@ -176,9 +164,7 @@ useEffect(() => {
             <Route path={process.env.PUBLIC_URL + "/"} element={<HomeFashion />} />
             <Route path={process.env.PUBLIC_URL + "/home-fashion"} element={<HomeFashion />} />
             <Route path={process.env.PUBLIC_URL + "/shop"} element={<ShopGridStandard />} />
-            <Route path={process.env.PUBLIC_URL + "/combos"} element={<CombosPage />} />
-            <Route path={process.env.PUBLIC_URL + "/combo/root/:rootComboId"} element={<ComboDetailPage />} />
-            {/* <Route path={process.env.PUBLIC_URL + "/combo/:id"} element={<ComboPage />} /> */}
+
 
             {/* Products */}
             <Route path={process.env.PUBLIC_URL + "/product/:slug"} element={<Product />} />

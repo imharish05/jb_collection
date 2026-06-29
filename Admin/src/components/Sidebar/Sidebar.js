@@ -91,11 +91,11 @@ const NAV_ITEMS = [
           <path d="M20 7l-8-4-8 4m16 0v10l-8 4m-8-4V7m8 4v10"/>
         </svg>
       )},
-      { id: 'combos', label: 'Combos', icon: (
+      /* { id: 'combos', label: 'Combos', icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
         </svg>
-      )},
+      )}, */
       { id: 'variants', label: 'Product Variant', icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="2" y="3" width="6" height="6" rx="1"/>

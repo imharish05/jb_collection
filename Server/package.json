@@ -1,7 +1,7 @@
 {
   "name": "kamali-gifts-backend",
   "version": "1.0.0",
-  "description": "Backend API for Kamali Gifts e-commerce platform",
+  "description": "Backend API for JB House of Fashion e-commerce platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

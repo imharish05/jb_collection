@@ -657,13 +657,7 @@ const Checkout = () => {
         image: item.image || null,
         selectedProductColor: item.selectedProductColor || null,
         selectedProductSize: item.selectedProductSize || null,
-        isCombo: item.isCombo || false,
-        rootComboId: item.rootComboId || null,
-        childComboId: item.childComboId || null,
-        comboName: item.isCombo ? item.name : null,
-        comboType: item.comboType || null,
-        selectedProducts: item.selectedProducts || null,
-        customisationDetails: item.customisationDetails || null,
+
       })),
       totalAmount: shippingPricing.grandTotal,
       shippingAddressId: selectedShippingAddrId,
@@ -1388,92 +1382,7 @@ const Checkout = () => {
                               </div>
                             )}
 
-                            {(() => {
-                              let custom = item.customisationDetails;
-                              if (typeof custom === 'string') {
-                                try {
-                                  custom = JSON.parse(custom);
-                                  if (typeof custom === 'string') {
-                                    custom = JSON.parse(custom);
-                                  }
-                                } catch {
-                                  custom = null;
-                                }
-                              }
-                                if (custom && typeof custom === 'object' && Object.values(custom).some(Boolean)) {
-                                  const validEntries = Object.entries(custom).filter(([_, val]) => val);
-                                  return (
-                                    <div 
-                                      className="kco-custom-row-container"
-                                      style={{
-                                        marginTop: 5,
-                                        padding: "4px 8px",
-                                        background: "#fffbeb",
-                                        border: "1px solid #fde68a",
-                                        borderRadius: "6px",
-                                        fontSize: "10px",
-                                        color: "#78350f",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "6px",
-                                        whiteSpace: "nowrap",
-                                        overflowX: "auto",
-                                        scrollbarWidth: "none",
-                                        width: "100%"
-                                      }}
-                                    >
-                                      <span style={{ fontWeight: 700, flexShrink: 0 }}>🎨 Custom:</span>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                                        {validEntries.map(([key, val], idx) => {
-                                          const label = key
-                                            .split('_')
-                                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                            .join(' ');
-                                          const isFont = key.toLowerCase().includes('font');
-                                          const isCol = key.toLowerCase().includes('color') || key.toLowerCase().includes('colour') || (typeof val === 'string' && val.startsWith('#'));
-                                          return (
-                                            <span 
-                                              key={key} 
-                                              style={{ 
-                                                display: 'inline-flex', 
-                                                alignItems: 'center', 
-                                                gap: 3, 
-                                                background: "rgba(253, 230, 138, 0.4)", 
-                                                padding: "2px 6px", 
-                                                borderRadius: "4px",
-                                                fontSize: "9px",
-                                                flexShrink: 0,
-                                                ...(isFont ? { fontFamily: val } : {}) 
-                                              }}
-                                            >
-                                              <span style={{ fontWeight: 600 }}>{label}:</span>
-                                              {isCol ? (
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                                  <span style={{
-                                                    width: 10,
-                                                    height: 10,
-                                                    borderRadius: '50%',
-                                                    background: val,
-                                                    border: '1px solid rgba(0,0,0,0.15)',
-                                                    display: 'inline-block'
-                                                  }} />
-                                                  <code style={{ fontSize: 9, background: '#f3f4f6', padding: '1px 3px', borderRadius: 3 }}>{val}</code>
-                                                </span>
-                                              ) : (
-                                                <span>{val}</span>
-                                              )}
-                                              {idx < validEntries.length - 1 && (
-                                                <span style={{ marginLeft: 6, color: '#d97706', fontWeight: "bold" }}>•</span>
-                                              )}
-                                            </span>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              })()}
+
 
                             <div className="kco-item-price-row">
                               <span className="kco-item-price">₹{(price * item.quantity).toFixed(2)}</span>

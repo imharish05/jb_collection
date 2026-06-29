@@ -38,7 +38,6 @@ const Notification        = require("./Notification");
 const StockHistory        = require("./StockHistory");
 const Role                = require("./Role");
 const Font                = require("./Font");
-const CustomisationField  = require("./CustomisationField");
 const SiteSetting         = require("./SiteSetting");
 
 User.belongsTo(Role, { foreignKey: "roleId", as: "roleRecord" });
@@ -47,10 +46,7 @@ Role.hasMany(User, { foreignKey: "roleId", as: "users" });
 User.hasMany(PasswordResetOtp, { foreignKey: "user_id", as: "passwordResetOtps", onDelete: "CASCADE" });
 PasswordResetOtp.belongsTo(User, { foreignKey: "user_id", as: "user" });
 
-// ── New Root/Child Combo models ───────────────────────────────────────────────
-const RootCombo         = require("./RootCombo");
-const ChildCombo        = require("./ChildCombo");
-const ChildComboProduct = require("./ChildComboProduct");
+
 
 // ── Inventory Log Associations ───────────────────────────────────────────────
 InventoryLog.belongsTo(Order, { foreignKey: "order_id", as: "order", constraints: false });
@@ -92,9 +88,6 @@ Product.belongsTo(Category,  { foreignKey: "category_id" });
 Product.belongsTo(SubCategory, { foreignKey: "sub_category_id", as: "SubCategory", constraints: false });
 SubCategory.hasMany(Product,   { foreignKey: "sub_category_id", as: "products",    constraints: false });
 
-// ── Product ↔ Combo (legacy) ───────────────────────────────────────────────────
-Combo.hasMany(Product,   { foreignKey: "combo_id", as: "comboProducts", constraints: false });
-Product.belongsTo(Combo, { foreignKey: "combo_id", as: "Combo",         constraints: false });
 
 // ── Product ↔ Variant ─────────────────────────────────────────────────────────
 Product.hasMany(Variant,    { foreignKey: "product_id", as: "Variants", onDelete: "CASCADE" });
@@ -113,20 +106,6 @@ OrderItem.belongsTo(Order, { foreignKey: "order_id" });
 OrderItem.belongsTo(Product, { foreignKey: "productId", as: "product", constraints: false });
 OrderItem.belongsTo(Variant, { foreignKey: "selectedVariantId", as: "variant", constraints: false });
 
-// ── RootCombo ↔ ChildCombo ────────────────────────────────────────────────────
-RootCombo.hasMany(ChildCombo, { foreignKey: "root_combo_id", as: "children", onDelete: "CASCADE" });
-ChildCombo.belongsTo(RootCombo, { foreignKey: "root_combo_id", as: "rootCombo" });
-
-ChildCombo.hasMany(Review, { foreignKey: "child_combo_id", as: "reviews", onDelete: "CASCADE" });
-Review.belongsTo(ChildCombo, { foreignKey: "child_combo_id", as: "childCombo" });
-
-// ── ChildCombo ↔ ChildComboProduct ───────────────────────────────────────────
-ChildCombo.hasMany(ChildComboProduct, { foreignKey: "child_combo_id", as: "comboProducts", onDelete: "CASCADE" });
-ChildComboProduct.belongsTo(ChildCombo, { foreignKey: "child_combo_id", as: "childCombo" });
-
-// ── ChildComboProduct ↔ Product / Variant ─────────────────────────────────────
-ChildComboProduct.belongsTo(Product, { foreignKey: "product_id", as: "product", constraints: false });
-ChildComboProduct.belongsTo(Variant, { foreignKey: "variant_id", as: "variant", constraints: false });
 
 // ── Returns module associations ───────────────────────────────────────────────
 Return.belongsTo(Order,           { foreignKey: 'order_id',      as: 'order',           constraints: false });
@@ -155,7 +134,6 @@ const models = {
   Category,
   SubCategory,
   Event,
-  Combo,
   OfferBanner,
   MarqueeMessage,
   Order,
@@ -167,10 +145,6 @@ const models = {
   Contact,
   OrderItem,
   Testimonial,
-  // New combo models
-  RootCombo,
-  ChildCombo,
-  ChildComboProduct,
   // Password reset
   PasswordResetOtp,
   // Inventory settings + notifications
@@ -188,7 +162,6 @@ const models = {
   ReverseShipment,
   ReferenceSequence,
   Font,
-  CustomisationField,
   SiteSetting,
   TimelineMilestone,
 };

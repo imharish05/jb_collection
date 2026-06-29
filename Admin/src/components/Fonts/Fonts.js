@@ -172,7 +172,7 @@ export default function Fonts({ showToast }) {
                 {errors.name && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>⚠ {errors.name}</div>}
                 {name.trim() && (
                   <div style={{ marginTop: 6, fontSize: 15, color: KM.text }}>
-                    Preview: <span style={{ fontFamily: `'${name.trim()}', serif`, fontSize: 18 }}>Kamali Gifts</span>
+                    Preview: <span style={{ fontFamily: `'${name.trim()}', serif`, fontSize: 18 }}>JB House of Fashion</span>
                   </div>
                 )}
               </div>
@@ -210,7 +210,7 @@ export default function Fonts({ showToast }) {
               <td style={{ fontWeight: 500 }}>{row.name}</td>
               <td>
                 <span style={{ fontFamily: `'${row.name}', serif`, fontSize: 16, color: KM.text }}>
-                  Kamali Gifts
+                  JB House of Fashion
                 </span>
               </td>
               <td>

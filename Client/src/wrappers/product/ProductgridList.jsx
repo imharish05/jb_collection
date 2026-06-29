@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import React, { Fragment } from "react";
 import { useSelector } from "react-redux";
 import ProductGridListSingle from "../../components/product/ProductGridListSingle";
-import ComboCard from "../../components/product/ComboCard";
+
 import ProductSkeleton from "../../components/product/ProductSkeleton";
 
 const ProductGridList = ({ products, spaceBottomClass, layout, isLoadingMore }) => {
@@ -31,9 +31,6 @@ const ProductGridList = ({ products, spaceBottomClass, layout, isLoadingMore }) 
     <Fragment>
       {products.map(item => (
         <div className={colClass} key={item.id}>
-          {item.isCombo ? (
-            <ComboCard combo={item} spaceBottomClass={spaceBottomClass} />
-          ) : (
             <ProductGridListSingle
               spaceBottomClass={spaceBottomClass}
               layout={layout}
@@ -44,7 +41,6 @@ const ProductGridList = ({ products, spaceBottomClass, layout, isLoadingMore }) 
               wishlistItems={wishlistItems.filter(i => i.id === item.id)}
               compareItem={compareItems.find(i => i.id === item.id)}
             />
-          )}
         </div>
       ))}
       

@@ -31,7 +31,7 @@ export default function Topbar({ title, addBtn, addLabel, onAdd }) {
 
   const [logoUrl, setLogoUrl] = useState('');
   const [adminName, setAdminName] = useState('Admin');
-  const [adminRole, setAdminRole] = useState('Kamali Gifts');
+  const [adminRole, setAdminRole] = useState('JB House of Fashion');
 
   const fetchLogo = async () => {
     try {
@@ -87,7 +87,7 @@ export default function Topbar({ title, addBtn, addLabel, onAdd }) {
         <div className="adminProfile">
           <img
             src={logoUrl ? `${IMG_BASE_URL}/${logoUrl}` : logo}
-            alt="Kamali gifts"
+            alt="JB House of Fashion"
             className="adminLogo"
           />
           <div className="adminInfo">

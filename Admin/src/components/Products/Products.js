@@ -94,7 +94,7 @@ function blankVariantRow() {
 const BLANK_FORM = {
   productName: '', categoryId: '', categoryName: '', subCategoryId: '', subCategoryName: '',
   brandId: '', discount: '', shortDescription: '', fullDescription: '',
-  tag: '', isCustomisable: true, isNewArrival: false, isHotDeal: false,
+  tag: '', isNewArrival: false, isHotDeal: false,
   isPartialCodAvailable: true,
   customisationFields: {},
   shippingWeight: '', shippingLength: '', shippingBreadth: '', shippingHeight: '',
@@ -385,7 +385,7 @@ export default function Products({ showToast }) {
       shortDescription: p.shortDescription || '',
       fullDescription: p.fullDescription || '',
       tag: Array.isArray(p.tag) ? p.tag.join(', ') : (p.tag || ''),
-      isCustomisable: p.isCustomisable !== false,
+
       isNewArrival: !!p.isNew,
       isHotDeal: !!p.isHotDeal,
       isPartialCodAvailable: p.isPartialCodAvailable !== false,
@@ -587,7 +587,7 @@ export default function Products({ showToast }) {
     fd.append('shortDescription', formData.shortDescription);
     fd.append('fullDescription', formData.fullDescription);
     fd.append('isNewArrival', formData.isNewArrival);
-    fd.append('isCustomisable', formData.isCustomisable);
+
     fd.append('isHotDeal', formData.isHotDeal);
     fd.append('isPartialCodAvailable', formData.isPartialCodAvailable);
     fd.append('shippingWeight', formData.shippingWeight || '');
@@ -596,15 +596,12 @@ export default function Products({ showToast }) {
       breadth: formData.shippingBreadth ? parseFloat(formData.shippingBreadth) : null,
       height: formData.shippingHeight ? parseFloat(formData.shippingHeight) : null
     }));
-    if (formData.isCustomisable) {
-      fd.append('customisationFields', JSON.stringify(formData.customisationFields));
-    }
 
     if (formData.subCategoryId) fd.append('subCategoryId', formData.subCategoryId);
     if (formData.subCategoryName) fd.append('subCategoryName', formData.subCategoryName);
 
     const baseTags = formData.tag ? formData.tag.split(',').map(t => t.trim()).filter(Boolean) : [];
-    if (formData.isCustomisable && !baseTags.includes('customisable')) baseTags.push('customisable');
+
     if (formData.isNewArrival   && !baseTags.includes('new-arrival'))  baseTags.push('new-arrival');
     if (formData.isHotDeal      && !baseTags.includes('hot-deal'))      baseTags.push('hot-deal');
     fd.append('tag', JSON.stringify(baseTags));
@@ -731,7 +728,7 @@ export default function Products({ showToast }) {
                 {editingId ? 'Edit Product' : 'Add New Product'}
               </div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 1 }}>
-                Kamali Gift Factory — product details &amp; variants
+                JB House of Fashion — product details &amp; variants
               </div>
             </div>
           </div>
@@ -1146,7 +1143,7 @@ export default function Products({ showToast }) {
                 <td>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {row.isNew && <span style={tag(KM.green, '#ecfdf5')}>NEW</span>}
-                    {row.isCustomisable && <span style={tag(KM.teal, '#ecfeff')}>CUSTOM</span>}
+
                     {row.isHotDeal && <span style={tag(KM.orange, KM.orangeLight)}>HOT DEAL</span>}
                   </div>
                 </td>

@@ -23,7 +23,7 @@ const BADGE_STYLES = {
 
 const STATUS_EMAIL_CONFIG = {
   confirmed: {
-    subject: (orderId) => `Order Confirmed 🎉 — Order #${orderId} | Kamali Gifts`,
+    subject: (orderId) => `Order Confirmed 🎉 — Order #${orderId} | JB House of Fashion`,
     heroIcon: "🎉",
     heroTitle: "Your Order Has Been Confirmed",
     heroMessage:
@@ -32,7 +32,7 @@ const STATUS_EMAIL_CONFIG = {
     badgeStyle: BADGE_STYLES.green,
   },
   shipped: {
-    subject: (orderId) => `Order Shipped 📦 — Order #${orderId} | Kamali Gifts`,
+    subject: (orderId) => `Order Shipped 📦 — Order #${orderId} | JB House of Fashion`,
     heroIcon: "📦",
     heroTitle: "Your Order Has Been Shipped",
     heroMessage:
@@ -42,7 +42,7 @@ const STATUS_EMAIL_CONFIG = {
     showTrackingButton: true,
   },
   processing: {
-    subject: (orderId) => `Out For Delivery 🚚 — Order #${orderId} | Kamali Gifts`,
+    subject: (orderId) => `Out For Delivery 🚚 — Order #${orderId} | JB House of Fashion`,
     heroIcon: "🚚",
     heroTitle: "Your Order Is Out For Delivery",
     heroMessage: "Your package is on its final journey and should arrive shortly.",
@@ -52,7 +52,7 @@ const STATUS_EMAIL_CONFIG = {
       "Please keep your phone available to receive delivery updates.",
   },
   delivered: {
-    subject: (orderId) => `Delivered Successfully ✅ — Order #${orderId} | Kamali Gifts`,
+    subject: (orderId) => `Delivered Successfully ✅ — Order #${orderId} | JB House of Fashion`,
     heroIcon: "✅",
     heroTitle: "Your Order Has Been Delivered",
     heroMessage:
@@ -62,7 +62,7 @@ const STATUS_EMAIL_CONFIG = {
     additionalSection: "delivered",
   },
   cancelled: {
-    subject: (orderId) => `Order Cancelled ❌ — Order #${orderId} | Kamali Gifts`,
+    subject: (orderId) => `Order Cancelled ❌ — Order #${orderId} | JB House of Fashion`,
     heroIcon: "❌",
     heroTitle: "Your Order Has Been Cancelled",
     heroMessage: "Your order has been cancelled successfully.",
@@ -71,7 +71,7 @@ const STATUS_EMAIL_CONFIG = {
     additionalSection: "refund",
   },
   returned: {
-    subject: (orderId) => `Return Request Updated ↩️ — Order #${orderId} | Kamali Gifts`,
+    subject: (orderId) => `Return Request Updated ↩️ — Order #${orderId} | JB House of Fashion`,
     heroIcon: "↩️",
     heroTitle: "Return Process Started",
     heroMessage: "Your return request is currently being processed.",
@@ -80,10 +80,10 @@ const STATUS_EMAIL_CONFIG = {
     additionalSection: "return",
   },
   admin_new_order: {
-    subject: (orderId) => `New Order Received 🛍️ — Order #${orderId} | Kamali Gifts`,
+    subject: (orderId) => `New Order Received 🛍️ — Order #${orderId} | JB House of Fashion`,
     heroIcon: "🛍️",
     heroTitle: "New Order Received",
-    heroMessage: "A new order has been placed on Kamali Gifts. Below are the order details.",
+    heroMessage: "A new order has been placed on JB House of Fashion. Below are the order details.",
     badgeText: "New Order",
     badgeStyle: BADGE_STYLES.green,
     headerSubtitle: "New Order Alert",
@@ -92,7 +92,7 @@ const STATUS_EMAIL_CONFIG = {
 
 const RETURN_EMAIL_CONFIG = {
   return_submitted: {
-    subject: (id) => `Return Request Submitted 📦 — Return #${id} | Kamali Gifts`,
+    subject: (id) => `Return Request Submitted 📦 — Return #${id} | JB House of Fashion`,
     heroIcon: "📦",
     heroTitle: "Return Request Submitted",
     heroMessage: "We have received your return request and it is currently under review by our team.",
@@ -100,7 +100,7 @@ const RETURN_EMAIL_CONFIG = {
     badgeStyle: BADGE_STYLES.orange,
   },
   approved: {
-    subject: (id) => `Return Request Approved ✅ — Return #${id} | Kamali Gifts`,
+    subject: (id) => `Return Request Approved ✅ — Return #${id} | JB House of Fashion`,
     heroIcon: "✅",
     heroTitle: "Return Approved",
     heroMessage: "Your return request has been approved. We will schedule a reverse pickup shortly.",
@@ -108,7 +108,7 @@ const RETURN_EMAIL_CONFIG = {
     badgeStyle: BADGE_STYLES.green,
   },
   rejected: {
-    subject: (id) => `Return Request Rejected ❌ — Return #${id} | Kamali Gifts`,
+    subject: (id) => `Return Request Rejected ❌ — Return #${id} | JB House of Fashion`,
     heroIcon: "❌",
     heroTitle: "Return Request Rejected",
     heroMessage: "Your return request has been rejected after review.",
@@ -116,7 +116,7 @@ const RETURN_EMAIL_CONFIG = {
     badgeStyle: BADGE_STYLES.red,
   },
   pickup_scheduled: {
-    subject: (id) => `Reverse Pickup Scheduled 🚚 — Return #${id} | Kamali Gifts`,
+    subject: (id) => `Reverse Pickup Scheduled 🚚 — Return #${id} | JB House of Fashion`,
     heroIcon: "🚚",
     heroTitle: "Reverse Pickup Scheduled",
     heroMessage: "Our logistics partner has scheduled a reverse pickup for your returned item.",
@@ -124,7 +124,7 @@ const RETURN_EMAIL_CONFIG = {
     badgeStyle: BADGE_STYLES.blue,
   },
   picked_up: {
-    subject: (id) => `Item Picked Up 📬 — Return #${id} | Kamali Gifts`,
+    subject: (id) => `Item Picked Up 📬 — Return #${id} | JB House of Fashion`,
     heroIcon: "📬",
     heroTitle: "Item Picked Up",
     heroMessage: "The package has been successfully picked up by our courier and is in transit to our warehouse.",
@@ -132,7 +132,7 @@ const RETURN_EMAIL_CONFIG = {
     badgeStyle: BADGE_STYLES.blue,
   },
   inspection_completed: {
-    subject: (id) => `Inspection Completed 🔍 — Return #${id} | Kamali Gifts`,
+    subject: (id) => `Inspection Completed 🔍 — Return #${id} | JB House of Fashion`,
     heroIcon: "🔍",
     heroTitle: "Inspection Completed",
     heroMessage: "We have received the returned package at our warehouse and completed the inspection.",
@@ -140,7 +140,7 @@ const RETURN_EMAIL_CONFIG = {
     badgeStyle: BADGE_STYLES.green,
   },
   refund_initiated: {
-    subject: (id) => `Refund Initiated 💰 — Return #${id} | Kamali Gifts`,
+    subject: (id) => `Refund Initiated 💰 — Return #${id} | JB House of Fashion`,
     heroIcon: "💰",
     heroTitle: "Refund Initiated",
     heroMessage: "Your refund has been initiated and will be processed back to your payment mode.",
@@ -148,7 +148,7 @@ const RETURN_EMAIL_CONFIG = {
     badgeStyle: BADGE_STYLES.purple,
   },
   refund_completed: {
-    subject: (id) => `Refund Completed ✅ — Return #${id} | Kamali Gifts`,
+    subject: (id) => `Refund Completed ✅ — Return #${id} | JB House of Fashion`,
     heroIcon: "✅",
     heroTitle: "Refund Completed",
     heroMessage: "Your refund is fully completed and credited.",
@@ -156,7 +156,7 @@ const RETURN_EMAIL_CONFIG = {
     badgeStyle: BADGE_STYLES.green,
   },
   replacement_shipped: {
-    subject: (id) => `Replacement Shipped 📦 — Return #${id} | Kamali Gifts`,
+    subject: (id) => `Replacement Shipped 📦 — Return #${id} | JB House of Fashion`,
     heroIcon: "📦",
     heroTitle: "Replacement Shipped",
     heroMessage: "Your replacement item has been shipped and is on its way to you.",
@@ -164,7 +164,7 @@ const RETURN_EMAIL_CONFIG = {
     badgeStyle: BADGE_STYLES.blue,
   },
   replacement_delivered: {
-    subject: (id) => `Replacement Delivered ✅ — Return #${id} | Kamali Gifts`,
+    subject: (id) => `Replacement Delivered ✅ — Return #${id} | JB House of Fashion`,
     heroIcon: "✅",
     heroTitle: "Replacement Delivered",
     heroMessage: "Your replacement item has been successfully delivered.",
@@ -485,7 +485,7 @@ const buildOrderEmailHtml = ({ order, user, status, trackingDetails }) => {
   <!-- Header -->
   <tr>
     <td style="background:linear-gradient(135deg,rgba(223,77,129,0.4) 0%,rgb(255,232,214) 100%);padding:36px 40px;text-align:center;">
-      <h1 style="margin:0;color:#000;font-size:26px;font-weight:700;letter-spacing:0.5px;">🎁 Kamali Gifts</h1>
+      <h1 style="margin:0;color:#000;font-size:26px;font-weight:700;letter-spacing:0.5px;">🎁 JB House of Fashion</h1>
       <p style="margin:8px 0 0;color:rgba(0,0,0,0.75);font-size:14px;">${escapeHtml(headerSubtitle)}</p>
     </td>
   </tr>
@@ -634,7 +634,7 @@ const buildOrderEmailHtml = ({ order, user, status, trackingDetails }) => {
       <p style="margin:0 0 8px;font-size:13px;color:#888;">
         Need help? Contact us at <a href="mailto:${escapeHtml(contactEmail)}" style="color:#db1a5d;">${escapeHtml(contactEmail)}</a>
       </p>
-      <p style="margin:0;font-size:12px;color:#bbb;">© ${new Date().getFullYear()} Kamali Gifts. All rights reserved.</p>
+      <p style="margin:0;font-size:12px;color:#bbb;">© ${new Date().getFullYear()} JB House of Fashion. All rights reserved.</p>
     </td>
   </tr>
 
@@ -678,7 +678,7 @@ const sendOrderStatusEmail = async ({ order, user, status, trackingDetails } = {
   const sentAt = new Date();
   const displayId = getDisplayReference(orderData, orderData.id);
   await transporter.sendMail({
-    from: `"Kamali Gifts" <${process.env.EMAIL_USER}>`,
+    from: `"JB House of Fashion" <${process.env.EMAIL_USER}>`,
     to: user.email,
     subject: config.subject(displayId),
     html,
@@ -724,7 +724,7 @@ const sendAdminNewOrderEmail = async (order, user) => {
   const sentAt = new Date();
   const displayId = getDisplayReference(orderData, orderData.id);
   await transporter.sendMail({
-    from: `"Kamali Gifts Alert" <${process.env.EMAIL_USER}>`,
+    from: `"JB House of Fashion Alert" <${process.env.EMAIL_USER}>`,
     to: adminEmail,
     subject: config.subject(displayId),
     html,
@@ -816,7 +816,7 @@ const sendReturnNotificationEmail = async ({ returnRequest, user, order, orderIt
           <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px;">
             <h4 style="margin:0 0 8px;color:#2563eb;font-size:14px;font-weight:700;">Replacement Shipment Details</h4>
             <p style="margin:0 0 6px;font-size:13px;color:#666;">Replacement AWB: <strong>${awb}</strong></p>
-            <p style="margin:0;font-size:13px;color:#666;">Delivery Charge: <strong>Paid by Kamali Gifts (Prepaid)</strong></p>
+            <p style="margin:0;font-size:13px;color:#666;">Delivery Charge: <strong>Paid by JB House of Fashion (Prepaid)</strong></p>
             ${buttonHtml}
           </div>
         </td>
@@ -835,7 +835,7 @@ const sendReturnNotificationEmail = async ({ returnRequest, user, order, orderIt
   <!-- Header -->
   <tr>
     <td style="background:linear-gradient(135deg,rgba(223,77,129,0.4) 0%,rgb(255,232,214) 100%);padding:36px 40px;text-align:center;">
-      <h1 style="margin:0;color:#000;font-size:26px;font-weight:700;letter-spacing:0.5px;">🎁 Kamali Gifts</h1>
+      <h1 style="margin:0;color:#000;font-size:26px;font-weight:700;letter-spacing:0.5px;">🎁 JB House of Fashion</h1>
       <p style="margin:8px 0 0;color:rgba(0,0,0,0.75);font-size:14px;">Return & Refund Updates</p>
     </td>
   </tr>
@@ -893,7 +893,7 @@ const sendReturnNotificationEmail = async ({ returnRequest, user, order, orderIt
       <p style="margin:0 0 8px;font-size:13px;color:#888;">
         Need help? Contact us at <a href="mailto:${escapeHtml(contactEmail)}" style="color:#db1a5d;">${escapeHtml(contactEmail)}</a>
       </p>
-      <p style="margin:0;font-size:12px;color:#bbb;">© ${new Date().getFullYear()} Kamali Gifts. All rights reserved.</p>
+      <p style="margin:0;font-size:12px;color:#bbb;">© ${new Date().getFullYear()} JB House of Fashion. All rights reserved.</p>
     </td>
   </tr>
 
@@ -907,7 +907,7 @@ const sendReturnNotificationEmail = async ({ returnRequest, user, order, orderIt
   const subjectText = config.subject(displayRetId);
 
   await transporter.sendMail({
-    from: `"Kamali Gifts" <${process.env.EMAIL_USER}>`,
+    from: `"JB House of Fashion" <${process.env.EMAIL_USER}>`,
     to: user.email,
     subject: subjectText,
     html,

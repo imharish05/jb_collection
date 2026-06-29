@@ -30,7 +30,7 @@ const HeaderOne = ({
   const isSticky = scroll > headerTop;
 
   return (
-    <header className={clsx("header-area clearfix header-padding-1", headerBgClass, headerPositionClass)} style={{ borderTop: "4px solid transparent", borderImage: "var(--theme-gradient) 1" }}>
+    <header className={clsx("header-area clearfix header-padding-1", headerBgClass, headerPositionClass)}>
       {/* Top bar */}
       
         <div className={clsx("header-top-area d-none d-lg-block", headerPaddingClass, borderStyle === "fluid-border" && "border-none")}>

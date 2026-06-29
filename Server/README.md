@@ -1,6 +1,6 @@
 # Kamali Grifts — Backend API (MySQL)
 
-Express + Sequelize + **MySQL** backend for the Kamali Gifts e-commerce frontend.
+Express + Sequelize + **MySQL** backend for the JB House of Fashion e-commerce frontend.
 
 ## Project Structure
 

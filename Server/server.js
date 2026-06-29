@@ -33,12 +33,10 @@ const userRoutes = require("./routes/users");
 const testimonialRoutes = require("./routes/testimonials");
 const shippingRoutes = require("./routes/shipping");
 const timelineRoutes = require("./routes/timeline");
-const newComboRoutes = require("./routes/combos");
 const returnRoutes = require("./routes/returns");
 const notificationRoutes    = require("./routes/notifications");
 const inventorySettingsRoutes = require("./routes/inventorySettings");
 const fontRoutes              = require("./routes/fonts");
-const customisationFieldRoutes = require("./routes/customisationFields");
 
 const { protect } = require("./middleware/auth");
 const seed = require("./seeders/seed");
@@ -132,15 +130,13 @@ app.use("/api/users", userRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/timeline", timelineRoutes);
-app.use("/api/combos", newComboRoutes);
-app.use("/api/customisation-fields", customisationFieldRoutes);
 app.use("/api/returns", returnRoutes);
 app.use("/api/notifications",     notificationRoutes);
 app.use("/api/inventory-settings", inventorySettingsRoutes);
 app.use("/api/fonts",             fontRoutes);
 
 app.get("/api/health", (req, res) =>
-  res.json({ status: "ok", service: "Kamali Gifts API", db: "MySQL" })
+  res.json({ status: "ok", service: "JB House of Fashion API", db: "MySQL" })
 );
 
 app.use("/api", categoryRoutes);
@@ -164,9 +160,6 @@ const startServer = async () => {
       await sequelize.query("ALTER TABLE users ADD COLUMN status ENUM('active', 'inactive') DEFAULT 'active';").catch(() => {});
       await sequelize.query("ALTER TABLE products ADD COLUMN is_partial_cod_available TINYINT(1) DEFAULT 1;").catch(() => {});
       await sequelize.query("ALTER TABLE orders ADD COLUMN awb_code VARCHAR(100) NULL;").catch(() => {});
-      await sequelize.query("ALTER TABLE products ADD COLUMN customisation_fields JSON NULL;").catch(() => {});
-      await sequelize.query("ALTER TABLE cart_items ADD COLUMN customisation_details JSON NULL;").catch(() => {});
-      await sequelize.query("ALTER TABLE order_items ADD COLUMN customisation_details JSON NULL;").catch(() => {});
       console.log("✅ Users and products table columns verified");
     } catch (alterErr) {
       console.warn("⚠️ Column alter query failed (ignoring):", alterErr.message);

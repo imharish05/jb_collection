@@ -480,9 +480,7 @@ const toggleVisibility = (field) => {
                           const hoursFromCreated = hoursSince(order.createdAt);
                           const orderStatusLow = order.status?.toLowerCase() || "";
                           const nonCancellableStatuses = ["confirmed", "shipped", "processing", "delivered", "cancelled"];
-                          const hasCustomItem = order.items?.some(i => i.product?.isCustomisable || (i.customisationDetails && Object.keys(i.customisationDetails).length > 0));
-                          const isProductionCustom = hasCustomItem && orderStatusLow !== "pending";
-                          const canCancel = hoursFromCreated < 24 && !nonCancellableStatuses.includes(orderStatusLow) && !isProductionCustom;
+                          const canCancel = hoursFromCreated < 24 && !nonCancellableStatuses.includes(orderStatusLow);
 
                           const handleCancelFromAccount = async () => {
                             const result = await Swal.fire({

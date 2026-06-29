@@ -1,5 +1,5 @@
 // ============================================================
-// PM2 Ecosystem Config — Kamali Gifts Backend
+// PM2 Ecosystem Config — JB House of Fashion Backend
 // ============================================================
 //
 // USAGE:

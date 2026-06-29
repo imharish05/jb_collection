@@ -5,7 +5,7 @@ const Variant   = require("../models/Variant");
 const Product   = require("../models/Product");
 const OrderItem = require("../models/OrderItem");
 const Order     = require("../models/Order");
-const ChildComboProduct = require("../models/ChildComboProduct");
+
 
 const generateSku = () =>
   `KMV-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
@@ -363,7 +363,7 @@ const remove = async (req, res) => {
     const WishlistItem = require("../models/WishlistItem");
 
     // Clean up combo associations
-    await ChildComboProduct.destroy({ where: { variantId: variant.id } });
+
 
     // Clean up cart items
     await CartItem.destroy({ where: { selectedVariantId: variant.id } });

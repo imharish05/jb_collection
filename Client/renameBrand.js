@@ -4,7 +4,7 @@ const path = require('path');
 const dir = path.join(__dirname, 'src');
 const publicDir = path.join(__dirname, 'public');
 
-const searchStr1 = /Kamali Gifts/gi;
+const searchStr1 = /JB House of Fashion/gi;
 const searchStr2 = /Kamali Gift Factory/gi;
 const searchStr3 = /Kamali Gift/gi;
 

@@ -60,9 +60,9 @@ const sendPasswordResetOtp = async (email) => {
   const html = getPasswordResetEmailTemplate(user.name, otp);
 
   await transporter.sendMail({
-    from: `"Kamali Gifts" <${process.env.EMAIL_USER}>`,
+    from: `"JB House of Fashion" <${process.env.EMAIL_USER}>`,
     to: user.email,
-    subject: "Reset Your Password – Kamali Gifts",
+    subject: "Reset Your Password – JB House of Fashion",
     html,
   });
 

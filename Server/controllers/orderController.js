@@ -113,7 +113,7 @@ const getMyOrders = async (req, res, next) => {
           model: OrderItem,
           as: "items",
           include: [
-            { model: require("../models").Product, as: "product", attributes: ["id", "referenceSlug", "sku", "isNonReturnable", "isCustomisable"] },
+            { model: require("../models").Product, as: "product", attributes: ["id", "referenceSlug", "sku", "isNonReturnable"] },
             { model: require("../models").Return, as: "returns" }
           ]
         },
@@ -142,7 +142,7 @@ const getOrderById = async (req, res, next) => {
           model: OrderItem,
           as: "items",
           include: [
-            { model: require("../models").Product, as: "product", attributes: ["id", "referenceSlug", "sku", "isNonReturnable", "isCustomisable"] },
+            { model: require("../models").Product, as: "product", attributes: ["id", "referenceSlug", "sku", "isNonReturnable"] },
             { model: require("../models").Return, as: "returns" }
           ]
         },

@@ -53,7 +53,7 @@ const syncCartFromServer = async (dispatch) => {
         selectedProducts: snap.products || null,
         comboType: snap.comboType || null,
         isPartialCodAvailable: cartItem.product?.isPartialCodAvailable !== false,
-        customisationDetails: cartItem.customisationDetails || null,
+
         customisationFields: cartItem.product?.customisationFields || null,
       };
     });

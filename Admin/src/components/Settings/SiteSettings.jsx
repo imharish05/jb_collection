@@ -84,7 +84,7 @@ export default function SiteSettings({ showToast }) {
       // About
       setAboutImageUrl(data.aboutImageUrl || '');
       setAboutImagePreview(getImageUrl(data.aboutImageUrl));
-      setAboutTitle(data.aboutTitle || 'Welcome To Kamali Gifts');
+      setAboutTitle(data.aboutTitle || 'Welcome To JB House of Fashion');
       setAboutSubtitle(data.aboutSubtitle || 'Who Are We');
       setAboutDescPrimary(data.aboutDescPrimary || '');
       setAboutDescSecondary(data.aboutDescSecondary || '');
@@ -135,7 +135,7 @@ export default function SiteSettings({ showToast }) {
       setAboutImageFile(null);
       if (aboutImageInputRef.current) aboutImageInputRef.current.value = '';
 
-      setAboutTitle(data.aboutTitle || 'Welcome To Kamali Gifts');
+      setAboutTitle(data.aboutTitle || 'Welcome To JB House of Fashion');
       setAboutSubtitle(data.aboutSubtitle || 'Who Are We');
       setAboutDescPrimary(data.aboutDescPrimary || '');
       setAboutDescSecondary(data.aboutDescSecondary || '');
@@ -433,7 +433,7 @@ export default function SiteSettings({ showToast }) {
                     value={aboutTitle}
                     onChange={e => setAboutTitle(e.target.value)}
                     style={inputStyle}
-                    placeholder="e.g. Welcome To Kamali Gifts"
+                    placeholder="e.g. Welcome To JB House of Fashion"
                   />
                 </div>
 

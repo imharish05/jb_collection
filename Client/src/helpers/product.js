@@ -17,7 +17,7 @@ export const getProducts = (products, category, type, limit) => {
 
   if (type && type === "customisable") {
     const customProducts = finalProducts.filter(single =>
-      (single.tag && single.tag.some(t => /custom/i.test(t))) || single.isCustomisable
+      (single.tag && single.tag.some(t => /custom/i.test(t)))
     );
     return customProducts.slice(0, limit ? limit : customProducts.length);
   }

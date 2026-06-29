@@ -130,7 +130,7 @@ const ProductGridSingle = ({
 
           {/* Badge — forced by section context, else highest-priority fallback */}
           {(() => {
-            if (sectionType === "customisable" || (!sectionType && product.isCustomisable)) {
+            if (sectionType === "customisable") {
               return (
                 <div className="product-badge-single">
                   <span className="badge-glass badge-glass--custom">Custom</span>

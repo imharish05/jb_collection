@@ -1,7 +1,7 @@
 import { Fragment, useState, useEffect, useRef, useMemo, cloneElement } from 'react';
 import { useSelector, useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
-import { fetchComboById } from '../../store/services/comboService';
+
 import { getSortedProducts } from '../../helpers/product';
 import SEO from "../../components/seo";
 import LayoutOne from '../../layouts/LayoutOne';
@@ -43,7 +43,7 @@ const ShopGridStandard = () => {
 
   const { products } = useSelector((state) => state.product);
   const { rootCombos: navCombos = [], categories = [], events = [] } = useSelector((state) => state.navMenu || {});
-  const { currentCombo: reduxCurrentCombo } = useSelector((state) => state.combo || {});
+
   const { search, pathname } = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -116,21 +116,6 @@ const ShopGridStandard = () => {
   useEffect(() => { setDisplayCount(pageLimit); }, [search, filterSortType, filterSortValue]);
 
   const isComboMode = !!comboParam;
-  useEffect(() => {
-    if (comboParam) dispatch(fetchComboById(comboParam));
-    else setChildCombos([]);
-  }, [comboParam]);
-
-  useEffect(() => {
-    if (isComboMode && reduxCurrentCombo?.children) {
-      const rootSlug = reduxCurrentCombo.slug || reduxCurrentCombo.id;
-      setChildCombos(
-        reduxCurrentCombo.children
-          .filter(c => c.isActive)
-          .map(c => ({ ...c, rootComboId: rootSlug, slug: rootSlug }))
-      );
-    }
-  }, [reduxCurrentCombo, isComboMode]);
 
   useEffect(() => {
     let source = products;
