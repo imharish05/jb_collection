@@ -208,7 +208,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
               <Link to={process.env.PUBLIC_URL + "/"}>
                 <img
                   src={resolvedLogo}
-                  alt="JB House of Fashion & Crafts"
+                  alt="JB House of Fashion"
                   className="km-brand-logo"
                   onError={(e) => { e.target.style.display = "none"; }}
                 />
@@ -334,7 +334,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           {/* ── Bottom bar ── */}
           <div className="km-bottom-bar">
             <span className="km-copyright">
-              © {new Date().getFullYear()} JB House of Fashion & Crafts. All rights reserved.
+              © {new Date().getFullYear()} JB House of Fashion. All rights reserved.
             </span>
             <span className="km-copyright">
   Developed by{" "}

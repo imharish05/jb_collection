@@ -46,42 +46,8 @@ const BANNER_DIMENSIONS = {
 
 const validateImageDimensions = (file) => {
   return new Promise((resolve) => {
-    if (file.size > BANNER_DIMENSIONS.maxFileSize) {
-      resolve({ valid: false, error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB` });
-      return;
-    }
-    if (!BANNER_DIMENSIONS.formats.includes(file.type)) {
-      resolve({ valid: false, error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You uploaded: ${file.type || 'unknown'}` });
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const { width, height } = img;
-        const actualRatio = width / height;
-        const expectedRatio = BANNER_DIMENSIONS.aspectRatio;
-        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
-
-        // Check aspect ratio
-        if (ratioDiff > BANNER_DIMENSIONS.tolerance) {
-          const recommendedHeight = Math.round(width / expectedRatio);
-          resolve({
-            valid: false,
-            error: `Incorrect aspect ratio. Use 16:9 (${BANNER_DIMENSIONS.width}×${BANNER_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
-            dimensions: { width, height },
-          });
-          return;
-        }
-
-        resolve({
-          valid: true,
-          dimensions: { width, height },
-        });
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    // Validation temporarily disabled per user request
+    resolve({ valid: true, dimensions: { width: 1920, height: 1080 } });
   });
 };
 

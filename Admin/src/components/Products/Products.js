@@ -31,51 +31,8 @@ const PRODUCT_IMAGE_DIMENSIONS = {
 
 const validateProductImageDimensions = (file) => {
   return new Promise((resolve) => {
-    // Check file size
-    if (file.size > PRODUCT_IMAGE_DIMENSIONS.maxFileSize) {
-      resolve({
-        valid: false,
-        error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
-      });
-      return;
-    }
-
-    // Check file format
-    if (!PRODUCT_IMAGE_DIMENSIONS.formats.includes(file.type)) {
-      resolve({
-        valid: false,
-        error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You have: ${file.type || 'unknown'}`,
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const { width, height } = img;
-        const actualRatio = width / height;
-        const expectedRatio = PRODUCT_IMAGE_DIMENSIONS.aspectRatio;
-        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
-
-        // Check aspect ratio (5:6)
-        if (ratioDiff > PRODUCT_IMAGE_DIMENSIONS.tolerance) {
-          resolve({
-            valid: false,
-            error: `Incorrect aspect ratio. Use 5:6 portrait (${PRODUCT_IMAGE_DIMENSIONS.width}×${PRODUCT_IMAGE_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
-            dimensions: { width, height },
-          });
-          return;
-        }
-
-        resolve({
-          valid: true,
-          dimensions: { width, height },
-        });
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    // Validation temporarily disabled per user request
+    resolve({ valid: true, dimensions: { width: 400, height: 400 } });
   });
 };
 

@@ -30,7 +30,7 @@ const heroSlideStorage = multer.diskStorage({
 });
 const uploadHeroSlide = multer({
   storage: heroSlideStorage,
-  limits: { fileSize: 3 * 1024 * 1024 },
+  // limits: { fileSize: 3 * 1024 * 1024 },
 });
 
 // ── Offer Banner upload ──────────────────────────────────────

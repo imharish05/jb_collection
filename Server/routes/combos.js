@@ -18,7 +18,7 @@ const comboStorage = multer.diskStorage({
 });
 const uploadCombo = multer({
   storage: comboStorage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  // limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ok = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".bmp", ".tiff", ".tif", ".ico", ".heic", ".heif", ".avif"];
     if (ok.includes(path.extname(file.originalname).toLowerCase())) cb(null, true);

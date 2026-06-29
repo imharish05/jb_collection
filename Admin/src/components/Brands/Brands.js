@@ -23,38 +23,8 @@ const BRAND_LOGO_CONFIG = {
 
 const validateBrandLogo = (file) => {
   return new Promise((resolve) => {
-    // Check file size
-    if (file.size > BRAND_LOGO_CONFIG.maxFileSize) {
-      resolve({
-        valid: false,
-        error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
-      });
-      return;
-    }
-
-    // Check file format
-    if (!BRAND_LOGO_CONFIG.formats.includes(file.type)) {
-      resolve({
-        valid: false,
-        error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You uploaded: ${file.type || 'unknown'}`,
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const { width, height } = img;
-
-        resolve({
-          valid: true,
-          dimensions: { width, height },
-        });
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    // Validation temporarily disabled per user request
+    resolve({ valid: true, dimensions: { width: 120, height: 120 } });
   });
 };
 

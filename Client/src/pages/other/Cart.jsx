@@ -1,5 +1,6 @@
 import { Fragment, useState, useCallback, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { ShoppingBag } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SEO from "../../components/seo";
 import { getDiscountPrice, isColourKey, isHexColor } from "../../helpers/product";
@@ -166,11 +167,11 @@ const Cart = () => {
           />
           <div className="kg-cart-page">
             <div className="kg-cart-container">
-              <div className="kg-empty-wrap">
-                <div style={{ width:90, height:90, borderRadius:"50%", background:"#fff5f8", border:"2px solid #fce7f3", display:"flex", alignItems:"center", justifyContent:"center", fontSize:38 }}>
-              <img src="/assets/img/icon-img/cartimg-1.png" className="img-fluid p-2" alt="" />
-            </div>
-                <h3 className="kg-empty-title">Your cart is empty</h3>
+              <div className="kg-empty-wrap" style={{ display:"flex", flexDirection:"column", alignItems:"center", gap: "10px" }}>
+                <div style={{ width:110, height:110, borderRadius:"50%", background:"linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)", border:"4px solid #fbcfe8", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 15px 30px rgba(251, 207, 232, 0.6)", marginBottom:"10px", margin:"0 auto" }}>
+                  <ShoppingBag size={48} color="var(--theme-color)" strokeWidth={1.5} style={{ filter: "drop-shadow(0 4px 8px rgba(219,26,93,0.3))" }} />
+                </div>
+                <h3 className="kg-empty-title" style={{ fontSize:28, fontWeight:800, color:"#111", margin:0, letterSpacing:"-0.5px" }}>Your cart is empty</h3>
                 <p className="kg-empty-text">
                   Looks like you haven't added anything yet.
                 </p>

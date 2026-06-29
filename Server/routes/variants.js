@@ -18,7 +18,7 @@ const upload = multer({
     const allowed = /jpeg|jpg|png|webp|gif|svg|bmp|tiff|tif|ico|heic|heif|avif/;
     cb(null, allowed.test(path.extname(file.originalname).toLowerCase()));
   },
-  limits: { fileSize: 5 * 1024 * 1024 },
+  // limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 const maybeUpload = (req, res, next) => {

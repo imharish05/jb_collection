@@ -192,7 +192,7 @@ export default function App() {
             color: '#fff',
             borderRadius: '12px',
             fontSize: '14px',
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: "'Noto Serif', serif",
             border: '1px solid rgba(255,255,255,0.08)',
             boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
           },

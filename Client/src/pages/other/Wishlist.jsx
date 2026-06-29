@@ -1,5 +1,6 @@
 import { Fragment } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { Heart } from "lucide-react";
 import {
   addToCartService,
   deleteFromWishlistService,
@@ -326,11 +327,11 @@ const Wishlist = () => {
           </div>
         ) : (
           /* ── Empty State ── */
-          <div style={{ textAlign:"center", padding:"100px 20px", display:"flex", flexDirection:"column", alignItems:"center", gap:18 }}>
-            <div style={{ width:90, height:90, borderRadius:"50%", background:"#fff5f8", border:"2px solid #fce7f3", display:"flex", alignItems:"center", justifyContent:"center", fontSize:38 }}>
-              <img src="/assets/img/icon-img/wishlist.png" className="img-fluid p-2" alt="" />
+          <div style={{ textAlign:"center", padding:"100px 20px", display:"flex", flexDirection:"column", alignItems:"center", gap:20 }}>
+            <div style={{ width:110, height:110, borderRadius:"50%", background:"linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)", border:"4px solid #fbcfe8", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 15px 30px rgba(251, 207, 232, 0.6)", marginBottom:"10px" }}>
+              <Heart size={48} color="var(--theme-color)" strokeWidth={1.5} style={{ filter: "drop-shadow(0 4px 8px rgba(219,26,93,0.3))" }} />
             </div>
-            <h3 style={{ fontSize:22, fontWeight:800, color:"#111", margin:0 }}>Your wishlist is empty</h3>
+            <h3 style={{ fontSize:28, fontWeight:800, color:"#111", margin:0, letterSpacing:"-0.5px" }}>Your wishlist is empty</h3>
             <p style={{ fontSize:14, color:"#888", margin:0 }}>Save items you love and come back to them anytime.</p>
             <Link
               to={process.env.PUBLIC_URL + "/shop"}

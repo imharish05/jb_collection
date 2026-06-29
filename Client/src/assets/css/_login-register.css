@@ -120,8 +120,8 @@
 /* Submit Button */
 .vibrant-submit-btn {
   width: 100%;
-  background: var(--grad-linear);
-  color: black;
+  background: var(--theme-color);
+  color: white;
   padding: 16px;
   border: none;
   border-radius: 12px;
@@ -131,14 +131,13 @@
   justify-content: center;
   gap: 10px;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(219, 26, 93, 0.25);
-  transition: transform 0.2s;
+  transition: filter 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .vibrant-submit-btn:hover {
+  filter: brightness(1.1);
   transform: translateY(-2px);
-  color: white;
-  background: #d11a7d; /* Slightly darker shade on hover */
+  box-shadow: 0 10px 20px rgba(219, 26, 93, 0.22);
 }
 
 .password-toggle {

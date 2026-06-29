@@ -109,7 +109,7 @@ const DealSection = ({ section, isLast, category }) => {
             category={category}
             type={section.type}
             sectionType={section.type}
-            limit={10}
+            limit={20}
             spaceBottomClass="mb-0"
             productsList={section.items}
           />
