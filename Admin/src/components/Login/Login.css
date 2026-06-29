@@ -87,7 +87,7 @@
   text-transform: uppercase;
   letter-spacing: 2px;
   font-size: 11px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Serif', serif;
 }
 
 .glass-title {
@@ -95,7 +95,7 @@
   font-weight: 800;
   margin: 8px 0;
   color: #1f2937;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Serif', serif;
   letter-spacing: -0.5px;
 }
 
@@ -116,7 +116,7 @@
   margin-bottom: 8px;
   font-size: 13px;
   padding-left: 4px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Serif', serif;
 }
 
 .input-with-icon {
@@ -143,7 +143,7 @@
   color: #1f2937;
   transition: all 0.25s ease;
   font-size: 14px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Serif', serif;
   position: relative;
   z-index: 1;
   outline: none;
@@ -187,7 +187,7 @@
   transition: all 0.3s ease;
   margin-top: 10px;
   width: 100%;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Serif', serif;
   box-shadow: 0 4px 14px rgba(234, 139, 12, 0.3);
 }
 
@@ -223,7 +223,7 @@
   color: #9ca3af;
   font-size: 13px;
   font-weight: 500;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Serif', serif;
 }
 
 /* Mobile */

@@ -83,7 +83,7 @@ const Contact = () => {
 
   return (
     <Fragment>
-      <SEO title="Contact Kamali Gifts" titleTemplate="Get in Touch for Customized Gifts" description="Contact Kamali Gifts for bulk orders, corporate gifts, customized return gifts, wedding gifts, personalized solutions, and gift consultations. Serving Chennai and all of India." keywords="contact kamali gifts, bulk orders, corporate gifts inquiry, customized gifts contact, return gifts supplier contact, personalized gifts consultation" />
+      <SEO title="Contact JB House of Fashion" titleTemplate="Get in Touch for Customized Gifts" description="Contact JB House of Fashion for bulk orders, corporate gifts, customized return gifts, wedding gifts, personalized solutions, and gift consultations. Serving Chennai and all of India." keywords="contact JB House of Fashion, bulk orders, corporate gifts inquiry, customized gifts contact, return gifts supplier contact, personalized gifts consultation" />
 
       <LayoutOne headerTop="visible">
         {/* breadcrumb */}

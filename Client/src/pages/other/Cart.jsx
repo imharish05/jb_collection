@@ -156,7 +156,7 @@ const Cart = () => {
   if (!cartItems || cartItems.length === 0) {
     return (
       <Fragment>
-        <SEO title="Shopping Cart" titleTemplate="Your Cart - Kamali Gifts" description="View and manage your shopping cart. Review your selected personalized and customized gifts before checkout." keywords="shopping cart, cart items, gift cart" />
+        <SEO title="Shopping Cart" titleTemplate="Your Cart - JB House of Fashion" description="View and manage your shopping cart. Review your selected personalized and customized gifts before checkout." keywords="shopping cart, cart items, gift cart" />
         <LayoutOne headerTop="visible">
           <Breadcrumb
             pages={[
@@ -188,7 +188,7 @@ const Cart = () => {
   /* ── Main Render ───────────────────────────────────────────────────────── */
   return (
     <Fragment>
-      <SEO titleTemplate="Cart — Kamali Gifts" description="Your shopping cart." />
+      <SEO titleTemplate="Cart — JB House of Fashion" description="Your shopping cart." />
       <LayoutOne headerTop="visible">
         <Breadcrumb
           pages={[

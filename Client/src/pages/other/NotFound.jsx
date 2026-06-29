@@ -10,8 +10,8 @@ const NotFound = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="404 - Kamali Gifts"
-        description="Page not found. Return to Kamali Gifts to explore our collection of personalized and handcrafted gifts."
+        titleTemplate="404 - JB House of Fashion"
+        description="Page not found. Return to JB House of Fashion to explore our collection of personalized and handcrafted gifts."
       />
       <LayoutOne headerTop="visible">
         {/* breadcrumb */}

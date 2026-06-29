@@ -93,7 +93,7 @@ const ResetPassword = () => {
         <div className="vibrant-auth-wrapper">
           <div className="vibrant-bg-header">
             <div className="header-content">
-              <span className="brand-tag">Kamali Gifts</span>
+              <span className="brand-tag">JB House of Fashion</span>
               <h1>Set New Password</h1>
               <p>Choose a strong password for your account.</p>
             </div>

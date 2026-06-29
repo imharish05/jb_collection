@@ -24,8 +24,8 @@ const PaymentPolicy = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="Payment Policy – Kamali Gifts"
-        description="Kamali Gifts payment policy — learn about accepted payment methods, Razorpay security, COD, EMI options, refund timelines, and how we handle failed transactions."
+        titleTemplate="Payment Policy – JB House of Fashion"
+        description="JB House of Fashion payment policy — learn about accepted payment methods, Razorpay security, COD, EMI options, refund timelines, and how we handle failed transactions."
       />
       <LayoutOne headerTop="visible">
         <Breadcrumb
@@ -53,7 +53,7 @@ const PaymentPolicy = () => {
             {/* Intro */}
             <div style={{ marginBottom: 40 }}>
               <p style={{ fontSize: 15, lineHeight: 1.85, color: "#444" }}>
-                At <strong style={{ color: "#0d1b40" }}>Kamali Gifts</strong>, all payments are processed securely through <strong>Razorpay</strong> — one of India's leading PCI-DSS Level 1 certified payment gateways. This policy explains how we collect payments, what methods we accept, how refunds work, and how we protect your financial data. We do not store any card, UPI, or banking credentials on our servers.
+                At <strong style={{ color: "#0d1b40" }}>JB House of Fashion</strong>, all payments are processed securely through <strong>Razorpay</strong> — one of India's leading PCI-DSS Level 1 certified payment gateways. This policy explains how we collect payments, what methods we accept, how refunds work, and how we protect your financial data. We do not store any card, UPI, or banking credentials on our servers.
               </p>
 
               {/* Razorpay callout */}
@@ -66,7 +66,7 @@ const PaymentPolicy = () => {
                 <div>
                   <p style={{ margin: 0, fontWeight: 600, color: "#0d1b40" }}>Powered by Razorpay</p>
                   <p style={{ margin: "4px 0 0", fontSize: 13, color: "#666" }}>
-                    Razorpay is a PCI-DSS Level 1 certified payment gateway compliant with RBI guidelines. Your card details, UPI credentials, and net banking information are handled entirely within Razorpay's encrypted infrastructure — Kamali Gifts never receives or stores this data.
+                    Razorpay is a PCI-DSS Level 1 certified payment gateway compliant with RBI guidelines. Your card details, UPI credentials, and net banking information are handled entirely within Razorpay's encrypted infrastructure — JB House of Fashion never receives or stores this data.
                   </p>
                 </div>
               </div>
@@ -137,14 +137,14 @@ const PaymentPolicy = () => {
                 <h2>How Razorpay Processes Your Payment</h2>
               </div>
               <p>
-                When you click "Proceed to Pay" at checkout, you are redirected to Razorpay's secure hosted payment page. The entire payment interaction — entering card details, UPI PIN, or net banking credentials — occurs within <strong>Razorpay's PCI-DSS compliant environment</strong>, not on Kamali Gifts' servers.
+                When you click "Proceed to Pay" at checkout, you are redirected to Razorpay's secure hosted payment page. The entire payment interaction — entering card details, UPI PIN, or net banking credentials — occurs within <strong>Razorpay's PCI-DSS compliant environment</strong>, not on JB House of Fashion' servers.
               </p>
               <ul className="policy-ul">
                 <li>Razorpay uses <strong>256-bit SSL/TLS encryption</strong> for all data transmitted during payment</li>
-                <li>Card data is tokenized by Razorpay; Kamali Gifts only receives a token and transaction reference ID</li>
+                <li>Card data is tokenized by Razorpay; JB House of Fashion only receives a token and transaction reference ID</li>
                 <li>3D Secure (OTP-based) authentication is enforced for all card transactions as per RBI mandates</li>
                 <li>UPI transactions are authorized via your UPI app PIN — this PIN never leaves your device</li>
-                <li>Payment confirmation is communicated to Kamali Gifts via Razorpay's secure webhook; your order enters production only after payment is fully authorized</li>
+                <li>Payment confirmation is communicated to JB House of Fashion via Razorpay's secure webhook; your order enters production only after payment is fully authorized</li>
                 <li>Razorpay's own <a href="https://razorpay.com/privacy/" target="_blank" rel="noopener noreferrer" style={{ color: "#b60410" }}>Privacy Policy</a> and <a href="https://razorpay.com/terms/" target="_blank" rel="noopener noreferrer" style={{ color: "#b60410" }}>Terms of Service</a> govern the payment processing portion of your transaction</li>
               </ul>
             </div>
@@ -156,7 +156,7 @@ const PaymentPolicy = () => {
                 <h2>Partial COD (Cash on Delivery)</h2>
               </div>
               <p>
-                Kamali Gifts offers a <strong>Partial COD</strong> option on eligible orders — a hybrid model where you pay a portion online via Razorpay upfront, and the remaining balance in cash at the time of delivery.
+                JB House of Fashion offers a <strong>Partial COD</strong> option on eligible orders — a hybrid model where you pay a portion online via Razorpay upfront, and the remaining balance in cash at the time of delivery.
               </p>
               <ul className="policy-ul">
                 <li>The online advance covers a minimum of 30–50% of the order value; the exact split is shown at checkout</li>
@@ -177,17 +177,17 @@ const PaymentPolicy = () => {
                 <div className="policy-section-num">4</div>
                 <h2>Payment Security</h2>
               </div>
-              <p>Your financial security is our highest priority. Here's what protects you when you pay on Kamali Gifts:</p>
+              <p>Your financial security is our highest priority. Here's what protects you when you pay on JB House of Fashion:</p>
               <ul className="policy-ul">
                 <li><strong>PCI-DSS Level 1:</strong> Razorpay is certified at the highest level of the Payment Card Industry Data Security Standard — the same level used by global banks</li>
                 <li><strong>3D Secure / OTP:</strong> All card transactions require an additional OTP or bank app authentication step, ensuring only the authorized cardholder can complete payment</li>
                 <li><strong>TLS 1.2+:</strong> All data exchanged between your browser and Razorpay is encrypted using Transport Layer Security 1.2 or higher</li>
-                <li><strong>Tokenization:</strong> Razorpay tokenizes saved card data in compliance with RBI's card-on-file tokenization guidelines; actual card numbers are never stored by Kamali Gifts</li>
+                <li><strong>Tokenization:</strong> Razorpay tokenizes saved card data in compliance with RBI's card-on-file tokenization guidelines; actual card numbers are never stored by JB House of Fashion</li>
                 <li><strong>Fraud Detection:</strong> Razorpay's ML-powered fraud detection engine monitors transactions in real time and flags suspicious activity before authorization</li>
-                <li><strong>Zero Knowledge Architecture:</strong> Kamali Gifts has zero access to your CVV, UPI PIN, net banking password, or card number at any point</li>
+                <li><strong>Zero Knowledge Architecture:</strong> JB House of Fashion has zero access to your CVV, UPI PIN, net banking password, or card number at any point</li>
               </ul>
               <div className="policy-highlight">
-                <p>Kamali Gifts will <strong>never</strong> ask you for your card number, CVV, OTP, UPI PIN, or net banking credentials via email, phone, or WhatsApp. If you receive such a request claiming to be from Kamali Gifts, it is a phishing attempt — report it to <strong>Kamalireturngifts@gmail.com</strong> immediately.</p>
+                <p>JB House of Fashion will <strong>never</strong> ask you for your card number, CVV, OTP, UPI PIN, or net banking credentials via email, phone, or WhatsApp. If you receive such a request claiming to be from JB House of Fashion, it is a phishing attempt — report it to <strong>Kamalireturngifts@gmail.com</strong> immediately.</p>
               </div>
             </div>
 
@@ -235,14 +235,14 @@ const PaymentPolicy = () => {
                 <li>Available on orders above ₹3,000 for cards issued by HDFC, ICICI, SBI, Axis, Kotak, and other major banks</li>
                 <li>Tenure options: 3, 6, 9, 12, and 24 months depending on your bank and card</li>
                 <li>No-cost EMI options (where interest is subvented) are clearly marked at checkout; standard EMI options display the applicable interest rate</li>
-                <li>EMI processing is entirely managed by Razorpay and your issuing bank; Kamali Gifts does not handle EMI approvals or denials</li>
+                <li>EMI processing is entirely managed by Razorpay and your issuing bank; JB House of Fashion does not handle EMI approvals or denials</li>
                 <li>Pre-closure of EMI is subject to your bank's terms</li>
               </ul>
 
               <h3>Buy Now Pay Later (BNPL)</h3>
               <ul className="policy-ul">
                 <li>BNPL options (Simpl, LazyPay, ZestMoney) are available at checkout where supported by Razorpay for your account</li>
-                <li>BNPL credit limits and repayment terms are governed entirely by the respective BNPL provider, not Kamali Gifts</li>
+                <li>BNPL credit limits and repayment terms are governed entirely by the respective BNPL provider, not JB House of Fashion</li>
                 <li>Refunds for BNPL orders are processed back to the BNPL provider, who adjusts your outstanding balance accordingly</li>
               </ul>
             </div>
@@ -255,7 +255,7 @@ const PaymentPolicy = () => {
               </div>
               <ul className="policy-ul">
                 <li>All transactions are processed in <strong>Indian Rupees (INR)</strong> only; international currencies are not supported</li>
-                <li>Product prices displayed on Kamali Gifts are <strong>inclusive of GST</strong> (Goods and Services Tax) at the applicable rate unless explicitly stated otherwise</li>
+                <li>Product prices displayed on JB House of Fashion are <strong>inclusive of GST</strong> (Goods and Services Tax) at the applicable rate unless explicitly stated otherwise</li>
                 <li>A detailed tax invoice including HSN codes and GST breakdowns is emailed to you upon order confirmation; it is also available to download from your account under "My Orders"</li>
                 <li>Corporate buyers requiring GSTIN-linked invoices must provide their GSTIN at checkout; post-order invoice amendments are not guaranteed</li>
                 <li>Shipping charges displayed at checkout are exclusive of any GST applicable on logistics services, which is charged separately where applicable</li>
@@ -268,7 +268,7 @@ const PaymentPolicy = () => {
                 <div className="policy-section-num">8</div>
                 <h2>Refunds via Razorpay</h2>
               </div>
-              <p>All approved refunds are processed through Razorpay back to the original payment source. Refunds are initiated by Kamali Gifts within 24–48 hours of approval; the time to reflect in your account depends on Razorpay's processing and your bank's settlement cycle.</p>
+              <p>All approved refunds are processed through Razorpay back to the original payment source. Refunds are initiated by JB House of Fashion within 24–48 hours of approval; the time to reflect in your account depends on Razorpay's processing and your bank's settlement cycle.</p>
 
               <div className="policy-info-grid">
                 <div className="policy-info-card">
@@ -309,12 +309,12 @@ const PaymentPolicy = () => {
                 <div className="policy-info-card">
                   <div className="label">Store Credit</div>
                   <div className="value">Within 24 Hours</div>
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Added to your Kamali Gifts wallet</div>
+                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Added to your JB House of Fashion wallet</div>
                 </div>
               </div>
 
               <div className="policy-highlight" style={{ marginTop: 16 }}>
-                <p>Kamali Gifts initiates refunds promptly upon approval. However, bank-side processing delays are beyond our control. If a refund has not reflected after <strong>10 business days</strong>, contact your bank first; if unresolved, escalate to us at <strong>Kamalireturngifts@gmail.com</strong> with your Razorpay payment ID.</p>
+                <p>JB House of Fashion initiates refunds promptly upon approval. However, bank-side processing delays are beyond our control. If a refund has not reflected after <strong>10 business days</strong>, contact your bank first; if unresolved, escalate to us at <strong>Kamalireturngifts@gmail.com</strong> with your Razorpay payment ID.</p>
               </div>
             </div>
 
@@ -329,10 +329,10 @@ const PaymentPolicy = () => {
               </p>
               <ul className="policy-ul">
                 <li>If you have an issue with an order, we strongly request that you <strong>contact us first</strong> at <strong>Kamalireturngifts@gmail.com</strong> before raising a chargeback; most issues are resolved within 24–48 hours</li>
-                <li>For unresolved disputes, Kamali Gifts will respond to all Razorpay-mediated chargeback requests with order evidence including dispatch records, tracking details, and customer communication logs</li>
-                <li>Chargeback claims filed for orders that have been validly fulfilled and delivered will be disputed and may result in account suspension on Kamali Gifts</li>
-                <li>Razorpay's dispute resolution process and timelines govern the outcome of chargeback proceedings; Kamali Gifts is bound by their decisions</li>
-                <li>Customers found to have filed fraudulent chargebacks will be permanently banned from Kamali Gifts and may be reported to Razorpay's risk teams</li>
+                <li>For unresolved disputes, JB House of Fashion will respond to all Razorpay-mediated chargeback requests with order evidence including dispatch records, tracking details, and customer communication logs</li>
+                <li>Chargeback claims filed for orders that have been validly fulfilled and delivered will be disputed and may result in account suspension on JB House of Fashion</li>
+                <li>Razorpay's dispute resolution process and timelines govern the outcome of chargeback proceedings; JB House of Fashion is bound by their decisions</li>
+                <li>Customers found to have filed fraudulent chargebacks will be permanently banned from JB House of Fashion and may be reported to Razorpay's risk teams</li>
               </ul>
             </div>
 
@@ -342,17 +342,17 @@ const PaymentPolicy = () => {
                 <div className="policy-section-num">10</div>
                 <h2>Fraud Prevention</h2>
               </div>
-              <p>Kamali Gifts takes payment fraud seriously. The following practices protect both our customers and our platform:</p>
+              <p>JB House of Fashion takes payment fraud seriously. The following practices protect both our customers and our platform:</p>
               <ul className="policy-ul">
                 <li>Razorpay's real-time fraud detection engine screens every transaction before authorization using ML-based risk scoring</li>
                 <li>Orders flagged as high-risk by Razorpay may require additional verification before processing; our support team will contact you if this occurs</li>
                 <li>Orders with mismatched billing and shipping addresses for high-value items may be held for manual verification</li>
                 <li>Multiple failed payment attempts from the same device or IP within a short period triggers a temporary block for security</li>
-                <li>Kamali Gifts reserves the right to cancel any order suspected of fraudulent intent, with a full refund issued via Razorpay</li>
+                <li>JB House of Fashion reserves the right to cancel any order suspected of fraudulent intent, with a full refund issued via Razorpay</li>
                 <li>Verified fraud attempts will be reported to Razorpay, the relevant bank, and Indian cybercrime authorities under applicable law</li>
               </ul>
               <div className="policy-warning">
-                <strong>Phishing Warning:</strong> Kamali Gifts or Razorpay will <strong>never</strong> send you links to re-enter payment details or request your OTP via SMS, WhatsApp, or email. Do not share OTPs with anyone claiming to be from our support team.
+                <strong>Phishing Warning:</strong> JB House of Fashion or Razorpay will <strong>never</strong> send you links to re-enter payment details or request your OTP via SMS, WhatsApp, or email. Do not share OTPs with anyone claiming to be from our support team.
               </div>
             </div>
 

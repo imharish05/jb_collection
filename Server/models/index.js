@@ -22,6 +22,7 @@ const OrderItem   = require("./OrderItem");
 const Testimonial = require("./Testimonial");
 const InventoryLog = require("./InventoryLog");
 const OrderStatusEmailAudit = require("./OrderStatusEmailAudit");
+const TimelineMilestone = require("./TimelineMilestone");
 
 const Return          = require("./Return");
 const ReturnMedia     = require("./ReturnMedia");
@@ -189,6 +190,7 @@ const models = {
   Font,
   CustomisationField,
   SiteSetting,
+  TimelineMilestone,
 };
 
 attachReferenceSlugs(models);

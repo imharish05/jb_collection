@@ -4,8 +4,9 @@ import React, { Fragment } from "react";
 import { useSelector } from "react-redux";
 import ProductGridListSingle from "../../components/product/ProductGridListSingle";
 import ComboCard from "../../components/product/ComboCard";
+import ProductSkeleton from "../../components/product/ProductSkeleton";
 
-const ProductGridList = ({ products, spaceBottomClass, layout }) => {
+const ProductGridList = ({ products, spaceBottomClass, layout, isLoadingMore }) => {
   const currency = useSelector((state) => state.currency || { currencyName: "INR", currencyRate: 1, currencySymbol: "₹" });
   const { cartItems }    = useSelector((state) => state.cart);
   const { wishlistItems } = useSelector((state) => state.wishlist);
@@ -18,7 +19,7 @@ const ProductGridList = ({ products, spaceBottomClass, layout }) => {
       ? "col-xl-6 col-sm-6"
       : "col-xl-4 col-sm-6"; // default three-column
 
-  if (!products || products.length === 0) {
+  if (!products || (products.length === 0 && !isLoadingMore)) {
     return (
       <div className="col-12 text-center" style={{ padding: "40px 0", color: "#aaa" }}>
         <p>No items found matching your filters.</p>
@@ -46,6 +47,16 @@ const ProductGridList = ({ products, spaceBottomClass, layout }) => {
           )}
         </div>
       ))}
+      
+      {isLoadingMore && (
+        <Fragment>
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div className={colClass} key={`skeleton-${index}`}>
+              <ProductSkeleton spaceBottomClass={spaceBottomClass} />
+            </div>
+          ))}
+        </Fragment>
+      )}
     </Fragment>
   );
 };

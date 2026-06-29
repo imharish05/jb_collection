@@ -758,7 +758,7 @@ const Checkout = () => {
         order_id: rzpOrderId,
         amount: Math.round(deliveryCharge * 100),
         currency: "INR",
-        name: "Kamali Gifts",
+        name: "JB House of Fashion",
         description: `Delivery charge for Order ${dbOrderId}`,
         customer_notify: 1,
         prefill: {
@@ -865,7 +865,7 @@ const Checkout = () => {
         order_id: rzpOrderId,
         amount: Math.round(orderPayload.totalAmount * 100),
         currency: "INR",
-        name: "Kamali Gifts",
+        name: "JB House of Fashion",
         description: "Order Payment",
         customer_notify: 1,
         prefill: {
@@ -996,7 +996,7 @@ const Checkout = () => {
         </div>
       )}
       <SEO
-        titleTemplate="Checkout — Kamali Gifts"
+        titleTemplate="Checkout — JB House of Fashion"
         description="Complete your purchase securely."
       />
       <LayoutOne headerTop="visible">

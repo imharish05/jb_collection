@@ -49,7 +49,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         }
         .km-brand-desc {
           font-size: 13.5px;
-          color: #777;
+          color: #ddd;
           line-height: 1.75;
           max-width: 240px;
           margin: 0 0 24px;
@@ -83,7 +83,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 2px;
-          color: #111;
+          color: #c8826a; /* Main brand color */
           margin: 0 0 20px;
         }
 
@@ -96,7 +96,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         .km-links li { margin-bottom: 10px; }
         .km-links a {
           font-size: 13px;
-          color: #666;
+          color: #ddd;
           text-decoration: none;
           transition: color 0.2s ease, padding-left 0.2s ease;
         }
@@ -126,11 +126,11 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         }
         .km-contact-text {
           font-size: 13px;
-          color: #666;
+          color: #ddd;
           line-height: 1.6;
         }
         .km-contact-text a {
-          color: #666;
+          color: #ddd;
           text-decoration: none;
           transition: color 0.2s;
         }
@@ -140,7 +140,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         .km-bottom-bar {
           margin-top: 56px;
           padding: 20px 0;
-          border-top: 1px solid #f0f0f0;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -149,7 +149,15 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         }
         .km-copyright {
           font-size: 12.5px;
-          // color: #aaa;
+          color: #ddd;
+        }
+        .km-copyright a {
+          color: #ddd;
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+        .km-copyright a:hover {
+          color: #c8826a;
         }
         .km-payment-logos {
           display: flex;
@@ -199,7 +207,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
               <Link to={process.env.PUBLIC_URL + "/"}>
                 <img
                   src={resolvedLogo}
-                  alt="Kamali Gifts & Crafts"
+                  alt="JB House of Fashion & Crafts"
                   className="km-brand-logo"
                   onError={(e) => { e.target.style.display = "none"; }}
                 />
@@ -326,7 +334,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           {/* ── Bottom bar ── */}
           <div className="km-bottom-bar">
             <span className="km-copyright">
-              © {new Date().getFullYear()} Kamali Gifts & Crafts. All rights reserved.
+              © {new Date().getFullYear()} JB House of Fashion & Crafts. All rights reserved.
             </span>
             <span className="km-copyright">
   Developed by{" "}

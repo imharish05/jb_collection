@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import clsx from "clsx";
 import ProductgridList from "./ProductgridList";
 
-const ShopProducts = ({ products, layout, isComboMode, childCombos }) => {
+const ShopProducts = ({ products, layout, isComboMode, childCombos, isLoadingMore }) => {
   const displayItems = isComboMode
     ? (childCombos || []).map(c => ({ ...c, isCombo: true }))
     : products;
@@ -15,6 +15,7 @@ const ShopProducts = ({ products, layout, isComboMode, childCombos }) => {
           products={displayItems}
           layout={layout}
           spaceBottomClass="mb-25"
+          isLoadingMore={isLoadingMore}
         />
       </div>
     </div>
@@ -26,6 +27,7 @@ ShopProducts.propTypes = {
   products: PropTypes.array,
   isComboMode: PropTypes.bool,
   childCombos: PropTypes.array,
+  isLoadingMore: PropTypes.bool,
 };
 
 export default ShopProducts;

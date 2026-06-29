@@ -1,5 +1,4 @@
 import { Fragment, useState, useEffect, useRef, useMemo } from 'react';
-import Paginator from 'react-hooks-paginator';
 import { useSelector, useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { fetchComboById } from '../../store/services/comboService';
@@ -26,13 +25,14 @@ const ShopGridStandard = () => {
   const [layout, setLayout] = useState('grid three-column');
   const [filterSortType, setFilterSortType] = useState('');
   const [filterSortValue, setFilterSortValue] = useState('');
-  const [offset, setOffset] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [displayCount, setDisplayCount] = useState(20);
   const [currentData, setCurrentData] = useState([]);
   const [sortedProducts, setSortedProducts] = useState([]);
   const [pageLimit, setPageLimit] = useState(20);
   const [showAll, setShowAll] = useState(false);
   const [priceRange, setPriceRange] = useState(null);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const isFetchingRef = useRef(false);
 
   // Mobile UX state
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -102,7 +102,7 @@ const ShopGridStandard = () => {
     if (type === "priceRange") {
       const [min, max] = val;
       setPriceRange(min === 0 && max === priceMax ? null : { min, max });
-      setOffset(0); setCurrentPage(1);
+      setDisplayCount(pageLimit);
       return;
     }
     if (!val) { navigate(S); return; }
@@ -113,7 +113,7 @@ const ShopGridStandard = () => {
     else { setFilterSortType(type); setFilterSortValue(val); }
   };
 
-  useEffect(() => { setOffset(0); setCurrentPage(1); }, [search]);
+  useEffect(() => { setDisplayCount(pageLimit); }, [search, filterSortType, filterSortValue]);
 
   const isComboMode = !!comboParam;
   useEffect(() => {
@@ -164,8 +164,42 @@ const ShopGridStandard = () => {
     sorted = getSortedProducts(sorted, filterSortType, filterSortValue);
     if (priceRange) sorted = sorted.filter(p => p.price >= priceRange.min && p.price <= priceRange.max);
     setSortedProducts(sorted);
-    setCurrentData(showAll ? sorted : sorted.slice(offset, offset + pageLimit));
-  }, [offset, products, sortType, sortValue, subCatParam, filterSortType, filterSortValue, pageLimit, showAll, priceRange]);
+    setCurrentData(showAll ? sorted : sorted.slice(0, displayCount));
+  }, [displayCount, products, sortType, sortValue, subCatParam, filterSortType, filterSortValue, pageLimit, showAll, priceRange]);
+
+  // Infinite Scroll Listener
+  useEffect(() => {
+    if (showAll || currentData.length >= sortedProducts.length) return;
+    
+    const handleScroll = () => {
+      // If user scrolled near the bottom (within 600px) and not already fetching
+      if (
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 600 &&
+        !isFetchingRef.current
+      ) {
+        isFetchingRef.current = true;
+        setIsFetchingMore(true);
+        setTimeout(() => {
+          setDisplayCount(prev => prev + pageLimit);
+          setIsFetchingMore(false);
+          isFetchingRef.current = false;
+        }, 800);
+      }
+    };
+    
+    // Add debounce to scroll event
+    let timeout;
+    const debouncedScroll = () => {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(handleScroll, 100);
+    };
+
+    window.addEventListener('scroll', debouncedScroll);
+    return () => {
+      window.removeEventListener('scroll', debouncedScroll);
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [showAll, currentData.length, sortedProducts.length, pageLimit]);
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) setDrawerOpen(false);
@@ -354,12 +388,13 @@ const ShopGridStandard = () => {
                     <strong style={{ color:'#222' }}>{currentData.length}</strong> of {sortedProducts.length} products
                   </p>
                 </div>
+                
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16, justifyContent:"flex-end" }}>
                   <span style={{ fontSize:13, color:"#666" }}>Show:</span>
                   {PAGE_SIZES.map(size => (
                     <button key={size} onClick={() => {
-                      if (size === "All") { setShowAll(true); setOffset(0); setCurrentPage(1); }
-                      else { setShowAll(false); setPageLimit(size); setOffset(0); setCurrentPage(1); }
+                      if (size === "All") { setShowAll(true); setDisplayCount(sortedProducts.length); }
+                      else { setShowAll(false); setPageLimit(size); setDisplayCount(size); }
                     }} style={{
                       padding:"4px 14px", borderRadius:20, border:"1.5px solid", fontSize:13, fontWeight:500, cursor:"pointer",
                       borderColor: (showAll && size==="All")||(!showAll && size===pageLimit) ? "#c0622a":"#ddd",
@@ -368,18 +403,16 @@ const ShopGridStandard = () => {
                     }}>{size}</button>
                   ))}
                 </div>
-                <ShopProducts layout={layout} products={currentData} isComboMode={isComboMode} childCombos={childCombos} />
-                {!showAll && !isComboMode && (
-                  <div className="pro-pagination-style text-center mt-30">
-                    <Paginator
-                      totalRecords={sortedProducts.length} pageLimit={pageLimit}
-                      pageNeighbours={2} setOffset={setOffset}
-                      currentPage={currentPage} setCurrentPage={setCurrentPage}
-                      pageContainerClass="mb-0 mt-0" pagePrevText="«" pageNextText="»"
-                    />
-                  </div>
-                )}
-                <p style={{ textAlign:"center", fontSize:13, color:"#888", marginTop:12 }}>
+
+                <ShopProducts 
+                  layout={layout} 
+                  products={currentData} 
+                  isComboMode={isComboMode} 
+                  childCombos={childCombos} 
+                  isLoadingMore={isFetchingMore}
+                />
+                
+                <p style={{ textAlign:"center", fontSize:13, color:"#888", marginTop:20 }}>
                   {isComboMode
                     ? `Showing ${childCombos.length} combos`
                     : `Showing ${currentData.length} of ${sortedProducts.length} products`

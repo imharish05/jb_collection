@@ -25,8 +25,8 @@ const TermsConditions = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="Terms & Conditions – Kamali Gifts"
-        description="Read the Terms and Conditions for shopping at Kamali Gifts — customized gifts, toys, and stationery."
+        titleTemplate="Terms & Conditions – JB House of Fashion"
+        description="Read the Terms and Conditions for shopping at JB House of Fashion — customized gifts, toys, and stationery."
       />
       <LayoutOne headerTop="visible">
         <Breadcrumb
@@ -183,7 +183,7 @@ const TermsConditions = () => {
                 <h2>Intellectual Property</h2>
               </div>
               <ul className="policy-ul">
-                <li>All website content, including images, logos, designs, text, and branding, remains the intellectual property of <strong>Kamali Gifts Factory</strong> and may not be copied, reproduced, or distributed without prior written permission.</li>
+                <li>All website content, including images, logos, designs, text, and branding, remains the intellectual property of <strong>JB House of Fashion Factory</strong> and may not be copied, reproduced, or distributed without prior written permission.</li>
               </ul>
             </div>
 
@@ -194,7 +194,7 @@ const TermsConditions = () => {
                 <h2>Amendments</h2>
               </div>
               <p>
-                Kamali Gifts Factory reserves the right to modify these Terms &amp; Conditions at any time without prior notice. Updated terms will be posted on this page and will become effective immediately upon publication.
+                JB House of Fashion Factory reserves the right to modify these Terms &amp; Conditions at any time without prior notice. Updated terms will be posted on this page and will become effective immediately upon publication.
               </p>
             </div>
 
@@ -207,7 +207,7 @@ const TermsConditions = () => {
               <p>For any queries related to these Terms &amp; Conditions:</p>
               <div className="policy-contact-box">
                 <div>
-                  <h3>Kamali Gifts Factory</h3>
+                  <h3>JB House of Fashion Factory</h3>
                   <p>Mon–Sat, 9 AM – 6 PM IST.</p>
                 </div>
                 <div className="policy-contact-items">

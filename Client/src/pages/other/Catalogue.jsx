@@ -84,7 +84,7 @@ const Catalogue = () => {
 
   return (
     <Fragment>
-      <SEO title="Catalogue" titleTemplate="All Gift Categories & Collections - Kamali Gifts" description="Browse our complete catalogue of gift categories, events, and collections. Find the perfect customized gift for every occasion." keywords="gift categories, gift collections, gift events, personalized gifts catalogue, customized gifts shop, bulk gifts catalogue" />
+      <SEO title="Catalogue" titleTemplate="All Gift Categories & Collections - JB House of Fashion" description="Browse our complete catalogue of gift categories, events, and collections. Find the perfect customized gift for every occasion." keywords="gift categories, gift collections, gift events, personalized gifts catalogue, customized gifts shop, bulk gifts catalogue" />
       <LayoutOne headerTop="visible">
         <Breadcrumb
           pages={[

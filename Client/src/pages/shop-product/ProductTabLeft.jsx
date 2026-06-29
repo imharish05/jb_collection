@@ -17,8 +17,8 @@ const ProductTabLeft = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="Shop - Kamali Gifts"
-        description="Shop premium personalized gifts and unique handcrafted items at Kamali Gifts. Curated gift solutions for every occasion."
+        titleTemplate="Shop - JB House of Fashion"
+        description="Shop premium personalized gifts and unique handcrafted items at JB House of Fashion. Curated gift solutions for every occasion."
       />
 
       <LayoutOne headerTop="visible">

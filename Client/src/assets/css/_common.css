@@ -22,13 +22,13 @@ body {
 }
 
 body {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Noto Serif', serif;
   font-size: 14px;
   font-weight: 400;
   font-style: normal;
   line-height: 24px;
-  color: #f0ead6;
-  background-color: #0d0d0d;
+  color: #333333 !important;
+  background-color: #ffffff !important;
 }
 
 h1,
@@ -37,19 +37,19 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Noto Serif', serif;
   font-weight: 600;
   margin-top: 0;
-  color: #ffffff;
+  color: #000000 !important;
 }
 
 p {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Noto Serif', serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 24px;
   margin-bottom: 15px;
-  color: #c8bfb0;
+  color: #555555 !important;
 }
 
 h1 {
@@ -91,7 +91,7 @@ button {
   line-height: inherit;
   cursor: pointer;
   text-decoration: none;
-  color: #f0ead6;
+  color: #333333;
 }
 
 button,

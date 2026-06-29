@@ -28,13 +28,14 @@ import HeroSlider from './components/HeroSlider/HeroSlider';
 import TimelessTreasures from './components/TimelessTreasures/TimelessTreasures';
 import Marquee from './components/Marquee/Marquee';
 import Testimonials from './components/Testimonials/Testimonials';
+import Timeline from './components/Timeline/Timeline';
 // ── Returns / Refunds ────────────────────────────────────────
 import ReturnsDashboard from './components/Returns/ReturnsDashboard';
 import ReturnDetail from './components/Returns/ReturnDetail';
 import Roles from './components/Roles/Roles';
 import Users from './components/Users/Users';
-import Fonts from './components/Fonts/Fonts';
-import CustomisationFields from './components/CustomisationFields/CustomisationFields';
+// import Fonts from './components/Fonts/Fonts';
+// import CustomisationFields from './components/CustomisationFields/CustomisationFields';
 import SiteSettings from './components/Settings/SiteSettings';
 
 import './components/global.css';
@@ -70,12 +71,13 @@ const PAGE_CONFIG = {
   timeless_treasures:  { title: 'Timeless Treasures' },
   marquee:             { title: 'Slider Messages' },
   testimonials:        { title: 'Testimonials' },
+  timeline:            { title: 'Timeline Milestones' },
   // ── Returns ─────────────────────────────────────────────────
   returns:             { title: 'Returns & Refunds' },
   roles:               { title: 'Roles & Permissions' },
   users:               { title: 'User Management' },
-  fonts:               { title: 'Font Management' },
-  customisation_fields: { title: 'Customisation Fields' },
+  // fonts:               { title: 'Font Management' },
+  // customisation_fields: { title: 'Customisation Fields' },
 };
 
 function AdminLayoutWrapper({ handleLogout }) {
@@ -133,14 +135,15 @@ function AdminLayoutWrapper({ handleLogout }) {
             <Route path="/banners"             element={<HeroSlider         showToast={showToast} />} />
             <Route path="/timeless_treasures"  element={<TimelessTreasures  showToast={showToast} />} />
             <Route path="/marquee"             element={<Marquee            showToast={showToast} />} />
-            <Route path="/testimonials"        element={<Testimonials       showToast={showToast} />} />
+            {/* <Route path="/testimonials"        element={<Testimonials       showToast={showToast} />} /> */}
+            <Route path="/timeline"            element={<Timeline           showToast={showToast} />} />
             {/* ── Returns & Refunds ──────────────────────────── */}
             <Route path="/returns"             element={<ReturnsDashboard   showToast={showToast} />} />
             <Route path="/returns/:id"         element={<ReturnDetail />} />
             <Route path="/roles"               element={<Roles              showToast={showToast} />} />
             <Route path="/users"               element={<Users              showToast={showToast} />} />
-            <Route path="/fonts"               element={<Fonts              showToast={showToast} />} />
-            <Route path="/customisation_fields" element={<CustomisationFields showToast={showToast} />} />
+            {/* <Route path="/fonts"               element={<Fonts              showToast={showToast} />} /> */}
+            {/* <Route path="/customisation_fields" element={<CustomisationFields showToast={showToast} />} /> */}
             <Route path="/settings"             element={<SiteSettings       showToast={showToast} />} />
             <Route path="/"                    element={<Navigate to="/dashboard" />} />
           </Routes>

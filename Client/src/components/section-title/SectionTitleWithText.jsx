@@ -11,8 +11,8 @@ const SectionTitleWithText = ({ spaceTopClass, spaceBottomClass }) => {
     : "/assets/img/about.jpg";
 
   const subtitle = settings?.aboutSubtitle || "Who Are We";
-  const title = settings?.aboutTitle || "Welcome To Kamali Gifts";
-  const primaryDesc = settings?.aboutDescPrimary || "At Kamali Gift Factory, we believe every gift should tell a story. Established in 2025, we are a complete gift solution hub dedicated to curating and customizing thoughtful gifts for every occasion.";
+  const title = settings?.aboutTitle || "Welcome To JB House of Fashion";
+  const primaryDesc = settings?.aboutDescPrimary || "At JB House of Fashion, we believe every gift should tell a story. Established in 2025, we are a complete gift solution hub dedicated to curating and customizing thoughtful gifts for every occasion.";
   const secondaryDesc = settings?.aboutDescSecondary || "With a focus on creativity, quality, and affordability, we transform simple ideas into meaningful keepsakes. Whether you are looking for personalized return gifts or unique handcrafted items, we ensure every piece is made with care.";
   const signature = settings?.aboutSignature || "Making your special moments even more memorable.";
 
@@ -25,7 +25,7 @@ const SectionTitleWithText = ({ spaceTopClass, spaceBottomClass }) => {
             <div className="welcome-image-wrapper">
               <img 
                 src={resolvedImage} 
-                alt="Kamali Gifts" 
+                alt="JB House of Fashion" 
                 className="img-fluid"
               />
               {/* Optional: A small "since" badge for authority */}

@@ -14,7 +14,7 @@ const BlogDetailsStandard = () => {
     <Fragment>
       <SEO
         title="Blog Post"
-        titleTemplate="Gift Ideas & Tips - Kamali Gifts"
+        titleTemplate="Gift Ideas & Tips - JB House of Fashion"
         description="Explore our blog for personalization tips, gift ideas, and inspiration for meaningful gifting. Learn about corporate gifts, return gifts, and customized solutions."
         keywords="gift ideas, personalized gifts blog, gifting tips, corporate gift ideas, return gift ideas, wedding gift ideas, customized gift suggestions, laser engraving, personalization"
       />

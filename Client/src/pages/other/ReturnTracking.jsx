@@ -305,7 +305,7 @@ const ReturnTracking = () => {
                           Courier: <strong>{returnReq.reverseShipment.replacementCourier || "Courier Partner"}</strong>
                         </p>
                         <p style={{ margin: "0 0 12px 0", fontSize: "12px", fontStyle: "italic", color: "#1e3a8a" }}>
-                          * Delivery charge paid by Kamali Gifts (Customer pays ₹0)
+                          * Delivery charge paid by JB House of Fashion (Customer pays ₹0)
                         </p>
                         {returnReq.reverseShipment.replacementTrackingUrl && (
                           <a

@@ -98,7 +98,7 @@ const LoginRegister = () => {
         <div className="vibrant-auth-wrapper">
           <div className="vibrant-bg-header">
             <div className="header-content">
-              <span className="brand-tag">Kamali Gifts</span>
+              <span className="brand-tag">JB House of Fashion</span>
               <h1>{isLogin ? "Welcome Back" : "Create Account"}</h1>
               <p>{isLogin ? "Sign in to manage your orders." : "Join us for personalized gifting experiences."}</p>
             </div>

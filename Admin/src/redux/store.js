@@ -19,6 +19,7 @@ import timelessTreasuresReducer from "./slices/timelessTreasuresSlice";
 import marqueeReducer          from "./slices/marqueeSlice";
 import testimonialsReducer    from "./slices/testimonialsSlice";
 import notificationsReducer  from "./slices/notificationsSlice";
+import timelineReducer       from "./slices/timelineSlice";
 
 export const store = configureStore({
   reducer: {
@@ -42,5 +43,6 @@ export const store = configureStore({
     marquee:           marqueeReducer,
     testimonials:      testimonialsReducer,
     notifications:     notificationsReducer,
+    timeline:          timelineReducer,
   },
 });

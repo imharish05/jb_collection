@@ -21,8 +21,8 @@ const ExchangePolicy = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="Exchange & Return Policy – Kamali Gifts"
-        description="Kamali Gifts exchange and return policy for customized gifts, toys, and stationery. Learn about eligibility, return windows, refund timelines via Razorpay, and how to initiate a return."
+        titleTemplate="Exchange & Return Policy – JB House of Fashion"
+        description="JB House of Fashion exchange and return policy for customized gifts, toys, and stationery. Learn about eligibility, return windows, refund timelines via Razorpay, and how to initiate a return."
       />
       <LayoutOne headerTop="visible">
         <Breadcrumb
@@ -49,7 +49,7 @@ const ExchangePolicy = () => {
           <div className="policy-body">
             <div style={{ marginBottom: 40 }}>
               <p style={{ fontSize: 15, lineHeight: 1.85, color: "#444" }}>
-                Thank you for shopping with <strong style={{ color: "#0d1b40" }}>Kamali Gifts Factory</strong>. We strive to provide high-quality return gifts and excellent customer service. Please read our Refund &amp; Return Policy carefully before making a purchase.
+                Thank you for shopping with <strong style={{ color: "#0d1b40" }}>JB House of Fashion Factory</strong>. We strive to provide high-quality return gifts and excellent customer service. Please read our Refund &amp; Return Policy carefully before making a purchase.
               </p>
             </div>
 
@@ -159,7 +159,7 @@ const ExchangePolicy = () => {
               <p>For return, refund, or replacement requests, please contact:</p>
               <div className="policy-contact-box">
                 <div>
-                  <h3>Kamali Gifts Factory</h3>
+                  <h3>JB House of Fashion Factory</h3>
                   <p>We appreciate your trust and look forward to serving you.</p>
                 </div>
                 <div className="policy-contact-items">

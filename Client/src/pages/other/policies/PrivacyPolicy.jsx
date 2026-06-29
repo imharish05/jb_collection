@@ -23,8 +23,8 @@ const PrivacyPolicy = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="Privacy Policy – Kamali Gifts"
-        description="Learn how Kamali Gifts collects, uses, and protects your personal information when you shop for customized gifts, toys, and stationery."
+        titleTemplate="Privacy Policy – JB House of Fashion"
+        description="Learn how JB House of Fashion collects, uses, and protects your personal information when you shop for customized gifts, toys, and stationery."
       />
       <LayoutOne headerTop="visible">
         <Breadcrumb
@@ -214,7 +214,7 @@ const PrivacyPolicy = () => {
               <p>For any privacy-related queries, data deletion requests, or concerns:</p>
               <div className="policy-contact-box">
                 <div>
-                  <h3>Kamali Gifts Factory</h3>
+                  <h3>JB House of Fashion Factory</h3>
                   <p>We aim to respond to all privacy queries within 48 business hours.</p>
                 </div>
                 <div className="policy-contact-items">

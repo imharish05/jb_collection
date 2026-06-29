@@ -79,7 +79,11 @@ const PERMISSION_GROUPS = [
       { key: "testimonials_view", label: "View Testimonials" },
       { key: "testimonials_create", label: "Add Testimonial" },
       { key: "testimonials_edit", label: "Edit Testimonial" },
-      { key: "testimonials_delete", label: "Delete Testimonial" }
+      { key: "testimonials_delete", label: "Delete Testimonial" },
+      { key: "timeline_view", label: "View Timeline" },
+      { key: "timeline_create", label: "Add Timeline Milestone" },
+      { key: "timeline_edit", label: "Edit Timeline Milestone" },
+      { key: "timeline_delete", label: "Delete Timeline Milestone" }
     ]
   },
   {
@@ -137,7 +141,7 @@ const PERMISSION_GROUPS = [
       { key: "settings_edit", label: "Edit Settings" }
     ]
   },
-  {
+  /* {
     module: "Customisation Fields",
     permissions: [
       { key: "customisation_fields_view", label: "View Customisation Fields" },
@@ -145,7 +149,7 @@ const PERMISSION_GROUPS = [
       { key: "customisation_fields_edit", label: "Edit Customisation Field" },
       { key: "customisation_fields_delete", label: "Delete Customisation Field" }
     ]
-  }
+  } */
 ];
 
 export default function Roles({ showToast }) {

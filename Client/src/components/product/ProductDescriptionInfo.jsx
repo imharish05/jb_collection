@@ -433,7 +433,7 @@ const ProductDescriptionInfo = ({
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const shareTitle = localProduct?.name || product?.name || "this product";
-  const shareMessage = `Check out ${shareTitle} on Kamali Gifts — a perfect pick for every special moment.`;
+  const shareMessage = `Check out ${shareTitle} on JB House of Fashion — a perfect pick for every special moment.`;
   const shareText = `${shareMessage}\n${shareUrl}`;
   const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareMessage)}`;
   const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
@@ -1501,7 +1501,7 @@ const handleBuyNow = async () => {
       <div className="pdp-info__divider" />
 
       {/* ── Share ── */}
-      <div className="pdp-info__share">
+      {/* <div className="pdp-info__share">
         <span className="pdp-info__share-label">Share:</span>
         <div className="pdp-info__share-links">
           <a
@@ -1526,7 +1526,7 @@ const handleBuyNow = async () => {
             <i className="fa fa-whatsapp" />
           </a>
         </div>
-      </div>
+      </div> */}
 
       {/* ── Styles ── */}
       <style>{`

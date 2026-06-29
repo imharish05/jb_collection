@@ -4,7 +4,7 @@
    ========================================= */
 
 .testimonial-section {
-  background: #0d0d0d;
+  background: #ffffff;
   overflow: hidden;
 }
 
@@ -107,7 +107,7 @@
   line-height: 1;
   color: #b60410;
   opacity: 0.06;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Noto Serif', serif;
   pointer-events: none;
 }
 

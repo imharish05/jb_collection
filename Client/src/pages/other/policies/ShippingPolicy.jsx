@@ -20,8 +20,8 @@ const ShippingPolicy = () => {
   return (
     <Fragment>
       <SEO
-        titleTemplate="Shipping Policy – Kamali Gifts"
-        description="Kamali Gifts ships across India. Learn about delivery timelines, shipping charges, tracking, and pre-booking orders for your customized gifts, toys, and stationery."
+        titleTemplate="Shipping Policy – JB House of Fashion"
+        description="JB House of Fashion ships across India. Learn about delivery timelines, shipping charges, tracking, and pre-booking orders for your customized gifts, toys, and stationery."
       />
       <LayoutOne headerTop="visible">
         <Breadcrumb

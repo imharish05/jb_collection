@@ -75,7 +75,7 @@ export const registerFunction = async (dispatch, navigate, userData) => {
 
     dispatch(loginSuccess(res.data));
     setTimeout(() => {
-      cogoToast.success(`Welcome to Kamali Gifts, ${res.data.name}!`);
+      cogoToast.success(`Welcome to JB House of Fashion, ${res.data.name}!`);
     }, 100);
 
     navigate(getRedirectPath());

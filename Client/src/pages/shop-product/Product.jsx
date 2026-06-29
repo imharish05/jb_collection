@@ -38,7 +38,7 @@ const Product = () => {
     <Fragment>
       <SEO
         titleTemplate="Product Page"
-        description="Product Page of Kamali Gifts."
+        description="Product Page of JB House of Fashion."
       />
 
       <LayoutOne headerTop="visible">

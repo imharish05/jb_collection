@@ -10,7 +10,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Serif', serif;
   color: var(--text-secondary-light);
   z-index: 100;
   transition: width 0.3s ease;
@@ -167,7 +167,7 @@
   border: 1px solid var(--danger-100);
   border-radius: var(--radius-sm);
   color: var(--danger-600);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Serif', serif;
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;

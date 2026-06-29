@@ -63,7 +63,7 @@ const ForgotPassword = () => {
         <div className="vibrant-auth-wrapper">
           <div className="vibrant-bg-header">
             <div className="header-content">
-              <span className="brand-tag">Kamali Gifts</span>
+              <span className="brand-tag">JB House of Fashion</span>
               <h1>Forgot Password</h1>
               <p>Enter your registered email and we'll send you an OTP to reset your password.</p>
             </div>

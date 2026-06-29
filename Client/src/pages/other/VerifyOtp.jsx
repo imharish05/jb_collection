@@ -143,7 +143,7 @@ const VerifyOtp = () => {
         <div className="vibrant-auth-wrapper">
           <div className="vibrant-bg-header">
             <div className="header-content">
-              <span className="brand-tag">Kamali Gifts</span>
+              <span className="brand-tag">JB House of Fashion</span>
               <h1>Verify OTP</h1>
               <p>We've sent a 6-digit code to your email address.</p>
             </div>
