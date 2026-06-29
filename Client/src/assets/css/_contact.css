@@ -1,9 +1,9 @@
-﻿:root {
-  --primary-color: #b60410;
+:root {
+  --primary-color: var(--theme-color);
   --primary-glow: rgba(219, 26, 93, 0.22);
 }
 
-/* ── WRAPPER ── */
+/* -- WRAPPER -- */
 .glass-contact-wrapper {
   min-height: 100vh;
   padding: clamp(32px, 5vw, 60px) 0;
@@ -13,7 +13,7 @@
   align-items: center;
 }
 
-/* ── BLOBS ── */
+/* -- BLOBS -- */
 .glass-shape {
   position: absolute;
   border-radius: 50%;
@@ -34,7 +34,7 @@
   bottom: -50px; left: -50px;
 }
 
-/* ── CARD ── */
+/* -- CARD -- */
 .glass-card-container {
   position: relative;
   z-index: 1;
@@ -47,7 +47,7 @@
   overflow: hidden;
 }
 
-/* ── INFO SIDE ── */
+/* -- INFO SIDE -- */
 .glass-info-side {
   background: rgba(255, 255, 255, 0.2);
   padding: clamp(32px, 5vw, 60px) clamp(24px, 4vw, 50px);
@@ -109,7 +109,7 @@
   display: block;
 }
 
-/* ── FORM SIDE ── */
+/* -- FORM SIDE -- */
 .glass-form-side {
   padding: clamp(32px, 5vw, 60px) clamp(24px, 4vw, 50px);
 }
@@ -155,7 +155,7 @@
   gap: clamp(12px, 2vw, 20px);
 }
 
-/* ── BUTTON ── */
+/* -- BUTTON -- */
 .glass-button {
   background: var(--primary-color);
   color: white;
@@ -176,7 +176,7 @@
 }
 .glass-button:active { transform: translateY(0); }
 
-/* ── MAP ── */
+/* -- MAP -- */
 .glass-map-wrapper {
   position: relative;
   line-height: 0;
@@ -203,7 +203,7 @@
   border-radius: inherit;
 }
 
-/* ── TABLET (Bootstrap lg breakpoint) ── */
+/* -- TABLET (Bootstrap lg breakpoint) -- */
 @media (max-width: 991px) {
   .glass-info-side {
     border-right: none;
@@ -212,7 +212,7 @@
   }
 }
 
-/* ── MOBILE ── */
+/* -- MOBILE -- */
 @media (max-width: 576px) {
   .glass-contact-wrapper {
     padding: 20px 0;
@@ -237,9 +237,10 @@
   }
 }
 
-/* ── SMALL PHONES ── */
+/* -- SMALL PHONES -- */
 @media (max-width: 380px) {
   .glass-info-side,
   .glass-form-side { padding: 22px 16px; }
   .glass-title { font-size: 1.7rem; }
 }
+

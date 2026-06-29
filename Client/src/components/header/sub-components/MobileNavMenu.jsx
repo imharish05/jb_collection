@@ -159,7 +159,7 @@ const MobileNavMenu = () => {
           {catalogueOpen && (
             <div className="mob-catalogue-panel">
 
-                          <SectionLabel title="Products" accent="#b60410" />
+                          <SectionLabel title="Products" accent="var(--theme-color)" />
               <div className="mob-list-row mob-list-row--all-products">
                 <span className="mob-thumb mob-thumb--all">
                   <span className="mob-thumb__fallback" style={{ display: "flex" }}>✨</span>
@@ -171,7 +171,7 @@ const MobileNavMenu = () => {
 
               {categories.length > 0 && (
                 <>
-                  <SectionLabel title="Categories" accent="#b60410" />
+                  <SectionLabel title="Categories" accent="var(--theme-color)" />
                   
                   {categories.map(cat => (
                     <CategoryRow key={cat.value ?? cat.id} item={cat} closeMenu={closeMenu} />
@@ -195,7 +195,7 @@ const MobileNavMenu = () => {
                 </>
               )}
 
-              {rootCombos.length > 0 && (
+              {/* {rootCombos.length > 0 && (
                 <>
                   <SectionLabel title="Combos" accent="#10b981" />
                   {rootCombos.map(c => (
@@ -209,7 +209,7 @@ const MobileNavMenu = () => {
                     />
                   ))}
                 </>
-              )}
+              )} */}
 
               <Link
                 to={S}

@@ -18,9 +18,10 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
       <style>{`
         /* ── Kamali Footer ── */
         .km-footer {
-          // background: #fff;
+          background: #111111;
           padding: 72px 0 0;
-          // border-top: 1px solid #eee;
+          color: #ddd;
+          /* border-top: 1px solid #eee; */
         }
 
         /* ── Main grid ── */
@@ -43,13 +44,13 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           font-size: 11px;
           text-transform: uppercase;
           letter-spacing: 3px;
-          color: #c8826a;
+          color: var(--theme-color);
           display: block;
           margin-bottom: 16px;
         }
         .km-brand-desc {
           font-size: 13.5px;
-          color: #ddd;
+          color: #fff !important;
           line-height: 1.75;
           max-width: 240px;
           margin: 0 0 24px;
@@ -83,7 +84,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 2px;
-          color: #c8826a; /* Main brand color */
+          color: var(--theme-color) !important; /* Main brand color */
           margin: 0 0 20px;
         }
 
@@ -100,7 +101,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           text-decoration: none;
           transition: color 0.2s ease, padding-left 0.2s ease;
         }
-        .km-links a:hover { color: #c8826a; padding-left: 4px; }
+        .km-links a:hover { color: var(--theme-color-secondary); padding-left: 4px; }
 
         /* ── Contact / Find Us column ── */
         .km-contact-item {
@@ -112,12 +113,12 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
         .km-contact-icon {
           flex-shrink: 0;
           margin-top: 1px;
-          color: #c8826a;
+          color: var(--theme-color);
         }
         .km-contact-icon svg {
           width: 14px;
           height: 14px;
-          stroke: #c8826a;
+          stroke: var(--theme-color);
           fill: none;
           stroke-width: 2;
           stroke-linecap: round;
@@ -134,7 +135,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           text-decoration: none;
           transition: color 0.2s;
         }
-        .km-contact-text a:hover { color: #c8826a; }
+        .km-contact-text a:hover { color: var(--theme-color-secondary); }
 
         /* ── Bottom bar ── */
         .km-bottom-bar {
@@ -157,7 +158,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
           transition: color 0.2s;
         }
         .km-copyright a:hover {
-          color: #c8826a;
+          color: var(--theme-color-secondary);
         }
         .km-payment-logos {
           display: flex;
@@ -212,14 +213,13 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
                   onError={(e) => { e.target.style.display = "none"; }}
                 />
               </Link>
-              <span className="km-brand-tagline">Gifts & Crafts</span>
+              <span className="km-brand-tagline">Tex & Tailor</span>
               <p className="km-brand-desc">
-                Curating handcrafted joy and timeless traditions.
-                Made with love in Tamil Nadu.
+                Stitching love, tradition, and timeless style into every thread.
               </p>
               <div className="km-social">
                 <a
-                  href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                  href="https://www.instagram.com/jbtexandtailors?igsh=MWE2dTU3dzRpOW12dA=="
                   className="km-ig"
                   aria-label="Instagram"
                   target="_blank"
@@ -228,7 +228,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
                   <svg viewBox="0 0 448 512"><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg>
                 </a>
                 <a
-                  href="https://www.facebook.com/share/1F6BNcFs9L/"
+                  href="https:https://www.facebook.com/share/1E8XuTpw4k//share/1E8XuTpw4k/"
                   className="km-fb"
                   aria-label="Facebook"
                   target="_blank"
@@ -236,11 +236,11 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
                 >
                   <svg viewBox="0 0 320 512"><path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"/></svg>
                 </a>
-                {/* <a href="#" className="km-yt" aria-label="YouTube">
+                <a href="https://www.youtube.com/@JBBeautyandfashion-zf1gk" className="km-yt" aria-label="YouTube" target="_blank" rel="noopener noreferrer">
                   <svg viewBox="0 0 576 512"><path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.781 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"/></svg>
-                </a> */}
+                </a>
                 <a
-                  href="https://wa.me/7338814319"
+                  href="https://wa.me/9500848860"
                   className="km-wa"
                   aria-label="WhatsApp"
                   target="_blank"
@@ -302,7 +302,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
                   </svg>
                 </span>
                 <span className="km-contact-text">
-                  <a href="tel:+917338814319">+91 73388 14319</a>
+                  <a href="tel:+919500848860">+91 95008 48860</a>
                 </span>
               </div>
 
@@ -314,7 +314,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
                   </svg>
                 </span>
                 <span className="km-contact-text">
-                  <a href="mailto:Kamalireturngifts@gmail.com">Kamalireturngifts@gmail.com</a>
+                  <a href="mailto:jbbeautyandfashion@gmail.com">jbbeautyandfashion@gmail.com</a>
                 </span>
               </div>
 

@@ -33,7 +33,7 @@
   width: 80px;
   height: 2px;
   content: "";
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 @media only screen and (max-width: 767px) {
   .section-title h2::before {
@@ -48,7 +48,7 @@
   width: 80px;
   height: 2px;
   content: "";
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 @media only screen and (max-width: 767px) {
   .section-title h2::after {
@@ -94,7 +94,7 @@
   height: 2px;
   margin: 0 auto;
   content: "";
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .section-title-2 p {
   margin: 0;
@@ -227,8 +227,9 @@
   height: 1px;
   content: "";
   transform: translateX(-50%);
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
+
 
 
 

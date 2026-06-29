@@ -26,7 +26,7 @@ const TabProduct = ({ spaceTopClass, spaceBottomClass, bgColorClass, category })
       <div className="container">
         <div className="section-title text-center mb-50">
           <h2 className="event-title pb-2">Daily Deals</h2>
-          <div className="event-subtitle">Custom creations that speak louder than words</div>
+          <div className="event-subtitle">Custom threads tailored to your personality</div>
         </div>
 
         <div className="deals-sections">

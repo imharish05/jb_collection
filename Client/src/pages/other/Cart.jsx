@@ -226,7 +226,7 @@ const Cart = () => {
                       <span style={{ fontSize: 20 }}>🚚</span>
                       <span>
                         Add{" "}
-                        <strong style={{ color: "#b60410" }}>
+                        <strong style={{ color: "var(--theme-color)" }}>
                           ₹{(SHIPPING_THRESHOLD - subtotal).toFixed(0)}
                         </strong>{" "}
                         more for <strong>FREE delivery</strong>
@@ -339,7 +339,7 @@ const Cart = () => {
                               display: "inline-block",
                               fontSize: "10px",
                               fontWeight: 700,
-                              color: "#b60410",
+                              color: "var(--theme-color)",
                               background: "#fff0f6",
                               border: "1px solid #ffd6e7",
                               borderRadius: "4px",
@@ -522,7 +522,7 @@ const Cart = () => {
                                 style={{
                                   background: "none",
                                   border: "none",
-                                  color: "#b60410",
+                                  color: "var(--theme-color)",
                                   fontSize: "12px",
                                   fontWeight: 600,
                                   cursor: "pointer",
@@ -820,7 +820,7 @@ const Cart = () => {
                               width: "100%",
                               textAlign: "left",
                               borderRadius: 12,
-                              border: `1px solid ${isActive ? "#b60410" : "#e0e0e0"}`,
+                              border: `1px solid ${isActive ? "var(--theme-color)" : "#e0e0e0"}`,
                               background: isActive ? "#fff0f8" : "#fff",
                               padding: 18,
                               cursor: "pointer",

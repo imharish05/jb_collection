@@ -263,7 +263,7 @@ function CustomNoteSection({ variant }) {
   if (!attrs.length) return null;
   return (
     <div style={{ marginTop: 14, padding: "14px 18px", background: "#1e1e1e", border: "1px solid #2a2a2a", borderRadius: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#b60410", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--theme-color)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
         <span>✏️</span> Customisation Info
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -275,7 +275,7 @@ function CustomNoteSection({ variant }) {
               const val = part.slice(ci + 1).trim();
               return (
                 <span key={`${i}-${j}`} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, padding: "4px 12px", borderRadius: 8, background: "#252525", border: "1px solid #383838", color: "#f0ead6", fontWeight: 500 }}>
-                  <span style={{ color: "#b60410", fontWeight: 700 }}>{k}:</span>{val}
+                  <span style={{ color: "var(--theme-color)", fontWeight: 700 }}>{k}:</span>{val}
                 </span>
               );
             }
@@ -435,7 +435,7 @@ const ProductDescriptionInfo = ({
   const shareTitle = localProduct?.name || product?.name || "this product";
   const shareMessage = `Check out ${shareTitle} on JB House of Fashion — a perfect pick for every special moment.`;
   const shareText = `${shareMessage}\n${shareUrl}`;
-  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareMessage)}`;
+  const facebookShareUrl = `https:https://www.facebook.com/share/1E8XuTpw4k//sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareMessage)}`;
   const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
   const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
 
@@ -1164,7 +1164,7 @@ const handleBuyNow = async () => {
               background: '#1e1e1e',
               borderRadius: 12, border: '1px solid #2a2a2a',
             }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#b60410', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--theme-color)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
                 🎨 Personalise Your Product
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -1219,7 +1219,7 @@ const handleBuyNow = async () => {
                             <div style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, overflow: 'hidden', border: '1px solid #383838', cursor: 'pointer', flexShrink: 0 }}>
                               <input
                                 type="color"
-                                value={customisationDetails[field.key] && customisationDetails[field.key].startsWith('#') ? customisationDetails[field.key] : '#b60410'}
+                                value={customisationDetails[field.key] && customisationDetails[field.key].startsWith('#') ? customisationDetails[field.key] : 'var(--theme-color)'}
                                 onChange={e => setCustomisationDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
                                 style={{ position: 'absolute', top: -5, left: -5, width: 50, height: 50, border: 0, padding: 0, cursor: 'pointer' }}
                               />
@@ -1248,10 +1248,10 @@ const handleBuyNow = async () => {
                                       alignItems: 'center',
                                       gap: 6,
                                       padding: '5px 10px',
-                                      border: isSelected ? '2px solid #b60410' : '1px solid #383838',
+                                      border: isSelected ? '2px solid var(--theme-color)' : '1px solid #383838',
                                       borderRadius: 20,
                                       background: isSelected ? 'rgba(205, 131, 62, 0.15)' : '#252525',
-                                      color: isSelected ? '#b60410' : '#c8bfb0',
+                                      color: isSelected ? 'var(--theme-color)' : '#c8bfb0',
                                       fontSize: 12,
                                       fontWeight: 500,
                                       cursor: 'pointer',
@@ -1327,10 +1327,10 @@ const handleBuyNow = async () => {
               <div style={{ fontSize: 11, color: '#9a3412', marginTop: 8, opacity: 0.8 }}>
                 * Customisation details will be added to your order. Please{' '}
                 <a
-                  href="https://wa.me/7338814319?text=Hello! I want to enquire about customisation details for my order."
+                  href="https://wa.me/9500848860?text=Hello! I want to enquire about customisation details for my order."
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: '#b60410', textDecoration: 'underline', fontWeight: 600 }}
+                  style={{ color: 'var(--theme-color)', textDecoration: 'underline', fontWeight: 600 }}
                 >
                   Contact our team via WhatsApp
                 </a>{' '}
@@ -1382,7 +1382,7 @@ const handleBuyNow = async () => {
                 onClick={handleWishlist}
                 disabled={isAuthenticated && isInWishlist}
                 title={isInWishlist ? "In your wishlist" : "Add to wishlist"}
-                style={{ width: "46px", height: "46px", padding: "0", borderRadius: "8px", background: "#252525", color: isInWishlist ? "#de1a67" : "#c8bfb0", border: "1.5px solid " + (isInWishlist ? "#b60410" : "#383838"), cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease", flexShrink: 0 }}
+                style={{ width: "46px", height: "46px", padding: "0", borderRadius: "8px", background: "#252525", color: isInWishlist ? "#de1a67" : "#c8bfb0", border: "1.5px solid " + (isInWishlist ? "var(--theme-color)" : "#383838"), cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease", flexShrink: 0 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill={isInWishlist ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -1398,7 +1398,7 @@ const handleBuyNow = async () => {
                 {isAuthenticated && productCartQty > 0 ? (
                   <>
                   <div className="col-12 pdp-info__purchase-cell pdp-info__purchase-cell--primary">
-                    <Link to="/cart" style={{ width: "100%", height: "46px", background: "#b60410", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none" }} onMouseEnter={(e) => e.currentTarget.style.background = "#e8974d"} onMouseLeave={(e) => e.currentTarget.style.background = "#b60410"}>
+                    <Link to="/cart" style={{ width: "100%", height: "46px", background: "var(--theme-color)", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none" }} onMouseEnter={(e) => e.currentTarget.style.background = "#e8974d"} onMouseLeave={(e) => e.currentTarget.style.background = "var(--theme-color)"}>
                       View Cart
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
@@ -1409,7 +1409,7 @@ const handleBuyNow = async () => {
                     <button
                       onClick={handleBuyNow}
                       disabled={isAddingToCart || isBuyingNow || (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))}
-                      style={{ width: "100%", height: "46px", background: "#b60410", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(205,131,62,0.25)" }}
+                      style={{ width: "100%", height: "46px", background: "var(--theme-color)", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(205,131,62,0.25)" }}
                       title="Buy this product now"
                     >
                       {isBuyingNow ? (
@@ -1434,7 +1434,7 @@ const handleBuyNow = async () => {
                       <button
                         onClick={handleAddToCart}
                         disabled={isAddingToCart || isBuyingNow || (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))}
-                        style={{ width: "100%", height: "46px", background: "#b60410", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(205,131,62,0.25)" }}
+                        style={{ width: "100%", height: "46px", background: "var(--theme-color)", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(205,131,62,0.25)" }}
                         title="Add this product to your cart"
                       >
                         {isAddingToCart ? (
@@ -1457,7 +1457,7 @@ const handleBuyNow = async () => {
                       <button
                         onClick={handleBuyNow}
                         disabled={isAddingToCart || isBuyingNow || (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))}
-                        style={{ width: "100%", height: "46px", background: "#b60410", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(205,131,62,0.25)" }}
+                        style={{ width: "100%", height: "46px", background: "var(--theme-color)", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(205,131,62,0.25)" }}
                         title="Buy this product now"
                       >
                         {isBuyingNow ? (

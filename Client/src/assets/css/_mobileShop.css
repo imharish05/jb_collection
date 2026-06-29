@@ -1,15 +1,15 @@
-﻿/* ═══════════════════════════════════════════════════════
-   JB House of Fashion — Mobile Shop UX  (max-width 991px only)
+/* -------------------------------------------------------
+   JB House of Fashion � Mobile Shop UX  (max-width 991px only)
    Desktop layout is completely untouched.
-   ═══════════════════════════════════════════════════════ */
+   ------------------------------------------------------- */
 
-/* ─── 1. Hide sidebar on mobile, show it on desktop ─── */
+/* --- 1. Hide sidebar on mobile, show it on desktop --- */
 @media (max-width: 991px) {
   .shop-sidebar-col { display: none !important; }
   .shop-products-col { width: 100% !important; max-width: 100% !important; flex: 0 0 100% !important; }
 }
 
-/* ─── 2. Mobile search bar ─── */
+/* --- 2. Mobile search bar --- */
 .mobile-shop-search {
   display: none;
 }
@@ -27,7 +27,7 @@
     transition: border-color 0.2s;
   }
   .mobile-shop-search:focus-within {
-    border-color: #b60410;
+    border-color: var(--theme-color);
     box-shadow: 0 2px 14px rgba(219,26,93,0.12);
   }
   .mobile-shop-search input {
@@ -42,7 +42,7 @@
   }
   .mobile-shop-search input::placeholder { color: #aaa; }
   .mobile-shop-search button {
-    background: #b60410;
+    background: var(--theme-gradient);
     border: none;
     color: #fff;
     width: 44px;
@@ -59,7 +59,7 @@
   .mobile-shop-search button:active { background: #b5164e; }
 }
 
-/* ─── 3. Category pills (horizontal scroll) ─── */
+/* --- 3. Category pills (horizontal scroll) --- */
 .mobile-cat-pills {
   display: none;
 }
@@ -90,16 +90,16 @@
     display: inline-block;
   }
   .mobile-cat-pills .cat-pill:active,
-  .mobile-cat-pills .cat-pill:hover { background: #fdf2f6; border-color: #b60410; color: #b60410; }
+  .mobile-cat-pills .cat-pill:hover { background: #fdf2f6; border-color: var(--theme-color); color: var(--theme-color); }
   .mobile-cat-pills .cat-pill.active {
-    background: #b60410;
-    border-color: #b60410;
+    background: var(--theme-gradient);
+    border-color: var(--theme-color);
     color: #fff;
     font-weight: 600;
   }
 }
 
-/* ─── 4. Active filter chips bar ─── */
+/* --- 4. Active filter chips bar --- */
 .mobile-active-filters {
   display: none;
 }
@@ -142,7 +142,7 @@
   .filter-chip-price button { color: #cc7700; }
 }
 
-/* ─── 5. Sticky bottom filter bar ─── */
+/* --- 5. Sticky bottom filter bar --- */
 .mobile-filter-bar {
   display: none;
 }
@@ -176,7 +176,7 @@
     transition: all 0.15s;
   }
   .mobile-filter-bar__btn--filter {
-    background: #b60410;
+    background: var(--theme-gradient);
     color: #fff;
   }
   .mobile-filter-bar__btn--filter:active { background: #b5164e; }
@@ -188,7 +188,7 @@
   .mobile-filter-bar__btn--sort:active { background: #e8e8e8; }
   .filter-bar-badge {
     background: #fff;
-    color: #b60410;
+    color: var(--theme-color);
     border-radius: 50%;
     width: 18px;
     height: 18px;
@@ -203,7 +203,7 @@
   .shop-area { padding-bottom: 80px !important; }
 }
 
-/* ─── 6. Filter drawer (slide up) ─── */
+/* --- 6. Filter drawer (slide up) --- */
 .mobile-filter-overlay {
   display: none;
   position: fixed;
@@ -330,8 +330,8 @@
 }
 .drawer-chip:active { transform: scale(0.97); }
 .drawer-chip.active {
-  background: #b60410;
-  border-color: #b60410;
+  background: var(--theme-gradient);
+  border-color: var(--theme-color);
   color: #fff;
   font-weight: 600;
 }
@@ -362,7 +362,7 @@
 }
 .drawer-sort-option:active { transform: scale(0.98); }
 .drawer-sort-option.active {
-  border-color: #b60410;
+  border-color: var(--theme-color);
   background: #fff7f9;
   box-shadow: 0 2px 12px rgba(219,26,93,0.10);
 }
@@ -393,7 +393,7 @@
   transition: color 0.15s;
 }
 .drawer-sort-option.active .sort-opt-label {
-  color: #b60410;
+  color: var(--theme-color);
   font-weight: 600;
 }
 .sort-opt-check {
@@ -410,8 +410,8 @@
   color: transparent;
 }
 .sort-opt-check--active {
-  background: #b60410;
-  border-color: #b60410;
+  background: var(--theme-gradient);
+  border-color: var(--theme-color);
   color: #fff;
 }
 
@@ -437,13 +437,13 @@
   cursor: pointer;
   transition: border-color 0.15s;
 }
-.drawer-footer__clear:active { border-color: #b60410; color: #b60410; }
+.drawer-footer__clear:active { border-color: var(--theme-color); color: var(--theme-color); }
 .drawer-footer__apply {
   flex: 2;
   padding: 12px;
   border-radius: 20px;
   border: none;
-  background: #b60410;
+  background: var(--theme-gradient);
   color: #fff;
   font-size: 14px;
   font-weight: 700;
@@ -451,3 +451,4 @@
   transition: background 0.15s;
 }
 .drawer-footer__apply:active { background: #b5164e; }
+

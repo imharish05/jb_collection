@@ -1,4 +1,4 @@
-﻿/* updated */
+/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -72,7 +72,7 @@
 }
 .shop-top-bar .shop-tab a.active,
 .shop-top-bar .shop-tab button.active {
-  color: #b60410;
+  color: var(--theme-color);
 }
 
 .shop-list-wrap .product-wrap:hover .hover-img {
@@ -105,7 +105,7 @@
   color: #010101;
 }
 .shop-list-wrap .shop-list-content h3 a:hover {
-  color: #b60410;
+  color: var(--theme-color);
 }
 .shop-list-wrap .shop-list-content .product-list-price {
   margin: 13px 0 22px;
@@ -203,7 +203,7 @@
 }
 .shop-list-wrap .shop-list-content .shop-list-btn a:hover,
 .shop-list-wrap .shop-list-content .shop-list-btn button:hover {
-  border: 1px solid #b60410;
+  border: 1px solid var(--theme-color);
 }
 .shop-list-wrap:hover .product-wrap .hover-img {
   visibility: visible;
@@ -229,7 +229,7 @@
   height: 43px;
   padding: 0;
   text-align: center;
-  color: #b60410;
+  color: var(--theme-color);
   border: none;
   border-radius: 100% !important;
   background: none;
@@ -238,11 +238,11 @@
 .pro-pagination-style ul li a:hover,
 .pro-pagination-style ul li button:hover {
   color: #fff;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .pro-pagination-style ul li a.active {
   color: #fff;
-  background-color: #b60410;
+  background: var(--theme-gradient);
   box-shadow: none;
 }
 .pro-pagination-style ul li a.active:hover {
@@ -251,19 +251,19 @@
 .pro-pagination-style ul li a.prev,
 .pro-pagination-style ul li a.next {
   font-size: 17px;
-  color: #b60410;
+  color: var(--theme-color);
   background-color: #f6f6f6;
   box-shadow: none;
 }
 .pro-pagination-style ul li a.prev:hover,
 .pro-pagination-style ul li a.next:hover {
   color: #fff;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .pro-pagination-style ul li.page-item.active .page-link {
   --bs-pagination-active-color: #ffffff;
-  border-color: #b60410;
-  background-color: #b60410;
+  border-color: var(--theme-color);
+  background: var(--theme-gradient);
   box-shadow: 0 0 12px 0.8px rgba(0, 0, 0, 0.1) !important;
 }
 .pro-pagination-style ul li.page-item.active .page-link:focus {
@@ -371,7 +371,7 @@
 .shop-list-wishlist button:hover, .shop-list-wishlist button.active,
 .shop-list-compare button:hover,
 .shop-list-compare button.active {
-  color: #b60410;
+  color: var(--theme-color);
 }
 
 .shop-area .container-fluid {
@@ -397,6 +397,7 @@
     padding: 0 15px;
   }
 }
+
 
 
 

@@ -1,4 +1,4 @@
-﻿/* updated */
+/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -144,7 +144,7 @@
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3 input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3 button:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.hover-red input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.hover-red button:hover {
@@ -156,7 +156,7 @@
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.red-subscribe input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.red-subscribe button:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.green-subscribe input,
 .subscribe-style-3 .subscribe-form-3 .clear-3.green-subscribe button {
@@ -164,7 +164,7 @@
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.green-subscribe input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.green-subscribe button:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-red-subscribe input,
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-red-subscribe button {
@@ -173,7 +173,7 @@
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-red-subscribe input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-red-subscribe button:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-blue-subscribe input,
 .subscribe-style-3 .subscribe-form-3 .clear-3.dark-blue-subscribe button {
@@ -190,15 +190,15 @@
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.red-2-subscribe input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.red-2-subscribe button:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.pink-subscribe input,
 .subscribe-style-3 .subscribe-form-3 .clear-3.pink-subscribe button {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .subscribe-style-3 .subscribe-form-3 .clear-3.pink-subscribe input:hover,
 .subscribe-style-3 .subscribe-form-3 .clear-3.pink-subscribe button:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .subscribe-style-3--blue h2 {
   font-family: 'Noto Serif', serif;
@@ -235,14 +235,15 @@
   border: none;
 }
 .subscribe-style-3.subscribe-style-3-white .subscribe-form-3 .clear-3 input:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .subscribe-style-3.subscribe-style-3-white .subscribe-form-3 .clear-3.red-2-subscribe input {
   background-color: #e90042;
 }
 .subscribe-style-3.subscribe-style-3-white .subscribe-form-3 .clear-3.red-2-subscribe input:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
+
 
 
 

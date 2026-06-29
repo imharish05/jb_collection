@@ -1,4 +1,4 @@
-﻿/* Layout & Area */
+/* Layout & Area */
 .full-account-area {
   background-color: #fcfcfc;
 }
@@ -63,7 +63,7 @@
 
 .logout-link {
   margin-top: 15px;
-  color: #b60410 !important;
+  color: var(--theme-color) !important;
   border-top: 1px solid #eee;
   border-radius: 0;
   padding-top: 20px;
@@ -224,11 +224,11 @@
 .full-account-area { background-color: #f8f9fa; }
 .account-side-nav { background: #fff; border-radius: 20px; padding: 25px; border: 1px solid #eee; position: sticky; top: 100px; }
 .nav-header { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-.avatar-box { width: 55px; height: 55px; background: #b60410; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: bold; }
+.avatar-box { width: 55px; height: 55px; background: var(--theme-gradient); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: bold; }
 .nav-links { display: flex; flex-direction: column; gap: 8px; }
 .nav-links button, .logout-link { border: none; background: none; text-align: left; padding: 12px 15px; border-radius: 10px; color: #555; font-weight: 600; text-decoration: none; font-size: 14px; transition: 0.3s; }
-.nav-links button.active { background: #fff4ed; color: #b60410; }
-.logout-link { color: #b60410 !important; margin-top: 15px; border-top: 1px solid #eee; border-radius: 0; padding-top: 15px; }
+.nav-links button.active { background: #fff4ed; color: var(--theme-color); }
+.logout-link { color: var(--theme-color) !important; margin-top: 15px; border-top: 1px solid #eee; border-radius: 0; padding-top: 15px; }
 
 /* Main Card */
 .account-main-content { background: #fff; border-radius: 20px; border: 1px solid #eee; padding: 35px; }
@@ -476,8 +476,8 @@
 
 .km-account-btn--primary,
 .full-btn-dark {
-  background: #b60410;
-  border: 1.5px solid #b60410;
+  background: var(--theme-gradient);
+  border: 1.5px solid var(--theme-color);
   color: #fff;
 }
 
@@ -493,8 +493,8 @@
 .add-new-pill,
 .btn-view-order {
   background: transparent;
-  border: 1.5px solid #b60410;
-  color: #b60410;
+  border: 1.5px solid var(--theme-color);
+  color: var(--theme-color);
   padding: 10px;
 }
 
@@ -502,8 +502,8 @@
 .full-btn-light:hover,
 .add-new-pill:hover,
 .btn-view-order:hover {
-  background: #b60410;
-  border-color: #b60410;
+  background: var(--theme-gradient);
+  border-color: var(--theme-color);
   color: #fff;
 }
 
@@ -580,9 +580,9 @@
 
 .km-address-type-btn:hover,
 .km-address-type-btn.active {
-  border-color: #b60410;
+  border-color: var(--theme-color);
   background: #fff5f8;
-  color: #b60410;
+  color: var(--theme-color);
 }
 
 @media (max-width: 576px) {
@@ -600,3 +600,4 @@
     margin-left: 0;
   }
 }
+

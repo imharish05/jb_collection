@@ -7,7 +7,9 @@ import FeatureIcon from "../../wrappers/feature-icon/FeatureIcon";
 import TabProduct from "../../wrappers/product/TabProduct";
 import Category from "../../components/category/Category";
 import CategoryEvent from "../../components/event/CategoryEvent";
+import FeatureImageText from "../../wrappers/feature-image-text/FeatureImageText.jsx";
 import OfferBanner from "../../components/Offer/OfferBanner.jsx";
+import FunFactTwo from "../../wrappers/fun-fact/FunFactTwo.jsx";
 
 const HomeFashion = () => {
   return (
@@ -30,16 +32,34 @@ const HomeFashion = () => {
 
 
         {/* Categories */}
-        <Category/>
+        <div style={{ backgroundColor: "#ffffff", paddingTop: "40px" }}>
+          <Category/>
+        </div>
 
         {/* Timeless Treasure - Offer Banners */}
-        <OfferBanner />
+        <div style={{ backgroundColor: "#faf5f5", padding: "60px 0" }}>
+          <OfferBanner />
+        </div>
 
         {/* tab product */}
-        <TabProduct spaceBottomClass="pb-60" spaceTopClass="pt-60" />
+        <div style={{ backgroundColor: "#ffffff" }}>
+          <TabProduct spaceBottomClass="pb-60" spaceTopClass="pt-60" />
+        </div>
+
+        {/* Feature Image Text Section */}
+        <div style={{ backgroundColor: "#fcfcfc", padding: "40px 0" }}>
+          <FeatureImageText />
+        </div>
+
+        {/* Fun fact two section */}
+        <div style={{ backgroundColor: "#111111" }}>
+          <FunFactTwo />
+        </div>
 
         {/* Shop by Event */}
-        <FeatureIcon spaceTopClass="pt-100" spaceBottomClass="pb-60" />
+        <div style={{ backgroundColor: "#ffffff" }}>
+          <FeatureIcon spaceTopClass="pt-100" spaceBottomClass="pb-60" />
+        </div>
 
       </LayoutOne>
     </Fragment>

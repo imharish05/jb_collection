@@ -48,7 +48,7 @@
   transition: color 0.15s;
   box-sizing: border-box;
 }
-.ig-search__icon-btn:hover { color: #b60410; }
+.ig-search__icon-btn:hover { color: var(--theme-color); }
 
 .ig-search__form {
   flex: 1;
@@ -83,7 +83,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #b60410;
+  background: var(--theme-gradient);
   border: none;
   border-radius: 50%;
   cursor: pointer;
@@ -117,7 +117,7 @@
 }
 .ig-account__trigger:hover,
 .ig-account--open .ig-account__trigger {
-  color: #b60410;
+  color: var(--theme-color);
   background: rgba(219,26,93,.07);
 }
 
@@ -127,7 +127,7 @@
   height: 28px;
   min-width: 28px;
   border-radius: 50%;
-  background: #b60410;
+  background: var(--theme-gradient);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -174,7 +174,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #b60410, #f97316);
+  background: linear-gradient(135deg, var(--theme-color), #f97316);
   color: #fff;
   font-size: 13px;
   font-weight: 700;
@@ -229,7 +229,7 @@
 }
 .ig-account__item:hover {
   background: #fdf2f6;
-  color: #b60410;
+  color: var(--theme-color);
 }
 .ig-account__item svg { flex-shrink: 0; opacity: 0.6; }
 .ig-account__item:hover svg { opacity: 1; }
@@ -262,7 +262,7 @@
 .ig-account__btn-primary {
   flex: 1;
   padding: 9px 0;
-  background: #b60410;
+  background: var(--theme-gradient);
   color: #fff !important;
   text-decoration: none;
   border-radius: 20px;
@@ -276,17 +276,17 @@
   flex: 1;
   padding: 9px 0;
   background: transparent;
-  color: #b60410 !important;
+  color: var(--theme-color) !important;
   text-decoration: none;
   border-radius: 20px;
-  border: 1.5px solid #b60410;
+  border: 1.5px solid var(--theme-color);
   font-size: 12.5px;
   font-weight: 600;
   text-align: center;
   transition: background 0.15s, color 0.15s;
 }
 .ig-account__btn-outline:hover {
-  background: #b60410;
+  background: var(--theme-gradient);
   color: #fff !important;
 }
 
@@ -319,7 +319,7 @@
 
 .ig-wrap .same-style > a:hover,
 .ig-wrap .same-style button:hover {
-  color: #b60410;
+  color: var(--theme-color);
 }
 
 /* Adjust count badges for the new centered flex box alignment */
@@ -338,6 +338,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background-color: #b60410 !important;
+  background: var(--theme-gradient) !important;
   color: #fff !important;
 }
+

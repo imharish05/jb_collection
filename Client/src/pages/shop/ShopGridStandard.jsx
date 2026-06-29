@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useRef, useMemo } from 'react';
+import { Fragment, useState, useEffect, useRef, useMemo, cloneElement } from 'react';
 import { useSelector, useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { fetchComboById } from '../../store/services/comboService';
@@ -229,6 +229,68 @@ const ShopGridStandard = () => {
 
   const activeFilterCount = (priceRange ? 1 : 0) + (catParam || eventParam || comboParam || subCatParam ? 1 : 0);
   const sliderVal = (draftPrice || priceRange) ? [(draftPrice || priceRange).min, (draftPrice || priceRange).max] : [priceMin, priceMax];
+
+  const handleRender = (node, handleProps) => {
+    const { value, dragging, index } = handleProps;
+    const isLeft = index === 0;
+    const color = isLeft ? "var(--theme-color-secondary)" : "var(--theme-color)";
+    
+    return cloneElement(node, {
+      style: {
+        ...node.props.style,
+        backgroundColor: "transparent",
+        border: "none",
+        boxShadow: "none",
+        width: 24,
+        height: 24,
+        marginTop: -9,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: dragging ? 2 : 1
+      }
+    }, (
+      <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        {/* Tooltip */}
+        <div style={{
+          position: "absolute",
+          top: -38,
+          backgroundColor: color,
+          color: "white",
+          padding: "4px 8px",
+          borderRadius: "6px",
+          fontSize: "12px",
+          fontWeight: "bold",
+          whiteSpace: "nowrap",
+          boxShadow: "0 2px 5px rgba(0,0,0,0.2)"
+        }}>
+          ₹{value}
+          <div style={{
+            position: "absolute",
+            bottom: -5,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 0,
+            height: 0,
+            borderLeft: "6px solid transparent",
+            borderRight: "6px solid transparent",
+            borderTop: `6px solid ${color}`
+          }}></div>
+        </div>
+        
+        {/* Thumb design */}
+        <div style={{
+          width: 24,
+          height: 24,
+          borderRadius: "50%",
+          backgroundColor: color,
+          border: "3px solid #fff", 
+          boxShadow: `0 0 0 2px ${color}80, 0 2px 4px rgba(0,0,0,0.2)`, 
+          boxSizing: "border-box"
+        }}></div>
+      </div>
+    ));
+  };
 
   return (
     <Fragment>
@@ -470,35 +532,19 @@ const ShopGridStandard = () => {
               <>
                 <div className="drawer-section">
                   <p className="drawer-section-title">Price Range</p>
-                  <div className="drawer-price-badges">
-                    <div className="drawer-price-badge">
-                      <span className="badge-label">Min</span>
-                      <span className="badge-val">₹{(draftPrice ? draftPrice.min : priceMin).toLocaleString('en-IN')}</span>
-                    </div>
-                    <span className="drawer-price-sep">—</span>
-                    <div className="drawer-price-badge">
-                      <span className="badge-label">Max</span>
-                      <span className="badge-val">₹{(draftPrice ? draftPrice.max : priceMax).toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
-                  <div style={{ padding: '0 8px' }}>
+
+                  <div style={{ padding: '0 8px', marginTop: '50px', marginBottom: '20px' }}>
                     <Slider
                       range
                       min={priceMin} max={priceMax}
                       step={Math.max(1, Math.floor((priceMax - priceMin) / 100))}
                       value={sliderVal}
                       onChange={val => setDraftPrice({ min: val[0], max: val[1] })}
-                      trackStyle={[{ backgroundColor: "#b60410", height: 3 }]}
-                      handleStyle={[
-                        { borderColor:"#b60410", backgroundColor:"#fff", width:20, height:20, marginTop:-8.5, boxShadow:"0 1px 6px rgba(219,26,93,0.4)", opacity:1 },
-                        { borderColor:"#b60410", backgroundColor:"#fff", width:20, height:20, marginTop:-8.5, boxShadow:"0 1px 6px rgba(219,26,93,0.4)", opacity:1 },
-                      ]}
-                      railStyle={{ backgroundColor:"#e8e8e8", height:3 }}
+                      trackStyle={[{ background: "linear-gradient(to right, var(--theme-color-secondary), var(--theme-color))", height: 6, borderRadius: 3 }]}
+                      handleRender={handleRender}
+                      railStyle={{ backgroundColor: "#f0f0f0", height: 6, borderRadius: 3 }}
                     />
-                    <div style={{ display:"flex", justifyContent:"space-between", marginTop:8, fontSize:11, color:"#bbb" }}>
-                      <span>₹{priceMin.toLocaleString('en-IN')}</span>
-                      <span>₹{priceMax.toLocaleString('en-IN')}</span>
-                    </div>
+
                   </div>
                 </div>
 

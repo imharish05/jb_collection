@@ -1,4 +1,4 @@
-﻿
+
   .policy-page {
     font-family: 'Noto Serif', serif;
     color: #444;
@@ -6,7 +6,7 @@
   }
 
   .policy-hero {
-    background: linear-gradient(135deg, #0d1b40 0%, #1a2e6b 60%, #b6041022 100%);
+    background: linear-gradient(135deg, #0d1b40 0%, #1a2e6b 60%, rgba(182, 4, 16, 0.13) 100%);
     padding: 60px 0 50px;
     text-align: center;
     position: relative;
@@ -19,7 +19,7 @@
     width: 320px;
     height: 320px;
     border-radius: 50%;
-    background: radial-gradient(circle, #b6041022 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(182, 4, 16, 0.13) 0%, transparent 70%);
     top: -80px;
     right: -60px;
   }
@@ -27,13 +27,13 @@
   .policy-hero-icon {
     width: 64px;
     height: 64px;
-    background: linear-gradient(135deg, #b60410, #f04e8a);
+    background: linear-gradient(135deg, var(--theme-color), #f04e8a);
     border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 20px;
-    box-shadow: 0 8px 24px #b6041044;
+    box-shadow: 0 8px 24px rgba(182, 4, 16, 0.27);
   }
 
   .policy-hero-icon svg {
@@ -57,8 +57,8 @@
 
   .policy-hero-badge {
     display: inline-block;
-    background: #b6041022;
-    border: 1px solid #b6041055;
+    background: rgba(182, 4, 16, 0.13);
+    border: 1px solid rgba(182, 4, 16, 0.33);
     color: #ff8ab5;
     font-size: 11px;
     font-weight: 600;
@@ -78,7 +78,7 @@
   .policy-toc {
     background: #fafafa;
     border: 1px solid #f0e0e7;
-    border-left: 4px solid #b60410;
+    border-left: 4px solid var(--theme-color);
     border-radius: 10px;
     padding: 24px 28px;
     margin-bottom: 48px;
@@ -103,7 +103,7 @@
   }
 
   .policy-toc a {
-    color: #b60410;
+    color: var(--theme-color);
     font-size: 13px;
     text-decoration: none;
     font-weight: 500;
@@ -130,7 +130,7 @@
   .policy-section-num {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, #b60410, #f04e8a);
+    background: linear-gradient(135deg, var(--theme-color), #f04e8a);
     color: #fff;
     border-radius: 10px;
     display: flex;
@@ -151,7 +151,7 @@
   .policy-section h3 {
     font-size: 15px;
     font-weight: 600;
-    color: #b60410;
+    color: var(--theme-color);
     margin: 20px 0 10px;
   }
 
@@ -183,7 +183,7 @@
     top: 13px;
     width: 8px;
     height: 8px;
-    background: #b60410;
+    background: var(--theme-gradient);
     border-radius: 50%;
     opacity: 0.7;
   }
@@ -226,7 +226,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #b60410;
+    background: var(--theme-gradient);
     flex-shrink: 0;
   }
 
@@ -249,7 +249,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #b60410;
+    color: var(--theme-color);
     margin-bottom: 6px;
   }
 
@@ -336,3 +336,4 @@
     .policy-section h2 { font-size: 16px; }
     .policy-contact-box { padding: 20px; }
   }
+

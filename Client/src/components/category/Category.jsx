@@ -99,7 +99,7 @@ const Category = () => {
       <div className="container position-relative">
         <div className="section-title text-center mb-50">
           <h2 className="event-title pb-2">Shop by Category</h2>
-          <div className="event-subtitle">Custom creations that speak louder than words</div>
+          <div className="event-subtitle">Wear your story on your sleeve</div>
         </div>
 
         <div

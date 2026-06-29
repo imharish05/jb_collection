@@ -2,8 +2,8 @@
 const nodemailer = require("nodemailer");
 const { getDisplayReference } = require("./referenceSlugs");
 
-const SUPPORT_EMAIL = "kamalireturngifts@gmail.com";
-const SUPPORT_WHATSAPP = "+91 73388 14319";
+const SUPPORT_EMAIL = "jbbeautyandfashion@gmail.com";
+const SUPPORT_WHATSAPP = "+91 95008 48860";
 
 const transporter = nodemailer.createTransport({
   service: "gmail",

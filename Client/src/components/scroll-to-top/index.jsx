@@ -5,7 +5,7 @@ const ScrollToTop = () => {
     return (
         <>
             <a
-                href="https://wa.me/917338814319"
+                href="https://wa.me/919500848860"
                 className={`whatsapp-float ${stick ? "has-scroll" : ""}`}
                 target="_blank"
                 rel="noopener noreferrer"

@@ -100,7 +100,7 @@ const OrderDetails = () => {
       text: "This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#b60410",
+      confirmButtonColor: "var(--theme-color)",
       cancelButtonColor: "#6c757d",
       confirmButtonText: "Yes, cancel order",
       cancelButtonText: "No, keep it",
@@ -126,7 +126,7 @@ const OrderDetails = () => {
             title: "Success!",
             text: "Order cancelled successfully!",
             icon: "success",
-            confirmButtonColor: "#b60410",
+            confirmButtonColor: "var(--theme-color)",
           });
         } catch (err) {
           console.error(err);
@@ -135,7 +135,7 @@ const OrderDetails = () => {
             title: "Error",
             text: errorMsg,
             icon: "error",
-            confirmButtonColor: "#b60410",
+            confirmButtonColor: "var(--theme-color)",
           });
         }
       },
@@ -198,7 +198,7 @@ const OrderDetails = () => {
             Return Status: {statusLabels[activeReturn.status] || activeReturn.status}
           </span>
           <div style={{ marginTop: "6px" }}>
-            <Link to={`/return-tracking/${activeReturn.referenceSlug || activeReturn.id}`} style={{ color: "#b60410", fontWeight: 600, fontSize: "13px" }}>
+            <Link to={`/return-tracking/${activeReturn.referenceSlug || activeReturn.id}`} style={{ color: "var(--theme-color)", fontWeight: 600, fontSize: "13px" }}>
               <i className="fa fa-map-marker"></i> Track Return
             </Link>
           </div>

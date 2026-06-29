@@ -1,6 +1,6 @@
-﻿:root {
+:root {
   --mb-navy: #001d3d;
-  --mb-pink: #b60410;
+  --mb-pink: var(--theme-color);
   --mb-bg: #ffffff;
   --mb-shadow: rgba(0, 29, 61, 0.08);
 }
@@ -145,3 +145,4 @@
   font-family: 'FontAwesome';
   font-size: 18px;
 }
+

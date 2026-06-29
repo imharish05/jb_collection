@@ -6,7 +6,6 @@ import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
 import SectionTitleWithText from "../../components/section-title/SectionTitleWithText";
 import BannerOne from "../../wrappers/banner/BannerOne";
 import TextGridOne from "../../wrappers/text-grid/TextGridOne";
-import FunFactOne from "../../wrappers/fun-fact/FunFactOne";
 import BrandLogoSliderOne from "../../wrappers/brand-logo/BrandLogoSliderOne";
 import TestimonialPage from "./TestimonialPage";
 import Timeline from "../../components/timeline/Timeline";
@@ -40,13 +39,6 @@ const About = () => {
 
         {/* timeline */}
         <Timeline />
-
-        {/* fun fact */}
-        <FunFactOne
-          spaceTopClass="pt-100"
-          spaceBottomClass="pb-70"
-          bgClass="bg-gray-3"
-        />
 
         {/* <TestimonialPage/> */}
 

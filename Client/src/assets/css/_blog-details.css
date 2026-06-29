@@ -1,4 +1,4 @@
-﻿/* updated */
+/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -30,7 +30,7 @@
   background-color: #ff0000;
 }
 .blog-details-top .blog-details-img .video-icon a:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .blog-details-top .blog-details-content {
   margin-top: 30px;
@@ -66,7 +66,7 @@
   color: #333;
 }
 .blog-details-top .blog-details-content .blog-meta-2 ul li a:hover {
-  color: #b60410;
+  color: var(--theme-color);
 }
 .blog-details-top .blog-details-content h3 {
   font-size: 24px;
@@ -320,7 +320,7 @@
   letter-spacing: 1px;
   color: #fff;
   border: medium none;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .blog-reply-wrapper .blog-form .text-leave input:hover {
   background-color: #333;
@@ -330,6 +330,7 @@
   visibility: visible;
   opacity: 1;
 }
+
 
 
 

@@ -1,4 +1,4 @@
-﻿/* updated */
+/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -37,7 +37,7 @@
   padding: 3px 11px;
   color: #fff;
   border-radius: 3px;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .product-details-img .large-img-style .img-popup-wrap {
   font-size: 30px;
@@ -47,7 +47,7 @@
   color: #000000;
 }
 .product-details-img .large-img-style .img-popup-wrap:hover {
-  color: #b60410;
+  color: var(--theme-color);
 }
 .product-details-img .shop-details-tab {
   position: relative;
@@ -236,7 +236,7 @@
   background: none;
 }
 .single-review .review-top-wrap .review-left > button:hover {
-  color: #b60410;
+  color: var(--theme-color);
 }
 .single-review .review-top-wrap .review-btn a {
   font-weight: 500;
@@ -306,8 +306,8 @@
   padding: 12px 50px;
   text-transform: uppercase;
   color: #fff;
-  border: 1px solid #b60410;
-  background-color: #b60410;
+  border: 1px solid var(--theme-color);
+  background: var(--theme-gradient);
 }
 .ratting-form-wrapper .ratting-form form .form-submit input:hover {
   border: 1px solid #333;
@@ -415,7 +415,7 @@
   padding: 3px 11px;
   color: #fff;
   border-radius: 3px;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .zoompro-wrap .zoompro-span .product-video {
   position: absolute;
@@ -429,7 +429,7 @@
   padding: 5px 15px 5px;
   color: #fff;
   border-radius: 3px;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 @media only screen and (max-width: 767px) {
   .zoompro-wrap .zoompro-span .product-video a {
@@ -458,7 +458,7 @@
   padding: 3px 11px;
   color: #fff;
   border-radius: 3px;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 
 @media only screen and (max-width: 767px) {
@@ -512,7 +512,7 @@
   color: #333;
 }
 .product-details-slider-active.nav-style-1.owl-carousel .owl-nav div:hover {
-  color: #b60410;
+  color: var(--theme-color);
 }
 .product-details-slider-active.nav-style-1.owl-carousel .owl-nav div.owl-next {
   right: 20px;
@@ -544,7 +544,7 @@
   border-radius: 3px;
 }
 .product-large-image-wrapper .product-img-badges span.pink {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .product-large-image-wrapper .product-img-badges span.purple {
   background-color: #0d1b40;
@@ -572,7 +572,7 @@
   visibility: visible;
   opacity: 1;
 }
-/* ── Chain height through swiper internals ── */
+/* -- Chain height through swiper internals -- */
 .product-large-image-wrapper .swiper-container,
 .product-large-image-wrapper .swiper,
 .product-large-image-wrapper .swiper-wrapper,
@@ -648,3 +648,4 @@
     margin-top: 15px;
   }
 }
+

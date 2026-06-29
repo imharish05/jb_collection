@@ -115,14 +115,14 @@ const Contact = () => {
                         <div className="icon-circle"><i className="fa fa-envelope"></i></div>
                         <div>
                           <strong>Email Us</strong>
-                          <span>Kamalireturngifts@gmail.com</span>
+                          <span>jbbeautyandfashion@gmail.com</span>
                         </div>
                       </div>
                       <div className="glass-link-item d-flex gap-3 mt-4">
                         <div className="icon-circle"><i className="fa fa-phone"></i></div>
                       <div>
                           <strong>Call Us</strong>
-                          <span>+91 73388 14319</span>
+                          <span>+91 95008 48860</span>
                       </div>
                       </div>
                     </div>

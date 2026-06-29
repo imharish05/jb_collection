@@ -17,7 +17,7 @@ const CircleCard = ({ to, imgSrc, label, emoji = "🎁" }) => (
       justifyContent: "center", background: "#f8f8f8", flexShrink: 0,
       transition: "border-color 0.2s, box-shadow 0.2s",
     }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = "#b60410"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(219, 26, 93,0.15)"; }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--theme-color)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(219, 26, 93,0.15)"; }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = "#eee"; e.currentTarget.style.boxShadow = "none"; }}
     >
       {imgSrc ? (

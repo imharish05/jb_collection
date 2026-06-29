@@ -80,7 +80,7 @@ const ForgotPassword = () => {
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     border: "2px solid rgba(219,26,93,0.2)"
                   }}>
-                    <Mail size={32} color="#b60410" />
+                    <Mail size={32} color="var(--theme-color)" />
                   </div>
                   <h3 style={{ margin: "12px 0 4px", fontSize: "18px", fontWeight: "700", color: "#2c2c2c" }}>
                     Reset Your Password
@@ -118,7 +118,7 @@ const ForgotPassword = () => {
                 <div style={{ textAlign: "center", marginTop: "20px" }}>
                   <Link
                     to="/login"
-                    style={{ color: "#b60410", fontSize: "13px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: "600" }}
+                    style={{ color: "var(--theme-color)", fontSize: "13px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: "600" }}
                   >
                     <ArrowLeft size={14} /> Back to Sign In
                   </Link>

@@ -1,8 +1,10 @@
-﻿:root {
-  --primary-color: #b60410;
-  --secondary-color: #0d1b40;
-  --bg-subtle: #f9f9f9;
-  --border-color: #d1d1d1;
+:root {
+  --primary-color: var(--theme-color);
+  --secondary-color: #e0e0e0;
+  --bg-dark: #000000;
+  --bg-card: #111111;
+  --bg-pill: #1a1a1a;
+  --border-color: #333333;
   --radius-lg: 12px;
   --radius-md: 8px;
   --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -13,7 +15,8 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px 80px 20px;
-  font-family: inherit;
+  background-color: var(--bg-dark);
+  color: #ffffff;
 }
 
 .kcat-section {
@@ -29,9 +32,9 @@
 .kcat-section-title h2 {
   font-size: 24px;
   font-weight: 600;
-  color: var(--primary-color);
+  color: #ffffff;
   margin: 0 0 8px 0;
-  letter-spacing: -0.5px;
+  letter-spacing: 0.5px;
 }
 
 .kcat-section-title__indicator {
@@ -50,7 +53,7 @@
 
 /* Category Cards */
 .kcat-card {
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -61,7 +64,7 @@
 
 .kcat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(219, 26, 93, 0.12);
+  box-shadow: 0 12px 30px rgba(182, 4, 16, 0.15);
   border-color: var(--primary-color);
 }
 
@@ -76,7 +79,7 @@
 .kcat-card__image-wrapper {
   width: 100%;
   height: 100%;
-  background-color: var(--bg-subtle);
+  background-color: #050505;
 }
 
 .kcat-card__img {
@@ -96,7 +99,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #ccc;
+  color: #555;
 }
 
 .kcat-fallback-icon {
@@ -107,11 +110,17 @@
 .kcat-card__overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.0) 100%);
+  background: linear-gradient(
+    to top, 
+    rgba(0, 0, 0, 0.95) 0%, 
+    rgba(0, 0, 0, 0.5) 50%, 
+    rgba(0, 0, 0, 0) 100%
+  );
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   padding: 20px;
+  pointer-events: none;
 }
 
 .kcat-card__title {
@@ -119,11 +128,15 @@
   margin: 0 0 4px 0;
   font-size: 18px;
   font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
-.kcat-card__count {
-  color: rgba(255, 255, 255, 0.8);
+.kcat-card__subtitle {
+  color: #e0e0e0;
   font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 /* Category Content & Subcategory Pills */
@@ -143,8 +156,8 @@
 
 .kcat-pill {
   font-size: 13px;
-  color: var(--secondary-color);
-  background-color: var(--bg-subtle);
+  color: #cccccc;
+  background-color: var(--bg-pill);
   padding: 6px 14px;
   border-radius: 20px;
   text-decoration: none;
@@ -153,14 +166,21 @@
 }
 
 .kcat-pill:hover {
-  background-color: #ffffff;
+  background-color: var(--primary-color);
   border-color: var(--primary-color);
-  color: var(--primary-color);
+  color: #ffffff;
 }
 
 .kcat-pill--more {
   font-weight: 600;
   color: var(--primary-color);
+  border-color: rgba(182, 4, 16, 0.3);
+  background-color: rgba(182, 4, 16, 0.05);
+}
+
+.kcat-pill--more:hover {
+  background-color: var(--primary-color);
+  color: #ffffff;
 }
 
 .kcat-card__explore-btn {
@@ -177,6 +197,10 @@
   transition: transform 0.2s ease;
 }
 
+.kcat-card__explore-btn:hover {
+  color: #ff3344;
+}
+
 .kcat-card__explore-btn:hover svg {
   transform: translateX(4px);
 }
@@ -189,7 +213,7 @@
 }
 
 .kcat-simple-card {
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -201,13 +225,13 @@
 
 .kcat-simple-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(219, 26, 93, 0.1);
+  box-shadow: 0 8px 24px rgba(182, 4, 16, 0.15);
   border-color: var(--primary-color);
 }
 
 .kcat-simple-card__image-container {
   height: 140px;
-  background-color: var(--bg-subtle);
+  background-color: #050505;
   overflow: hidden;
 }
 
@@ -232,7 +256,7 @@
 .kcat-simple-card__name {
   font-size: 15px;
   font-weight: 500;
-  color: var(--primary-color);
+  color: #ffffff;
 }
 
 .kcat-simple-card__link {
@@ -249,7 +273,7 @@
 
 .kcat-empty-state .kcat-fallback-icon {
   margin: 0 auto 16px auto;
-  opacity: 0.5;
+  opacity: 0.3;
 }
 
 .kcat-empty-state__btn {
@@ -282,37 +306,3 @@
   }
 }
 
-/* Deepened scrim overlay to guarantee text legibility */
-.kcat-card__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top, 
-    rgba(0, 0, 0, 0.85) 0%, 
-    rgba(0, 0, 0, 0.4) 50%, 
-    rgba(0, 0, 0, 0) 100%
-  );
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 20px;
-  pointer-events: none; /* Allows clicks to pass through to the image link safely */
-}
-
-/* Base title enhancements */
-.kcat-card__title {
-  color: #ffffff;
-  margin: 0 0 4px 0;
-  font-size: 18px;
-  font-weight: 600;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* High contrast Subtitle/Count styling */
-.kcat-card__subtitle {
-  color: #f0f0f0; /* Crisp near-white color */
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.2px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-}

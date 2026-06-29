@@ -766,7 +766,7 @@ const Checkout = () => {
           email: user?.email || "",
           contact: selectedShippingAddr?.phone || "",
         },
-        theme: { color: "#b60410" },
+        theme: { color: "var(--theme-color)" },
         handler: async (response) => {
           try {
             const verifyRes = await api.post("/payment/verify", {
@@ -873,7 +873,7 @@ const Checkout = () => {
           email: user?.email || "",
           contact: selectedShippingAddr?.phone || "",
         },
-        theme: { color: "#b60410" },
+        theme: { color: "var(--theme-color)" },
         handler: async (response) => {
           // Payment succeeded — NOW create the DB order + verify atomically
           try {
@@ -964,7 +964,7 @@ const Checkout = () => {
             width: '60px',
             height: '60px',
             border: '5px solid #f3f3f3',
-            borderTop: '5px solid #b60410',
+            borderTop: '5px solid var(--theme-color)',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
             marginBottom: '20px',
@@ -1276,7 +1276,7 @@ const Checkout = () => {
                           type="checkbox"
                           checked={addrForm.isDefault}
                           onChange={(e) => setAddrForm((f) => ({ ...f, isDefault: e.target.checked }))}
-                          style={{ accentColor: "#b60410" }}
+                          style={{ accentColor: "var(--theme-color)" }}
                         />
                         Set as my default address
                       </label>
@@ -1617,7 +1617,7 @@ const Checkout = () => {
                               style={{
                                 background: "none",
                                 border: "none",
-                                color: "#b60410",
+                                color: "var(--theme-color)",
                                 fontSize: "11px",
                                 fontWeight: "700",
                                 cursor: "pointer",
@@ -1653,7 +1653,7 @@ const Checkout = () => {
 
                   <div className="kco-total-line">
                     <span>Total (incl. GST)</span>
-                    <span style={{ color: "#b60410" }}>₹{grandTotalWithCOD.toFixed(2)}</span>
+                    <span style={{ color: "var(--theme-color)" }}>₹{grandTotalWithCOD.toFixed(2)}</span>
                   </div>
 
                   {shippingPricing.couponDiscount > 0 && (
@@ -1693,7 +1693,7 @@ const Checkout = () => {
                       borderRadius: "12px",
                       fontSize: "15px",
                       fontWeight: "800",
-                      background: "linear-gradient(135deg, #b60410, #c01550)",
+                      background: "linear-gradient(135deg, var(--theme-color), #c01550)",
                       color: "#fff",
                       border: "none",
                       boxShadow: "0 4px 14px rgba(219,26,93,0.28)",

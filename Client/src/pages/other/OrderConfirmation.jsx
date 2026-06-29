@@ -808,16 +808,16 @@ const docBtnStyle = {
 };
 
 const ctaBtnPrimary = {
-  background: "#b60410", color: "#fff",
+  background: "var(--theme-color)", color: "#fff",
   padding: "12px 28px", borderRadius: 30,
   fontWeight: 600, textDecoration: "none", fontSize: 14,
   display: "inline-flex", alignItems: "center", gap: 6,
 };
 const ctaBtnOutline = {
-  background: "#fff", color: "#b60410",
+  background: "#fff", color: "var(--theme-color)",
   padding: "12px 28px", borderRadius: 30,
   fontWeight: 600, textDecoration: "none", fontSize: 14,
-  border: "2px solid #b60410",
+  border: "2px solid var(--theme-color)",
   display: "inline-flex", alignItems: "center", gap: 6,
 };
 

@@ -172,7 +172,7 @@ ul {
 }
 
 a:hover {
-  color: #b60410;
+  color: var(--theme-color);
 }
 
 /*************************
@@ -1680,7 +1680,7 @@ textarea:focus {
   border: none;
   border-radius: 50px;
   background: none;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 @media only screen and (max-width: 767px) {
   .scroll-top {
@@ -1839,7 +1839,7 @@ textarea:focus {
 .btn-hover a:hover,
 .btn-hover button:hover {
   color: #fff;
-  border: 1px solid #b60410;
+  border-color: transparent;
 }
 .btn-hover a::before, .btn-hover a::after,
 .btn-hover button::before,
@@ -1858,7 +1858,7 @@ textarea:focus {
   right: 0;
   left: auto;
   width: 0;
-  background: #b60410;
+  background: var(--theme-gradient);
 }
 .btn-hover a:hover::after,
 .btn-hover button:hover::after {
@@ -1987,7 +1987,7 @@ a.default-btn {
 }
 .item-empty-area__text a:hover {
   color: #ffffff;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 
 .fullpage-slider-wrapper .Navigation .Navigation-Anchor {
@@ -2049,6 +2049,7 @@ button:disabled {
 .swiper-wrap {
   position: relative;
 }
+
 
 
 

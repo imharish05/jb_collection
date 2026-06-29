@@ -1,4 +1,4 @@
-﻿/* updated */
+/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -73,7 +73,7 @@
   color: #fff;
   border: medium none;
   border-radius: 50px;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .billing-info-wrap .checkout-account-toggle button.checkout-btn:hover {
   background-color: #333;
@@ -184,7 +184,7 @@
   font-size: 16px;
   font-weight: 500;
   list-style: outside none none;
-  color: #b60410;
+  color: var(--theme-color);
 }
 .your-order-area .payment-accordion {
   margin: 0 0 16px;
@@ -203,7 +203,7 @@
   color: #212121;
 }
 .your-order-area .payment-accordion h4 a:hover {
-  color: #b60410;
+  color: var(--theme-color);
 }
 .your-order-area .payment-accordion .panel-body {
   padding: 5px 0 0 0;
@@ -228,7 +228,7 @@
   border: none;
   border-radius: 50px;
   background: none;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .your-order-area .place-order > a:hover,
 .your-order-area .place-order > button:hover {
@@ -240,6 +240,7 @@
     padding-bottom: 60px;
   }
 }
+
 
 
 

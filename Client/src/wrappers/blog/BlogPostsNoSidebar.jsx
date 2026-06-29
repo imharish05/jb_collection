@@ -44,7 +44,7 @@ const BlogPostsNoSidebar = () => {
                 <div className="share-social">
                   <ul>
                     <li>
-                      <a className="facebook" href="//facebook.com">
+                      <a className="facebook" href="https://www.facebook.com/share/1E8XuTpw4k/">
                         <i className="fa fa-facebook" />
                       </a>
                     </li>
@@ -56,7 +56,7 @@ const BlogPostsNoSidebar = () => {
                     <li>
                       <a
                         className="instagram"
-                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        href="https://www.instagram.com/jbtexandtailors?igsh=MWE2dTU3dzRpOW12dA=="
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -111,7 +111,7 @@ const BlogPostsNoSidebar = () => {
                 <div className="share-social">
                   <ul>
                     <li>
-                      <a className="facebook" href="//facebook.com">
+                      <a className="facebook" href="https://www.facebook.com/share/1E8XuTpw4k/">
                         <i className="fa fa-facebook" />
                       </a>
                     </li>
@@ -123,7 +123,7 @@ const BlogPostsNoSidebar = () => {
                     <li>
                       <a
                         className="instagram"
-                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        href="https://www.instagram.com/jbtexandtailors?igsh=MWE2dTU3dzRpOW12dA=="
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -178,7 +178,7 @@ const BlogPostsNoSidebar = () => {
                 <div className="share-social">
                   <ul>
                     <li>
-                      <a className="facebook" href="//facebook.com">
+                      <a className="facebook" href="https://www.facebook.com/share/1E8XuTpw4k/">
                         <i className="fa fa-facebook" />
                       </a>
                     </li>
@@ -190,7 +190,7 @@ const BlogPostsNoSidebar = () => {
                     <li>
                       <a
                         className="instagram"
-                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        href="https://www.instagram.com/jbtexandtailors?igsh=MWE2dTU3dzRpOW12dA=="
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -245,7 +245,7 @@ const BlogPostsNoSidebar = () => {
                 <div className="share-social">
                   <ul>
                     <li>
-                      <a className="facebook" href="//facebook.com">
+                      <a className="facebook" href="https://www.facebook.com/share/1E8XuTpw4k/">
                         <i className="fa fa-facebook" />
                       </a>
                     </li>
@@ -257,7 +257,7 @@ const BlogPostsNoSidebar = () => {
                     <li>
                       <a
                         className="instagram"
-                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        href="https://www.instagram.com/jbtexandtailors?igsh=MWE2dTU3dzRpOW12dA=="
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -312,7 +312,7 @@ const BlogPostsNoSidebar = () => {
                 <div className="share-social">
                   <ul>
                     <li>
-                      <a className="facebook" href="//facebook.com">
+                      <a className="facebook" href="https://www.facebook.com/share/1E8XuTpw4k/">
                         <i className="fa fa-facebook" />
                       </a>
                     </li>
@@ -324,7 +324,7 @@ const BlogPostsNoSidebar = () => {
                     <li>
                       <a
                         className="instagram"
-                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        href="https://www.instagram.com/jbtexandtailors?igsh=MWE2dTU3dzRpOW12dA=="
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -379,7 +379,7 @@ const BlogPostsNoSidebar = () => {
                 <div className="share-social">
                   <ul>
                     <li>
-                      <a className="facebook" href="//facebook.com">
+                      <a className="facebook" href="https://www.facebook.com/share/1E8XuTpw4k/">
                         <i className="fa fa-facebook" />
                       </a>
                     </li>
@@ -391,7 +391,7 @@ const BlogPostsNoSidebar = () => {
                     <li>
                       <a
                         className="instagram"
-                        href="https://www.instagram.com/kamaligiftsfactory?utm_source=qr&igsh=MThqdmp6ODBlazdkdw=="
+                        href="https://www.instagram.com/jbtexandtailors?igsh=MWE2dTU3dzRpOW12dA=="
                         target="_blank"
                         rel="noopener noreferrer"
                       >

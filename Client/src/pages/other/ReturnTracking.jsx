@@ -313,7 +313,7 @@ const ReturnTracking = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              backgroundColor: "#b60410",
+                              backgroundColor: "var(--theme-color)",
                               color: "#fff",
                               padding: "6px 16px",
                               fontSize: "12px",
@@ -357,8 +357,8 @@ const ReturnTracking = () => {
                       <div style={{ marginTop:'12px', padding:'12px 16px', background:'#fef2f2', border:'1px solid #fca5a5', borderRadius:'6px' }}>
                         <p style={{ margin:0, fontSize:'13px', color:'#b91c1c', fontWeight:600 }}>
                           Your refund could not be processed automatically. Please contact us at{' '}
-                          <a href="mailto:Kamalireturngifts@gmail.com" style={{ color:'#b91c1c' }}>
-                            Kamalireturngifts@gmail.com
+                          <a href="mailto:jbbeautyandfashion@gmail.com" style={{ color:'#b91c1c' }}>
+                            jbbeautyandfashion@gmail.com
                           </a>{' '}
                           with your Return ID and we will resolve this within 2 business days.
                         </p>

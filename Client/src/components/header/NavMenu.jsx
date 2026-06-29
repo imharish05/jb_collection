@@ -5,28 +5,66 @@ import { useSelector } from "react-redux";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 
-const IMG_BASE = process.env.REACT_APP_IMG_URL || 'http://localhost:5000';
-const imgSrc = (path) => {
-  if (!path) return null;
-  const cleanBase = IMG_BASE.endsWith('/') ? IMG_BASE : `${IMG_BASE}/`;
-  let cleanPath = path.trim().replace(/^\//, '');
-  if (!cleanPath.startsWith('uploads/')) {
-    cleanPath = `uploads/${cleanPath}`;
-  }
-  return `${cleanBase}${cleanPath}`;
-};
+const IMG_BASE = process.env.REACT_APP_IMG_URL + "/uploads/";
 
-/* ─── Portal wrapper — positions the dropdown via fixed coords ─── */
-const PortalDropdown = ({ anchorRef, open, onMouseEnter, onMouseLeave, children }) => {
+const imgSrc = (path) =>
+  path ? `${IMG_BASE}${path.replace(/^\/?(uploads\/)?/, "")}` : null;
+
+
+
+/* ── Single image card used in the mega panel ── */
+const CatalogueCard = ({ to, image, label, emoji }) => (
+  <Link to={to} className="catalogue-card">
+    <span className="catalogue-card__img-wrap">
+      {image ? (
+        <img
+          src={imgSrc(image)}
+          alt={label}
+          className="catalogue-card__img"
+          onError={(e) => {
+            e.target.style.display = "none";
+            e.target.nextSibling.style.display = "flex";
+          }}
+        />
+      ) : null}
+      <span
+        className="catalogue-card__fallback"
+        style={{ display: image ? "none" : "flex" }}
+      >
+        {emoji}
+      </span>
+    </span>
+    <span className="catalogue-card__label">{label}</span>
+  </Link>
+);
+
+/* ── Mega panel section with title + grid of cards ── */
+const MegaSection = ({ title, accent, items, renderItem }) =>
+  items.length === 0 ? null : (
+    <div className="mega-section">
+      <p className="mega-section__title" style={{ "--accent": accent }}>
+        {title}
+      </p>
+      <div className="mega-section__grid">{items.map(renderItem)}</div>
+    </div>
+  );
+
+/* ── Portal wrapper — renders panel at <body> to escape all parent clipping ── */
+const PortalMegaPanel = ({ anchorRef, open, onMouseEnter, onMouseLeave, children }) => {
   const [style, setStyle] = useState({});
 
   const reposition = useCallback(() => {
     if (!anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
+    const panelWidth = Math.min(860, window.innerWidth * 0.92);
+    let left = rect.left + rect.width / 2 - panelWidth / 2;
+    // clamp so it doesn't go off-screen
+    left = Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8));
     setStyle({
       position: "fixed",
       top: rect.bottom + 2,
-      left: rect.left,
+      left,
+      width: panelWidth,
     });
   }, [anchorRef]);
 
@@ -45,7 +83,7 @@ const PortalDropdown = ({ anchorRef, open, onMouseEnter, onMouseLeave, children 
 
   return createPortal(
     <div
-      className={clsx("kg-collections-panel", open && "kg-collections-panel--open")}
+      className="kg-mega-panel kg-mega-panel--open"
       style={style}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -56,159 +94,56 @@ const PortalDropdown = ({ anchorRef, open, onMouseEnter, onMouseLeave, children 
   );
 };
 
-/* ─── Subcategory flyout panel (floating box next to row) ─── */
-const SubFlyoutPanel = ({ cat, shopBase }) => {
-  const subs = cat.subcategories || [];
-  return (
-    <div className="kg-sub-flyout-panel" onMouseEnter={(e) => e.stopPropagation()}>
-      <div className="kg-col-sub-list">
-        {subs.map((sub) => (
-          <Link
-            key={sub.id}
-            to={sub.value ? `${shopBase}?subcategory=${sub.value}` : `${shopBase}?category=${cat.value}`}
-            className="kg-col-sub-pill"
-          >
-            {sub.label}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-/* ─── Category row (left column) ─── */
-const CategoryRow = ({ cat, isHovered, onHover, shopBase }) => {
-  const hasSubs = cat.subcategories && cat.subcategories.length > 0;
-  return (
-    <div
-      className={clsx("kg-col-cat-row", isHovered && "kg-col-cat-row--active")}
-      onMouseEnter={() => onHover(cat.id)}
-    >
-      {/* Category image thumbnail (only shown if present) */}
-      {cat.image && (
-        <span className="kg-col-cat-row__icon">
-          <img
-            src={imgSrc(cat.image)}
-            alt={cat.label}
-            className="kg-col-cat-row__img"
-            onError={(e) => { e.target.parentNode.style.display = "none"; }}
-          />
-        </span>
-      )}
-
-      {/* Category name */}
-      <Link
-        to={cat.value ? `${shopBase}?category=${cat.value}` : shopBase}
-        className="kg-col-cat-row__name"
-      >
-        {cat.label}
-      </Link>
-
-      {/* Arrow indicator when subs exist */}
-      {hasSubs && (
-        <span className="kg-col-cat-row__arrow">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-      )}
-
-      {/* Render subcategories flyout box inline next to row if hovered */}
-      {isHovered && hasSubs && (
-        <SubFlyoutPanel cat={cat} shopBase={shopBase} />
-      )}
-    </div>
-  );
-};
-
-/* ─── Main NavMenu ─── */
 const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
-  const { categories = [] } = useSelector((state) => state.navMenu || {});
+  const { categories = [], events = [], rootCombos = [] } = useSelector(
+    (state) => state.navMenu || {}
+  );
   const location = useLocation();
-  const S = process.env.PUBLIC_URL + "/shop";
 
-  const [collectionsOpen, setCollectionsOpen] = useState(false);
-  const [hoveredCatId, setHoveredCatId] = useState(null);
+  const S = process.env.PUBLIC_URL + "/shop";
+  const [catalogueOpen, setCatalogueOpen] = useState(false);
   const closeTimer = useRef(null);
   const anchorRef = useRef(null);
 
-  const isActive = (path) => {
-    const basePath = process.env.PUBLIC_URL || "";
-    const currentPath = location.pathname.replace(basePath, "") || "/";
-    const targetPath = path.replace(basePath, "") || "/";
-    return currentPath === targetPath || currentPath === targetPath + "/";
-  };
-
   const openPanel = useCallback(() => {
     clearTimeout(closeTimer.current);
-    setCollectionsOpen(true);
+    setCatalogueOpen(true);
   }, []);
 
   const scheduleClose = useCallback(() => {
-    closeTimer.current = setTimeout(() => {
-      setCollectionsOpen(false);
-      setHoveredCatId(null);
-    }, 180);
+    closeTimer.current = setTimeout(() => setCatalogueOpen(false), 160);
   }, []);
 
   useEffect(() => () => clearTimeout(closeTimer.current), []);
 
-  // Sidebar mobile menu display
-  if (sidebarMenu) {
-    return (
-      <div className="sidebar-menu kg-nav">
-        <nav>
-          <ul>
-            <li className={isActive(process.env.PUBLIC_URL + "/") ? "active" : ""}>
-              <Link to={process.env.PUBLIC_URL + "/"}>Home</Link>
-            </li>
-            <li className={isActive(process.env.PUBLIC_URL + "/about") ? "active" : ""}>
-              <Link to={process.env.PUBLIC_URL + "/about"}>About</Link>
-            </li>
-            <li className={clsx(categories.length > 0 && "kg-dropdown-item")}>
-              <Link to={S}>Collections</Link>
-              {categories.length > 0 && (
-                <ul className="kg-sub-dropdown">
-                  {categories.map((cat) => (
-                    <li key={cat.id}>
-                      <Link to={`${S}?category=${cat.value}`}>{cat.label}</Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-            <li className={isActive(process.env.PUBLIC_URL + "/contact") ? "active" : ""}>
-              <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
-            </li>
-          </ul>
-        </nav>
-      </div>
-    );
-  }
-
   return (
-    <div className={clsx(`main-menu ${menuWhiteClass || ""}`, "kg-nav")}>
+    <div
+      className={clsx(
+        sidebarMenu ? "sidebar-menu" : `main-menu ${menuWhiteClass || ""}`,
+        "kg-nav"
+      )}
+    >
       <nav>
         <ul>
-          <li className={isActive(process.env.PUBLIC_URL + "/") ? "active" : ""}>
+          <li className={location.pathname === (process.env.PUBLIC_URL + "/") ? "active" : ""}>
             <Link to={process.env.PUBLIC_URL + "/"}>Home</Link>
           </li>
-          <li className={isActive(process.env.PUBLIC_URL + "/about") ? "active" : ""}>
+          <li className={location.pathname === (process.env.PUBLIC_URL + "/about") ? "active" : ""}>
             <Link to={process.env.PUBLIC_URL + "/about"}>About</Link>
           </li>
 
-          {/* Collections dropdown list */}
+          {/* ── Catalogue with portal mega panel ── */}
           <li
             ref={anchorRef}
             className={clsx(
-              "kg-catalogue-item",
-              collectionsOpen && "kg-catalogue-item--open",
-              isActive(S) ? "active" : ""
+              "kg-catalogue-item", 
+              catalogueOpen && "kg-catalogue-item--open",
+              location.pathname.startsWith(process.env.PUBLIC_URL + "/shop") && "active"
             )}
             onMouseEnter={openPanel}
             onMouseLeave={scheduleClose}
           >
-            <Link to={S} className="kg-catalogue-trigger">
+            <Link to={process.env.PUBLIC_URL + "/shop"} className="kg-catalogue-trigger">
               Collections
               <span className="kg-chevron">
                 <svg width="12" height="7" viewBox="0 0 12 7" fill="none">
@@ -217,28 +152,71 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
               </span>
             </Link>
 
-            <PortalDropdown
-              anchorRef={anchorRef}
-              open={collectionsOpen}
-              onMouseEnter={openPanel}
-              onMouseLeave={scheduleClose}
-            >
-              {/* Categories list */}
-              <div className="kg-col-left">
-                {categories.map((cat) => (
-                  <CategoryRow
-                    key={cat.id}
-                    cat={cat}
-                    isHovered={hoveredCatId === cat.id}
-                    onHover={setHoveredCatId}
-                    shopBase={S}
+            {!sidebarMenu && (
+              <PortalMegaPanel
+                anchorRef={anchorRef}
+                open={catalogueOpen}
+                onMouseEnter={openPanel}
+                onMouseLeave={scheduleClose}
+              >
+                <div className="kg-mega-inner">
+                  <MegaSection
+                    title="Categories"
+                    accent="#db1a5d"
+                    items={categories}
+                    renderItem={(cat) => (
+                      <CatalogueCard
+                        key={cat.value ?? cat.id}
+                        to={cat.value ? `${S}?category=${cat.value}` : S}
+                        image={cat.image}
+                        label={cat.label}
+                        emoji="🗂️"
+                      />
+                    )}
                   />
-                ))}
-              </div>
-            </PortalDropdown>
+
+                  <MegaSection
+                    title="Events"
+                    accent="#f59e0b"
+                    items={events}
+                    renderItem={(evt) => (
+                      <CatalogueCard
+                        key={evt.value}
+                        to={`${S}?event=${evt.value}`}
+                        image={evt.image}
+                        label={evt.label}
+                        emoji="🎉"
+                      />
+                    )}
+                  />
+
+                  {/* <MegaSection
+                    title="Combos"
+                    accent="#10b981"
+                    items={rootCombos}
+                    renderItem={(combo) => (
+                      <CatalogueCard
+                        key={combo.id}
+                        to={`${S}?combo=${combo.id}`}
+                        image={combo.image}
+                        label={combo.name}
+                        emoji="🎁"
+                      />
+                    )}
+                  /> */}
+
+                  {/* CTA strip */}
+                  <div className="kg-mega-cta">
+                    <Link to={process.env.PUBLIC_URL + "/shop"} className="kg-mega-cta__btn">
+                      View all products →
+                    </Link>
+                  </div>
+                </div>
+              </PortalMegaPanel>
+            )}
           </li>
 
-          <li className={isActive(process.env.PUBLIC_URL + "/contact") ? "active" : ""}>
+          <li className={location.pathname === (process.env.PUBLIC_URL + "/contact") ? "active" : ""}>
             <Link to={process.env.PUBLIC_URL + "/contact"}>Contact Us</Link>
           </li>
         </ul>

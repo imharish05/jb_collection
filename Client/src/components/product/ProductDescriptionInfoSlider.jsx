@@ -255,7 +255,7 @@ const ProductDescriptionInfoSlider = ({
       <div className="pro-details-social">
         <ul className="justify-content-center">
           <li>
-            <a href="//facebook.com">
+            <a href="https://www.facebook.com/share/1E8XuTpw4k/">
               <i className="fa fa-facebook" />
             </a>
           </li>

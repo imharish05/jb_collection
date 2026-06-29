@@ -211,8 +211,8 @@ const TermsConditions = () => {
                   <p>Mon–Sat, 9 AM – 6 PM IST.</p>
                 </div>
                 <div className="policy-contact-items">
-                  <div className="policy-contact-item"><span>Email</span> kamalireturngifts@gmail.com</div>
-                  <div className="policy-contact-item"><span>WhatsApp</span> +91 73388 14319</div>
+                  <div className="policy-contact-item"><span>Email</span> jbbeautyandfashion@gmail.com</div>
+                  <div className="policy-contact-item"><span>WhatsApp</span> +91 95008 48860</div>
                 </div>
               </div>
             </div>

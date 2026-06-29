@@ -94,7 +94,7 @@ const ProductImageGallerySideThumb = ({ product, thumbPosition }) => {
       cursor:        "pointer",
       borderRadius:  6,
       overflow:      "hidden",
-      border:        isActive ? "2px solid #b60410" : "2px solid transparent",
+      border:        isActive ? "2px solid var(--theme-color)" : "2px solid transparent",
       transition:    "border-color 0.15s ease",
       background:    "#f3f4f6",
     }),
@@ -172,7 +172,7 @@ const ProductImageGallerySideThumb = ({ product, thumbPosition }) => {
       borderRadius: 6,
       overflow:    "hidden",
       cursor:      "pointer",
-      border:      isActive ? "2px solid #b60410" : "2px solid transparent",
+      border:      isActive ? "2px solid var(--theme-color)" : "2px solid transparent",
       background:  "#f3f4f6",
       transition:  "border-color 0.15s ease",
     }),
@@ -224,7 +224,7 @@ const ProductImageGallerySideThumb = ({ product, thumbPosition }) => {
             {(badgeDiscount || badgeNew) && (
               <div style={styles.badgeWrap}>
                 {badgeDiscount ? (
-                  <span style={{ fontSize: 13, fontWeight: 500, padding: "3px 11px", color: "#fff", borderRadius: 3, background: "#b60410" }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, padding: "3px 11px", color: "#fff", borderRadius: 3, background: "var(--theme-color)" }}>
                     -{badgeDiscount}%
                   </span>
                 ) : null}
@@ -261,7 +261,7 @@ const ProductImageGallerySideThumb = ({ product, thumbPosition }) => {
           {(badgeDiscount || badgeNew) && (
             <div style={styles.badgeWrap}>
               {badgeDiscount ? (
-                <span style={{ fontSize: 13, fontWeight: 500, padding: "3px 11px", color: "#fff", borderRadius: 3, background: "#b60410" }}>
+                <span style={{ fontSize: 13, fontWeight: 500, padding: "3px 11px", color: "#fff", borderRadius: 3, background: "var(--theme-color)" }}>
                   -{badgeDiscount}%
                 </span>
               ) : null}

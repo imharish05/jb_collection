@@ -1,4 +1,4 @@
-﻿/* updated */
+/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -127,38 +127,38 @@
   background-color: #000;
 }
 .funfact-content .funfact-btn a:hover {
-  border: 1px solid #b60410;
+  border: 1px solid var(--theme-color);
 }
 .funfact-content .funfact-btn.btn-only-round a {
   overflow: hidden;
   border-radius: 50px;
 }
 .funfact-content .funfact-btn.btn-only-round a:hover {
-  border: 1px solid #b60410;
+  border: 1px solid var(--theme-color);
 }
 .funfact-content .funfact-btn.funfact-btn-red a {
   background-color: #c61a32;
 }
 .funfact-content .funfact-btn.funfact-btn-red a:hover {
-  border: 1px solid #b60410;
+  border: 1px solid var(--theme-color);
 }
 .funfact-content .funfact-btn.funfact-btn-red-2 a {
   background-color: #c61a32;
 }
 .funfact-content .funfact-btn.funfact-btn-red-2 a:hover {
-  border: 1px solid #b60410;
+  border: 1px solid var(--theme-color);
 }
 .funfact-content .funfact-btn.funfact-btn-violet a {
   background-color: #ab87cd;
 }
 .funfact-content .funfact-btn.funfact-btn-violet a:hover {
-  border: 1px solid #b60410;
+  border: 1px solid var(--theme-color);
 }
 .funfact-content .funfact-btn.funfact-btn-green a {
   background-color: #6eab49;
 }
 .funfact-content .funfact-btn.funfact-btn-green a:hover {
-  border: 1px solid #b60410;
+  border: 1px solid var(--theme-color);
 }
 .funfact-content .funfact-btn.funfact-btn-brown a {
   font-weight: 500;
@@ -274,6 +274,7 @@
     margin: 0 0 35px;
   }
 }
+
 
 
 

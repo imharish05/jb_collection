@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import clsx from "clsx";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, cloneElement } from "react";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import Slider from "rc-slider";
@@ -91,6 +91,68 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
 
   const isAllProductsActive = !activeCategory && !activeEvent && !activeCombo && !activeSubCat;
 
+  const handleRender = (node, handleProps) => {
+    const { value, dragging, index } = handleProps;
+    const isLeft = index === 0;
+    const color = isLeft ? "var(--theme-color-secondary)" : "var(--theme-color)";
+    
+    return cloneElement(node, {
+      style: {
+        ...node.props.style,
+        backgroundColor: "transparent",
+        border: "none",
+        boxShadow: "none",
+        width: 24,
+        height: 24,
+        marginTop: -9, // center over the track
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: dragging ? 2 : 1
+      }
+    }, (
+      <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        {/* Tooltip */}
+        <div style={{
+          position: "absolute",
+          top: -38,
+          backgroundColor: color,
+          color: "white",
+          padding: "4px 8px",
+          borderRadius: "6px",
+          fontSize: "12px",
+          fontWeight: "bold",
+          whiteSpace: "nowrap",
+          boxShadow: "0 2px 5px rgba(0,0,0,0.2)"
+        }}>
+          ₹{value}
+          <div style={{
+            position: "absolute",
+            bottom: -5,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 0,
+            height: 0,
+            borderLeft: "6px solid transparent",
+            borderRight: "6px solid transparent",
+            borderTop: `6px solid ${color}`
+          }}></div>
+        </div>
+        
+        {/* Thumb design */}
+        <div style={{
+          width: 24,
+          height: 24,
+          borderRadius: "50%",
+          backgroundColor: color,
+          border: "3px solid #fff", 
+          boxShadow: `0 0 0 2px ${color}80, 0 2px 4px rgba(0,0,0,0.2)`, 
+          boxSizing: "border-box"
+        }}></div>
+      </div>
+    ));
+  };
+
   return (
     <div className={clsx("sidebar-style", sideSpaceClass)} style={styles.root}>
       
@@ -119,24 +181,10 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
         </div>
 
         <div className={clsx("mobile-accordion-content", (mobileSections.price || !isMobile) && "open")} style={(!mobileSections.price && isMobile) ? {display: 'none'} : {marginTop: 14}}>
-          <div style={styles.priceBadgeRow} >
-            <div style={styles.priceBadge}>
-              <span style={styles.badgeLabel}>Min</span>
-              <span style={styles.badgeValue}>
-                ₹{(priceRange ? priceRange.min : priceMin).toLocaleString("en-IN")}
-              </span>
-            </div>
-            <span style={styles.priceSep}>—</span>
-            <div style={styles.priceBadge}>
-              <span style={styles.badgeLabel}>Max</span>
-              <span style={styles.badgeValue}>
-                ₹{(priceRange ? priceRange.max : priceMax).toLocaleString("en-IN")}
-              </span>
-            </div>
-          </div>
+
 
           {/* Wrapper to add horizontal indentation specifically for the track on mobile viewports */}
-          <div style={isMobile ? styles.sliderMobileWrapper : undefined}>
+          <div style={{ ...(isMobile ? styles.sliderMobileWrapper : {}), marginTop: 50, marginBottom: 20 }}>
             <Slider
               range
               min={priceMin}
@@ -145,18 +193,12 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
               value={sliderValue}
               onChange={handlePriceChange}
               onAfterChange={handlePriceAfterChange}
-              trackStyle={[{ backgroundColor: "#b60410", height: 3 }]}
-              handleStyle={[
-                { borderColor: "#b60410", backgroundColor: "#fff", width: 18, height: 18, marginTop: -7.5, boxShadow: "0 1px 4px rgba(219, 26, 93,0.35)", opacity: 1 },
-                { borderColor: "#b60410", backgroundColor: "#fff", width: 18, height: 18, marginTop: -7.5, boxShadow: "0 1px 4px rgba(219, 26, 93,0.35)", opacity: 1 },
-              ]}
-              railStyle={{ backgroundColor: "#e8e8e8", height: 3 }}
+              trackStyle={[{ background: "linear-gradient(to right, var(--theme-color-secondary), var(--theme-color))", height: 6, borderRadius: 3 }]}
+              handleRender={handleRender}
+              railStyle={{ backgroundColor: "#f0f0f0", height: 6, borderRadius: 3 }}
             />
 
-            <div style={styles.priceLimits}>
-              <span>₹{priceMin.toLocaleString("en-IN")}</span>
-              <span>₹{priceMax.toLocaleString("en-IN")}</span>
-            </div>
+
           </div>
         </div>
       </div>
@@ -360,7 +402,7 @@ const styles = {
   },
   mobileChevron: { fontSize: 10, color: "#bbb" },
   clearBtn: {
-    background: "none", border: "none", color: "#b60410",
+    background: "none", border: "none", color: "var(--theme-color)",
     fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, textDecoration: "underline",
   },
   priceBadgeRow: { display: "flex", alignItems: "center", gap: 8, marginBottom: 16 },

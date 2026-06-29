@@ -1,6 +1,6 @@
-﻿:root {
+:root {
   --ev-navy: #001d3d;
-  --ev-pink: #b60410;
+  --ev-pink: var(--theme-color);
   --ev-bg-soft: #e8f5f1; /* Very light teal tint */
   --ev-glass-bg: rgba(255, 255, 255, 0.8);
 }
@@ -82,5 +82,6 @@
     padding: 0 10px;
   }
 }
+
 
 

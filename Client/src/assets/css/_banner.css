@@ -1,4 +1,4 @@
-﻿/* updated */
+/* updated */
 /* updated */
 /* was purple, now soft pink */
 /* navy blue */
@@ -109,16 +109,16 @@
   line-height: 25px;
 }
 .single-banner .banner-content a:hover {
-  color: #b60410;
-  border: 2px solid #b60410;
+  color: var(--theme-color);
+  border: 2px solid var(--theme-color);
 }
 .single-banner .banner-content.banner-pink a {
-  color: #b60410;
-  border: 2px solid #b60410;
+  color: var(--theme-color);
+  border: 2px solid var(--theme-color);
 }
 .single-banner .banner-content.banner-pink a:hover {
-  color: #b60410;
-  border: 2px solid #b60410;
+  color: var(--theme-color);
+  border: 2px solid var(--theme-color);
 }
 .single-banner .banner-content--style2 h3 {
   color: #1c1c1c;
@@ -316,22 +316,22 @@
   border-radius: 100%;
 }
 .single-banner .banner-content-3 > a:hover {
-  color: #b60410;
-  border: 2px solid #b60410;
+  color: var(--theme-color);
+  border: 2px solid var(--theme-color);
 }
 .single-banner .banner-content-3.pink-banner p {
   color: #010101;
 }
 .single-banner .banner-content-3.pink-banner p span {
-  color: #b60410;
+  color: var(--theme-color);
 }
 .single-banner .banner-content-3.pink-banner > a {
-  color: #b60410;
-  border: 2px solid #b60410;
+  color: var(--theme-color);
+  border: 2px solid var(--theme-color);
 }
 .single-banner .banner-content-3.pink-banner > a:hover {
-  color: #b60410;
-  border: 2px solid #b60410;
+  color: var(--theme-color);
+  border: 2px solid var(--theme-color);
 }
 .single-banner .banner-content-4 span {
   font-size: 18px;
@@ -405,19 +405,19 @@
   background-color: #6eab49;
 }
 .single-banner .banner-content-4 > a:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .single-banner .banner-content-4.pink-banner span {
-  color: #b60410;
+  color: var(--theme-color);
 }
 .single-banner .banner-content-4.pink-banner h2 {
-  color: #b60410;
+  color: var(--theme-color);
 }
 .single-banner .banner-content-4.pink-banner > a {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .single-banner .banner-content-4.pink-banner > a:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .single-banner .banner-content-5 {
   position: absolute;
@@ -499,8 +499,8 @@
   border-radius: 100%;
 }
 .single-banner .banner-content-5 a:hover {
-  color: #b60410;
-  border: 2px solid #b60410;
+  color: var(--theme-color);
+  border: 2px solid var(--theme-color);
 }
 .single-banner .banner-content-5.banner-content-5-white h3 {
   color: #fff;
@@ -520,7 +520,7 @@
   background-color: #e90042;
 }
 .single-banner .banner-content-6 a:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .single-banner .banner-content-7 {
   position: absolute;
@@ -598,8 +598,8 @@
   border-radius: 100%;
 }
 .single-banner .banner-content-7 > a:hover {
-  color: #b60410;
-  border: 2px solid #b60410;
+  color: var(--theme-color);
+  border: 2px solid var(--theme-color);
 }
 .single-banner .banner-content-8 {
   position: absolute;
@@ -712,8 +712,8 @@
   border-radius: 100%;
 }
 .single-banner .banner-content-8 > a:hover {
-  color: #b60410;
-  border: 2px solid #b60410;
+  color: var(--theme-color);
+  border: 2px solid var(--theme-color);
 }
 .single-banner .banner-content-33 {
   position: absolute;
@@ -1107,8 +1107,8 @@
   border-color: #ab87cd;
 }
 .single-banner-2 .banner-content-2--style2--pink a {
-  color: #b60410;
-  border-color: #b60410;
+  color: var(--theme-color);
+  border-color: var(--theme-color);
 }
 .single-banner-2 .banner-content-2--style3 h3 {
   font-size: 36px;
@@ -1281,10 +1281,10 @@
   display: inline-block;
   padding: 13px 40px 15px;
   color: #fff;
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 .save-money-content .save-money-btn a:hover {
-  background-color: #b60410;
+  background: var(--theme-gradient);
 }
 
 .medical-contact-area {
@@ -1428,6 +1428,7 @@
 .cta-content .cta-btn:hover {
   background-color: #053399;
 }
+
 
 
 

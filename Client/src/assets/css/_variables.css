@@ -10,6 +10,8 @@
 */
 :root {
   --theme-color: #b60410;
+  --theme-color-secondary: #e6683c;
+  --theme-gradient: linear-gradient(to right, var(--theme-color-secondary), var(--theme-color));
   --theme-color-2: #0d1b40;
   --font-size-2xs: 10px;
   --font-size-xs: 11px;
@@ -47,5 +49,6 @@
   --theme-color-2: #0d1b40;
 }
         
+
 
 

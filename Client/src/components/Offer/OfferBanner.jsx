@@ -130,7 +130,7 @@ const OfferBanner = () => {
           position: absolute;
           top: 15px;
           left: 15px;
-          background: #b60410;
+          background: var(--theme-color);
           color: #fff;
           font-size: 12event-section-wrapper pt-30 pb-30;
           font-weight: 800;
