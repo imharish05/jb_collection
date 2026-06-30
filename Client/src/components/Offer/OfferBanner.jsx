@@ -153,25 +153,27 @@ const OfferBanner = () => {
           padding: 20px 18px 18px;
         }
         .tt-card-title {
-          color: #fff;
-          font-size: 16px;
-          font-weight: 600;
+          color: #ffffff !important;
+          font-size: 24px;
+          font-weight: 700;
           margin: 0 0 10px;
           line-height: 1.3;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
+          text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
         }
         .tt-card-cta {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          color: rgba(255,255,255,0.8);
-          font-size: 12px;
-          font-weight: 500;
-          letter-spacing: 0.3px;
+          color: #ffffff !important;
+          font-size: 15px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
           transition: gap 0.2s ease, color 0.2s ease;
+          text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
         }
         .tt-card:hover .tt-card-cta { gap: 10px; color: #fff; }
 

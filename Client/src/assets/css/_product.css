@@ -2651,7 +2651,7 @@ updated
   margin: 20px 0 0;
 }
 .product-wrap-9 .product-content-2 .title-price-wrap-2 h3 {
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   line-height: 1;
   margin: 0 0 6px;
 }
@@ -2806,7 +2806,7 @@ updated
   margin: 20px 0 0;
 }
 .product-wrap-10 .product-content-2 .title-price-wrap-2 h3 {
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   line-height: 1;
   margin: 0 0 6px;
 }
@@ -3224,7 +3224,7 @@ updated
   margin-right: 0;
 }
 .product-tab-list-7 a h4 {
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 24px;
   font-weight: 700;
   margin: 0;
@@ -3456,7 +3456,7 @@ updated
 .product-card-premium:hover .main-img { opacity: 0; }
 .product-card-premium:hover .product-img-container img { transform: scale(1.08); }
 
-/* Single-image: zoom only — do NOT fade the main image out */
+/* Single-image: zoom only ï¿½ do NOT fade the main image out */
 .product-card-premium.single-image-card:hover .main-img { opacity: 1; }
 .product-card-premium.single-image-card:hover .product-img-container img { transform: scale(1.08); }
 
@@ -3548,7 +3548,7 @@ updated
 
 .cart-action-overlay button:disabled { opacity: 1; cursor: not-allowed; }
 
-/* In Cart state — green confirmation */
+/* In Cart state ï¿½ green confirmation */
 .cart-action-overlay button.in-cart,
 .cart-action-overlay button.in-cart:hover {
     background: #22c55e;
@@ -3740,7 +3740,7 @@ updated
 
 
 /* ============================================================
-   DAILY DEALS — section-per-type horizontal scroll design
+   DAILY DEALS ï¿½ section-per-type horizontal scroll design
    ============================================================ */
 
 .deals-area {
@@ -4150,7 +4150,7 @@ updated
 .cart-action-overlay button:hover,
 .cart-action-overlay a.cart-action-btn:hover { background: var(--p-pink); }
 .cart-action-overlay button:disabled { opacity: 1; cursor: not-allowed; }
-/* In Cart state — green confirmation */
+/* In Cart state ï¿½ green confirmation */
 .cart-action-overlay button.in-cart,
 .cart-action-overlay button.in-cart:hover {
     background: #22c55e;
@@ -4380,7 +4380,7 @@ updated
 
 
 /* ============================================================
-   DAILY DEALS — section-per-type horizontal scroll design
+   DAILY DEALS ï¿½ section-per-type horizontal scroll design
    ============================================================ */
 
 .deals-area {
@@ -4631,7 +4631,7 @@ updated
 
 
 /* ============================================================
-   DAILY DEALS — MOBILE: bigger cards (show ~1.2 per row)
+   DAILY DEALS ï¿½ MOBILE: bigger cards (show ~1.2 per row)
    ============================================================ */
 @media (max-width: 575px) {
   /* 2 cards visible at once with a small gap */
@@ -4684,7 +4684,7 @@ updated
 }
 
 /* ============================================================
-   DAILY DEALS MOBILE — 2 cards visible (horizontal scroll)
+   DAILY DEALS MOBILE ï¿½ 2 cards visible (horizontal scroll)
    ============================================================ */
 @media (max-width: 575px) {
   /* .deal-scroll-inner .product-img-container { aspect-ratio: 1 / 1; } */

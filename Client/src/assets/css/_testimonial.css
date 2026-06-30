@@ -107,7 +107,7 @@
   line-height: 1;
   color: var(--theme-color);
   opacity: 0.06;
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   pointer-events: none;
 }
 

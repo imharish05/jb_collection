@@ -7,9 +7,9 @@ import FeatureIcon from "../../wrappers/feature-icon/FeatureIcon";
 import TabProduct from "../../wrappers/product/TabProduct";
 import Category from "../../components/category/Category";
 import CategoryEvent from "../../components/event/CategoryEvent";
-import FeatureImageText from "../../wrappers/feature-image-text/FeatureImageText.jsx";
+
 import OfferBanner from "../../components/Offer/OfferBanner.jsx";
-import FunFactTwo from "../../wrappers/fun-fact/FunFactTwo.jsx";
+
 
 const HomeFashion = () => {
   return (
@@ -46,15 +46,7 @@ const HomeFashion = () => {
           <TabProduct spaceBottomClass="pb-60" spaceTopClass="pt-60" />
         </div>
 
-        {/* Feature Image Text Section */}
-        <div style={{ backgroundColor: "#fcfcfc", padding: "40px 0" }}>
-          <FeatureImageText />
-        </div>
 
-        {/* Fun fact two section */}
-        <div style={{ backgroundColor: "#111111" }}>
-          <FunFactTwo />
-        </div>
 
         {/* Shop by Event */}
         <div style={{ backgroundColor: "#ffffff" }}>

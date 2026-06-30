@@ -216,7 +216,7 @@ export default function ReturnDetail() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: '0 0 60px', fontFamily: 'Inter, sans-serif', maxWidth: '1100px' }}>
+    <div style={{ padding: '0 0 60px', fontFamily: "'Montserrat', sans-serif", maxWidth: '1100px' }}>
 
       {/* ── Back + header ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
@@ -445,7 +445,7 @@ export default function ReturnDetail() {
                   style={{
                     background: '#ffffff', border: '1px solid #d1d5db', color: '#111827',
                     borderRadius: '8px', padding: '10px 12px', fontSize: '13px', resize: 'vertical',
-                    fontFamily: 'Inter, sans-serif', outline: 'none',
+                    fontFamily: "'Montserrat', sans-serif", outline: 'none',
                   }}
                 />
                 <button

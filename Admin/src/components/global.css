@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -124,7 +124,7 @@
 
 /* ── Body ── */
 body {
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   background: var(--bg-color);
   color: var(--text-secondary-light);
   min-height: 100vh;
@@ -134,7 +134,7 @@ body {
 
 /* ── Headings ── */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   font-weight: 600;
 }
 
@@ -213,7 +213,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   border: none;
   cursor: pointer;
   transition: all 0.18s ease;
@@ -435,7 +435,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .km-input,
 .km-select {
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   border: 1px solid var(--neutral-300);
   border-radius: var(--radius-sm);
   padding: 9px 13px;
@@ -503,7 +503,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 700;
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   cursor: pointer;
   transition: background 0.18s, transform 0.15s;
   width: 100%;
@@ -523,7 +523,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   cursor: pointer;
   transition: all 0.18s;
   width: 100%;
@@ -638,7 +638,7 @@ h1, h2, h3, h4, h5, h6 {
 .form-group  { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .form-group label { font-size: 12px; font-weight: 600; color: var(--neutral-600); }
 .form-group input, .form-group select {
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   border: 1px solid var(--neutral-300);
   border-radius: var(--radius-sm);
   padding: 9px 13px;
@@ -654,7 +654,7 @@ h1, h2, h3, h4, h5, h6 {
 .btn-add {
   background: var(--primary-600); color: #fff; border: none;
   padding: 9px 20px; border-radius: var(--radius-sm);
-  font-size: 13px; font-weight: 700; font-family: 'Noto Serif', serif;
+  font-size: 13px; font-weight: 700; font-family: 'Montserrat', sans-serif;
   cursor: pointer; transition: background 0.18s;
 }
 .btn-add:hover { background: var(--primary-700); }
@@ -662,7 +662,7 @@ h1, h2, h3, h4, h5, h6 {
 .btn-save {
   background: var(--primary-600); color: #fff; border: none;
   padding: 9px 20px; border-radius: var(--radius-sm);
-  font-size: 13px; font-weight: 700; font-family: 'Noto Serif', serif;
+  font-size: 13px; font-weight: 700; font-family: 'Montserrat', sans-serif;
   cursor: pointer; transition: background 0.18s;
 }
 .btn-save:hover { background: var(--primary-700); }
@@ -671,7 +671,7 @@ h1, h2, h3, h4, h5, h6 {
   background: transparent; color: var(--neutral-500);
   border: 1px solid var(--neutral-300); padding: 9px 20px;
   border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
-  font-family: 'Noto Serif', serif; cursor: pointer; transition: all 0.18s;
+  font-family: 'Montserrat', sans-serif; cursor: pointer; transition: all 0.18s;
 }
 .btn-cancel:hover { background: var(--neutral-100); color: var(--neutral-700); }
 
@@ -679,7 +679,7 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--danger-50); color: var(--danger-600);
   border: 1px solid var(--danger-100); padding: 6px 14px;
   border-radius: var(--radius-sm); font-size: 12px; font-weight: 600;
-  font-family: 'Noto Serif', serif; cursor: pointer; transition: all 0.18s;
+  font-family: 'Montserrat', sans-serif; cursor: pointer; transition: all 0.18s;
 }
 .btn-delete:hover { background: var(--danger-600); color: #fff; }
 
@@ -811,7 +811,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   border: 1.5px solid transparent;
   cursor: pointer;
   outline: none;

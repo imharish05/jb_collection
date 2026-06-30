@@ -6,6 +6,9 @@ import { fetchOrders } from '../../redux/services/ordersService';
 import { fetchCustomers } from '../../redux/services/customersService';
 import { fetchCategories } from '../../redux/services/categoriesService';
 import styles from '../Dashboard/Dashboard.module.css';
+import * as XLSX from 'xlsx';
+import { FaFileExcel } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const DATE_RANGES = [
   { id: 'all', label: 'All Time' },
@@ -188,6 +191,81 @@ export default function Reports() {
   const totalCustomers = (Array.isArray(customers) ? customers : []).length;
   const isLoading = productsLoading || ordersLoading || customersLoading;
 
+  const handleExportExcel = () => {
+    let dataToExport = [];
+    let sheetName = "";
+    let fileName = "";
+
+    if (reportType === 'sales') {
+      sheetName = "Sales Best Sellers";
+      fileName = `Sales_Best_Sellers`;
+      dataToExport = salesRows.map(row => ({
+        'Product': row.name,
+        'Units Sold': row.units,
+        'Revenue (₹)': Number(row.revenue.toFixed(2))
+      }));
+    } else if (reportType === 'orders') {
+      sheetName = "Orders Report";
+      fileName = `Orders_Report`;
+      dataToExport = filteredOrders.map(o => ({
+        'Order ID': o.referenceSlug || o.id,
+        'Customer': o.User?.name || o.user?.name || '—',
+        'Status': ORDER_STATUS_LABEL[o.status] || o.status,
+        'Total (₹)': Number(Number(o.totalAmount || 0).toFixed(2)),
+        'Date': o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
+      }));
+    } else if (reportType === 'customers') {
+      sheetName = "Customers Report";
+      fileName = `Customers_Report`;
+      dataToExport = customerRows.map(c => ({
+        'Customer': c.name,
+        'Email': c.email,
+        'Orders': c.ordersCount,
+        'Spend (₹)': Number(c.spend.toFixed(2)),
+        'Last Order': c.lastOrder ? c.lastOrder.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
+      }));
+    }
+
+    if (dataToExport.length === 0) {
+      toast.error("No data available to export for the selected filters.");
+      return;
+    }
+
+    let rangeLabel = dateRange;
+    if (dateRange === 'all') rangeLabel = 'All_Time';
+    else if (dateRange === '7d') rangeLabel = 'Last_7_Days';
+    else if (dateRange === '30d') rangeLabel = 'Last_30_Days';
+    else if (dateRange === 'month') rangeLabel = 'This_Month';
+    else if (dateRange === 'year') rangeLabel = `Year_${selectedYear}`;
+    else if (dateRange === 'custom') rangeLabel = `Custom_${fromDate}_to_${toDate}`;
+
+    const finalFileName = `${fileName}_${rangeLabel}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+    try {
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', finalFileName);
+      document.body.appendChild(link);
+      link.click();
+      
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Report exported to Excel successfully!");
+    } catch (error) {
+      console.error("Failed to export Excel report:", error);
+      toast.error("Failed to export Excel report.");
+    }
+  };
+
   return (
     <div className={`${styles.dash} ${mounted ? styles.dashIn : ''}`}>
       <div className={styles.greeting}>
@@ -297,6 +375,47 @@ export default function Reports() {
             </select>
           </div>
         )}
+
+        <div style={{ marginLeft: 'auto' }}>
+          <button
+            onClick={handleExportExcel}
+            className="btn btn-success"
+            disabled={isLoading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 18px',
+              backgroundColor: isLoading ? '#86efac' : '#16a34a',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 600,
+              fontSize: '13px',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              boxShadow: isLoading ? 'none' : '0 2px 4px rgba(22, 163, 74, 0.2)',
+              transition: 'all 0.2s ease',
+              opacity: isLoading ? 0.7 : 1,
+            }}
+            onMouseOver={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.backgroundColor = '#15803d';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 6px rgba(22, 163, 74, 0.3)';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.backgroundColor = '#16a34a';
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(22, 163, 74, 0.2)';
+              }
+            }}
+          >
+            <FaFileExcel size={16} />
+            Export Excel
+          </button>
+        </div>
       </div>
 
       {/* ── Single table, driven by reportType ── */}

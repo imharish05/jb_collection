@@ -22,7 +22,7 @@
 }
 
 .topbarTitle {
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary-light);
@@ -40,7 +40,7 @@
 .tbBtn {
   padding: 8px 18px;
   border-radius: var(--radius-sm);
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
@@ -151,13 +151,13 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary-light);
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .adminRole {
   font-size: 11px;
   font-weight: 500;
   color: var(--brand);
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
 }
 

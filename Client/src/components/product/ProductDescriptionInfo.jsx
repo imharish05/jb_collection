@@ -972,14 +972,10 @@ const handleBuyNow = async () => {
 
       {stockState.message && (
         <div style={{ 
-          fontSize: 13, 
+          fontSize: 14, 
           fontWeight: 600, 
-          padding: "8px 12px", 
-          borderRadius: 8, 
           marginBottom: 16, 
-          background: stockState.state === STOCK_STATES.LOW_STOCK ? "rgba(234, 88, 12, 0.15)" : stockState.state === STOCK_STATES.IN_STOCK ? "rgba(21, 128, 61, 0.15)" : "rgba(185, 28, 28, 0.15)",
-          color: stockState.state === STOCK_STATES.LOW_STOCK ? "#f97316" : stockState.state === STOCK_STATES.IN_STOCK ? "#4ade80" : "#f87171",
-          border: `1px solid ${stockState.state === STOCK_STATES.LOW_STOCK ? "rgba(234, 88, 12, 0.3)" : stockState.state === STOCK_STATES.IN_STOCK ? "rgba(21, 128, 61, 0.3)" : "rgba(185, 28, 28, 0.3)"}`
+          color: stockState.state === STOCK_STATES.LOW_STOCK ? "#ea580c" : stockState.state === STOCK_STATES.IN_STOCK ? "#16a34a" : "#dc2626"
         }}>
           {stockState.state === STOCK_STATES.LOW_STOCK ? "⚡ " : stockState.state === STOCK_STATES.IN_STOCK ? "✓ " : "⚠️ "}
           {stockState.message}

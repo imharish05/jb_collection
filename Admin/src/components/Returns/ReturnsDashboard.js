@@ -109,7 +109,7 @@ export default function ReturnsDashboard({ showToast }) {
 
   // ── render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: '0 0 40px', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ padding: '0 0 40px', fontFamily: "'Montserrat', sans-serif" }}>
 
       {/* ── Stats row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '20px', marginBottom: '24px' }}>

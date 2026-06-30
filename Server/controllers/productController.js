@@ -419,17 +419,12 @@ const updateProduct = async (req, res, next) => {
       if (deletedVariants.length > 0) {
         const deletedIds = deletedVariants.map(dv => dv.id);
 
-        // 1. Clean up referencing combo products
-        await ChildComboProduct.destroy({
-          where: { variantId: deletedIds }
-        });
-
-        // 2. Clean up referencing cart items
+        // 1. Clean up referencing cart items
         await CartItem.destroy({
           where: { selectedVariantId: deletedIds }
         });
 
-        // 3. Clean up referencing wishlist items
+        // 2. Clean up referencing wishlist items
         await WishlistItem.destroy({
           where: { variantId: deletedIds }
         });
@@ -513,9 +508,8 @@ const deleteProduct = async (req, res, next) => {
       }
     } catch (e) { console.warn('Error deleting product files:', e.message); }
 
-    // Clean up combo associations, variants, cart items, wishlist entries, and reviews
+    // Clean up variants, cart items, wishlist entries, and reviews
     await Promise.all([
-      ChildComboProduct.destroy({ where: { productId: product.id } }),
       Variant.destroy({ where: { productId: product.id } }),
       CartItem.destroy({ where: { productId: product.id } }),
       WishlistItem.destroy({ where: { productId: product.id } }),

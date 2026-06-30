@@ -15,16 +15,17 @@ const FunFactTwoSingle = ({ data }) => {
     <div className="single-count-two">
       <style>
         {`
-          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+          .single-count-two h2.count, .single-count-two h2.count span { color: #ffffff !important; }
         `}
       </style>
       <h2 
         className="count" 
         style={{ 
-          color: "#000000", // Black color
+          color: "#ffffff", // White color
           fontSize: "42px", 
           fontWeight: "700",
-          fontFamily: "'Playfair Display', serif",
+          fontFamily: "'Montserrat', sans-serif",
           marginBottom: "5px"
         }}
       >

@@ -34,7 +34,7 @@ export default function AccessDenied({ moduleName }) {
         fontWeight: 600,
         color: '#111827',
         marginBottom: 8,
-        fontFamily: "'Noto Serif', serif"
+        fontFamily: "'Montserrat', sans-serif"
       }}>Access Restricted</h3>
       <p style={{
         fontSize: 14,
@@ -42,7 +42,7 @@ export default function AccessDenied({ moduleName }) {
         lineHeight: '1.6',
         marginBottom: 28,
         maxWidth: 380,
-        fontFamily: "'Noto Serif', serif"
+        fontFamily: "'Montserrat', sans-serif"
       }}>
         Your current role does not have permission to view {moduleName || 'this page'}. Please contact your system administrator if you believe this is an error.
       </p>
@@ -59,7 +59,7 @@ export default function AccessDenied({ moduleName }) {
           fontSize: 14,
           boxShadow: '0 4px 12px rgba(219, 26, 93, 0.25)',
           transition: 'all 0.2s ease',
-          fontFamily: "'Noto Serif', serif",
+          fontFamily: "'Montserrat', sans-serif",
           outline: 'none'
         }}
         onMouseOver={(e) => {

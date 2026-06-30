@@ -10,7 +10,7 @@
 }
 
 .timeline-title-container h2 {
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 36px;
   font-weight: 700;
   color: #001d3d; /* Elegant deep navy */
@@ -96,7 +96,7 @@
 }
 
 .timeline-card-year {
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   font-weight: 700;
   color: #c5a880; /* Subtle gold/tan */
@@ -106,7 +106,7 @@
 }
 
 .timeline-card-title {
-  font-family: 'Noto Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 20px;
   font-weight: 700;
   color: #111111;

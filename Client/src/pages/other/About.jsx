@@ -9,6 +9,7 @@ import TextGridOne from "../../wrappers/text-grid/TextGridOne";
 import BrandLogoSliderOne from "../../wrappers/brand-logo/BrandLogoSliderOne";
 import TestimonialPage from "./TestimonialPage";
 import Timeline from "../../components/timeline/Timeline";
+import FunFactTwo from "../../wrappers/fun-fact/FunFactTwo";
 
 const About = () => {
   let { pathname } = useLocation();
@@ -33,6 +34,11 @@ const About = () => {
         {/* section title with text */}
         <SectionTitleWithText spaceTopClass="pt-100" spaceBottomClass="pb-95" />
 
+
+        {/* fun fact */}
+        <div style={{ backgroundColor: "#111111", marginBottom: "40px" }}>
+          <FunFactTwo spaceTopClass="pt-100" spaceBottomClass="pb-70" />
+        </div>
 
         {/* text grid */}
         <TextGridOne spaceBottomClass="pb-70" />
