@@ -329,15 +329,6 @@ const Cart = () => {
                       return getImgUrl(stripped) || "/assets/img/products/products-1.jpeg";
                     };
                     const resolvedImgSrc = resolveItemImage(item.image);
-                    const rate = currency.currencyRate || 1;
-                    const unitPrice = parseFloat(item.price || 0) * rate;
-                    const finalPrice = unitPrice.toFixed(2);
-                    const finalDisc = null;  // no client-side discount — price is already final
-                    const lineTotal = (unitPrice * item.quantity).toFixed(2);
-
-                    // Use stock stored on item directly (set by cartService from variant or product)
-                    const maxStock = item.stock || 999;
-
                     // ── Variant attrs (priority order, same resolution as Wishlist):
                     // 1. selectedVariant.attributes  (set by new cartService/authService)
                     // 2. find from item.Variants[] by selectedVariantId (existing Redux items)
@@ -350,6 +341,19 @@ const Cart = () => {
                     const attrs = getVariantAttrs(resolvedVariant).length > 0
                       ? getVariantAttrs(resolvedVariant)
                       : parseFallbackAttrs(item.selectedVariantName);
+
+                    const gstMode = resolvedVariant?.gstMode || "Inclusive";
+                    const gstRate = resolvedVariant ? parseFloat(resolvedVariant.gstRate || 0) : 18.00;
+
+                    const rate = currency.currencyRate || 1;
+                    let unitPrice = parseFloat(item.price || 0) * rate;
+                    if (gstMode === "Exclusive") {
+                      unitPrice = unitPrice * (1 + gstRate / 100);
+                    }
+                    const finalPrice = unitPrice.toFixed(2);
+                    const finalDisc = null;  // no client-side discount — price is already final
+                    const lineTotal = (unitPrice * item.quantity).toFixed(2);
+                    const maxStock = item.stock || 999;
 
                     return (
                       <div key={item.cartItemId} className="kg-cart-item">

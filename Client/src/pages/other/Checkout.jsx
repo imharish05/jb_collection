@@ -1452,8 +1452,24 @@ const Checkout = () => {
                   {/* Item Cards */}
                   <div className="kco-item-list">
                     {checkoutItems.map((item) => {
-                      const price = parseFloat(item.price || 0);
-                      const mrp = parseFloat(item.selectedVariant?.mrp || item.variation?.[0]?.mrp || 0);
+                      const resolvedVariant =
+                        item.selectedVariant ||
+                        (item.selectedVariantId && Array.isArray(item.Variants)
+                          ? item.Variants.find(v => Number(v.id) === Number(item.selectedVariantId)) || null
+                          : null);
+
+                      const gstMode = resolvedVariant?.gstMode || "Inclusive";
+                      const gstRate = resolvedVariant ? parseFloat(resolvedVariant.gstRate || 0) : 18.00;
+
+                      let price = parseFloat(item.price || 0);
+                      let mrp = parseFloat(item.selectedVariant?.mrp || item.variation?.[0]?.mrp || 0);
+                      if (gstMode === "Exclusive") {
+                        price = price * (1 + gstRate / 100);
+                        if (mrp > 0) {
+                          mrp = mrp * (1 + gstRate / 100);
+                        }
+                      }
+
                       const hasMrp = mrp > 0 && mrp > price;
                       const discount = hasMrp ? Math.round((1 - price / mrp) * 100) : 0;
 

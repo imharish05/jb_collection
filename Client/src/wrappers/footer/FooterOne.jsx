@@ -18,7 +18,7 @@ const FooterOne = ({ containerClass, extraFooterClass }) => {
       <style>{`
         /* ── Kamali Footer ── */
         .km-footer {
-          background: #111111;
+          // background: #111111;
           padding: 72px 0 0;
           color: #ddd;
           /* border-top: 1px solid #eee; */
