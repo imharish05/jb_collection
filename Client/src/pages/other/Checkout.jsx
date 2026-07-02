@@ -29,23 +29,22 @@ const calculateTotalWeight = (items) => {
   return parseFloat(total.toFixed(3));
 };
 
-// ── Helper: check shipping rates ─────────────────────────────────
-const checkShippingServiceability = async (pincode, orderValue, weight = 0.5) => {
+// ── Helper: fetch delivery zone charge for a state ──────────────────────────
+const fetchDeliveryZoneCharge = async (state) => {
+  if (!state) return null;
   try {
-    const cod = true;
-    const res = await api.get("/shipping/rates", {
-      params: { pincode, weight, cod },
-    });
+    const res = await api.get(`/delivery-zones/charge/${encodeURIComponent(state)}`);
     return {
-      serviceable: res.data.serviceable,
-      shippingCharge: res.data.charge || 0,
-      courier: res.data.courier || null,
-      estimatedDays: res.data.estimatedDays || null,
-      codAvailable: cod,
-      allCouriers: res.data.allCouriers || [],
+      found: true,
+      shippingCharge: res.data.deliveryCharge ?? res.data.charge ?? 0,
+      state: res.data.state || state,
     };
   } catch (err) {
-    console.error("[Checkout] Shipping rates check failed:", err.message);
+    if (err.response?.status === 404) {
+      // No zone configured for this state — free shipping or default
+      return { found: false, shippingCharge: 0, state };
+    }
+    console.error("[Checkout] Delivery zone fetch failed:", err.message);
     return null;
   }
 };
@@ -97,6 +96,16 @@ const EMPTY_ADDR = {
   country: "India",
   isDefault: false,
 };
+
+const INDIAN_STATES = [
+  'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh',
+  'Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka',
+  'Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram',
+  'Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana',
+  'Tripura','Uttar Pradesh','Uttarakhand','West Bengal',
+  'Andaman & Nicobar Islands','Chandigarh','Dadra & Nagar Haveli and Daman & Diu',
+  'Delhi','Jammu & Kashmir','Ladakh','Lakshadweep','Puducherry',
+];
 
 const PAYMENT_METHODS = [
   {
@@ -397,30 +406,28 @@ const Checkout = () => {
   }, []);
 
   /* ── Check shipping rates when address changes ── */
+  /* ── Fetch delivery zone charge whenever shipping address state changes ── */
   useEffect(() => {
-    const checkShipping = async () => {
-      if (!selectedShippingAddr?.pincode) {
+    const loadDeliveryZone = async () => {
+      const state = selectedShippingAddr?.state;
+      if (!state) {
         setShippingInfo(null);
+        setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: 0 }));
         return;
       }
       setCheckingServiceability(true);
-      const totalWeight = calculateTotalWeight(checkoutItems || []);
-      const result = await checkShippingServiceability(
-        selectedShippingAddr.pincode,
-        shippingPricing.subtotal,
-        totalWeight
-      );
+      const result = await fetchDeliveryZoneCharge(state);
       setCheckingServiceability(false);
       if (result) {
-        setShippingInfo(result);
-        const newShipping = result.serviceable ? (result.shippingCharge || 0) : 0;
-        setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: newShipping }));
+        setShippingInfo({ ...result, serviceable: true, codAvailable: true, allCouriers: [] });
+        setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: result.shippingCharge }));
       } else {
         setShippingInfo(null);
       }
     };
-    checkShipping();
-  }, [selectedShippingAddrId, shippingPricing.subtotal, checkoutItems]);
+    loadDeliveryZone();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedShippingAddrId, addresses]);
 
   const handleSelectCourier = (selected) => {
     setShippingInfo((prev) => ({
@@ -1313,12 +1320,28 @@ const Checkout = () => {
                           />
                         </FormField>
                         <FormField label="State *" error={addrErrors.state}>
-                          <input
+                          <select
                             className={`kco-input ${addrErrors.state ? "error" : ""}`}
                             value={addrForm.state}
-                            onChange={(e) => setAddrForm((f) => ({ ...f, state: e.target.value }))}
-                            placeholder="State"
-                          />
+                            onChange={(e) => {
+                              const newState = e.target.value;
+                              setAddrForm((f) => ({ ...f, state: newState }));
+                              // Live-preview delivery zone charge when state changes
+                              if (newState) {
+                                fetchDeliveryZoneCharge(newState).then((result) => {
+                                  if (result) {
+                                    setShippingInfo({ ...result, serviceable: true, codAvailable: true, allCouriers: [] });
+                                    setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: result.shippingCharge }));
+                                  }
+                                });
+                              }
+                            }}
+                          >
+                            <option value="">— Select State —</option>
+                            {INDIAN_STATES.map((s) => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
                         </FormField>
                       </div>
                       <div className="kco-field-grid">
@@ -1568,65 +1591,35 @@ const Checkout = () => {
                       <span>₹{shippingPricing.subtotalBeforeGst.toFixed(2)}</span>
                     </div>
                     <div className="kco-sum-row">
-                      <span style={{ color: "#555" }}>GST Tax Amount</span>
+                      <span style={{ color: "#555" }}>GST Amount</span>
                       <span style={{ color: "#555" }}>+ ₹{shippingPricing.gstAmount.toFixed(2)}</span>
                     </div>
 
-                    {checkingServiceability && (
-                      <div className="kco-sum-row" style={{ color: "#666" }}>
-                        <span>Delivery</span>
-                        <span>⏳ Checking...</span>
-                      </div>
-                    )}
-
-                    {!checkingServiceability && shippingInfo && (
-                      <>
-                        <div className="kco-sum-row" style={{ marginBottom: shippingInfo.allCouriers?.length > 0 ? "4px" : "12px" }}>
-                          <span>
-                            Delivery
-                            {shippingInfo.estimatedDays && (
-                              <span style={{ fontSize: "0.85em", color: "#666" }}>
-                                {" "}(Est. {shippingInfo.estimatedDays} {Number(shippingInfo.estimatedDays) === 1 ? "day" : "days"})
-                              </span>
-                            )}
+                    <div className="kco-sum-row">
+                      <span>
+                        Shipping
+                        {selectedShippingAddr?.state && (
+                          <span style={{ fontSize: "0.85em", color: "#888", marginLeft: 4 }}>
+                            ({selectedShippingAddr.state})
                           </span>
-                          <span style={shippingInfo.shippingCharge === 0 ? { color: "#16a34a", fontWeight: 700 } : {}}>
-                            {shippingInfo.shippingCharge === 0 ? "FREE" : `₹${shippingInfo.shippingCharge}`}
-                          </span>
-                        </div>
-                        {shippingInfo.allCouriers && shippingInfo.allCouriers.length > 0 && (
-                          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: -6, marginBottom: 8 }}>
-                            <button
-                              type="button"
-                              onClick={() => setCourierModalOpen(true)}
-                              style={{
-                                background: "none",
-                                border: "none",
-                                color: "var(--theme-color)",
-                                fontSize: "11px",
-                                fontWeight: "700",
-                                cursor: "pointer",
-                                padding: 0,
-                                textDecoration: "underline",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "3px"
-                              }}
-                            >
-                              <span>Change Partner ({shippingInfo.courier})</span>
-                              <span style={{ fontSize: "9px" }}>✏️</span>
-                            </button>
-                          </div>
                         )}
-                      </>
-                    )}
-
-                    {!checkingServiceability && !shippingInfo && selectedShippingAddr && (
-                      <div className="kco-sum-row" style={{ color: "#dc2626" }}>
-                        <span>Delivery</span>
-                        <span>❌ Not available</span>
-                      </div>
-                    )}
+                      </span>
+                      <span>
+                        {checkingServiceability ? (
+                          <span style={{ color: "#888" }}>⏳ Checking...</span>
+                        ) : !selectedShippingAddr ? (
+                          <span style={{ color: "#aaa", fontSize: 12 }}>Select address</span>
+                        ) : shippingInfo ? (
+                          shippingInfo.shippingCharge === 0 ? (
+                            <span style={{ color: "#16a34a", fontWeight: 700 }}>FREE</span>
+                          ) : (
+                            `₹${parseFloat(shippingInfo.shippingCharge).toFixed(2)}`
+                          )
+                        ) : (
+                          <span style={{ color: "#aaa", fontSize: 12 }}>—</span>
+                        )}
+                      </span>
+                    </div>
 
                     {shippingPricing.couponDiscount > 0 && (
                       <div className="kco-sum-row kco-sum-row--green">

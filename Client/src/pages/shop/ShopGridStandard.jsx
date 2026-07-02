@@ -323,7 +323,7 @@ const ShopGridStandard = () => {
               .category-marquee-track {
                 display: flex;
                 width: max-content;
-                animation: marquee-scroll 55s linear infinite;
+                animation: marquee-scroll 25s linear infinite;
               }
               .category-marquee-track-wrapper:hover .category-marquee-track {
                 animation-play-state: paused;
@@ -524,14 +524,14 @@ const ShopGridStandard = () => {
                 <span style={{ fontSize:13, color:"#555" }}>Active filter:</span>
                 <span style={{
                   display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#fdf0ff", color:"#a020c0",
+                  background:"transparent", color:"var(--theme-color)",
                   fontSize:12, fontWeight:600, borderRadius:20,
-                  padding:"4px 12px", border:"1px solid #c050e0",
+                  padding:"4px 12px", border:"1px solid var(--theme-color)",
                 }}>
                   ₹{priceRange.min.toLocaleString("en-IN")} – ₹{priceRange.max.toLocaleString("en-IN")}
                   <button
                     onClick={() => setPriceRange(null)}
-                    style={{ background:"none", border:"none", color:"#a020c0", cursor:"pointer", padding:0, fontSize:14, lineHeight:1, fontWeight:700 }}
+                    style={{ background:"none", border:"none", color:"var(--theme-color)", cursor:"pointer", padding:0, fontSize:14, lineHeight:1, fontWeight:700 }}
                   >×</button>
                 </span>
                 <span style={{ fontSize:12, color:"#888" }}>{sortedProducts.length} products found</span>
@@ -731,7 +731,7 @@ const ShopGridStandard = () => {
                             className={`drawer-pill${!subSubCatParam ? ' active' : ''}`}
                             onClick={() => { navigate(`${S}?category=${catParam}&subcategory=${subCatParam}`); setDrawerOpen(false); }}
                             style={{
-                              background: !subSubCatParam ? "#a020c0" : "#f3f4f6",
+                              background: !subSubCatParam ? "var(--theme-gradient)" : "#f3f4f6",
                               color: !subSubCatParam ? "#fff" : "#4b5563",
                               border: "none",
                               padding: "6px 12px",
@@ -756,7 +756,7 @@ const ShopGridStandard = () => {
                                 className={`drawer-pill${isActive ? ' active' : ''}`}
                                 onClick={() => { navigate(`${S}?category=${catParam}&subcategory=${subCatParam}&subsubcategory=${subsub.value}`); setDrawerOpen(false); }}
                                 style={{
-                                  background: isActive ? "#a020c0" : "#f3f4f6",
+                                  background: isActive ? "var(--theme-gradient)" : "#f3f4f6",
                                   color: isActive ? "#fff" : "#4b5563",
                                   border: "none",
                                   padding: "6px 12px",
@@ -852,8 +852,8 @@ const marqueeStyles = {
     width: "72px",
     height: "72px",
     borderRadius: "50%",
-    border: "2.5px solid #db1a5d",
-    boxShadow: "0 0 0 3px #fff, 0 0 0 5px #db1a5d, 0 4px 10px rgba(219, 26, 93, 0.15)",
+    border: "2.5px solid var(--theme-color)",
+    boxShadow: "0 0 0 3px #fff, 0 0 0 5px var(--theme-color), 0 4px 10px rgba(0, 0, 0, 0.15)",
     background: "#fafafa",
     display: "flex",
     alignItems: "center",
@@ -871,20 +871,16 @@ const marqueeStyles = {
     fontWeight: 500,
     color: "#6b7280",
     textAlign: "center",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
+    whiteSpace: "normal",
     width: "100%",
     transition: "color 0.2s",
   },
   labelActive: {
     fontSize: "12px",
     fontWeight: 700,
-    color: "#db1a5d",
+    color: "var(--theme-color)",
     textAlign: "center",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
+    whiteSpace: "normal",
     width: "100%",
     transition: "color 0.2s",
   },

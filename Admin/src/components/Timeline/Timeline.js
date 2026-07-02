@@ -40,12 +40,6 @@ const TIMELINE_IMAGE_CONFIG = {
 };
 
 const validateImage = (file) => {
-  if (file.size > TIMELINE_IMAGE_CONFIG.maxFileSize) {
-    return { valid: false, error: `File too large. Max: 5MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB` };
-  }
-  if (!TIMELINE_IMAGE_CONFIG.formats.includes(file.type)) {
-    return { valid: false, error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG).` };
-  }
   return { valid: true };
 };
 

@@ -180,8 +180,16 @@ const Cart = () => {
     }
   });
 
-  const shipping = subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
-  const grandTotal = subtotal + shipping;
+  // Display cart total based on the product prices shown in the cart
+  let cartSummaryTotal = 0;
+  cartItems.forEach((item) => {
+    const itemPrice = parseFloat(item.price || 0) * (currency.currencyRate || 1);
+    const qty = item.quantity || 1;
+    cartSummaryTotal += itemPrice * qty;
+  });
+
+  // Shipping is determined at checkout based on the delivery zone (state)
+  const grandTotal = cartSummaryTotal;
 
   /* ── Empty Cart ────────────────────────────────────────────────────────── */
   if (!cartItems || cartItems.length === 0) {
@@ -656,21 +664,11 @@ const Cart = () => {
                   {/* Breakdown */}
                   <div className="kg-breakdown" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#555' }}>
-                      <span>Subtotal (before GST)</span>
-                      <span>₹{totalBasePrice.toFixed(2)}</span>
+                      <span>Total</span>
+                      <span style={{ fontWeight: 700, color: '#111' }}>₹{grandTotal.toFixed(2)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#555' }}>
-                      <span>GST Tax Amount</span>
-                      <span>₹{totalGstAmount.toFixed(2)}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#555' }}>
-                      <span>Shipping Charges</span>
-                      <span>{shipping === 0 ? <strong style={{ color: 'var(--theme-color)' }}>FREE</strong> : `₹${shipping.toFixed(2)}`}</span>
-                    </div>
-                    <div style={{ height: '1px', background: '#eee', margin: '8px 0' }} />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 'bold', color: '#111' }}>
-                      <span>Grand Total</span>
-                      <span>₹{grandTotal.toFixed(2)}</span>
+                    <div style={{ fontSize: '12px', color: '#888', marginTop: 2 }}>
+                      Shipping charges will be calculated at checkout
                     </div>
                   </div>
                   {/* Checkout Button */}
@@ -683,10 +681,10 @@ const Cart = () => {
                           subtotal,
                           subtotalBeforeGst: totalBasePrice,
                           gstAmount: totalGstAmount,
-                          shipping,
+                          shipping: 0,
                           couponDiscount: 0,
                           couponCode: null,
-                          grandTotal,
+                          grandTotal: subtotal,
                         },
                       });
                     }}
@@ -715,32 +713,7 @@ const Cart = () => {
                   </div>
                 </div>
 
-                {/* Delivery Info */}
-                <div className="kg-info-card">
-                  <div className="kg-info-row">
-                    <span className="kg-info-icon">🚚</span>
-                    <div>
-                      <div className="kg-info-label">Estimated delivery</div>
-                      <div className="kg-info-value">3–7 business days</div>
-                    </div>
-                  </div>
-                  <div className="kg-info-divider" />
-                  <div className="kg-info-row">
-                    <span className="kg-info-icon">💵</span>
-                    <div>
-                      <div className="kg-info-label">Cash on Delivery</div>
-                      <div className="kg-info-value">COD Available</div>
-                    </div>
-                  </div>
-                  <div className="kg-info-divider" />
-                  <div className="kg-info-row">
-                    <span className="kg-info-icon">↩️</span>
-                    <div>
-                      <div className="kg-info-label">Return policy</div>
-                      <div className="kg-info-value">Hassle-free returns</div>
-                    </div>
-                  </div>
-                </div>
+
               </div>
             </div>
           </div>

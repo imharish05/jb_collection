@@ -911,9 +911,9 @@ const handleBuyNow = async () => {
       </div>
 
       {/* GST Breakdown label */}
-      <div style={{ fontSize: 13, color: "var(--theme-color)", marginTop: 6, marginBottom: 16, fontWeight: 600 }}>
+      {/* <div style={{ fontSize: 13, color: "var(--theme-color)", marginTop: 6, marginBottom: 16, fontWeight: 600 }}>
         {selectedVariantGstMode === "Exclusive" ? "Exclusive of GST" : "Inclusive of GST"} ({selectedVariantGstRate}%): Base ₹{basePrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} + GST ₹{gstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-      </div>
+      </div> */}
 
       {/* ── Short description ── */}
       {product.shortDescription && (

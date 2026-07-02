@@ -283,16 +283,6 @@ export default function Variants({ showToast }) {
 
   // ── Async image dimension validation ──────────────────────────────────────
   const validateImageDimensions = async (skuList) => {
-    for (let i = 0; i < skuList.length; i++) {
-      const s = skuList[i];
-      if (s.imageFile) {
-        const result = await validateProductImageDimensions(s.imageFile);
-        if (!result.valid) {
-          setErrors(prev => ({ ...prev, [`sku_${i}`]: `Image: ${result.error}` }));
-          return false;
-        }
-      }
-    }
     return true;
   };
 

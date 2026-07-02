@@ -170,12 +170,12 @@ const ProductGridSingle = ({
             >
               <i className="pe-7s-like" />
             </button>
-            <button
+            {/* <button
               onClick={() => setModalShow(true)}
               title="Quick View"
             >
               <i className="pe-7s-look" />
-            </button>
+            </button> */}
           </div>
 
           {/* Add to Cart Overlay */}
@@ -235,7 +235,7 @@ const ProductGridSingle = ({
       </div>
 
       {/* Quick View Modal */}
-      {modalShow && (
+      {/* modalShow && (
         <ProductModal
           show={modalShow}
           onHide={() => setModalShow(false)}
@@ -247,7 +247,7 @@ const ProductGridSingle = ({
           cartItem={cartItem}
           wishlistItem={wishlistItem}
         />
-      )}
+      ) */}
     </Fragment>
   );
 };
