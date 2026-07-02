@@ -48,6 +48,26 @@ const HomeFashion = () => {
 
 
 
+        {/* Parallax Banner */}
+        <style>{`
+          .parallax-banner {
+            height: 450px;
+            background-image: url('${process.env.PUBLIC_URL}/assets/img/online-shopping-parallax.png');
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            width: 100%;
+          }
+          @media (max-width: 768px) {
+            .parallax-banner {
+              height: 250px;
+              background-attachment: scroll;
+            }
+          }
+        `}</style>
+        <div className="parallax-banner" />
+
         {/* Shop by Event */}
         <div style={{ backgroundColor: "#ffffff" }}>
           <FeatureIcon spaceTopClass="pt-100" spaceBottomClass="pb-60" />
