@@ -8,7 +8,7 @@ const WishlistItem = require("./WishlistItem");
 const Blog         = require("./Blog");
 const HeroSlide    = require("./HeroSlide");
 const Address      = require("./Address");
-const { Category, Event, Combo, SubCategory }   = require("./Category");
+const { Category, Event, Combo, SubCategory, SubSubCategory }   = require("./Category");
 const { OfferBanner, MarqueeMessage }       = require("./Marketing");
 const Order        = require("./Order");
 
@@ -89,6 +89,10 @@ Product.belongsTo(Category,  { foreignKey: "category_id" });
 Product.belongsTo(SubCategory, { foreignKey: "sub_category_id", as: "SubCategory", constraints: false });
 SubCategory.hasMany(Product,   { foreignKey: "sub_category_id", as: "products",    constraints: false });
 
+// ── Product ↔ SubSubCategory ──────────────────────────────────────────────────
+Product.belongsTo(SubSubCategory, { foreignKey: "sub_sub_category_id", as: "SubSubCategory", constraints: false });
+SubSubCategory.hasMany(Product,   { foreignKey: "sub_sub_category_id", as: "products",    constraints: false });
+
 
 // ── Product ↔ Variant ─────────────────────────────────────────────────────────
 Product.hasMany(Variant,    { foreignKey: "product_id", as: "Variants", onDelete: "CASCADE" });
@@ -134,6 +138,7 @@ const models = {
   HeroSlide,
   Category,
   SubCategory,
+  SubSubCategory,
   Event,
   OfferBanner,
   MarqueeMessage,

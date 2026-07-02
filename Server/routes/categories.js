@@ -11,6 +11,9 @@ const { getNav, getCategories, getCategoryById, createCategory, updateCategory, 
 const {
   getAllSubCategories, getSubCategoryById, createSubCategory, updateSubCategory, deleteSubCategory
 } = require("../controllers/subCategoryController");
+const {
+  getAllSubSubCategories, getSubSubCategoryById, createSubSubCategory, updateSubSubCategory, deleteSubSubCategory
+} = require("../controllers/subSubCategoryController");
 
 
 // Auto-create folder if missing
@@ -43,6 +46,16 @@ const comboStorage = multer.diskStorage({
 });
 const uploadCombo = multer({ storage: comboStorage });
 
+// Auto-create folder for subcategories if missing
+const subCategoryUploadDir = path.join(__dirname, "../uploads/subcategories");
+if (!fs.existsSync(subCategoryUploadDir)) fs.mkdirSync(subCategoryUploadDir, { recursive: true });
+
+const subCategoryStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, subCategoryUploadDir),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
+});
+const uploadSubCategory = multer({ storage: subCategoryStorage });
+
 router.get("/", getNav);
 router.get("/categories", getCategories);
 router.get("/categories/:id", getCategoryById);
@@ -69,8 +82,15 @@ router.delete("/combos/:id", protect, adminOnly, deleteCombo);
 // ─── SubCategories ────────────────────────────────────────────────────────────
 router.get("/subcategories", getAllSubCategories);
 router.get("/subcategories/:id", getSubCategoryById);
-router.post("/subcategories", protect, adminOnly, createSubCategory);
-router.patch("/subcategories/:id", protect, adminOnly, updateSubCategory);
+router.post("/subcategories", protect, adminOnly, uploadSubCategory.single("image"), createSubCategory);
+router.patch("/subcategories/:id", protect, adminOnly, uploadSubCategory.single("image"), updateSubCategory);
 router.delete("/subcategories/:id", protect, adminOnly, deleteSubCategory);
+
+// ─── SubSubCategories ─────────────────────────────────────────────────────────
+router.get("/subsubcategories", getAllSubSubCategories);
+router.get("/subsubcategories/:id", getSubSubCategoryById);
+router.post("/subsubcategories", protect, adminOnly, createSubSubCategory);
+router.patch("/subsubcategories/:id", protect, adminOnly, updateSubSubCategory);
+router.delete("/subsubcategories/:id", protect, adminOnly, deleteSubSubCategory);
 
 module.exports = router;

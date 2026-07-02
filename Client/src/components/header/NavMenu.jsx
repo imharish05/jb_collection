@@ -56,7 +56,7 @@ const PortalMegaPanel = ({ anchorRef, open, onMouseEnter, onMouseLeave, children
   const reposition = useCallback(() => {
     if (!anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
-    const panelWidth = Math.min(860, window.innerWidth * 0.92);
+    const panelWidth = Math.min(540, window.innerWidth * 0.92);
     let left = rect.left + rect.width / 2 - panelWidth / 2;
     // clamp so it doesn't go off-screen
     left = Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8));
@@ -175,20 +175,6 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
                     )}
                   />
 
-                  <MegaSection
-                    title="Events"
-                    accent="#f59e0b"
-                    items={events}
-                    renderItem={(evt) => (
-                      <CatalogueCard
-                        key={evt.value}
-                        to={`${S}?event=${evt.value}`}
-                        image={evt.image}
-                        label={evt.label}
-                        emoji="🎉"
-                      />
-                    )}
-                  />
 
                   {/* CTA strip */}
                   <div className="kg-mega-cta">

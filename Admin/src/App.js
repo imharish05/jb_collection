@@ -10,6 +10,7 @@ import Reports from './components/Reports/Reports';
 import Payments from './components/Payments/Payments';
 import Categories from './components/Categories/Categories';
 import SubCategories from './components/SubCategories/SubCategories';
+import SubSubCategories from './components/SubSubCategories/SubSubCategories';
 import EventCategories from './components/EventCategories/EventCategories';
 import Brands from './components/Brands/Brands';
 import Combos from "./components/Combos/Combos";
@@ -49,6 +50,7 @@ const PAGE_CONFIG = {
   payments:            { title: 'Payments & Transactions' },
   categories:          { title: 'Categories' },
   sub_categories:      { title: 'Sub Categories' },
+  sub_sub_categories:  { title: 'Sub Sub Categories' },
   event_categories:    { title: 'Event Categories' },
   brands:              { title: 'Brands' },
   combos:              { title: 'Combos' },
@@ -115,6 +117,7 @@ function AdminLayoutWrapper({ handleLogout }) {
             {/* <Route path="/payments"            element={<Payments           showToast={showToast} />} /> */}
             <Route path="/categories"          element={<Categories         showToast={showToast} />} />
             <Route path="/sub_categories"      element={<SubCategories      showToast={showToast} />} />
+            <Route path="/sub_sub_categories"  element={<SubSubCategories   showToast={showToast} />} />
             <Route path="/event_categories"    element={<EventCategories    showToast={showToast} />} />
             <Route path="/brands"              element={<Brands             showToast={showToast} />} />
             <Route path="/combos" element={<NewCombos showToast={showToast} />} />

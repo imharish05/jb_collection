@@ -97,6 +97,7 @@ function blankVariantRow() {
 // ── Form defaults ─────────────────────────────────────────────────────────────
 const BLANK_FORM = {
   productName: '', categoryId: '', categoryName: '', subCategoryId: '', subCategoryName: '',
+  subSubCategoryId: '', subSubCategoryName: '',
   brandId: '', discount: '', shortDescription: '', fullDescription: '',
   tag: '', isNewArrival: false, isHotDeal: false,
   isPartialCodAvailable: true,
@@ -151,6 +152,9 @@ export default function Products({ showToast }) {
   const productCategories = categories.filter(c => c.value !== null && c.value !== undefined && c.value !== '');
 
   const subCategories = selectedCategory?.subcategories || selectedCategory?.subCategories || selectedCategory?.SubCategories || [];
+
+  const selectedSubCategory = subCategories.find(s => String(s.id) === String(formData.subCategoryId));
+  const subSubCategories = selectedSubCategory?.subsubcategories || selectedSubCategory?.subSubCategories || selectedSubCategory?.SubSubCategories || [];
 
 
   // ── Load data ─────────────────────────────────────────────────────────────
@@ -261,6 +265,8 @@ export default function Products({ showToast }) {
     const catName = p.Category?.name || p.Category?.label || '';
     const subCatId = p.subCategoryId || p.SubCategory?.id || '';
     const subCatName = p.SubCategory?.name || p.SubCategory?.label || '';
+    const subSubCatId = p.subSubCategoryId || p.SubSubCategory?.id || '';
+    const subSubCatName = p.SubSubCategory?.name || p.SubSubCategory?.label || '';
 
     setEditingId(p.id);
     setFormData({
@@ -269,6 +275,8 @@ export default function Products({ showToast }) {
       categoryName: catName,
       subCategoryId: subCatId,
       subCategoryName: subCatName,
+      subSubCategoryId: subSubCatId,
+      subSubCategoryName: subSubCatName,
       brandId: p.brandId || '',
       discount: p.discount ?? '',
       shortDescription: p.shortDescription || '',
@@ -513,6 +521,8 @@ export default function Products({ showToast }) {
 
     if (formData.subCategoryId) fd.append('subCategoryId', formData.subCategoryId);
     if (formData.subCategoryName) fd.append('subCategoryName', formData.subCategoryName);
+    if (formData.subSubCategoryId) fd.append('subSubCategoryId', formData.subSubCategoryId);
+    if (formData.subSubCategoryName) fd.append('subSubCategoryName', formData.subSubCategoryName);
 
     const baseTags = formData.tag ? formData.tag.split(',').map(t => t.trim()).filter(Boolean) : [];
 
@@ -661,6 +671,8 @@ export default function Products({ showToast }) {
                       categoryName: cat?.name || cat?.label || '',
                       subCategoryId: '',
                       subCategoryName: '',
+                      subSubCategoryId: '',
+                      subSubCategoryName: '',
                     });
                   }}>
                   <option value="">Select Category</option>
@@ -690,6 +702,8 @@ export default function Products({ showToast }) {
                         ...formData,
                         subCategoryId: e.target.value,
                         subCategoryName: sub?.label || sub?.name || '',
+                        subSubCategoryId: '',
+                        subSubCategoryName: '',
                       });
                     }}
                   >
@@ -708,7 +722,49 @@ export default function Products({ showToast }) {
                     placeholder={formData.categoryId ? 'Type sub-category (optional)' : 'Select a category first'}
                     disabled={!formData.categoryId}
                     value={formData.subCategoryName}
-                    onChange={e => setFormData({ ...formData, subCategoryName: e.target.value, subCategoryId: '' })}
+                    onChange={e => setFormData({ ...formData, subCategoryName: e.target.value, subCategoryId: '', subSubCategoryId: '', subSubCategoryName: '' })}
+                  />
+                )}
+              </div>
+
+              <div style={fieldStyle}>
+                <label style={labelStyle}>
+                  Sub-Subcategory
+                  {subSubCategories.length === 0 && formData.subCategoryId && (
+                    <span style={{ marginLeft: 6, fontSize: 10, color: KM.muted, textTransform: 'none', fontWeight: 400 }}>
+                      (none for this sub-category)
+                    </span>
+                  )}
+                </label>
+                {subSubCategories.length > 0 ? (
+                  <select
+                    style={inputStyle}
+                    value={formData.subSubCategoryId}
+                    onChange={e => {
+                      const subsub = subSubCategories.find(ss => String(ss.id) === String(e.target.value));
+                      setFormData({
+                        ...formData,
+                        subSubCategoryId: e.target.value,
+                        subSubCategoryName: subsub?.label || subsub?.name || '',
+                      });
+                    }}
+                  >
+                    <option value="">Select Sub-Subcategory</option>
+                    {subSubCategories.map(ss => (
+                      <option key={ss.id} value={ss.id}>{ss.label || ss.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    style={{
+                      ...inputStyle,
+                      background: formData.subCategoryId ? '#fff' : KM.bg,
+                      color: formData.subCategoryId ? KM.text : KM.muted,
+                    }}
+                    placeholder={formData.subCategoryId ? 'Type sub-subcategory (optional)' : 'Select a sub-category first'}
+                    disabled={!formData.subCategoryId}
+                    value={formData.subSubCategoryName}
+                    onChange={e => setFormData({ ...formData, subSubCategoryName: e.target.value, subSubCategoryId: '' })}
                   />
                 )}
               </div>

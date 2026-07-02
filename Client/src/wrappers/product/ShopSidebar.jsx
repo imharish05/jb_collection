@@ -8,8 +8,8 @@ import "rc-slider/assets/index.css";
 
 const S = process.env.PUBLIC_URL + "/shop";
 
-const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
-  const { categories = [], events = [], combos = [], rootCombos = [] } = useSelector((state) => state.navMenu);
+const ShopSidebar = ({ products, getSortParams, filterSortValue, sideSpaceClass }) => {
+  const { categories = [], rootCombos = [] } = useSelector((state) => state.navMenu);
 
   const { search } = useLocation();
   const navigate = useNavigate();
@@ -18,6 +18,12 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
   const activeEvent    = params.get("event")    || "";
   const activeCombo    = params.get("combo")    || "";
   const activeSubCat   = params.get("subcategory") || "";
+  const activeSubSubCat = params.get("subsubcategory") || "";
+
+  // Image base URL and source resolver
+  const IMG_BASE = process.env.REACT_APP_IMG_URL + "/uploads/";
+  const imgSrc = (path) =>
+    path ? `${IMG_BASE}${path.replace(/^\/?(uploads\/)?/, "")}` : null;
 
   // ── Mobile Responsive State ──
   const [isMobile, setIsMobile] = useState(false);
@@ -52,6 +58,13 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
   const [expandedCat, setExpandedCat] = useState(() => {
     return activeCategory || null;
   });
+
+  // Sync expandedCat with activeCategory from URL
+  useEffect(() => {
+    if (activeCategory) {
+      setExpandedCat(activeCategory);
+    }
+  }, [activeCategory]);
 
   // ── Price range (Force minimum starting from 0) ──
   const allPrices = useMemo(() => products.map(p => p.price).filter(Boolean), [products]);
@@ -203,179 +216,156 @@ const ShopSidebar = ({ products, getSortParams, sideSpaceClass }) => {
         </div>
       </div>
 
-      {/* ── Categories + Subcategories ── */}
+      {/* ── Sort By ── */}
       <div style={styles.section}>
-        <div className="mobile-accordion-header" onClick={() => toggleMobileSection("categories")}>
-          <p style={{...styles.sectionTitle, margin: 0}}>
-            Categories {isMobile && <span style={styles.mobileChevron}>{mobileSections.categories ? "▲" : "▼"}</span>}
-          </p>
-        </div>
-        
-        <div className={clsx("mobile-accordion-content", (mobileSections.categories || !isMobile) && "open")} style={(!mobileSections.categories && isMobile) ? {display: 'none'} : {marginTop: 14}}>
-          <ul style={styles.filterList}>
-            {/* ── All Products Button ── */}
-            <li>
-              <button
-                onClick={() => {
-                  setExpandedCat(null);
-                  navigate(S);
-                }}
-                style={{ ...styles.filterBtn, ...(isAllProductsActive ? styles.filterBtnActive : {}) }}
-              >
-                <span>All Products</span>
-                <span style={{ ...styles.filterCount, ...(isAllProductsActive ? styles.filterCountActive : {}) }}>
-                  ({products.length})
-                </span>
-              </button>
-            </li>
-
-            {categories.map((cat) => {
-              const isAll    = cat.value === null;
-              const isActive = isAll
-                ? !activeCategory && !activeEvent && !activeCombo
-                : activeCategory === cat.value;
-              const isExpanded  = expandedCat === cat.value;
-              const subcategories = cat.subcategories || [];
-              const hasSubCats  = !isAll && subcategories.length > 0;
-
-              const count = isAll
-                ? products.length
-                : products.filter(p =>
-                    // match by categoryId UUID (primary, what backend stores)
-                    (p.categoryId && String(p.categoryId) === String(cat.id)) ||
-                    // fallback: category array contains the slug value
-                    p.category?.includes(cat.value)
-                  ).length;
-
-              return (
-                <li key={cat.value ?? "__all"}>
-                  <button
-                    onClick={() => handleCategoryClick(cat)}
-                    style={{ ...styles.filterBtn, ...(isActive ? styles.filterBtnActive : {}) }}
-                  >
-                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      {hasSubCats && (
-                        <span style={{
-                          ...styles.chevron,
-                          transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
-                        }}>
-                          ›
-                        </span>
-                      )}
-                      {cat.label}
-                    </span>
-                    <span style={{ ...styles.filterCount, ...(isActive ? styles.filterCountActive : {}) }}>
-                      ({count})
-                    </span>
-                  </button>
-
-                  {/* ── Subcategory drawer ── */}
-                  {hasSubCats && isExpanded && (
-                    <ul style={styles.subList}>
-                      <li>
-                        <button
-                          onClick={() => navigate(`${S}?category=${cat.value}`)}
-                          style={{
-                            ...styles.subBtn,
-                            ...(!activeSubCat && activeCategory === cat.value ? styles.subBtnActive : {}),
-                          }}
-                        >
-                          <span>All {cat.label}</span>
-                          <span style={styles.filterCount}>({count})</span>
-                        </button>
-                      </li>
-
-                      {subcategories.map((sub) => {
-                        const subCount  = products.filter(p => 
-                          (p.subCategoryId && String(p.subCategoryId) === String(sub.id)) ||
-                          p.SubCategory?.value === sub.value
-                        ).length;
-                        const subActive = activeSubCat === sub.value;
-                        return (
-                          <li key={sub.value}>
-                            <button
-                              onClick={() =>
-                                navigate(`${S}?category=${cat.value}&subcategory=${sub.value}`)
-                              }
-                              style={{ ...styles.subBtn, ...(subActive ? styles.subBtnActive : {}) }}
-                            >
-                              <span>{sub.label}</span>
-                              <span style={{ ...styles.filterCount, ...(subActive ? styles.filterCountActive : {}) }}>
-                                ({subCount})
-                              </span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+        <p style={styles.sectionTitle}>Sort By</p>
+        <div style={{ marginTop: 14 }}>
+          <select
+            value={filterSortValue || "default"}
+            onChange={(e) => getSortParams("filterSort", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              fontSize: "14px",
+              color: "#333",
+              border: "1px solid #e5e7eb",
+              borderRadius: "6px",
+              background: "#fff",
+              outline: "none",
+              cursor: "pointer"
+            }}
+          >
+            <option value="default">Relevance</option>
+            <option value="priceLowToHigh">Price - Low to High</option>
+            <option value="priceHighToLow">Price - High to Low</option>
+            <option value="newest">Newest First</option>
+          </select>
         </div>
       </div>
 
-      {/* ── Events ── */}
-      <div style={styles.section}>
-        <div className="mobile-accordion-header" onClick={() => toggleMobileSection("events")}>
-          <p style={{...styles.sectionTitle, margin: 0}}>
-            Shop by Event {isMobile && <span style={styles.mobileChevron}>{mobileSections.events ? "▲" : "▼"}</span>}
-          </p>
-        </div>
-        
-        <div className={clsx("mobile-accordion-content", (mobileSections.events || !isMobile) && "open")} style={(!mobileSections.events && isMobile) ? {display: 'none'} : {marginTop: 14}}>
-          <ul style={styles.filterList}>
-            {events.map((evt) => {
-              const count    = products.filter(p => p.tag?.includes(evt.value)).length;
-              if (count === 0) return null;
-              const isActive = activeEvent === evt.value;
-              return (
-                <li key={evt.value}>
-                  <button
-                    onClick={() => navigate(`${S}?event=${evt.value}`)}
-                    style={{ ...styles.filterBtn, ...(isActive ? styles.filterBtnActive : {}) }}
-                  >
-                    <span>{evt.label}</span>
-                    <span style={{ ...styles.filterCount, ...(isActive ? styles.filterCountActive : {}) }}>
-                      ({count})
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </div>
-
-      {/* ── Combos ── */}
-      {rootCombos.length > 0 && (
-        <div style={{ ...styles.section, borderBottom: "none", paddingBottom: 0 }}>
-          <div className="mobile-accordion-header" onClick={() => toggleMobileSection("combos")}>
+      {/* ── Subcategories Section (Cascading) ── */}
+      {activeCategory && (
+        <div style={styles.section}>
+          <div className="mobile-accordion-header" onClick={() => toggleMobileSection("categories")}>
             <p style={{...styles.sectionTitle, margin: 0}}>
-              Combos {isMobile && <span style={styles.mobileChevron}>{mobileSections.combos ? "▲" : "▼"}</span>}
+              Subcategories {isMobile && <span style={styles.mobileChevron}>{mobileSections.categories ? "▲" : "▼"}</span>}
             </p>
           </div>
           
-          <div className={clsx("mobile-accordion-content", (mobileSections.combos || !isMobile) && "open")} style={(!mobileSections.combos && isMobile) ? {display: 'none'} : {marginTop: 14}}>
+          <div className={clsx("mobile-accordion-content", (mobileSections.categories || !isMobile) && "open")} style={(!mobileSections.categories && isMobile) ? {display: 'none'} : {marginTop: 14}}>
             <ul style={styles.filterList}>
-              {rootCombos.map((combo) => {
-                const count = combo.children ? combo.children.filter(c => c.isActive !== false && c.is_active !== false).length : 0;
-                const isActive = activeCombo === String(combo.id);
-                return (
-                  <li key={combo.id}>
-                    <button
-                      onClick={() => navigate(`${S}?combo=${combo.id}`)}
-                      style={{ ...styles.filterBtn, ...(isActive ? styles.filterBtnActive : {}) }}
-                    >
-                      <span>{combo.name}</span>
-                      <span style={{ ...styles.filterCount, ...(isActive ? styles.filterCountActive : {}) }}>
-                        ({count})
-                      </span>
-                    </button>
-                  </li>
+              {(() => {
+                const activeCatObj = categories.find(c => c.value === activeCategory);
+                const subcategories = activeCatObj?.subcategories || [];
+                if (!activeCatObj || subcategories.length === 0) return (
+                   <li style={{ fontSize: "13px", color: "#777" }}>No subcategories found.</li>
                 );
-              })}
+
+                return (
+                  <>
+                    {/* All Subcategories (Clear Subcategory Filter) */}
+                    <li>
+                      <button
+                        onClick={() => navigate(`${S}?category=${activeCategory}`)}
+                        style={{
+                          ...styles.filterBtn,
+                          color: !activeSubCat ? "var(--theme-color)" : "#333",
+                          fontWeight: !activeSubCat ? 600 : 400,
+                          borderBottom: "1px dashed #eee",
+                          paddingBottom: "12px",
+                          marginBottom: "8px",
+                          borderRadius: 0
+                        }}
+                      >
+                        <span style={{ display: "flex", alignItems: "center" }}>
+                          <span style={{
+                            ...styles.radioCircle,
+                            ...(!activeSubCat ? styles.radioCircleActive : {})
+                          }}>
+                            <span style={{
+                              ...styles.radioInner,
+                              ...(!activeSubCat ? styles.radioInnerActive : {})
+                            }} />
+                          </span>
+                          All Subcategories
+                        </span>
+                      </button>
+                    </li>
+
+                    {/* Subcategories with radio buttons for sub-subcategories */}
+                    {subcategories.map((sub) => {
+                      const subCount = products.filter(p => 
+                        (p.subCategoryId && String(p.subCategoryId) === String(sub.id)) ||
+                        p.SubCategory?.value === sub.value
+                      ).length;
+                      const subActive = activeSubCat === sub.value;
+                      const subsubs = sub.subsubcategories || [];
+
+                      return (
+                        <li key={sub.value} style={{ marginBottom: "6px" }}>
+                          <button
+                            onClick={() => navigate(`${S}?category=${activeCategory}&subcategory=${sub.value}`)}
+                            style={{ ...styles.subBtn, ...(subActive ? styles.subBtnActive : {}) }}
+                          >
+                            <span style={{ display: "flex", alignItems: "center" }}>
+                              <span style={{
+                                ...styles.radioCircle,
+                                ...(subActive ? styles.radioCircleActive : {})
+                              }}>
+                                <span style={{
+                                  ...styles.radioInner,
+                                  ...(subActive ? styles.radioInnerActive : {})
+                                }} />
+                              </span>
+                              {sub.image ? (
+                                <img src={imgSrc(sub.image)} alt={sub.label} style={styles.thumbImg} />
+                              ) : (
+                                <span style={styles.thumbPlaceholder}>📁</span>
+                              )}
+                              {sub.label}
+                            </span>
+                            <span style={{ ...styles.filterCount, ...(subActive ? styles.filterCountActive : {}) }}>
+                              ({subCount})
+                            </span>
+                          </button>
+
+                          {/* Sub-subcategory Radio Buttons */}
+                          {subActive && subsubs.length > 0 && (
+                            <div style={{ paddingLeft: "32px", marginTop: "8px", marginBottom: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                              {subsubs.map(ss => {
+                                const ssActive = activeSubSubCat === ss.value;
+                                return (
+                                  <label key={ss.value} style={{ display: "flex", alignItems: "center", cursor: "pointer", fontSize: "13px", color: ssActive ? "var(--theme-color)" : "#555", fontWeight: ssActive ? "500" : "400" }}>
+                                    <span style={{
+                                      ...styles.radioCircle,
+                                      ...(ssActive ? styles.radioCircleActive : {}),
+                                      marginRight: "8px"
+                                    }}>
+                                      <span style={{
+                                        ...styles.radioInner,
+                                        ...(ssActive ? styles.radioInnerActive : {})
+                                      }} />
+                                    </span>
+                                    <input
+                                      type="radio"
+                                      name="subsubcategory"
+                                      value={ss.value}
+                                      checked={ssActive}
+                                      onChange={() => navigate(`${S}?category=${activeCategory}&subcategory=${sub.value}&subsubcategory=${ss.value}`)}
+                                      style={{ display: 'none' }}
+                                    />
+                                    {ss.label}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </>
+                );
+              })()}
             </ul>
           </div>
         </div>
@@ -424,9 +414,9 @@ const styles = {
     fontSize: 13, color: "#444", borderRadius: 6,
     transition: "background 0.15s, color 0.15s", textAlign: "left",
   },
-  filterBtnActive: { background: "#fdf0ff", color: "#a020c0", fontWeight: 600 },
+  filterBtnActive: { background: "transparent", color: "var(--theme-color)", fontWeight: 600 },
   filterCount: { fontSize: 11, color: "#bbb", fontWeight: 400, flexShrink: 0 },
-  filterCountActive: { color: "#c050e0" },
+  filterCountActive: { color: "var(--theme-color)" },
   chevron: {
     display: "inline-block",
     fontSize: 25,
@@ -438,7 +428,7 @@ const styles = {
   subList: {
     listStyle: "none",
     margin: "2px 0 4px 0",
-    padding: "0 0 0 20px",
+    padding: "0 0 0 10px",
     display: "flex",
     flexDirection: "column",
     gap: 1,
@@ -451,13 +441,92 @@ const styles = {
     fontSize: 12, color: "#666", borderRadius: 5,
     transition: "background 0.15s, color 0.15s", textAlign: "left",
   },
-  subBtnActive: { background: "#fdf0ff", color: "#a020c0", fontWeight: 600 },
+  subBtnActive: { background: "transparent", color: "var(--theme-color)", fontWeight: 600 },
+  subSubList: {
+    listStyle: "none",
+    margin: "2px 0 4px 0",
+    padding: "0 0 0 20px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 1,
+    borderLeft: "2px dashed #f0e0ff",
+  },
+  subSubBtn: {
+    width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
+    background: "none", border: "none", outline: "none", cursor: "pointer",
+    paddingTop: 6, paddingBottom: 6, paddingRight: 10, paddingLeft: 8,
+    fontSize: 11, color: "#888", borderRadius: 4,
+    transition: "background 0.15s, color 0.15s", textAlign: "left",
+  },
+  subSubBtnActive: { background: "transparent", color: "var(--theme-color)", fontWeight: 600 },
+  radioCircle: {
+    display: "inline-flex",
+    width: 14,
+    height: 14,
+    borderRadius: "50%",
+    border: "1px solid #ccc",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+    flexShrink: 0,
+    background: "#fff",
+  },
+  radioCircleActive: {
+    borderColor: "var(--theme-color)",
+  },
+  radioInner: {
+    width: 6,
+    height: 6,
+    borderRadius: "50%",
+    background: "transparent",
+  },
+  radioInnerActive: {
+    background: "var(--theme-color)",
+  },
+  thumbImg: {
+    width: 24,
+    height: 24,
+    borderRadius: "50%",
+    objectFit: "cover",
+    marginRight: 8,
+    border: "1px solid #eee",
+    background: "#fff",
+  },
+  thumbPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: "50%",
+    background: "#f1f1f1",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+    fontSize: 10,
+  },
+  pillBtn: {
+    background: "#f3f4f6",
+    border: "none",
+    padding: "6px 12px",
+    borderRadius: "16px",
+    fontSize: "11px",
+    fontWeight: 500,
+    color: "#4b5563",
+    cursor: "pointer",
+    transition: "background 0.15s, color 0.15s",
+    whiteSpace: "nowrap",
+    outline: "none"
+  },
+  pillBtnActive: {
+    background: "var(--theme-color)",
+    color: "#fff",
+  },
   comboIcon: { marginRight: 6 },
 };
 
 ShopSidebar.propTypes = {
   getSortParams: PropTypes.func,
   products: PropTypes.array,
+  filterSortValue: PropTypes.string,
   sideSpaceClass: PropTypes.string,
 };
 

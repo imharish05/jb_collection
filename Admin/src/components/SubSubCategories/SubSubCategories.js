@@ -1,33 +1,24 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../api/axiosInstance';
 import DataTable from '../DataTable/DataTable';
-import ImageUploadField from '../ImageUploadField';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
 import AccessDenied from '../AccessDenied';
 
-const BASE_URL = process.env.REACT_APP_IMG_URL;
+export default function SubSubCategories({ showToast }) {
+  const [subsubcategories, setSubsubcategories] = useState([]);
+  const [categories, setCategories]             = useState([]);
+  const [subcategories, setSubcategories]       = useState([]);
+  const [loading, setLoading]                   = useState(false);
 
-const getImageUrl = (imagePath) => {
-  if (!imagePath) return null;
-  if (imagePath.startsWith('http')) return imagePath;
-  const filename = imagePath.replace(/^\//, '').replace(/^uploads\//, '');
-  return `${BASE_URL}/uploads/${filename}`;
-};
-
-export default function SubCategories({ showToast }) {
-  const [subcategories, setSubcategories] = useState([]);
-  const [categories, setCategories]       = useState([]);
-  const [loading, setLoading]             = useState(false);
-
-  const [showForm, setShowForm]           = useState(false);
-  const [editingId, setEditingId]         = useState(null);
-  const [label, setLabel]                 = useState('');
-  const [categoryId, setCategoryId]       = useState('');
-  const [isActive, setIsActive]           = useState(true);
-  const [imageFile, setImageFile]         = useState(null);
-  const [preview, setPreview]             = useState(null);
-  const fileInputRef = useRef();
+  const [showForm, setShowForm]                 = useState(false);
+  const [editingId, setEditingId]               = useState(null);
+  
+  // Cascading form values
+  const [categoryId, setCategoryId]             = useState('');
+  const [subCategoryId, setSubCategoryId]       = useState('');
+  const [label, setLabel]                       = useState('');
+  const [isActive, setIsActive]                 = useState(true);
 
   const generateSlug = (name) => {
     return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -36,16 +27,19 @@ export default function SubCategories({ showToast }) {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [subRes, catRes] = await Promise.all([
-        api.get('/categories/subcategories'),
+      const [subsubRes, catRes, subRes] = await Promise.all([
+        api.get('/categories/subsubcategories'),
         api.get('/categories/categories?active=true'),
+        api.get('/categories/subcategories?active=true'),
       ]);
       
-      const extractedSubs = subRes.data?.data || subRes.data || [];
+      const extractedSubSubs = subsubRes.data?.data || subsubRes.data || [];
       const extractedCats = catRes.data?.data || catRes.data || [];
+      const extractedSubs = subRes.data?.data || subRes.data || [];
       
-      setSubcategories(Array.isArray(extractedSubs) ? extractedSubs : []);
+      setSubsubcategories(Array.isArray(extractedSubSubs) ? extractedSubSubs : []);
       setCategories(Array.isArray(extractedCats) ? extractedCats : []);
+      setSubcategories(Array.isArray(extractedSubs) ? extractedSubs : []);
     } catch (err) {
       showToast.error('Failed to load data');
     } finally {
@@ -55,68 +49,51 @@ export default function SubCategories({ showToast }) {
 
   useEffect(() => { fetchAll(); }, []);
 
-  useEffect(() => {
-    if (imageFile) {
-      const url = URL.createObjectURL(imageFile);
-      setPreview(url);
-      return () => URL.revokeObjectURL(url);
-    }
-  }, [imageFile]);
-
   if (!hasPermission('subcategories_view')) {
-    return <AccessDenied moduleName="Sub-Categories" />;
+    return <AccessDenied moduleName="Sub-Sub Categories" />;
   }
 
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setLabel('');
     setCategoryId('');
+    setSubCategoryId('');
+    setLabel('');
     setIsActive(true);
-    setImageFile(null);
-    setPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleEditClick = (row) => {
     setEditingId(row.id);
+    const parentSub = row.subcategory || {};
+    setCategoryId(parentSub.categoryId || parentSub.category_id || '');
+    setSubCategoryId(row.subCategoryId || row.sub_category_id || '');
     setLabel(row.label);
-    setCategoryId(row.categoryId || row.category_id || '');
     setIsActive(row.isActive !== false);
-    setPreview(row.image ? getImageUrl(row.image) : null);
-    setImageFile(null);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleClearImage = () => {
-    setImageFile(null);
-    setPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!label) { showToast.error('Please enter a subcategory name'); return; }
-    if (!categoryId) { showToast.error('Please select a parent category'); return; }
+    if (!categoryId) { showToast.error('Please select a Category'); return; }
+    if (!subCategoryId) { showToast.error('Please select a Sub-Category'); return; }
+    if (!label) { showToast.error('Please enter a Sub-Subcategory Name'); return; }
 
-    const data = new FormData();
-    data.append('label', label);
-    data.append('value', generateSlug(label));
-    data.append('categoryId', categoryId);
-    data.append('isActive', isActive);
-    if (imageFile) {
-      data.append('image', imageFile);
-    }
+    const payload = {
+      subCategoryId,
+      label,
+      value: generateSlug(label),
+      isActive,
+    };
 
-    const toastId = showToast.loading(editingId ? 'Updating subcategory...' : 'Adding subcategory...');
+    const toastId = showToast.loading(editingId ? 'Updating sub-subcategory...' : 'Adding sub-subcategory...');
     try {
       if (editingId) {
-        await api.patch(`/categories/subcategories/${editingId}`, data);
-        showToast.success('Subcategory updated', toastId);
+        await api.patch(`/categories/subsubcategories/${editingId}`, payload);
+        showToast.success('Sub-subcategory updated', toastId);
       } else {
-        await api.post('/categories/subcategories', data);
-        showToast.success('Subcategory added', toastId);
+        await api.post('/categories/subsubcategories', payload);
+        showToast.success('Sub-subcategory added', toastId);
       }
       resetForm();
       fetchAll();
@@ -125,41 +102,49 @@ export default function SubCategories({ showToast }) {
     }
   };
 
-  const handleDelete = (subId) => {
+  const handleDelete = (id) => {
     confirmDelete({
-      title: 'Delete Subcategory?',
-      message: 'Are you sure you want to delete this subcategory?',
+      title: 'Delete Sub-subcategory?',
+      message: 'Are you sure you want to delete this sub-subcategory?',
       onConfirm: async () => {
         try {
-          await api.delete(`/categories/subcategories/${subId}`);
+          await api.delete(`/categories/subsubcategories/${id}`);
           fetchAll();
         } catch (err) {
-          console.error('Failed to delete subcategory:', err);
+          console.error('Failed to delete sub-subcategory:', err);
         }
       },
     });
   };
 
-  const safeCategories = Array.isArray(categories) ? categories : [];
+  // Filter subcategories based on selected category
+  const filteredSubCategories = subcategories.filter(sub => {
+    const parentCatId = sub.categoryId || sub.category_id;
+    return String(parentCatId) === String(categoryId);
+  });
 
   const getCategoryLabel = (row) => {
-    const catId = row.categoryId || row.category_id;
-    if (row.category?.label) return row.category.label;
-    if (row.category?.name) return row.category.name;
-    const cat = safeCategories.find(c => c.id === catId);
-    return cat ? (cat.label || cat.name) : '-';
+    if (row.subcategory?.category?.label) return row.subcategory.category.label;
+    if (row.subcategory?.category?.name) return row.subcategory.category.name;
+    return '-';
+  };
+
+  const getSubCategoryLabel = (row) => {
+    if (row.subcategory?.label) return row.subcategory.label;
+    if (row.subcategory?.name) return row.subcategory.name;
+    return '-';
   };
 
   return (
     <div className="categories-container">
       <div className="section-header">
-        <div className="section-title">Sub Categories</div>
+        <div className="section-title">Sub Sub Categories</div>
         {hasPermission('subcategories_create') && (
           <button
             className="action-btn btn-edit"
             onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
           >
-            {showForm ? 'Close' : '+ Add Sub Category'}
+            {showForm ? 'Close' : '+ Add Sub Sub Category'}
           </button>
         )}
       </div>
@@ -167,52 +152,63 @@ export default function SubCategories({ showToast }) {
       {showForm && (
         <div className="km-form-card fade-in">
           <div className="km-form-header">
-            <div className="km-form-header-icon">{editingId ? '✎' : 'S'}</div>
+            <div className="km-form-header-icon">{editingId ? '✎' : 'SS'}</div>
             <div>
-              <div className="km-form-header-title">{editingId ? 'Edit Sub Category' : 'Add New Sub Category'}</div>
+              <div className="km-form-header-title">{editingId ? 'Edit Sub Sub Category' : 'Add New Sub Sub Category'}</div>
               <div className="km-form-header-sub">Fill in the details below</div>
             </div>
           </div>
 
           <div className="km-form-body">
             <form className="km-form-grid" onSubmit={handleSubmit}>
+              
+              {/* Category Dropdown */}
               <div className="km-field km-field-half">
-                <label className="km-label">Parent Category</label>
+                <label className="km-label">Parent Category *</label>
                 <select
                   className="km-input"
                   value={categoryId}
-                  onChange={e => setCategoryId(e.target.value)}
+                  onChange={e => {
+                    setCategoryId(e.target.value);
+                    setSubCategoryId(''); // Reset subcategory when category changes
+                  }}
                   required
                 >
                   <option value="">— Select Category —</option>
-                  {safeCategories.map(cat => (
+                  {categories.map(cat => (
                     <option key={cat.id} value={cat.id}>{cat.label || cat.name}</option>
                   ))}
                 </select>
               </div>
 
+              {/* Sub-Category Dropdown */}
               <div className="km-field km-field-half">
-                <label className="km-label">Sub Category Name</label>
+                <label className="km-label">Parent Sub-Category *</label>
+                <select
+                  className="km-input"
+                  value={subCategoryId}
+                  onChange={e => setSubCategoryId(e.target.value)}
+                  disabled={!categoryId}
+                  required
+                >
+                  <option value="">— Select Sub-Category —</option>
+                  {filteredSubCategories.map(sub => (
+                    <option key={sub.id} value={sub.id}>{sub.label || sub.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sub-Subcategory Name input */}
+              <div className="km-field km-field-half">
+                <label className="km-label">Sub Sub Category Name *</label>
                 <input
-                  className="km-input" type="text" placeholder="e.g. Spice Box" required
+                  className="km-input" type="text" placeholder="e.g. Saree or Kurti" required
                   value={label} onChange={e => setLabel(e.target.value)}
                 />
               </div>
 
-              <ImageUploadField
-                label="Sub Category Image"
-                imageFile={imageFile}
-                preview={preview}
-                fileInputRef={fileInputRef}
-                onFileChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) setImageFile(file);
-                }}
-                onClear={handleClearImage}
-                requirements="400×400px (1:1) • Max: 3MB (JPG/WebP)"
-              />
-
-              <div className="km-field km-field-full">
+              {/* Status Select */}
+              <div className="km-field km-field-half">
                 <label className="km-label">Status</label>
                 <select
                   className="km-input"
@@ -226,7 +222,7 @@ export default function SubCategories({ showToast }) {
 
               <div className="km-form-actions" style={{ display: 'flex' }}>
                 <button type="submit" className="km-btn-submit">
-                  {editingId ? 'Update Sub Category' : 'Save Sub Category'}
+                  {editingId ? 'Update Sub Sub Category' : 'Save Sub Sub Category'}
                 </button>
                 <button type="button" className="km-btn-cancel" onClick={resetForm}>
                   Cancel
@@ -238,38 +234,18 @@ export default function SubCategories({ showToast }) {
       )}
 
       {loading ? (
-        <p className="km-loading">Loading subcategories...</p>
+        <p className="km-loading">Loading sub-subcategories...</p>
       ) : (
         <DataTable
           columns={(() => {
-            const cols = ['No.', 'Image', 'Parent Category', 'Sub Category Name', 'Slug', 'Status'];
+            const cols = ['No.', 'Category', 'Sub Category', 'Sub Sub Category Name', 'Slug', 'Status'];
             if (hasPermission('subcategories_edit') || hasPermission('subcategories_delete')) cols.push('Actions');
             return cols;
           })()}
-          initialRows={subcategories}
+          initialRows={subsubcategories}
           renderRow={(row, i) => (
             <tr key={row.id}>
               <td className="td-id">{i + 1}</td>
-              <td>
-                {row.image ? (
-                  <img
-                    src={getImageUrl(row.image)}
-                    alt={row.label}
-                    style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <span style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    background: '#f1f1f1',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 14,
-                  }}>📁</span>
-                )}
-              </td>
               <td>
                 <span style={{
                   background: 'rgba(72,127,255,0.12)',
@@ -282,7 +258,19 @@ export default function SubCategories({ showToast }) {
                   {getCategoryLabel(row)}
                 </span>
               </td>
-              <td>{row.label}</td>
+              <td>
+                <span style={{
+                  background: 'rgba(245,158,11,0.12)',
+                  color: '#d97706',
+                  borderRadius: 6,
+                  padding: '3px 10px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}>
+                  {getSubCategoryLabel(row)}
+                </span>
+              </td>
+              <td><strong>{row.label}</strong></td>
               <td><code style={{ fontSize: '12px', opacity: 0.7 }}>{row.value || '-'}</code></td>
               <td>
                 <span style={{

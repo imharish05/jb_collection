@@ -114,6 +114,7 @@ const attachReferenceSlugs = (models) => {
     "Brand",
     "Category",
     "SubCategory",
+    "SubSubCategory",
     "Event",
     "Combo",
     "OfferBanner",

@@ -169,6 +169,10 @@ const SubCategory = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    image: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     sortOrder: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
@@ -183,7 +187,50 @@ const SubCategory = sequelize.define(
   { tableName: "subcategories" }
 );
 
-// Association
+// ─── SubSubCategory ───────────────────────────────────────────────────────────
+
+const SubSubCategory = sequelize.define(
+  "SubSubCategory",
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
+    subCategoryId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: "sub_category_id",
+      references: { model: "subcategories", key: "id" },
+      onDelete: "CASCADE",
+    },
+    label: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    value: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    sortOrder: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: "sort_order",
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      field: "is_active",
+    },
+  },
+  { tableName: "subsubcategories" }
+);
+
+// Associations
 Category.hasMany(SubCategory, { foreignKey: "category_id", as: "subcategories", onDelete: "CASCADE" });
 SubCategory.belongsTo(Category, { foreignKey: "category_id", as: "category" });
-module.exports = { Category, Event, Combo, SubCategory };
+
+SubCategory.hasMany(SubSubCategory, { foreignKey: "sub_category_id", as: "subsubcategories", onDelete: "CASCADE" });
+SubSubCategory.belongsTo(SubCategory, { foreignKey: "sub_category_id", as: "subcategory" });
+
+module.exports = { Category, Event, Combo, SubCategory, SubSubCategory };

@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { Category, Event, Combo, SubCategory } = require("../models/Category");
+const { Category, Event, Combo, SubCategory, SubSubCategory } = require("../models/Category");
 
 const deleteUploadFile = (imagePath) => {
   if (!imagePath) return;
@@ -41,14 +41,25 @@ const getNav = async (req, res) => {
       Category.findAll({
         where: { isActive: true },
         attributes: ["id", "label", "value", "image"],
-        order: [["sortOrder", "ASC"]],
         include: [{
           model: SubCategory,
           as: "subcategories",
           where: { isActive: true },
-          attributes: ["id", "label", "value"],
+          attributes: ["id", "label", "value", "image"],
           required: false,
+          include: [{
+            model: SubSubCategory,
+            as: "subsubcategories",
+            where: { isActive: true },
+            attributes: ["id", "label", "value"],
+            required: false,
+          }]
         }],
+        order: [
+          ["sortOrder", "ASC"],
+          [{ model: SubCategory, as: "subcategories" }, "sortOrder", "ASC"],
+          [{ model: SubCategory, as: "subcategories" }, { model: SubSubCategory, as: "subsubcategories" }, "sortOrder", "ASC"]
+        ],
       }),
       Event.findAll({
         where: { isActive: true },
@@ -94,8 +105,21 @@ const getCategories = async (req, res) => {
 
     const categories = await Category.findAll({
       where,
-      order: [["sortOrder", "ASC"]],
-      include: [{ model: SubCategory, as: "subcategories", attributes: ["id", "label", "value", "sortOrder"], required: false }],
+      include: [{
+        model: SubCategory,
+        as: "subcategories",
+        required: false,
+        include: [{
+          model: SubSubCategory,
+          as: "subsubcategories",
+          required: false,
+        }]
+      }],
+      order: [
+        ["sortOrder", "ASC"],
+        [{ model: SubCategory, as: "subcategories" }, "sortOrder", "ASC"],
+        [{ model: SubCategory, as: "subcategories" }, { model: SubSubCategory, as: "subsubcategories" }, "sortOrder", "ASC"]
+      ],
     });
 
     return res.status(200).json({ success: true, data: categories });

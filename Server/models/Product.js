@@ -121,6 +121,12 @@ const Product = sequelize.define(
       allowNull: true,
       field: "sub_category_id",
     },
+    // FK → sub_sub_categories.id
+    subSubCategoryId: {
+      type: DataTypes.STRING(36),
+      allowNull: true,
+      field: "sub_sub_category_id",
+    },
     // FK → brands.id
     brandId: {
       type: DataTypes.INTEGER,

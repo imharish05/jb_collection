@@ -165,7 +165,9 @@ const startServer = async () => {
       await sequelize.query("ALTER TABLE Variants ADD COLUMN gst_mode VARCHAR(20) DEFAULT 'Inclusive';").catch(() => {});
       await sequelize.query("ALTER TABLE Variants ADD COLUMN gst_rate DECIMAL(5,2) DEFAULT 0.00;").catch(() => {});
       await sequelize.query("ALTER TABLE Variants ADD COLUMN images JSON NULL;").catch(() => {});
-      console.log("✅ Users, products, and variants table columns verified");
+      await sequelize.query("ALTER TABLE subcategories ADD COLUMN image VARCHAR(255) NULL;").catch(() => {});
+      await sequelize.query("ALTER TABLE products ADD COLUMN sub_sub_category_id CHAR(36) BINARY NULL;").catch(() => {});
+      console.log("✅ Users, products, subcategories, and variants table columns verified");
     } catch (alterErr) {
       console.warn("⚠️ Column alter query failed (ignoring):", alterErr.message);
     }

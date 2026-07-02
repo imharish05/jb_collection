@@ -57,8 +57,12 @@ const ShopGridStandard = () => {
   const comboParam  = params.get("combo");
   const searchParam = params.get("search");
   const subCatParam = params.get("subcategory");
+  const subSubCatParam = params.get("subsubcategory");
 
-  // ── Dynamic label map built from Redux state ──────────────────────────────
+  const IMG_BASE = process.env.REACT_APP_IMG_URL + "/uploads/";
+  const imgSrc = (path) =>
+    path ? `${IMG_BASE}${path.replace(/^\/?(uploads\/)?/, "")}` : null;
+
   const labelMap = useMemo(() => {
     const map = {};
     categories.forEach(c => { 
@@ -67,6 +71,12 @@ const ShopGridStandard = () => {
         c.subcategories.forEach(s => {
           if (s.value && s.label) map[s.value] = s.label;
           if (s.id && s.label) map[String(s.id)] = s.label;
+          if (s.subsubcategories) {
+            s.subsubcategories.forEach(ss => {
+              if (ss.value && ss.label) map[ss.value] = ss.label;
+              if (ss.id && ss.label) map[String(ss.id)] = ss.label;
+            });
+          }
         });
       }
     });
@@ -84,6 +94,7 @@ const ShopGridStandard = () => {
 
   const activeLabel = searchParam
     ? `Search: "${searchParam}"`
+    : subSubCatParam ? (labelMap[subSubCatParam] || subSubCatParam)
     : subCatParam ? (labelMap[subCatParam] || subCatParam)
     : catParam  ? (labelMap[catParam]  || catParam)
     : eventParam ? (labelMap[eventParam] || eventParam)
@@ -146,11 +157,21 @@ const ShopGridStandard = () => {
       );
     }
 
+    // Apply sub-subcategory filter if present
+    if (subSubCatParam) {
+      sorted = sorted.filter(p =>
+        (p.subSubCategoryId && String(p.subSubCategoryId) === String(subSubCatParam)) ||
+        p.SubSubCategory?.value === subSubCatParam ||
+        (p.SubSubCategory?.id && String(p.SubSubCategory.id) === String(subSubCatParam)) ||
+        (p.SubSubCategory && String(p.SubSubCategory) === String(subSubCatParam))
+      );
+    }
+
     sorted = getSortedProducts(sorted, filterSortType, filterSortValue);
     if (priceRange) sorted = sorted.filter(p => p.price >= priceRange.min && p.price <= priceRange.max);
     setSortedProducts(sorted);
     setCurrentData(showAll ? sorted : sorted.slice(0, displayCount));
-  }, [displayCount, products, sortType, sortValue, subCatParam, filterSortType, filterSortValue, pageLimit, showAll, priceRange]);
+  }, [displayCount, products, sortType, sortValue, subCatParam, subSubCatParam, filterSortType, filterSortValue, pageLimit, showAll, priceRange]);
 
   // Infinite Scroll Listener
   useEffect(() => {
@@ -212,7 +233,7 @@ const ShopGridStandard = () => {
     setDrawerOpen(false);
   };
 
-  const activeFilterCount = (priceRange ? 1 : 0) + (catParam || eventParam || comboParam || subCatParam ? 1 : 0);
+  const activeFilterCount = (priceRange ? 1 : 0) + (catParam || eventParam || comboParam || subCatParam || subSubCatParam ? 1 : 0);
   const sliderVal = (draftPrice || priceRange) ? [(draftPrice || priceRange).min, (draftPrice || priceRange).max] : [priceMin, priceMax];
 
   const handleRender = (node, handleProps) => {
@@ -291,7 +312,144 @@ const ShopGridStandard = () => {
           { label: activeLabel || "All Products", path: process.env.PUBLIC_URL + pathname + search }
         ]} />
 
-        <div className="shop-area pt-95 pb-100">
+        {/* Infinite Auto-Scrolling Category Marquee */}
+        {categories.length > 0 && (
+          <div style={marqueeStyles.container}>
+            <style>{`
+              @keyframes marquee-scroll {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(-25%); }
+              }
+              .category-marquee-track {
+                display: flex;
+                width: max-content;
+                animation: marquee-scroll 55s linear infinite;
+              }
+              .category-marquee-track-wrapper:hover .category-marquee-track {
+                animation-play-state: paused;
+              }
+              .category-marquee-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+                width: 90px;
+                flex-shrink: 0;
+                margin: 0 20px;
+                user-select: none;
+                transition: transform 0.2s ease;
+              }
+              .category-marquee-item:hover {
+                transform: scale(1.06);
+              }
+              .category-marquee-img-wrap {
+                width: 72px;
+                height: 72px;
+                border-radius: 50%;
+                border: 2px solid #e5e7eb;
+                background: #fafafa;
+                display: flex;
+                align-items: center;
+                justifyContent: center;
+                overflow: hidden;
+                transition: all 0.25s ease;
+              }
+              .category-marquee-item.active .category-marquee-img-wrap {
+                border: 2.5px solid #db1a5d;
+                box-shadow: 0 0 0 3px #fff, 0 0 0 5px #db1a5d, 0 4px 10px rgba(219, 26, 93, 0.15);
+              }
+            `}</style>
+            <div className="category-marquee-fade category-marquee-fade--left" style={marqueeStyles.fadeLeft} />
+            <div className="category-marquee-track-wrapper" style={marqueeStyles.trackWrapper}>
+              <div className="category-marquee-track">
+                {/* Loop 1 */}
+                {categories.map((cat) => {
+                  const isActive = catParam === cat.value;
+                  return (
+                    <div
+                      key={`cat-1-${cat.value}`}
+                      onClick={() => navigate(`${S}?category=${cat.value}`)}
+                      className={`category-marquee-item${isActive ? ' active' : ''}`}
+                    >
+                      <div className="category-marquee-img-wrap">
+                        {cat.image ? (
+                          <img src={imgSrc(cat.image)} alt={cat.label} style={marqueeStyles.img} />
+                        ) : (
+                          <span style={{ fontSize: 24 }}>📁</span>
+                        )}
+                      </div>
+                      <span style={isActive ? marqueeStyles.labelActive : marqueeStyles.label}>{cat.label}</span>
+                    </div>
+                  );
+                })}
+                {/* Loop 2 */}
+                {categories.map((cat) => {
+                  const isActive = catParam === cat.value;
+                  return (
+                    <div
+                      key={`cat-2-${cat.value}`}
+                      onClick={() => navigate(`${S}?category=${cat.value}`)}
+                      className={`category-marquee-item${isActive ? ' active' : ''}`}
+                    >
+                      <div className="category-marquee-img-wrap">
+                        {cat.image ? (
+                          <img src={imgSrc(cat.image)} alt={cat.label} style={marqueeStyles.img} />
+                        ) : (
+                          <span style={{ fontSize: 24 }}>📁</span>
+                        )}
+                      </div>
+                      <span style={isActive ? marqueeStyles.labelActive : marqueeStyles.label}>{cat.label}</span>
+                    </div>
+                  );
+                })}
+                {/* Loop 3 */}
+                {categories.map((cat) => {
+                  const isActive = catParam === cat.value;
+                  return (
+                    <div
+                      key={`cat-3-${cat.value}`}
+                      onClick={() => navigate(`${S}?category=${cat.value}`)}
+                      className={`category-marquee-item${isActive ? ' active' : ''}`}
+                    >
+                      <div className="category-marquee-img-wrap">
+                        {cat.image ? (
+                          <img src={imgSrc(cat.image)} alt={cat.label} style={marqueeStyles.img} />
+                        ) : (
+                          <span style={{ fontSize: 24 }}>📁</span>
+                        )}
+                      </div>
+                      <span style={isActive ? marqueeStyles.labelActive : marqueeStyles.label}>{cat.label}</span>
+                    </div>
+                  );
+                })}
+                {/* Loop 4 */}
+                {categories.map((cat) => {
+                  const isActive = catParam === cat.value;
+                  return (
+                    <div
+                      key={`cat-4-${cat.value}`}
+                      onClick={() => navigate(`${S}?category=${cat.value}`)}
+                      className={`category-marquee-item${isActive ? ' active' : ''}`}
+                    >
+                      <div className="category-marquee-img-wrap">
+                        {cat.image ? (
+                          <img src={imgSrc(cat.image)} alt={cat.label} style={marqueeStyles.img} />
+                        ) : (
+                          <span style={{ fontSize: 24 }}>📁</span>
+                        )}
+                      </div>
+                      <span style={isActive ? marqueeStyles.labelActive : marqueeStyles.label}>{cat.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="category-marquee-fade category-marquee-fade--right" style={marqueeStyles.fadeRight} />
+          </div>
+        )}
+
+        <div className="shop-area pb-100" style={{ paddingTop: "35px" }}>
           <div className="container">
 
             {activeLabel && (
@@ -316,44 +474,6 @@ const ShopGridStandard = () => {
               </button>
             </form>
 
-            {(categories.length > 0 || events.length > 0 || navCombos.length > 0) && (
-              <div className="mobile-cat-pills">
-                <button
-                  className={`cat-pill${!catParam && !eventParam && !comboParam && !searchParam ? ' active' : ''}`}
-                  onClick={() => navigate(S)}
-                >
-                  All
-                </button>
-                {categories.map(cat => (
-                  <button
-                    key={cat.value}
-                    className={`cat-pill${catParam === cat.value ? ' active' : ''}`}
-                    onClick={() => navigate(`${S}?category=${cat.value}`)}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-                {events.map(ev => (
-                  <button
-                    key={ev.value}
-                    className={`cat-pill${eventParam === ev.value ? ' active' : ''}`}
-                    onClick={() => navigate(`${S}?event=${ev.value}`)}
-                  >
-                    🎉 {ev.label}
-                  </button>
-                ))}
-                {navCombos.map(combo => (
-                  <button
-                    key={combo.id}
-                    className={`cat-pill${comboParam === String(combo.id) ? ' active' : ''}`}
-                    onClick={() => navigate(`${S}?combo=${combo.id}`)}
-                  >
-                    🎁 {combo.name || combo.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
             <div className="mobile-active-filters">
               {priceRange && (
                 <span className="filter-chip filter-chip-price">
@@ -367,10 +487,16 @@ const ShopGridStandard = () => {
                   <button onClick={() => navigate(S)}>×</button>
                 </span>
               )}
-              {subCatParam && (
+              {subCatParam && !subSubCatParam && (
                 <span className="filter-chip">
                   {labelMap[subCatParam] || subCatParam}
                   <button onClick={() => navigate(catParam ? `${S}?category=${catParam}` : S)}>×</button>
+                </span>
+              )}
+              {subSubCatParam && (
+                <span className="filter-chip">
+                  {labelMap[subSubCatParam] || subSubCatParam}
+                  <button onClick={() => navigate(subCatParam ? `${S}?category=${catParam}&subcategory=${subCatParam}` : catParam ? `${S}?category=${catParam}` : S)}>×</button>
                 </span>
               )}
               {eventParam && (
@@ -417,6 +543,7 @@ const ShopGridStandard = () => {
                 <ShopSidebar
                   products={products}
                   getSortParams={handleSortParams}
+                  filterSortValue={filterSortValue}
                   sideSpaceClass="mr-30"
                 />
               </div>
@@ -444,12 +571,6 @@ const ShopGridStandard = () => {
                   isLoadingMore={isFetchingMore}
                 />
                 
-                <p style={{ textAlign:"center", fontSize:13, color:"#888", marginTop:20 }}>
-                  {isComboMode
-                    ? `Showing ${childCombos.length} combos`
-                    : `Showing ${currentData.length} of ${sortedProducts.length} products`
-                  }
-                </p>
               </div>
             </div>
           </div>
@@ -557,49 +678,104 @@ const ShopGridStandard = () => {
                   </div>
                 )}
 
-                {events.length > 0 && (
-                  <div className="drawer-section">
-                    <p className="drawer-section-title">Shop by Event</p>
-                    <div className="drawer-chip-grid">
-                      {events.map(ev => {
-                        const count = products.filter(p => {
-                          const tags = Array.isArray(p.tag) ? p.tag : [];
-                          return tags.some(t => String(t).toLowerCase() === String(ev.value).toLowerCase());
-                        }).length;
-                        return (
+                {/* Subcategories (separate section in drawer) */}
+                {catParam && (
+                  (() => {
+                    const activeCatObj = categories.find(c => c.value === catParam);
+                    const subcats = activeCatObj?.subcategories || [];
+                    if (subcats.length === 0) return null;
+                    return (
+                      <div className="drawer-section">
+                        <p className="drawer-section-title">Sub-categories</p>
+                        <div className="drawer-chip-grid">
                           <button
-                            key={ev.value}
-                            className={`drawer-chip${eventParam === ev.value ? ' active' : ''}`}
-                            onClick={() => { navigate(`${S}?event=${ev.value}`); setDrawerOpen(false); }}
+                            className={`drawer-chip${!subCatParam ? ' active' : ''}`}
+                            onClick={() => { navigate(`${S}?category=${catParam}`); setDrawerOpen(false); }}
                           >
-                            🎉 {ev.label}
-                            <span className="drawer-chip-count">({count})</span>
+                            All {activeCatObj.label}
                           </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                          {subcats.map(sub => {
+                            const count = products.filter(p => 
+                              (p.subCategoryId && String(p.subCategoryId) === String(sub.id)) ||
+                              p.SubCategory?.value === sub.value
+                            ).length;
+                            return (
+                              <button
+                                key={sub.value}
+                                className={`drawer-chip${subCatParam === sub.value ? ' active' : ''}`}
+                                onClick={() => { navigate(`${S}?category=${catParam}&subcategory=${sub.value}`); setDrawerOpen(false); }}
+                              >
+                                {sub.label}
+                                <span className="drawer-chip-count">({count})</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()
                 )}
 
-                {navCombos.length > 0 && (
-                  <div className="drawer-section">
-                    <p className="drawer-section-title">🎁 Combos</p>
-                    <div className="drawer-chip-grid">
-                      {navCombos.map(combo => {
-                        const count = combo.children ? combo.children.filter(c => c.isActive !== false).length : 0;
-                        return (
+                {/* Sub-subcategories (separate section, pill design) */}
+                {catParam && subCatParam && (
+                  (() => {
+                    const activeCatObj = categories.find(c => c.value === catParam);
+                    const activeSubObj = activeCatObj?.subcategories?.find(s => s.value === subCatParam);
+                    const subsubcats = activeSubObj?.subsubcategories || [];
+                    if (subsubcats.length === 0) return null;
+                    return (
+                      <div className="drawer-section">
+                        <p className="drawer-section-title">Sub-subcategories</p>
+                        <div className="drawer-chip-grid" style={{ gap: 8 }}>
                           <button
-                            key={combo.id}
-                            className={`drawer-chip${comboParam === String(combo.id) ? ' active' : ''}`}
-                            onClick={() => { navigate(`${S}?combo=${combo.id}`); setDrawerOpen(false); }}
+                            className={`drawer-pill${!subSubCatParam ? ' active' : ''}`}
+                            onClick={() => { navigate(`${S}?category=${catParam}&subcategory=${subCatParam}`); setDrawerOpen(false); }}
+                            style={{
+                              background: !subSubCatParam ? "#a020c0" : "#f3f4f6",
+                              color: !subSubCatParam ? "#fff" : "#4b5563",
+                              border: "none",
+                              padding: "6px 12px",
+                              borderRadius: "16px",
+                              fontSize: "11px",
+                              fontWeight: 500,
+                              cursor: "pointer",
+                              outline: "none"
+                            }}
                           >
-                            {combo.name || combo.label}
-                            <span className="drawer-chip-count">({count})</span>
+                            All
                           </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                          {subsubcats.map(subsub => {
+                            const isActive = subSubCatParam === subsub.value;
+                            const count = products.filter(p => 
+                              (p.subSubCategoryId && String(p.subSubCategoryId) === String(subsub.id)) ||
+                              p.SubSubCategory?.value === subsub.value
+                            ).length;
+                            return (
+                              <button
+                                key={subsub.value}
+                                className={`drawer-pill${isActive ? ' active' : ''}`}
+                                onClick={() => { navigate(`${S}?category=${catParam}&subcategory=${subCatParam}&subsubcategory=${subsub.value}`); setDrawerOpen(false); }}
+                                style={{
+                                  background: isActive ? "#a020c0" : "#f3f4f6",
+                                  color: isActive ? "#fff" : "#4b5563",
+                                  border: "none",
+                                  padding: "6px 12px",
+                                  borderRadius: "16px",
+                                  fontSize: "11px",
+                                  fontWeight: 500,
+                                  cursor: "pointer",
+                                  outline: "none"
+                                }}
+                              >
+                                {subsub.label}
+                                <span style={{ fontSize: "10px", opacity: 0.8, marginLeft: 4 }}>({count})</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()
                 )}
 
                 <div className="drawer-footer">
@@ -616,3 +792,120 @@ const ShopGridStandard = () => {
 };
 
 export default ShopGridStandard;
+
+const marqueeStyles = {
+  container: {
+    position: "relative",
+    width: "100%",
+    background: "#fff",
+    borderBottom: "1px solid #f3f4f6",
+    padding: "15px 0",
+    overflow: "hidden",
+  },
+  trackWrapper: {
+    display: "flex",
+    width: "100%",
+    overflow: "hidden",
+  },
+  track: {
+    display: "flex",
+    width: "max-content",
+  },
+  item: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "10px",
+    cursor: "pointer",
+    width: "90px",
+    flexShrink: 0,
+    margin: "0 20px",
+    userSelect: "none",
+    transition: "transform 0.2s ease",
+  },
+  itemActive: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "10px",
+    cursor: "pointer",
+    width: "90px",
+    flexShrink: 0,
+    margin: "0 20px",
+    userSelect: "none",
+    transform: "scale(1.04)",
+    transition: "transform 0.2s ease",
+  },
+  imgWrap: {
+    width: "72px",
+    height: "72px",
+    borderRadius: "50%",
+    border: "2px solid #e5e7eb",
+    background: "#fafafa",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    transition: "all 0.25s ease",
+  },
+  imgWrapActive: {
+    width: "72px",
+    height: "72px",
+    borderRadius: "50%",
+    border: "2.5px solid #db1a5d",
+    boxShadow: "0 0 0 3px #fff, 0 0 0 5px #db1a5d, 0 4px 10px rgba(219, 26, 93, 0.15)",
+    background: "#fafafa",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    transition: "all 0.25s ease",
+  },
+  img: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  label: {
+    fontSize: "12px",
+    fontWeight: 500,
+    color: "#6b7280",
+    textAlign: "center",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    width: "100%",
+    transition: "color 0.2s",
+  },
+  labelActive: {
+    fontSize: "12px",
+    fontWeight: 700,
+    color: "#db1a5d",
+    textAlign: "center",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    width: "100%",
+    transition: "color 0.2s",
+  },
+  fadeLeft: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "80px",
+    height: "100%",
+    background: "linear-gradient(to right, rgba(255,255,255,1), rgba(255,255,255,0))",
+    zIndex: 2,
+    pointerEvents: "none",
+  },
+  fadeRight: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: "80px",
+    height: "100%",
+    background: "linear-gradient(to left, rgba(255,255,255,1), rgba(255,255,255,0))",
+    zIndex: 2,
+    pointerEvents: "none",
+  }
+};
