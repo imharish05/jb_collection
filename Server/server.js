@@ -37,6 +37,7 @@ const returnRoutes = require("./routes/returns");
 const notificationRoutes    = require("./routes/notifications");
 const inventorySettingsRoutes = require("./routes/inventorySettings");
 const fontRoutes              = require("./routes/fonts");
+const deliveryZoneRoutes      = require("./routes/deliveryZones");
 
 const { protect } = require("./middleware/auth");
 const seed = require("./seeders/seed");
@@ -134,6 +135,7 @@ app.use("/api/returns", returnRoutes);
 app.use("/api/notifications",     notificationRoutes);
 app.use("/api/inventory-settings", inventorySettingsRoutes);
 app.use("/api/fonts",             fontRoutes);
+app.use("/api/delivery-zones",    deliveryZoneRoutes);
 
 app.get("/api/health", (req, res) =>
   res.json({ status: "ok", service: "JB House of Fashion API", db: "MySQL" })
@@ -160,7 +162,10 @@ const startServer = async () => {
       await sequelize.query("ALTER TABLE users ADD COLUMN status ENUM('active', 'inactive') DEFAULT 'active';").catch(() => {});
       await sequelize.query("ALTER TABLE products ADD COLUMN is_partial_cod_available TINYINT(1) DEFAULT 1;").catch(() => {});
       await sequelize.query("ALTER TABLE orders ADD COLUMN awb_code VARCHAR(100) NULL;").catch(() => {});
-      console.log("✅ Users and products table columns verified");
+      await sequelize.query("ALTER TABLE Variants ADD COLUMN gst_mode VARCHAR(20) DEFAULT 'Inclusive';").catch(() => {});
+      await sequelize.query("ALTER TABLE Variants ADD COLUMN gst_rate DECIMAL(5,2) DEFAULT 0.00;").catch(() => {});
+      await sequelize.query("ALTER TABLE Variants ADD COLUMN images JSON NULL;").catch(() => {});
+      console.log("✅ Users, products, and variants table columns verified");
     } catch (alterErr) {
       console.warn("⚠️ Column alter query failed (ignoring):", alterErr.message);
     }

@@ -37,6 +37,7 @@ import Users from './components/Users/Users';
 // import Fonts from './components/Fonts/Fonts';
 // import CustomisationFields from './components/CustomisationFields/CustomisationFields';
 import SiteSettings from './components/Settings/SiteSettings';
+import DeliveryZones from './components/DeliveryZones/DeliveryZones';
 
 import './components/global.css';
 import Swal from 'sweetalert2';
@@ -74,6 +75,7 @@ const PAGE_CONFIG = {
   timeline:            { title: 'Timeline Milestones' },
   // ── Returns ─────────────────────────────────────────────────
   returns:             { title: 'Returns & Refunds' },
+  delivery_zones:      { title: 'Delivery Zone Charges' },
   roles:               { title: 'Roles & Permissions' },
   users:               { title: 'User Management' },
   // fonts:               { title: 'Font Management' },
@@ -144,6 +146,7 @@ function AdminLayoutWrapper({ handleLogout }) {
             <Route path="/users"               element={<Users              showToast={showToast} />} />
             {/* <Route path="/fonts"               element={<Fonts              showToast={showToast} />} /> */}
             {/* <Route path="/customisation_fields" element={<CustomisationFields showToast={showToast} />} /> */}
+            <Route path="/delivery_zones"     element={<DeliveryZones     showToast={showToast} />} />
             <Route path="/settings"             element={<SiteSettings       showToast={showToast} />} />
             <Route path="/"                    element={<Navigate to="/dashboard" />} />
           </Routes>

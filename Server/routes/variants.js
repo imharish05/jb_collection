@@ -24,7 +24,10 @@ const upload = multer({
 const maybeUpload = (req, res, next) => {
   const contentType = req.headers['content-type'] || '';
   if (contentType.startsWith('multipart/form-data')) {
-    return upload.single('image')(req, res, next);
+    return upload.fields([
+      { name: 'image', maxCount: 1 },
+      { name: 'gallery', maxCount: 15 }
+    ])(req, res, next);
   }
   return next();
 };

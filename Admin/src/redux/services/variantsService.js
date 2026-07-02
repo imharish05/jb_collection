@@ -1,35 +1,60 @@
 import api from "../../api/axiosInstance";
 import { setLoading, setItems, setError, addItem, updateItem, removeItem } from "../slices/variantsSlice";
 
-// Build FormData when imageFile is present, otherwise send JSON
+// Always use FormData so we can attach both image and gallery files
 function buildPayload(data) {
-  if (data.imageFile instanceof File) {
-    const fd = new FormData();
-    fd.append("productId",   data.productId);
-    fd.append("variantName", data.variantName);
-    fd.append("mrp",         data.mrp);
-    fd.append("salesPrice",  data.salesPrice);
-    fd.append("stock",       data.stock);
-    fd.append("status",      data.status || "Active");
-    fd.append("attributes",  JSON.stringify(data.attributes || []));
-    fd.append("image",       data.imageFile);
-    if (data.shippingWeight !== undefined && data.shippingWeight !== null) {
-      fd.append("shippingWeight", data.shippingWeight);
-    }
-    if (data.shippingDimensions !== undefined && data.shippingDimensions !== null) {
-      fd.append("shippingDimensions", typeof data.shippingDimensions === 'string' ? data.shippingDimensions : JSON.stringify(data.shippingDimensions));
-    }
-    return { payload: fd, isMultipart: true };
+  const fd = new FormData();
+
+  if (data.productId !== undefined)         fd.append("productId",          data.productId);
+  if (data.variantName !== undefined)       fd.append("variantName",        data.variantName || "Default");
+  if (data.mrp !== undefined)               fd.append("mrp",                data.mrp);
+  if (data.salesPrice !== undefined)        fd.append("salesPrice",         data.salesPrice);
+  if (data.stock !== undefined)             fd.append("stock",              data.stock);
+  if (data.status !== undefined)            fd.append("status",             data.status || "Active");
+  if (data.sku !== undefined)               fd.append("sku",                data.sku || "");
+  if (data.gstMode !== undefined)           fd.append("gstMode",            data.gstMode || "Inclusive");
+  if (data.gstRate !== undefined)           fd.append("gstRate",            data.gstRate || "0%");
+  if (data.lowStockThreshold !== undefined) fd.append("lowStockThreshold",  data.lowStockThreshold || "10");
+
+  fd.append("attributes", JSON.stringify(data.attributes || []));
+
+  if (data.shippingWeight) fd.append("shippingWeight", data.shippingWeight);
+  if (data.shippingDimensions) {
+    fd.append("shippingDimensions", typeof data.shippingDimensions === "string"
+      ? data.shippingDimensions
+      : JSON.stringify(data.shippingDimensions));
   }
-  const { imageFile, imagePreview, ...rest } = data;
-  return { 
-    payload: { 
-      ...rest, 
-      attributes: JSON.stringify(data.attributes || []),
-      shippingDimensions: data.shippingDimensions !== undefined ? (typeof data.shippingDimensions === 'string' ? data.shippingDimensions : JSON.stringify(data.shippingDimensions)) : undefined
-    }, 
-    isMultipart: false 
-  };
+
+  // Main variant image
+  if (data.imageFile instanceof File) {
+    fd.append("image", data.imageFile);
+  }
+
+  // Gallery sub-images (array of File objects)
+  if (Array.isArray(data.galleryFiles)) {
+    data.galleryFiles.forEach((file) => {
+      if (file instanceof File) fd.append("gallery", file);
+    });
+  }
+
+  // Retained existing gallery images
+  const existingImages = (data.galleryPreviews || [])
+    .filter(g => !g.file)
+    .map(g => {
+      const url = typeof g === 'string' ? g : g.url;
+      if (!url || url.startsWith('blob:')) return null;
+      if (url.startsWith('http')) {
+        try {
+          const pathname = new URL(url).pathname;
+          return pathname.replace(/^\//, '');
+        } catch { /* fall through */ }
+      }
+      return url.replace(/^\//, '');
+    })
+    .filter(Boolean);
+  fd.append("existingImages", JSON.stringify(existingImages));
+
+  return { payload: fd, isMultipart: true };
 }
 
 export const fetchVariants = () => async (dispatch) => {

@@ -60,16 +60,12 @@ const resolveCartImg = (img) => {
 
 const toAmount = (value) => Number.parseFloat(value || 0) || 0;
 
-const GST_RATE = 0.18;
-
 const withGrandTotal = (pricing) => {
   const subtotal = toAmount(pricing.subtotal);
   const shipping = toAmount(pricing.shipping);
   const couponDiscount = toAmount(pricing.couponDiscount);
-
-  // Since subtotal is inclusive of GST, back-calculate exclusive subtotal and gstAmount
-  const subtotalBeforeGst = subtotal / (1 + GST_RATE);
-  const gstAmount = subtotal - subtotalBeforeGst;
+  const subtotalBeforeGst = toAmount(pricing.subtotalBeforeGst);
+  const gstAmount = toAmount(pricing.gstAmount);
 
   return {
     ...pricing,
@@ -104,10 +100,10 @@ const EMPTY_ADDR = {
 
 const PAYMENT_METHODS = [
   {
-    id: "partial_cod",
-    label: "Partial COD",
-    icon: "🔀",
-    desc: "Pay delivery charge now · Product cost on delivery",
+    id: "cod",
+    label: "Cash On Delivery (COD)",
+    icon: "💵",
+    desc: "Pay in cash upon delivery",
   },
   {
     id: "razorpay",
@@ -190,10 +186,11 @@ const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
         width: "100%"
       }}
     >
-      {attrs.map((a, i) => {
+      {attrs.filter(a => a.key !== "ColourHex").map((a, i) => {
         const isCol = isColourKey(a.key);
-        const hasPreview = isCol && isHexColor(a.val);
-        const displayVal = hasPreview ? a.val.toUpperCase() : a.val;
+        const hexAttr = attrs.find(x => x.key === "ColourHex");
+        const hasSwatch = isCol && hexAttr && isHexColor(hexAttr.val);
+        const swatchColor = hasSwatch ? hexAttr.val : "";
         return (
           <span
             key={i}
@@ -213,24 +210,21 @@ const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
             }}
           >
             <span>{a.key}:</span>
-            {hasPreview ? (
-              // Color: show swatch only, no hex text
+            {hasSwatch && (
               <span
                 style={{
                   width: swatchSize,
                   height: swatchSize,
                   borderRadius: "50%",
                   border: "1px solid #dcdcdc",
-                  backgroundColor: displayVal,
+                  backgroundColor: swatchColor,
                   display: "inline-block",
                   flexShrink: 0,
                 }}
-                title={displayVal}
+                title={a.val}
               />
-            ) : (
-              // Non-color: show value text
-              <span>{displayVal}</span>
             )}
+            <span>{a.val}</span>
           </span>
         );
       })}
@@ -271,28 +265,74 @@ const Checkout = () => {
 
   /* ── Pricing ── */
   useEffect(() => {
-    let sub = 0;
+    let totalSubtotal = 0;
+    let totalBasePrice = 0;
+    let totalGstAmount = 0;
+
     (checkoutItems || []).forEach((item) => {
-      sub += parseFloat(item.price || 0) * (currency.currencyRate || 1) * item.quantity;
+      // Resolve variant
+      const resolvedVariant =
+        item.selectedVariant ||
+        (item.selectedVariantId && Array.isArray(item.Variants)
+          ? item.Variants.find(v => Number(v.id) === Number(item.selectedVariantId)) || null
+          : null);
+
+      const gstMode = resolvedVariant?.gstMode || "Inclusive";
+      const gstRate = resolvedVariant ? parseFloat(resolvedVariant.gstRate || 0) : 18.00;
+
+      const itemPrice = parseFloat(item.price || 0) * (currency.currencyRate || 1);
+      const qty = item.quantity || 1;
+
+      if (gstMode === "Exclusive") {
+        const base = itemPrice * qty;
+        const gst = base * (gstRate / 100);
+        const total = base + gst;
+
+        totalBasePrice += base;
+        totalGstAmount += gst;
+        totalSubtotal += total;
+      } else {
+        // Inclusive
+        const total = itemPrice * qty;
+        const gst = total - (total * (100 / (100 + gstRate)));
+        const base = total - gst;
+
+        totalBasePrice += base;
+        totalGstAmount += gst;
+        totalSubtotal += total;
+      }
     });
 
     if (navState) {
-      const base = sub || navState.subtotal || 0;
-      setShippingPricing((prev) => withGrandTotal({
-        ...prev,
-        ...navState,
-        subtotal: base,
-        couponDiscount: navState.couponCode ? navState.couponDiscount : prev.couponDiscount,
-        couponCode: navState.couponCode || prev.couponCode || null,
-        couponType: navState.couponType || prev.couponType || null,
-        couponValue: navState.couponValue ?? prev.couponValue ?? null,
-        coupon: navState.coupon || prev.coupon || null,
-      }));
+      setShippingPricing((prev) => {
+        const shipping = toAmount(navState.shipping);
+        const couponDiscount = navState.couponCode ? toAmount(navState.couponDiscount) : toAmount(prev.couponDiscount);
+        return {
+          ...prev,
+          ...navState,
+          subtotal: totalSubtotal,
+          subtotalBeforeGst: totalBasePrice,
+          gstAmount: totalGstAmount,
+          couponDiscount,
+          couponCode: navState.couponCode || prev.couponCode || null,
+          couponType: navState.couponType || prev.couponType || null,
+          couponValue: navState.couponValue ?? prev.couponValue ?? null,
+          coupon: navState.coupon || prev.coupon || null,
+          grandTotal: Math.max(0, totalSubtotal + shipping - couponDiscount),
+        };
+      });
     } else {
-      setShippingPricing((prev) => withGrandTotal({
-        ...prev,
-        subtotal: sub,
-      }));
+      setShippingPricing((prev) => {
+        const shipping = toAmount(prev.shipping);
+        const couponDiscount = toAmount(prev.couponDiscount);
+        return {
+          ...prev,
+          subtotal: totalSubtotal,
+          subtotalBeforeGst: totalBasePrice,
+          gstAmount: totalGstAmount,
+          grandTotal: Math.max(0, totalSubtotal + shipping - couponDiscount),
+        };
+      });
     }
   }, [checkoutItems, currency.currencyRate, navState]);
 
@@ -300,7 +340,7 @@ const Checkout = () => {
   const [selectedShippingAddrId, setSelectedShippingAddrId] = useState(activeAddressId);
   const [selectedBillingAddrId, setSelectedBillingAddrId] = useState(null);
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState("partial_cod");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [showNewAddrForm, setShowNewAddrForm] = useState(false);
   const [addrForm, setAddrForm] = useState(EMPTY_ADDR);
   const [addrErrors, setAddrErrors] = useState({});
@@ -317,7 +357,7 @@ const Checkout = () => {
     subtotal: 0,
     subtotalBeforeGst: 0,
     gstAmount: 0,
-    gstRate: GST_RATE,
+    gstRate: 18.00,
     shipping: 0,
     couponDiscount: 0,
     couponCode: null,
@@ -564,21 +604,21 @@ const Checkout = () => {
   const partialCodGloballyAvailable = shippingInfo?.codAvailable === true && allItemsPartialCodEligible;
 
   const availablePaymentMethods = PAYMENT_METHODS.filter(
-    (pm) => pm.id !== "partial_cod" || partialCodGloballyAvailable
+    (pm) => pm.id !== "cod" || partialCodGloballyAvailable
   );
 
-  // When Partial COD becomes unavailable, fall back to razorpay
+  // When COD becomes unavailable, fall back to razorpay
   useEffect(() => {
-    if (paymentMethod === "partial_cod" && !partialCodGloballyAvailable) {
-      const fallback = availablePaymentMethods.find(p => p.id !== "partial_cod")?.id || "razorpay";
+    if (paymentMethod === "cod" && !partialCodGloballyAvailable) {
+      const fallback = availablePaymentMethods.find(p => p.id !== "cod")?.id || "razorpay";
       setPaymentMethod(fallback);
     }
   }, [partialCodGloballyAvailable, paymentMethod]);
 
-  // When Partial COD becomes available again, switch to it
+  // When COD becomes available again, switch to it
   useEffect(() => {
     if (partialCodGloballyAvailable && paymentMethod === "razorpay") {
-      setPaymentMethod("partial_cod");
+      setPaymentMethod("cod");
     }
   }, [partialCodGloballyAvailable]);
 
@@ -675,8 +715,44 @@ const Checkout = () => {
       estimatedDeliveryDays: shippingInfo?.estimatedDays || null,
     };
 
-    if (paymentMethod === "partial_cod") {
-      // Partial COD: create DB order first, then open Razorpay for advance payment
+    if (paymentMethod === "cod") {
+      // COD: create DB order directly, then redirect to order-confirmation
+      setPlacing(true);
+      try {
+        const res = await api.post("/orders", orderPayload);
+        const createdOrder = res.data || {};
+        const id = createdOrder.id || createdOrder.orderId || "KG" + Date.now();
+        const referenceSlug = createdOrder.referenceSlug || id;
+
+        if (checkoutSource === "cart") dispatch(deleteAllFromCart());
+        navigatingRef.current = true;
+        dispatch(clearCheckout());
+        setTimeout(() => {
+          navigate(`/order-confirmation`, {
+            replace: true,
+            state: {
+              orderId: id,
+              referenceSlug,
+              selectedShippingAddr,
+            }
+          });
+        }, 500);
+      } catch (err) {
+        const errorData = err.response?.data;
+        const message = errorData?.message || "Could not place order. Please try again.";
+        cogoToast.error(message, { position: "top-center" });
+        if (errorData?.outOfStock) {
+          import("../../store/services/productService").then(({ refreshProductsSilently }) => {
+            refreshProductsSilently();
+          });
+          dispatch(clearCheckout());
+          setTimeout(() => { navigate(`${process.env.PUBLIC_URL}/cart`); }, 1500);
+        }
+      } finally {
+        setPlacing(false);
+      }
+    } else if (paymentMethod === "partial_cod") {
+      // Partial COD (legacy/fallback): create DB order first, then open Razorpay for advance payment
       setPlacing(true);
       try {
         const res = await api.post("/orders", orderPayload);
@@ -1327,9 +1403,9 @@ const Checkout = () => {
                     }}>
                       <span style={{ fontSize: 16 }}>⚠️</span>
                       <div style={{ fontSize: 13, color: '#991b1b', lineHeight: 1.4 }}>
-                        <strong>Partial COD Unavailable:</strong>{' '}
+                        <strong>COD Unavailable:</strong>{' '}
                         {!allItemsPartialCodEligible 
-                          ? 'One or more items in your cart do not support Partial COD (online payment required).'
+                          ? 'One or more items in your cart do not support Cash on Delivery (online payment required).'
                           : (selectedShippingAddr && shippingInfo && shippingInfo.codAvailable !== true)
                             ? `Cash on Delivery is not supported for your pincode (${selectedShippingAddr.pincode}).`
                             : 'Cash on Delivery is not available for this order.'
@@ -1492,7 +1568,7 @@ const Checkout = () => {
                       <span>₹{shippingPricing.subtotalBeforeGst.toFixed(2)}</span>
                     </div>
                     <div className="kco-sum-row">
-                      <span style={{ color: "#555" }}>GST (18%)</span>
+                      <span style={{ color: "#555" }}>GST Tax Amount</span>
                       <span style={{ color: "#555" }}>+ ₹{shippingPricing.gstAmount.toFixed(2)}</span>
                     </div>
 
@@ -1571,20 +1647,20 @@ const Checkout = () => {
                     </div>
                   )}
 
-                  {paymentMethod === "partial_cod" && (
+                  {paymentMethod === "cod" && (
                     <div style={{
-                      background: "#fff3cd",
-                      border: "1px solid #ffc107",
+                      background: "#e6fffa",
+                      border: "1px solid #319795",
                       borderRadius: 8,
                       padding: "10px 12px",
                       marginBottom: 14,
                       fontSize: "12px",
-                      color: "#856404",
+                      color: "#234e52",
                       textAlign: "center",
                       fontWeight: "500",
                       lineHeight: "1.4"
                     }}>
-                      ℹ️ ₹{(shippingPricing.grandTotal - (shippingInfo?.shippingCharge || 0)).toFixed(2)} will be collected on delivery
+                      ℹ️ ₹{grandTotalWithCOD.toFixed(2)} will be collected in cash upon delivery.
                     </div>
                   )}
 
@@ -1617,7 +1693,9 @@ const Checkout = () => {
                     }
                   >
                     {placing ? "Placing Order..." :
-                      `Pay ₹${(paymentMethod === "partial_cod" ? (shippingInfo?.shippingCharge || 0) : grandTotalWithCOD).toFixed(2)} now`
+                      paymentMethod === "cod"
+                        ? `Place COD Order (₹${grandTotalWithCOD.toFixed(2)})`
+                        : `Pay ₹${grandTotalWithCOD.toFixed(2)} now`
                     }
                   </button>
 

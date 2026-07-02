@@ -98,7 +98,44 @@ const attachReferenceSlug = (model) => {
 };
 
 const attachReferenceSlugs = (models) => {
-  const excluded = new Set(["sequelize", "ReferenceSequence", "Sequelize"]);
+  // Only transactional models that actually have a reference_slug column
+  // in the database should receive this attribute. All config/lookup tables
+  // must be listed here to prevent Sequelize from querying non-existent columns.
+  const excluded = new Set([
+    "sequelize",
+    "Sequelize",
+    "ReferenceSequence",
+    // Config / lookup tables — no reference_slug column in DB
+    "DeliveryZone",
+    "Role",
+    "Font",
+    "SiteSetting",
+    "InventorySettings",
+    "Brand",
+    "Category",
+    "SubCategory",
+    "Event",
+    "Combo",
+    "OfferBanner",
+    "MarqueeMessage",
+    "HeroSlide",
+    "Testimonial",
+    "Blog",
+    "Contact",
+    "Coupon",
+    "Notification",
+    "StockHistory",
+    "InventoryLog",
+    "CartItem",
+    "WishlistItem",
+    "Address",
+    "Review",
+    "OrderStatusEmailAudit",
+    "PasswordResetOtp",
+    "TimelineMilestone",
+    "ReturnMedia",
+    "OrderItem",
+  ]);
   Object.entries(models || {}).forEach(([name, model]) => {
     if (excluded.has(name)) return;
     if (!model || typeof model.refreshAttributes !== "function") return;

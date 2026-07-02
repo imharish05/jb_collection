@@ -143,11 +143,41 @@ const Cart = () => {
 
   const handleSelectAddress = (id) => dispatch(setActiveAddress(id));
 
-  /* ── Price Calculations ────────────────────────────────────────────────── */
+  /* ── Price Calculations with dynamic GST ───────────────────────────────── */
   let subtotal = 0;
+  let totalBasePrice = 0;
+  let totalGstAmount = 0;
+
   cartItems.forEach((item) => {
-    // item.price = salesPrice stored at cart-add time (already final, no discount to apply)
-    subtotal += parseFloat(item.price || 0) * (currency.currencyRate || 1) * item.quantity;
+    const resolvedVariant = item.selectedVariant ||
+      (item.selectedVariantId && Array.isArray(item.Variants)
+        ? item.Variants.find(v => Number(v.id) === Number(item.selectedVariantId))
+        : null);
+
+    const gstMode = resolvedVariant?.gstMode || "Inclusive";
+    const gstRate = resolvedVariant ? parseFloat(resolvedVariant.gstRate || 0) : 18.00;
+
+    const itemPrice = parseFloat(item.price || 0) * (currency.currencyRate || 1);
+    const qty = item.quantity || 1;
+
+    if (gstMode === "Exclusive") {
+      const base = itemPrice * qty;
+      const gst = base * (gstRate / 100);
+      const total = base + gst;
+
+      totalBasePrice += base;
+      totalGstAmount += gst;
+      subtotal += total;
+    } else {
+      // Inclusive
+      const total = itemPrice * qty;
+      const gst = total - (total * (100 / (100 + gstRate)));
+      const base = total - gst;
+
+      totalBasePrice += base;
+      totalGstAmount += gst;
+      subtotal += total;
+    }
   });
 
   const shipping = subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
@@ -364,33 +394,32 @@ const Cart = () => {
                           {/* Variant attributes — show all parsed key-value pairs */}
                           {attrs.length > 0 ? (
                             <div className="kg-variant-row">
-                              {attrs.map((attr, i) => {
+                              {attrs.filter(attr => attr.key !== "ColourHex").map((attr, i) => {
                                 const isCol = isColourKey(attr.key);
-                                const hasPreview = isCol && isHexColor(attr.value);
-                                const displayVal = hasPreview ? attr.value.toUpperCase() : attr.value;
+                                const hexAttr = attrs.find(a => a.key === "ColourHex");
+                                const hasSwatch = isCol && hexAttr && isHexColor(hexAttr.value);
+                                const swatchColor = hasSwatch ? hexAttr.value : "";
                                 return (
                                   <span key={i} className="kg-variant-chip" style={{ display: "inline-flex", alignItems: "center" }}>
                                     <span style={{ color: "#888", fontSize: 10, marginRight: 2 }}>
                                       {attr.key}:
                                     </span>
-                                    {hasPreview ? (
-                                      // Color: show swatch only, no hex text
+                                    {hasSwatch && (
                                       <span
                                         style={{
                                           width: 14,
                                           height: 14,
                                           borderRadius: '50%',
                                           border: '1px solid #dcdcdc',
-                                          backgroundColor: displayVal,
+                                          backgroundColor: swatchColor,
                                           display: 'inline-block',
+                                          marginRight: 4,
                                           flexShrink: 0,
                                         }}
-                                        title={displayVal}
+                                        title={attr.value}
                                       />
-                                    ) : (
-                                      // Non-color: show value text
-                                      <span>{displayVal}</span>
                                     )}
+                                    <span>{attr.value}</span>
                                   </span>
                                 );
                               })}
@@ -625,13 +654,23 @@ const Cart = () => {
                   <h3 className="kg-summary-title">Order Summary</h3>
 
                   {/* Breakdown */}
-                  <div className="kg-breakdown">
-                    <div className="kg-breakdown-row">
-                      <span>
-                        Subtotal ({cartItems.length}{" "}
-                        {cartItems.length === 1 ? "item" : "items"})
-                      </span>
-                      <span>₹{subtotal.toFixed(2)}</span>
+                  <div className="kg-breakdown" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#555' }}>
+                      <span>Subtotal (before GST)</span>
+                      <span>₹{totalBasePrice.toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#555' }}>
+                      <span>GST Tax Amount</span>
+                      <span>₹{totalGstAmount.toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#555' }}>
+                      <span>Shipping Charges</span>
+                      <span>{shipping === 0 ? <strong style={{ color: 'var(--theme-color)' }}>FREE</strong> : `₹${shipping.toFixed(2)}`}</span>
+                    </div>
+                    <div style={{ height: '1px', background: '#eee', margin: '8px 0' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 'bold', color: '#111' }}>
+                      <span>Grand Total</span>
+                      <span>₹{grandTotal.toFixed(2)}</span>
                     </div>
                   </div>
                   {/* Checkout Button */}
@@ -642,6 +681,8 @@ const Cart = () => {
                       navigate(process.env.PUBLIC_URL + "/checkout", {
                         state: {
                           subtotal,
+                          subtotalBeforeGst: totalBasePrice,
+                          gstAmount: totalGstAmount,
                           shipping,
                           couponDiscount: 0,
                           couponCode: null,
@@ -688,7 +729,7 @@ const Cart = () => {
                     <span className="kg-info-icon">💵</span>
                     <div>
                       <div className="kg-info-label">Cash on Delivery</div>
-                      <div className="kg-info-value">Partial COD Available</div>
+                      <div className="kg-info-value">COD Available</div>
                     </div>
                   </div>
                   <div className="kg-info-divider" />

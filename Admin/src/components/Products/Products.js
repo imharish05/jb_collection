@@ -6,28 +6,15 @@ import { fetchProducts, createProduct, editProduct, removeProduct } from '../../
 import { fetchCategories } from '../../redux/services/categoriesService';
 import { fetchBrands } from '../../redux/services/brandsService';
 import { fetchEvents } from '../../redux/services/eventService';
-import VariantBuilder, { renderVariantLabel } from './VariantBuilder'; // ← make sure VariantBuilder.jsx is in the same folder
+import { renderVariantLabel } from './VariantBuilder'; // ← make sure VariantBuilder.jsx is in the same folder
+import VariantCard from './VariantCard';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
 import API from '../../api/axiosInstance';
 import AccessDenied from '../AccessDenied';
 
-const BASE_URL = process.env.REACT_APP_API_URL;
 const IMG_URL = process.env.REACT_APP_IMG_URL;
 
-// Product Image Dimension Validator (800×960px 5:6 portrait)
-const PRODUCT_IMAGE_DIMENSIONS = {
-  width: 800,
-  height: 960,
-  aspectRatio: 5 / 6,
-  tolerance: 0.05,
-  maxFileSize: 3 * 1024 * 1024,
-  formats: [
-    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-    'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
-    'image/heic', 'image/heif', 'image/avif'
-  ],
-};
 
 const validateProductImageDimensions = (file) => {
   return new Promise((resolve) => {
@@ -78,7 +65,6 @@ const headerIcon = { width: 32, height: 32, background: 'rgba(255,255,255,0.15)'
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 5 };
 const labelStyle = { fontSize: 11, fontWeight: 500, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em' };
 const inputStyle = { padding: '9px 12px', border: `1px solid ${KM.border}`, borderRadius: 8, fontSize: 13, color: KM.text, background: '#fff', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box', textTransform: 'capitalize' };
-const submitBtn = { gridColumn: 'span 2', padding: 11, background: KM.orange, color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 };
 const tag = (color, bg) => ({ fontSize: 10, fontWeight: 700, color, background: bg, padding: '2px 7px', borderRadius: 4, whiteSpace: 'nowrap' });
 const errorStyle = { fontSize: 11, color: '#dc2626', fontWeight: 600, marginTop: 2 };
 
@@ -87,7 +73,25 @@ function totalStock(p) { return p.Variants?.reduce((a, v) => a + Number(v.stock 
 
 // ── Blank variant (matches VariantBuilder's internal shape) ───────────────────
 function blankVariantRow() {
-  return { id: Date.now() + Math.random(), mrp: '', salesPrice: '', stock: '', attributes: [{ key: '', value: '', customValue: '' }], imageFile: null, imagePreview: null };
+  return {
+    id: Date.now() + Math.random(),
+    mrp: '',
+    salesPrice: '',
+    stock: '',
+    status: 'Active',
+    sku: '',
+    attributes: [
+      { key: 'Colour', value: '' },
+      { key: 'ColourHex', value: '#000000' },
+      { key: 'Size', value: '' }
+    ],
+    gstMode: 'Inclusive',
+    gstRate: '0%',
+    imageFile: null,
+    imagePreview: null,
+    galleryFiles: [],
+    galleryPreviews: []
+  };
 }
 
 // ── Form defaults ─────────────────────────────────────────────────────────────
@@ -100,116 +104,7 @@ const BLANK_FORM = {
   shippingWeight: '', shippingLength: '', shippingBreadth: '', shippingHeight: '',
 };
 
-// ── EventTagSelector — searchable multi-tag picker from Events model ──────────
-function EventTagSelector({ value, onChange }) {
-  const { items: events } = useSelector(s => s.events || {});
-  const [inputVal, setInputVal] = useState('');
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef();
 
-  const selectedTags = value ? value.split(',').map(t => t.trim()).filter(Boolean) : [];
-
-  useEffect(() => {
-    const handler = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const allEventLabels = (events || [])
-    .filter(e => e.isActive !== false)
-    .map(e => (e.value || e.label || '').toLowerCase().trim())
-    .filter(Boolean);
-
-  const filteredSuggestions = allEventLabels.filter(lbl =>
-    lbl.includes(inputVal.toLowerCase()) && !selectedTags.map(t => t.toLowerCase()).includes(lbl)
-  );
-
-  const addTag = (tag) => {
-    const t = tag.trim();
-    if (!t || selectedTags.map(x => x.toLowerCase()).includes(t.toLowerCase())) return;
-    onChange([...selectedTags, t].join(', '));
-    setInputVal('');
-    setOpen(false);
-  };
-
-  const removeTag = (idx) => {
-    onChange(selectedTags.filter((_, i) => i !== idx).join(', '));
-  };
-
-  const handleKeyDown = (e) => {
-    if ((e.key === 'Enter' || e.key === ',') && inputVal.trim()) {
-      e.preventDefault();
-      addTag(inputVal);
-    }
-    if (e.key === 'Backspace' && !inputVal && selectedTags.length) removeTag(selectedTags.length - 1);
-    if (e.key === 'Escape') setOpen(false);
-  };
-
-  const blueFaint = '#EEF2FB';
-
-  return (
-    <div ref={wrapRef} style={{ position: 'relative' }}>
-      <div
-        onClick={() => setOpen(true)}
-        style={{
-          display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center',
-          padding: '7px 10px', border: `1px solid ${open ? KM.teal : KM.border}`,
-          borderRadius: 8, background: '#fff', minHeight: 40, cursor: 'text',
-        }}
-      >
-        {selectedTags.map((tag, i) => (
-          <span key={i} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: blueFaint, color: KM.blue, border: '1px solid #B8C9EE',
-            borderRadius: 5, fontSize: 12, fontWeight: 600, padding: '2px 8px',
-          }}>
-            {tag}
-            <span onClick={(e) => { e.stopPropagation(); removeTag(i); }}
-              style={{ cursor: 'pointer', color: KM.muted, fontSize: 14, lineHeight: 1 }}>×</span>
-          </span>
-        ))}
-        <input
-          style={{ border: 'none', outline: 'none', padding: '3px 4px', fontSize: 13, background: 'transparent', fontFamily: 'inherit', minWidth: 140, flex: 1, color: KM.text }}
-          value={inputVal}
-          placeholder={selectedTags.length ? '' : 'Search or type event tag…'}
-          onChange={e => { setInputVal(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={handleKeyDown}
-        />
-      </div>
-
-      {open && (
-        <div style={{
-          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
-          background: '#fff', border: `1px solid ${KM.border}`, borderRadius: 8,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.12)', marginTop: 4, maxHeight: 200, overflowY: 'auto',
-        }}>
-          {filteredSuggestions.map(lbl => (
-            <div key={lbl} onMouseDown={(e) => { e.preventDefault(); addTag(lbl); }}
-              style={{ padding: '8px 14px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}
-              onMouseEnter={e => e.currentTarget.style.background = KM.bg}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
-              <span>🏷️</span> {lbl}
-            </div>
-          ))}
-          {inputVal.trim() && !allEventLabels.includes(inputVal.trim().toLowerCase()) && (
-            <div onMouseDown={(e) => { e.preventDefault(); addTag(inputVal.trim()); }}
-              style={{ padding: '8px 14px', cursor: 'pointer', fontSize: 13, color: KM.orange, fontWeight: 600, borderTop: filteredSuggestions.length ? `1px solid ${KM.border}` : 'none' }}
-              onMouseEnter={e => e.currentTarget.style.background = KM.orangeLight}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
-              + Add "{inputVal.trim()}" as new tag
-            </div>
-          )}
-          {!filteredSuggestions.length && !inputVal.trim() && (
-            <div style={{ padding: '10px 14px', fontSize: 12, color: KM.muted }}>Type to search or create a tag…</div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function Products({ showToast }) {
@@ -237,9 +132,6 @@ export default function Products({ showToast }) {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ ...BLANK_FORM });
   const [errors, setErrors] = useState({});
-  const [customisationFieldsTemplates, setCustomisationFieldsTemplates] = useState([]);
-
-  // ── Variants — now managed by VariantBuilder ──────────────────────────────
   const [variants, setVariants] = useState([blankVariantRow()]);
   const [variantTab, setVariantTab] = useState('options'); // 'options' | 'skus'
 
@@ -248,8 +140,11 @@ export default function Products({ showToast }) {
   const [previews, setPreviews] = useState([]);
   const [imageDimensionsMap, setImageDimensionsMap] = useState({});
   const [originalPreviews, setOriginalPreviews] = useState([]); // snapshot on edit open
+  const [customisationFieldsTemplates, setCustomisationFieldsTemplates] = useState([]);
   const fileInputRef = useRef();
   const variantBuilderRef = useRef();
+
+
 
   // ── SubCategories derived from selected category safely ───────────────────
   const selectedCategory = categories.find(c => String(c.id) === String(formData.categoryId));
@@ -257,12 +152,6 @@ export default function Products({ showToast }) {
 
   const subCategories = selectedCategory?.subcategories || selectedCategory?.subCategories || selectedCategory?.SubCategories || [];
 
-  // ── Scroll to VariantBuilder when tab forced to 'skus' on validation error ──
-  useEffect(() => {
-    if (variantTab === 'skus' && errors.variantErrors) {
-      variantBuilderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [variantTab, errors.variantErrors]);
 
   // ── Load data ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -477,6 +366,17 @@ export default function Products({ showToast }) {
               return fromFlat.length > 0 ? fromFlat : nameAttrs;
             })();
 
+          const finalAttrsToSet = [...builtAttrs];
+          if (!finalAttrsToSet.some(a => a.key === 'Colour')) {
+            finalAttrsToSet.push({ key: 'Colour', value: '' });
+          }
+          if (!finalAttrsToSet.some(a => a.key === 'ColourHex')) {
+            finalAttrsToSet.push({ key: 'ColourHex', value: '#000000' });
+          }
+          if (!finalAttrsToSet.some(a => a.key === 'Size')) {
+            finalAttrsToSet.push({ key: 'Size', value: '' });
+          }
+
           return {
             id: v.id || Date.now() + Math.random(),
             open: false,
@@ -484,11 +384,22 @@ export default function Products({ showToast }) {
             salesPrice: v.salesPrice || '',
             stock: v.stock ?? '',
             status: v.status || 'Active',
+            sku: v.sku || '',
+            gstMode: v.gstMode || 'Inclusive',
+            gstRate: v.gstRate ? `${parseInt(v.gstRate)}%` : '0%',
             imageFile: null,
             imagePreview: v.image ? getImageUrl(v.image) : null,
-            combo: builtAttrs.map(a => ({ key: a.key, value: a.value })),
-            variantName: v.variantName || builtAttrs.map(a => `${a.key}: ${a.value}`).join(' · '),
-            attributes: builtAttrs.length > 0 ? builtAttrs : [{ key: '', value: '', customValue: '' }],
+            galleryFiles: [],
+            galleryPreviews: (() => {
+              const rawImgs = v.images;
+              const parsed = typeof rawImgs === 'string'
+                ? (() => { try { return JSON.parse(rawImgs); } catch { return []; } })()
+                : (Array.isArray(rawImgs) ? rawImgs : []);
+              return parsed.filter(Boolean).map(img => ({ url: getImageUrl(img), file: null }));
+            })(),
+            combo: finalAttrsToSet.map(a => ({ key: a.key, value: a.value })),
+            variantName: v.variantName || finalAttrsToSet.map(a => `${a.key}: ${a.value}`).join(' · '),
+            attributes: finalAttrsToSet,
           };
         })
         : [blankVariantRow()]
@@ -551,9 +462,14 @@ export default function Products({ showToast }) {
       const mrp = Number(v.mrp);
       const salesPrice = Number(v.salesPrice);
       const stock = Number(v.stock);
-      const hasAttribute = v.attributes?.some(a => a.key && (a.value || a.customValue));
 
-      if (!hasAttribute) messages.push('Add at least one attribute');
+      const colorVal = v.attributes?.find(a => a.key === 'Colour')?.value || '';
+      const sizeVal = v.attributes?.find(a => a.key === 'Size')?.value || '';
+
+      if (!colorVal && !sizeVal) {
+        messages.push('Either Color or Size is mandatory');
+      }
+
       if (!v.mrp) messages.push('Enter MRP');
       else if (Number.isNaN(mrp) || mrp <= 0) messages.push('MRP must be greater than 0');
       if (!v.salesPrice) messages.push('Enter sales price');
@@ -561,8 +477,6 @@ export default function Products({ showToast }) {
       else if (!Number.isNaN(mrp) && mrp > 0 && salesPrice > mrp) messages.push('Sales price cannot be greater than MRP');
       if (v.stock === '') messages.push('Enter stock');
       else if (Number.isNaN(stock) || stock < 0) messages.push('Stock cannot be negative');
-
-      if (!v.imagePreview && !v.imageFile) messages.push('Upload a variant image');
 
       variantErrors[index] = messages;
     });
@@ -606,48 +520,36 @@ export default function Products({ showToast }) {
     if (formData.isHotDeal      && !baseTags.includes('hot-deal'))      baseTags.push('hot-deal');
     fd.append('tag', JSON.stringify(baseTags));
 
-    // ── Map VariantBuilder state → API payload ────────────────────────────
+    // ── Map Variant state → API payload ────────────────────────────
     const mappedVariants = variants.map((v, idx) => {
-      const variantName = v.attributes
-        .map(a => {
-          const val = a.value === 'Custom' ? (a.customValue || 'Custom') : a.value;
-          return val ? (a.key ? `${a.key}: ${val}` : val) : '';
-        })
-        .filter(Boolean)
-        .join(' · ') || 'Default';
-
-      const attributes = v.attributes
-        .filter(a => a.key && (a.value || a.customValue))
-        .map(a => ({
-          key: a.key,
-          value: a.value === 'Custom' ? (a.customValue || 'Custom') : a.value,
-        }));
+      const attributes = (v.attributes || [])
+        .filter(a => a.key && a.value)
+        .map(a => ({ key: a.key, value: a.value }));
 
       const findAttr = (key) => {
         const found = attributes.find(a => a.key === key);
         return found ? found.value : '';
       };
 
+      const gstRateVal = parseFloat(String(v.gstRate || 0).replace('%', '')) || 0;
+
       return {
-        variantName,
+        variantName: v.variantName || 'Default',
         attributes,
         mrp: v.mrp,
         salesPrice: v.salesPrice,
-        stock: v.stock,
-        unit: findAttr('Size') || findAttr('Capacity') || 'Free Size',
+        stock: v.stock || 0,
+        sku: v.sku || null,
+        gstMode: v.gstMode || 'Inclusive',
+        gstRate: gstRateVal,
+        unit: findAttr('Size') || 'Free Size',
         colour: findAttr('Colour'),
-        size: findAttr('Size') || findAttr('Capacity'),
-        material: findAttr('Material'),
-        finish: findAttr('Finish'),
-        weight: findAttr('Weight'),
-        dimensions: findAttr('Dimensions'),
-        engraving: findAttr('Engraving'),
-        printText: findAttr('Print Text'),
-        customLabel: findAttr('Custom Note'),
-        subCategory: findAttr('Sub-type'),
+        size: findAttr('Size'),
         image: (!v.imageFile && v.imagePreview && !v.imagePreview.startsWith('blob:'))
           ? toRelativePath(v.imagePreview) : undefined,
-        variantImageIndex: v.imageFile ? idx : undefined,
+        images: v.galleryPreviews
+          ? v.galleryPreviews.filter(item => item && !item.file).map(item => toRelativePath(item.url)).filter(Boolean)
+          : [],
         status: v.status || 'Active',
       };
     });
@@ -655,7 +557,12 @@ export default function Products({ showToast }) {
     fd.append('variants', JSON.stringify(mappedVariants));
 
     variants.forEach((v, idx) => {
-      if (v.imageFile) fd.append(`variantImage_${idx}`, v.imageFile);
+      const filesToUpload = v.galleryPreviews
+        ? v.galleryPreviews.filter(item => item && item.file).map(item => item.file)
+        : [];
+      filesToUpload.forEach(file => {
+        fd.append(`variantGallery_${idx}`, file);
+      });
     });
 
     imageFiles.forEach(file => fd.append('images', file));
@@ -806,24 +713,13 @@ export default function Products({ showToast }) {
                 )}
               </div>
 
-              <div style={fieldStyle}>
+              <div style={{ ...fieldStyle, gridColumn: 'span 2', display: 'none' }}>
                 <label style={labelStyle}>Brand (Optional)</label>
                 <select style={inputStyle} value={formData.brandId}
                   onChange={e => setFormData({ ...formData, brandId: e.target.value })}>
                   <option value="">Select Brand</option>
                   {safeBrands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
-              </div>
-
-              <div style={{ ...fieldStyle }}>
-                <label style={labelStyle}>Event Tags</label>
-                <EventTagSelector
-                  value={formData.tag}
-                  onChange={val => setFormData({ ...formData, tag: val })}
-                />
-                <span style={{ fontSize: 11, color: KM.muted, marginTop: 3 }}>
-                  Search from events or type a new tag and press Enter
-                </span>
               </div>
 
               {/* ── Short Description ── */}
@@ -894,18 +790,50 @@ export default function Products({ showToast }) {
                 )}
               </div>
 
-              <div ref={variantBuilderRef} style={{ gridColumn: 'span 2' }}>
-                <VariantBuilder variants={variants} errors={errors.variantErrors || []} tab={variantTab} onTabChange={setVariantTab} onChange={(updated) => {
-                  setVariants(updated);
-                  const first = updated[0];
-                  if (first?.mrp && first?.salesPrice && Number(first.mrp) > 0) {
-                    const auto = Math.round((1 - Number(first.salesPrice) / Number(first.mrp)) * 100);
+              {/* Media Zone for Default Product Image */}
+              <div style={{ ...formCard, gridColumn: 'span 2', marginBottom: 0 }}>
+                <div style={{ ...formHeader, background: KM.blue }}>
+                  <div style={headerIcon}>🖼️</div>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Media</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>Main default product image</div>
+                  </div>
+                </div>
+                <div style={{ padding: '20px 24px', display: 'flex', justifyContent: 'center' }}>
+                  {previews.length > 0 ? (
+                    <div style={{ position: 'relative', width: 220, height: 260 }}>
+                      <img src={previews[0]} alt="Main product default" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10, border: `2px solid ${KM.border}` }} />
+                      <button type="button" onClick={() => removeImage(0)} style={{ position: 'absolute', top: -10, right: -10, width: 24, height: 24, borderRadius: '50%', background: KM.orange, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                    </div>
+                  ) : (
+                    <div onClick={() => fileInputRef.current.click()} style={{ width: '100%', height: 160, border: `2px dashed ${KM.border}`, borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#fafafa' }}>
+                      <span style={{ fontSize: 32 }}>📤</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: KM.blue, marginTop: 8 }}>Click to Upload Main Image</span>
+                      <span style={{ fontSize: 11, color: KM.muted, marginTop: 4 }}>JPG, PNG, WEBP, SVG — 800×1000px recommended</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <VariantCard 
+                variant={variants[0]}
+                onChange={(updatedVariant) => {
+                  const uv = [...variants];
+                  uv[0] = updatedVariant;
+                  setVariants(uv);
+                  if (updatedVariant.mrp && updatedVariant.salesPrice && Number(updatedVariant.mrp) > 0) {
+                    const auto = Math.round((1 - Number(updatedVariant.salesPrice) / Number(updatedVariant.mrp)) * 100);
                     if (auto >= 0 && auto <= 100) setFormData(f => ({ ...f, discount: String(auto) }));
                   }
-                }} />
-              </div>
+                }}
+                errors={errors.variantErrors?.[0]}
+                title="First Variant"
+                subtitle="Fill in the variant details below (mandatory either color or size)"
+              />
               <div style={{ gridColumn: 'span 2', marginTop: -10 }}>
-                <ErrorMsg field="variants" />
+                {errors.variantErrors && errors.variantErrors[0] && errors.variantErrors[0].length > 0 && (
+                  <span style={{ color: '#ef4444', fontSize: 12, fontWeight: 600 }}>⚠ {errors.variantErrors[0].join(' · ')}</span>
+                )}
               </div>
 
               {/* ── Final Discount ── */}
@@ -979,7 +907,7 @@ export default function Products({ showToast }) {
                   /* { key: 'isCustomisable', label: '🎨 Customisable' }, */
                   { key: 'isNewArrival', label: '✨ New Arrival' },
                   { key: 'isHotDeal', label: '🔥 Hot Deal' },
-                  { key: 'isPartialCodAvailable', label: '💳 Allow Partial COD' },
+                  { key: 'isPartialCodAvailable', label: '💳 Allow COD' },
                 ].map(item => (
                   <label key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
                     <input type="checkbox" checked={!!formData[item.key]}

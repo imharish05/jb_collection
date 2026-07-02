@@ -10,7 +10,7 @@ const PRODUCT_INCLUDE = [
   {
     model: Variant,
     as: "Variants",
-    attributes: ["id", "variantName", "mrp", "salesPrice", "stock", "sku", "attributes", "status", "image", "stockStatus", "warningThreshold"],
+    attributes: ["id", "variantName", "mrp", "salesPrice", "stock", "sku", "attributes", "status", "image", "stockStatus", "warningThreshold", "gstMode", "gstRate", "images"],
     required: false,
   },
   {
@@ -263,9 +263,10 @@ const createProduct = async (req, res, next) => {
     // create Variant rows
     for (let i = 0; i < parsedVariants.length; i++) {
       const v = parsedVariants[i];
-      // variant image: uploaded as variantImage_<idx>
-      const vImgFile = req.files ? req.files.find(f => f.fieldname === `variantImage_${i}`) : null;
-      const vImage   = vImgFile ? `uploads/products/${vImgFile.filename}` : (v.image || null);
+
+      const vGalleryFiles = req.files ? req.files.filter(f => f.fieldname === `variantGallery_${i}`) : [];
+      const vGalleryImages = vGalleryFiles.map(f => `uploads/products/${f.filename}`);
+
       await Variant.create({
         productId:   product.id,
         variantName: v.variantName,
@@ -273,10 +274,13 @@ const createProduct = async (req, res, next) => {
         mrp:         v.mrp,
         salesPrice:  v.salesPrice,
         stock:       v.stock || 0,
-        sku:         v.sku || generateSku("KMV"),
+        sku:         v.sku || null,
         attributes:  v.attributes || [],
         status:      v.status || "Active",
-        image:       vImage,
+        image:       vGalleryImages[0] || null,
+        images:      vGalleryImages,
+        gstMode:     v.gstMode || "Inclusive",
+        gstRate:     v.gstRate || 0.00,
       });
     }
 
@@ -375,12 +379,17 @@ const updateProduct = async (req, res, next) => {
 
       for (let i = 0; i < parsedVariants.length; i++) {
         const v = parsedVariants[i];
-        const vImgFile = req.files ? req.files.find(f => f.fieldname === `variantImage_${i}`) : null;
-        const vImage   = vImgFile ? `uploads/products/${vImgFile.filename}` : (v.image || null);
-        if (vImage) createdVariantImages.push(vImage);
 
         const vNameKey = v.variantName ? v.variantName.trim().toLowerCase() : '';
         const existingVariant = oldVariantMap.get(vNameKey);
+
+        const vGalleryFiles = req.files ? req.files.filter(f => f.fieldname === `variantGallery_${i}`) : [];
+        const newGalleryPaths = vGalleryFiles.map(f => `uploads/products/${f.filename}`);
+        const existingGallery = v.images ? safeParse(v.images, []) : [];
+        const vImages = [...existingGallery, ...newGalleryPaths];
+
+        const mainVarImg = vImages[0] || null;
+        if (mainVarImg) createdVariantImages.push(mainVarImg);
 
         if (existingVariant) {
           // Update existing variant (keeps same ID)
@@ -389,10 +398,13 @@ const updateProduct = async (req, res, next) => {
             mrp:         v.mrp,
             salesPrice:  v.salesPrice,
             stock:       v.stock || 0,
-            sku:         v.sku || existingVariant.sku || generateSku("KMV"),
+            sku:         v.sku || existingVariant.sku || null,
             status:      v.status || "Active",
             attributes:  v.attributes || [],
-            image:       vImage,
+            image:       mainVarImg,
+            images:      vImages,
+            gstMode:     v.gstMode || "Inclusive",
+            gstRate:     v.gstRate || 0.00,
           });
           activeVariantIds.add(existingVariant.id);
         } else {
@@ -404,10 +416,13 @@ const updateProduct = async (req, res, next) => {
             mrp:         v.mrp,
             salesPrice:  v.salesPrice,
             stock:       v.stock || 0,
-            sku:         v.sku || generateSku("KMV"),
+            sku:         v.sku || null,
             attributes:  v.attributes || [],
             status:      v.status || "Active",
-            image:       vImage,
+            image:       mainVarImg,
+            images:      vImages,
+            gstMode:     v.gstMode || "Inclusive",
+            gstRate:     v.gstRate || 0.00,
           });
           activeVariantIds.add(newVar.id);
         }

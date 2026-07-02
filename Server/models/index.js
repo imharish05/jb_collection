@@ -39,6 +39,7 @@ const StockHistory        = require("./StockHistory");
 const Role                = require("./Role");
 const Font                = require("./Font");
 const SiteSetting         = require("./SiteSetting");
+const DeliveryZone        = require("./DeliveryZone");
 
 User.belongsTo(Role, { foreignKey: "roleId", as: "roleRecord" });
 Role.hasMany(User, { foreignKey: "roleId", as: "users" });
@@ -164,6 +165,7 @@ const models = {
   Font,
   SiteSetting,
   TimelineMilestone,
+  DeliveryZone,
 };
 
 attachReferenceSlugs(models);

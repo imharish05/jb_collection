@@ -59,11 +59,13 @@ const COLOR_MAP = {
 };
 const LIGHT_COLORS = new Set(["white","ivory","cream","yellow","lime","gold","amber","silver","bronze","lemon","canary"]);
 
+const dynamicColorMap = {};
+
 function toHex(name) {
   if (!name) return null;
   const l = name.trim().toLowerCase();
   if (l.startsWith("#")) return l;
-  return COLOR_MAP[l] || null;
+  return dynamicColorMap[l] || COLOR_MAP[l] || null;
 }
 
 const KEY_ALIASES = { color: "Colour", colour: "Colour", size: "Size", material: "Material", finish: "Finish", capacity: "Capacity" };
@@ -89,6 +91,7 @@ function parseVariantNameAttrs(variantName) {
     })
     .filter(attr => {
       if (!attr || attr.key === "Custom Note") return false;
+      if (/colourhex/i.test(attr.key)) return false; // never show ColourHex as selectable option
       const key = attr.key.toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
@@ -98,7 +101,7 @@ function parseVariantNameAttrs(variantName) {
 
 function variantAttrs(variant) {
   const attrs = safeAttrs(variant?.attributes)
-    .filter(a => a.key && a.value && a.key !== "Custom Note")
+    .filter(a => a.key && a.value && a.key !== "Custom Note" && !/colourhex/i.test(a.key))
     .map(a => ({ ...a, key: normalKey(a.key) }));
   return attrs.length ? attrs : parseVariantNameAttrs(variant?.variantName);
 }
@@ -107,7 +110,7 @@ function buildOptionMap(variants) {
   const map = {};
   variants.forEach(v => {
     variantAttrs(v).forEach(a => {
-      if (!a.key || !a.value || a.key === "Custom Note") return;
+      if (!a.key || !a.value || a.key === "Custom Note" || /colourhex/i.test(a.key)) return;
       const k = normalKey(a.key);
       if (!map[k]) map[k] = new Set();
       map[k].add(a.value);
@@ -372,6 +375,23 @@ const ProductDescriptionInfo = ({
 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Populate dynamicColorMap from current variants
+  if (localProduct && Array.isArray(localProduct.Variants)) {
+    localProduct.Variants.forEach(v => {
+      let attrs = [];
+      if (typeof v.attributes === "string") {
+        try { attrs = JSON.parse(v.attributes); } catch (e) { attrs = []; }
+      } else if (Array.isArray(v.attributes)) {
+        attrs = v.attributes;
+      }
+      const colAttr = attrs.find(a => /colou?r/i.test(a.key));
+      const hexAttr = attrs.find(a => /colourhex/i.test(a.key));
+      if (colAttr && hexAttr) {
+        dynamicColorMap[colAttr.value.toLowerCase().trim()] = hexAttr.value.trim();
+      }
+    });
+  }
   const { isAuthenticated } = useSelector((state) => state.auth);
   const allProducts = useSelector((state) => state.product.products || []);
   const cartItemsFromStore = useSelector((state) => state.cart.cartItems);
@@ -824,15 +844,41 @@ const handleBuyNow = async () => {
   });
   const isInWishlist = wishlistItem !== undefined;
 
-  // ── Price display ──────────────────────────────────────────────────────────
-  const currentPrice = selectedVariant
+  // ── Price display with GST Calculations ────────────────────────────────────
+  const selectedVariantGstMode = selectedVariant?.gstMode || "Inclusive";
+  const selectedVariantGstRate = selectedVariant ? parseFloat(selectedVariant.gstRate || 0) : 18.00;
+
+  const rawSalesPrice = selectedVariant
     ? parseFloat(selectedVariant.salesPrice)
     : (discountedPrice !== null ? finalDiscountedPrice : finalProductPrice);
-  const oldPrice = selectedVariant && Number(selectedVariant.mrp) > Number(selectedVariant.salesPrice)
+
+  const rawMrp = selectedVariant && Number(selectedVariant.mrp) > Number(selectedVariant.salesPrice)
     ? parseFloat(selectedVariant.mrp)
     : (discountedPrice !== null ? finalProductPrice : null);
-  const savePct = selectedVariant && Number(selectedVariant.mrp) > Number(selectedVariant.salesPrice)
-    ? Math.round((1 - selectedVariant.salesPrice / selectedVariant.mrp) * 100)
+
+  let currentPrice = rawSalesPrice;
+  let oldPrice = rawMrp;
+  let gstAmount = 0;
+  let basePrice = rawSalesPrice;
+
+  if (selectedVariantGstMode === "Exclusive") {
+    gstAmount = rawSalesPrice * (selectedVariantGstRate / 100);
+    currentPrice = rawSalesPrice + gstAmount;
+    basePrice = rawSalesPrice;
+    if (rawMrp) {
+      const mrpGst = rawMrp * (selectedVariantGstRate / 100);
+      oldPrice = rawMrp + mrpGst;
+    }
+  } else {
+    // Inclusive
+    gstAmount = rawSalesPrice - (rawSalesPrice * (100 / (100 + selectedVariantGstRate)));
+    currentPrice = rawSalesPrice;
+    basePrice = rawSalesPrice - gstAmount;
+    oldPrice = rawMrp;
+  }
+
+  const savePct = oldPrice && Number(oldPrice) > Number(currentPrice)
+    ? Math.round((1 - currentPrice / oldPrice) * 100)
     : (product.discount > 0 ? product.discount : null);
 
   return (
@@ -850,7 +896,7 @@ const handleBuyNow = async () => {
       )}
 
       {/* ── Price block ── */}
-      <div className="pdp-info__price-block">
+      <div className="pdp-info__price-block" style={{ marginBottom: 0 }}>
         <span className="pdp-info__price">
           {currencySymbol}{currentPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
@@ -862,6 +908,11 @@ const handleBuyNow = async () => {
         {savePct > 0 && (
           <span className="pdp-info__save-badge">{savePct}% OFF</span>
         )}
+      </div>
+
+      {/* GST Breakdown label */}
+      <div style={{ fontSize: 13, color: "var(--theme-color)", marginTop: 6, marginBottom: 16, fontWeight: 600 }}>
+        {selectedVariantGstMode === "Exclusive" ? "Exclusive of GST" : "Inclusive of GST"} ({selectedVariantGstRate}%): Base ₹{basePrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} + GST ₹{gstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </div>
 
       {/* ── Short description ── */}

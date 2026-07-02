@@ -14,6 +14,9 @@ const Variant = sequelize.define("Variant", {
   attributes:  { type: DataTypes.JSON,           defaultValue: [], allowNull: true },
   status:      { type: DataTypes.STRING,         defaultValue: "Active" },
   image:       { type: DataTypes.STRING,         allowNull: true },
+  gstMode:     { type: DataTypes.STRING,         defaultValue: "Inclusive", field: "gst_mode" },
+  gstRate:     { type: DataTypes.DECIMAL(5, 2),  defaultValue: 0.00, field: "gst_rate" },
+  images:      { type: DataTypes.JSON,           allowNull: true, defaultValue: [] },
 
   // ── Shipping overrides (optional) ─────────────────────────────────────────
   shippingWeight: { type: DataTypes.DECIMAL(10, 3), allowNull: true, field: "shipping_weight" },

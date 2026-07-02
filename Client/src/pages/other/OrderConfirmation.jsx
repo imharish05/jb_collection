@@ -297,10 +297,11 @@ useEffect(() => {
                                 </div>
 {variantTags.length > 0 && (
   <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-    {variantTags.map((tag, ti) => {
+    {variantTags.filter(tag => tag.key !== "ColourHex").map((tag, ti) => {
       const isCol = isColourKey(tag.key);
-      const hasPreview = isCol && isHexColor(tag.val);
-      const displayVal = hasPreview ? tag.val.toUpperCase() : tag.val;
+      const hexAttr = variantTags.find(x => x.key === "ColourHex");
+      const hasSwatch = isCol && hexAttr && isHexColor(hexAttr.val);
+      const swatchColor = hasSwatch ? hexAttr.val : "";
       return (
         <span key={ti} style={{
           display: "inline-flex", alignItems: "center", gap: 3,
@@ -309,24 +310,21 @@ useEffect(() => {
           borderRadius: 20, padding: "2px 9px", lineHeight: 1.6,
         }}>
           <span style={{ color: "#999", fontWeight: 400 }}>{tag.key}:</span>
-          {hasPreview ? (
-            // Color: show only swatch, no hex text
+          {hasSwatch && (
             <span
               style={{
                 width: 12,
                 height: 12,
                 borderRadius: '50%',
                 border: '1px solid #dcdcdc',
-                backgroundColor: displayVal,
+                backgroundColor: swatchColor,
                 display: 'inline-block',
                 flexShrink: 0,
               }}
-              title={displayVal}
+              title={tag.val}
             />
-          ) : (
-            // Non-color: show value text
-            <span>{displayVal}</span>
           )}
+          <span>{tag.val}</span>
         </span>
       );
     })}

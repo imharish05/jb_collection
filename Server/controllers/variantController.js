@@ -113,6 +113,9 @@ const syncProductVariants = async (productId) => {
       status: v.status,
       shippingWeight: v.shippingWeight,
       shippingDimensions: v.shippingDimensions,
+      gstMode: v.gstMode,
+      gstRate: v.gstRate,
+      images: v.images || [],
     }));
 
     // Update product price (first variant salesPrice, or 0) and total stock
@@ -197,8 +200,13 @@ const getByProduct = async (req, res) => {
 // applied to every generated row.
 const add = async (req, res) => {
   try {
-    const { productId, mrp, salesPrice, stock, status, stockStatus, warningThreshold, shippingWeight, shippingDimensions } = req.body;
-    const image = buildImagePath(req.file);
+    const { productId, mrp, salesPrice, stock, status, stockStatus, warningThreshold, shippingWeight, shippingDimensions, sku } = req.body;
+    
+    const mainFile = req.files && req.files['image'] ? req.files['image'][0] : req.file;
+    const image = buildImagePath(mainFile);
+
+    const galleryFiles = req.files && req.files['gallery'] ? req.files['gallery'] : [];
+    const galleryPaths = galleryFiles.map(file => buildImagePath(file)).filter(Boolean);
 
     // ── Basic validation ──────────────────────────────────────────────────
     if (!productId) return res.status(400).json({ message: "productId is required" });
@@ -261,10 +269,11 @@ const add = async (req, res) => {
           stock:      stock      ?? 0,
           stockStatus: stockStatus || null,
           warningThreshold: warningThreshold !== undefined ? parseInt(warningThreshold) : 5,
-          sku:        generateSku(),
+          sku:        sku || null,
           attributes: combo,
           status:     status     || "Active",
-          image,
+          image:      image || galleryPaths[0] || null,
+          images:     galleryPaths,
           shippingWeight: weightVal,
           shippingDimensions: parsedDimensions,
         });
@@ -332,9 +341,28 @@ const update = async (req, res) => {
       ...(parsedDimensions !== undefined && { shippingDimensions: parsedDimensions }),
     };
 
-    if (req.file) {
+    const mainFile = req.files && req.files['image'] ? req.files['image'][0] : req.file;
+    if (mainFile) {
       deleteOldImage(variant.image);
-      updates.image = buildImagePath(req.file);
+      updates.image = buildImagePath(mainFile);
+    }
+
+    let existingImages = [];
+    if (req.body.existingImages) {
+      try {
+        existingImages = JSON.parse(req.body.existingImages);
+      } catch (e) {
+        existingImages = [];
+      }
+    }
+    const galleryFiles = req.files && req.files['gallery'] ? req.files['gallery'] : [];
+    const newGalleryPaths = galleryFiles.map(file => buildImagePath(file)).filter(Boolean);
+    
+    if (req.body.existingImages !== undefined || galleryFiles.length > 0) {
+      updates.images = [...existingImages, ...newGalleryPaths];
+      if (!mainFile) {
+        updates.image = updates.images[0] || null;
+      }
     }
 
     await variant.update(updates);
