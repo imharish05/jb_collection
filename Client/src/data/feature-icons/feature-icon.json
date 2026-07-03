@@ -2,6 +2,7 @@
   {
     "id": 1,
     "image": "/assets/img/icon-img/support-1.png",
+    "icon": "Truck",
     "title": "Free Shipping",
     "subtitle": "On orders above ₹999",
     "link" : "shipping-policy"
@@ -9,13 +10,15 @@
   {
     "id": 2,
     "image": "/assets/img/icon-img/support-2.png",
+    "icon": "RefreshCw",
     "title": "Easy Returns",
     "subtitle": "7-day return policy",
-     "link" : "exchange-policy"
+    "link" : "exchange-policy"
   },
   {
     "id": 3,
     "image": "/assets/img/icon-img/support-3.png",
+    "icon": "FileText",
     "title": "Terms & Conditions",
     "subtitle": "Read our store policies",
     "link" :"terms-conditions"
@@ -23,6 +26,7 @@
   {
     "id": 4,
     "image": "/assets/img/icon-img/support-4.png",
+    "icon": "CreditCard",
     "title": "Secure Payment",
     "subtitle": "UPI, Card, COD accepted",
     "link" : "payment-policy"

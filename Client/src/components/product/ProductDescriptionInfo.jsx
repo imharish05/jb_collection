@@ -863,12 +863,9 @@ const handleBuyNow = async () => {
 
   if (selectedVariantGstMode === "Exclusive") {
     gstAmount = rawSalesPrice * (selectedVariantGstRate / 100);
-    currentPrice = rawSalesPrice + gstAmount;
+    currentPrice = rawSalesPrice; // Display base price directly without adding GST
     basePrice = rawSalesPrice;
-    if (rawMrp) {
-      const mrpGst = rawMrp * (selectedVariantGstRate / 100);
-      oldPrice = rawMrp + mrpGst;
-    }
+    oldPrice = rawMrp; // Display base MRP directly without adding GST
   } else {
     // Inclusive
     gstAmount = rawSalesPrice - (rawSalesPrice * (100 / (100 + selectedVariantGstRate)));

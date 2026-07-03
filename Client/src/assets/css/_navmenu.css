@@ -12,11 +12,15 @@
 .kg-chevron {
   display: inline-flex;
   align-items: center;
-  transition: transform 0.25s ease;
 }
 
-.kg-catalogue-item--open .kg-chevron,
-.kg-catalogue-item:hover .kg-chevron {
+.kg-chevron svg {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.kg-catalogue-item--open .kg-chevron svg,
+.kg-catalogue-item:hover .kg-chevron svg {
   transform: rotate(180deg);
 }
 

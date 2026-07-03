@@ -145,7 +145,7 @@ const NavMenu = ({ menuWhiteClass, sidebarMenu }) => {
           >
             <Link to={process.env.PUBLIC_URL + "/shop"} className="kg-catalogue-trigger">
               Collections
-              <span className="kg-chevron ps-2">
+              <span className="kg-chevron ms-2">
                 <svg width="12" height="7" viewBox="0 0 12 7" fill="none">
                   <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

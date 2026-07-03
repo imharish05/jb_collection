@@ -419,85 +419,126 @@
     padding: 60px 0;
 }
 
-/* The Card Design - Minimalist */
+/* Redesigned Features Section - Elevated Card Style like Image 1 */
 .support-wrap-28 {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 20px 15px;
-    text-align: center;
-    transition: all 0.4s ease;
+    background: #ffffff;
+    border: 1px solid rgba(13, 27, 64, 0.08); /* Faint navy border */
+    border-radius: 16px;
+    padding: 24px 20px;
+    text-align: left;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     height: 100%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
+    gap: 18px;
     position: relative;
-    box-shadow: none;
+    box-shadow: 0 4px 15px rgba(13, 27, 64, 0.02);
     text-decoration: none;
-}
-
-/* Vertical Dividers for Desktop */
-@media (min-width: 992px) {
-    .col-lg-3:not(:last-child) .support-wrap-28::after {
-        content: '';
-        position: absolute;
-        right: -12px;
-        top: 15%;
-        height: 70%;
-        width: 1px;
-        background: rgba(205, 131, 62, 0.4); /* Elegant copper divider */
-    }
 }
 
 /* Hover effects */
 .support-wrap-28:hover {
-    transform: translateY(-5px);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(13, 27, 64, 0.08);
+    border-color: rgba(182, 4, 16, 0.2);
 }
 
-.support-wrap-28:hover .support-icon-28 img {
-    transform: scale(1.15);
-    /* Make it black with a subtle copper glow */
-    filter: brightness(0) drop-shadow(0px 0px 6px rgba(205, 131, 62, 0.8));
-}
-
-/* Icon Container */
+/* Icon Container - Dark Blue Circle */
 .support-icon-28 {
-    width: 60px;
-    height: 60px;
-    background: transparent;
+    width: 56px;
+    height: 56px;
+    background-color: var(--theme-color-2); /* Deep Navy */
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
-    border: none;
+    flex-shrink: 0;
+    transition: all 0.4s ease;
 }
 
-.support-icon-28 img {
-    width: 45px;
-    height: auto;
+.support-wrap-28:hover .support-icon-28 {
+    background-color: var(--theme-color); /* Theme Crimson Red */
+    box-shadow: 0 0 15px rgba(182, 4, 16, 0.4);
+}
+
+.feature-icon-svg {
+    width: 24px;
+    height: 24px;
+    stroke: #ffffff !important;
+    color: #ffffff !important;
     transition: all 0.4s ease;
-    /* Force to black */
-    filter: brightness(0); 
 }
 
 /* Text Styling */
+.support-content-28 {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 .support-content-28 h5 {
-    color: #000000;
-    font-size: 16px;
+    color: var(--theme-color-2); /* Deep Navy */
+    font-size: 15px;
     font-weight: 600;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-family: 'Montserrat', sans-serif; /* More elegant font */
+    margin: 0;
+    text-transform: none; /* Title Case */
+    letter-spacing: 0.2px;
+    font-family: 'Montserrat', sans-serif;
+    transition: color 0.3s ease;
+}
+
+.support-wrap-28:hover .support-content-28 h5 {
+    color: var(--theme-color); /* Highlight color on hover */
 }
 
 .support-content-28 p {
-    color: #555555;
+    color: #64748b; /* Slate grey */
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.4;
     margin: 0;
     font-weight: 400;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.1px;
+}
+
+/* --- Micro-Animations for Icons on Hover --- */
+.support-wrap-28:hover .icon-truck {
+    animation: truckDrive 0.8s ease-in-out;
+}
+
+.support-wrap-28:hover .icon-refreshcw {
+    animation: spinOnce 0.8s ease-in-out;
+}
+
+.support-wrap-28:hover .icon-filetext {
+    animation: documentBounce 0.6s ease-in-out;
+}
+
+.support-wrap-28:hover .icon-creditcard {
+    animation: cardPulse 0.6s ease-in-out;
+}
+
+@keyframes truckDrive {
+    0% { transform: translateX(0); }
+    30% { transform: translateX(-4px); }
+    60% { transform: translateX(4px); }
+    80% { transform: translateX(-2px); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes spinOnce {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(-360deg); }
+}
+
+@keyframes documentBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+@keyframes cardPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.18); }
 }
 
 /* --- Mobile Responsive Fixes --- */
@@ -506,31 +547,32 @@
         padding-top: 30px !important;
         padding-bottom: 30px !important;
     }
+}
 
+@media (max-width: 575px) {
     .support-wrap-28 {
-        padding: 15px 5px; 
-        margin-bottom: 20px;
+        flex-direction: column;
+        text-align: center;
+        padding: 20px 12px;
+        gap: 12px;
     }
-
+    
     .support-icon-28 {
-        width: 40px;
-        height: 40px;
-        margin-bottom: 15px;
+        width: 48px;
+        height: 48px;
     }
-
-    .support-icon-28 img {
-        width: 32px;
+    
+    .feature-icon-svg {
+        width: 20px;
+        height: 20px;
     }
-
+    
     .support-content-28 h5 {
         font-size: 14px;
-        margin-bottom: 8px;
-        letter-spacing: 1px;
     }
-
+    
     .support-content-28 p {
         font-size: 12px;
-        line-height: 1.4;
     }
 }
 

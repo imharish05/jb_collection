@@ -11,11 +11,11 @@ const FeatureIcon = ({ spaceTopClass, spaceBottomClass }) => {
           <h2>Designed For You..!</h2>
           <p>Premium quality, seamless delivery, and dedicated support—always.</p>
         </div>
-        {/* g-2 adds a small, professional gap between cards */}
+        {/* Row of cards, centered and using grid for spacing */}
         <div className="row g-4 justify-content-around">
           {featureIconData?.map(singleFeature => (
-            /* col-5 makes them 2-per-row with a bit of centered breathing room */
-            <div className="col-6 col-lg-3 col-md-6" key={singleFeature.id}>
+            /* Responsive grid: 1 per row on mobile, 2 on tablet, 4 on desktop */
+            <div className="col-12 col-md-6 col-lg-3" key={singleFeature.id}>
               <FeatureIconSingle
                 singleFeature={singleFeature}
               />

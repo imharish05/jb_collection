@@ -347,9 +347,10 @@ const Cart = () => {
 
                     const rate = currency.currencyRate || 1;
                     let unitPrice = parseFloat(item.price || 0) * rate;
-                    if (gstMode === "Exclusive") {
+                    // Exclusive GST is calculated and displayed at checkout, keep cart row clean
+                    /* if (gstMode === "Exclusive") {
                       unitPrice = unitPrice * (1 + gstRate / 100);
-                    }
+                    } */
                     const finalPrice = unitPrice.toFixed(2);
                     const finalDisc = null;  // no client-side discount — price is already final
                     const lineTotal = (unitPrice * item.quantity).toFixed(2);
