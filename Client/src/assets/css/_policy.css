@@ -45,12 +45,12 @@
   .policy-hero h1 {
     font-size: 36px;
     font-weight: 700;
-    color: #fff;
+    color: #fff !important;
     margin: 0 0 10px;
   }
 
   .policy-hero p {
-    color: #ffffffaa;
+    color: #fff !important;
     font-size: 14px;
     margin: 0;
   }

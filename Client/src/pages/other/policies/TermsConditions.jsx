@@ -8,25 +8,22 @@ const TermsConditions = () => {
   const { pathname } = useLocation();
 
   const sections = [
-    "Pricing & Orders",
-    "Product Variations",
-    "Customized, Personalized & Bulk Orders",
-    "Pre-Booking Orders",
-    "Processing & Delivery",
-    "Returns & Replacements",
-    "Shipping Charges",
-    "Order Refusal & Cancellation",
-    "Promotional Use of Content",
+    "Products",
+    "Pricing",
+    "Orders",
+    "Payments",
+    "Shipping",
+    "Returns & Refunds",
     "Intellectual Property",
-    "Amendments",
-    "Contact",
+    "Limitation of Liability",
+    "Governing Law"
   ];
 
   return (
     <Fragment>
       <SEO
-        titleTemplate="Terms & Conditions – JB House of Fashion"
-        description="Read the Terms and Conditions for shopping at JB House of Fashion — customized gifts, toys, and stationery."
+        titleTemplate="Terms & Conditions – JB Tex & Tailors"
+        description="Read the Terms and Conditions for shopping at JB Tex & Tailors — girls' clothing for sale across India."
       />
       <LayoutOne headerTop="visible">
         <Breadcrumb
@@ -55,7 +52,7 @@ const TermsConditions = () => {
           <div className="policy-body">
             <div style={{ marginBottom: 40 }}>
               <p style={{ fontSize: 15, lineHeight: 1.85, color: "#444" }}>
-                By accessing and placing an order through our website, you agree to the following Terms &amp; Conditions.
+                By accessing or using this website, you agree to comply with these Terms &amp; Conditions.
               </p>
             </div>
 
@@ -72,154 +69,111 @@ const TermsConditions = () => {
             <div className="policy-section" id="tc-1">
               <div className="policy-section-header">
                 <div className="policy-section-num">1</div>
-                <h2>Pricing &amp; Orders</h2>
+                <h2>Products</h2>
               </div>
-              <ul className="policy-ul">
-                <li>All product prices are displayed in the applicable currency and are subject to change without prior notice.</li>
-                <li>Orders are considered confirmed only after successful payment and order verification.</li>
-              </ul>
+              <p>
+                JB Tex &amp; Tailors offers girls' clothing for sale across India.
+              </p>
+              <p>
+                Product images and descriptions are provided as accurately as possible. Actual colors may vary slightly due to screen settings and lighting.
+              </p>
             </div>
 
             {/* 2 */}
             <div className="policy-section" id="tc-2">
               <div className="policy-section-header">
                 <div className="policy-section-num">2</div>
-                <h2>Product Variations</h2>
+                <h2>Pricing</h2>
               </div>
-              <ul className="policy-ul">
-                <li>Product images are for illustrative purposes only. Minor variations in color, size, packaging, or finish may occur due to photography, screen settings, manufacturing processes, or supplier variations.</li>
-              </ul>
+              <p>
+                All prices are displayed in Indian Rupees (INR) and are inclusive of applicable taxes unless stated otherwise.
+              </p>
+              <p>
+                Prices may change without prior notice.
+              </p>
             </div>
 
             {/* 3 */}
             <div className="policy-section" id="tc-3">
               <div className="policy-section-header">
                 <div className="policy-section-num">3</div>
-                <h2>Customized, Personalized &amp; Bulk Orders</h2>
+                <h2>Orders</h2>
               </div>
-              <div className="policy-warning">
-                Customized, personalized, made-to-order, and bulk orders are produced according to customer requirements and are <strong>not eligible for cancellation, return, or refund</strong> once production has commenced.
-              </div>
+              <p>
+                JB Tex &amp; Tailors reserves the right to accept, reject, or cancel any order due to:
+              </p>
+              <ul className="policy-ul">
+                <li>Product unavailability</li>
+                <li>Pricing or technical errors</li>
+                <li>Payment failure</li>
+                <li>Suspected fraudulent activity</li>
+              </ul>
             </div>
 
             {/* 4 */}
             <div className="policy-section" id="tc-4">
               <div className="policy-section-header">
                 <div className="policy-section-num">4</div>
-                <h2>Pre-Booking Orders</h2>
+                <h2>Payments</h2>
               </div>
-              <ul className="policy-ul">
-                <li>Certain products are offered on a pre-booking basis and may be imported, manufactured, or specially sourced only after a confirmed order is placed.</li>
-                <li>Pre-booking products may require <strong>up to 20 days or more</strong> before dispatch, depending on manufacturing, sourcing, or import timelines.</li>
-                <li>Pre-booking orders <strong>cannot be canceled, modified, or refunded</strong> by the customer after confirmation.</li>
-                <li>In exceptional circumstances where we are unable to manufacture, source, or import a pre-booked product, we reserve the right to cancel the order and provide a <strong>full refund</strong> of the amount paid.</li>
-              </ul>
+              <p>
+                Payments must be completed through the available secure payment methods before an order is processed.
+              </p>
             </div>
 
             {/* 5 */}
             <div className="policy-section" id="tc-5">
               <div className="policy-section-header">
                 <div className="policy-section-num">5</div>
-                <h2>Processing &amp; Delivery</h2>
+                <h2>Shipping</h2>
               </div>
-              <ul className="policy-ul">
-                <li>Standard orders are generally processed within <strong>1–3 business days</strong>, while customized, bulk, or pre-booking orders may require additional processing time.</li>
-                <li>Delivery timelines are estimates only and may be affected by courier delays, weather conditions, customs clearance, public holidays, or other circumstances beyond our control.</li>
-                <li>Customers are responsible for providing accurate shipping and contact information. We are not liable for delays or losses resulting from incorrect details provided by the customer.</li>
-              </ul>
+              <p>
+                Delivery timelines are estimates and may vary depending on location, courier operations, weather conditions, or unforeseen circumstances.
+              </p>
             </div>
 
             {/* 6 */}
             <div className="policy-section" id="tc-6">
               <div className="policy-section-header">
                 <div className="policy-section-num">6</div>
-                <h2>Returns &amp; Replacements</h2>
+                <h2>Returns &amp; Refunds</h2>
               </div>
-              <ul className="policy-ul">
-                <li>Returns and replacements are accepted only for products that are damaged, defective, or incorrectly supplied, subject to verification.</li>
-                <li>Claims regarding damaged, defective, or incorrect products must be reported within the specified return window along with supporting photographs and parcel opening videos.</li>
-              </ul>
+              <p>
+                Returns and refunds are subject to our Refund &amp; Return Policy.
+              </p>
             </div>
 
             {/* 7 */}
             <div className="policy-section" id="tc-7">
               <div className="policy-section-header">
                 <div className="policy-section-num">7</div>
-                <h2>Shipping Charges</h2>
+                <h2>Intellectual Property</h2>
               </div>
-              <ul className="policy-ul">
-                <li>Shipping charges, if applicable, are <strong>non-refundable</strong> except where an incorrect or damaged product has been delivered by us.</li>
-              </ul>
+              <p>
+                All website content, including logos, product images, graphics, text, and designs, is the property of JB Tex &amp; Tailors and may not be copied, reproduced, or distributed without prior written permission.
+              </p>
             </div>
 
             {/* 8 */}
             <div className="policy-section" id="tc-8">
               <div className="policy-section-header">
                 <div className="policy-section-num">8</div>
-                <h2>Order Refusal &amp; Cancellation</h2>
+                <h2>Limitation of Liability</h2>
               </div>
-              <ul className="policy-ul">
-                <li>We reserve the right to refuse, cancel, or limit any order if fraudulent activity, pricing errors, stock unavailability, or other operational issues are identified.</li>
-              </ul>
+              <p>
+                JB Tex &amp; Tailors shall not be liable for any indirect, incidental, or consequential damages arising from the use of this website or the purchase of products.
+              </p>
             </div>
 
             {/* 9 */}
             <div className="policy-section" id="tc-9">
               <div className="policy-section-header">
                 <div className="policy-section-num">9</div>
-                <h2>Promotional Use of Content</h2>
-              </div>
-              <div className="policy-highlight">
-                <p>
-                  With customer consent, we may use product photographs, customer reviews, testimonials, first names, and city/state/country information for promotional and marketing purposes on our website, social media platforms, advertisements, and other marketing materials. Sensitive personal information will never be disclosed.
-                </p>
-              </div>
-            </div>
-
-            {/* 10 */}
-            <div className="policy-section" id="tc-10">
-              <div className="policy-section-header">
-                <div className="policy-section-num">10</div>
-                <h2>Intellectual Property</h2>
-              </div>
-              <ul className="policy-ul">
-                <li>All website content, including images, logos, designs, text, and branding, remains the intellectual property of <strong>JB House of Fashion Factory</strong> and may not be copied, reproduced, or distributed without prior written permission.</li>
-              </ul>
-            </div>
-
-            {/* 11 */}
-            <div className="policy-section" id="tc-11">
-              <div className="policy-section-header">
-                <div className="policy-section-num">11</div>
-                <h2>Amendments</h2>
+                <h2>Governing Law</h2>
               </div>
               <p>
-                JB House of Fashion Factory reserves the right to modify these Terms &amp; Conditions at any time without prior notice. Updated terms will be posted on this page and will become effective immediately upon publication.
+                These Terms &amp; Conditions shall be governed by the laws of India. Any disputes shall be subject to the jurisdiction of the courts of Tiruchirappalli, Tamil Nadu.
               </p>
-            </div>
-
-            {/* 12 */}
-            <div className="policy-section" id="tc-12">
-              <div className="policy-section-header">
-                <div className="policy-section-num">12</div>
-                <h2>Contact</h2>
-              </div>
-              <p>For any queries related to these Terms &amp; Conditions:</p>
-              <div className="policy-contact-box">
-                <div>
-                  <h3>JB House of Fashion Factory</h3>
-                  <p>Mon–Sat, 9 AM – 6 PM IST.</p>
-                </div>
-                <div className="policy-contact-items">
-                  <div className="policy-contact-item"><span>Email</span> jbbeautyandfashion@gmail.com</div>
-                  <div className="policy-contact-item"><span>WhatsApp</span> +91 95008 48860</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="policy-last-updated">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              These Terms were last reviewed and updated in June 2026.
             </div>
 
           </div>

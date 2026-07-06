@@ -58,6 +58,7 @@ const PrivacyPolicy = lazy(() => import("./pages/other/policies/PrivacyPolicy"))
 const TermsConditions = lazy(() => import("./pages/other/policies/TermsConditions"));
 const ShippingPolicy = lazy(() => import("./pages/other/policies/ShippingPolicy"));
 const ExchangePolicy = lazy(() => import("./pages/other/policies/ExchangePolicy"));
+const CancellationPolicy = lazy(() => import("./pages/other/policies/CancellationPolicy"));
 
 const App = () => {
   const dispatch = useDispatch();
@@ -198,6 +199,7 @@ useEffect(() => {
             <Route path={process.env.PUBLIC_URL + "/terms-conditions"} element={<TermsConditions />} />
             <Route path={process.env.PUBLIC_URL + "/shipping-policy"} element={<ShippingPolicy />} />
             <Route path={process.env.PUBLIC_URL + "/exchange-policy"} element={<ExchangePolicy />} />
+            <Route path={process.env.PUBLIC_URL + "/cancellation-policy"} element={<CancellationPolicy />} />
             <Route path={process.env.PUBLIC_URL + "/payment-policy"} element={<PaymentPolicy/>} />
             <Route path={process.env.PUBLIC_URL + "/compare"} element={<Compare />} />
             <Route path={process.env.PUBLIC_URL + "/blog-standard"} element={<BlogStandard />} />
