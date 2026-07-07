@@ -37,6 +37,15 @@ const parseAttributes = (attributes) => {
   return attributes || [];
 };
 
+const getVariantSignature = (attributes) => {
+  const parsed = parseAttributes(attributes);
+  return parsed
+    .filter(a => a.key && a.value !== undefined && a.value !== null && String(a.value).trim() !== '')
+    .map(a => `${a.key.trim().toLowerCase()}:${a.value.trim().toLowerCase()}`)
+    .sort()
+    .join(';');
+};
+
 // ── Cartesian expand helpers ────────────────────────────────────────────────
 
 // Compute cartesian product of arrays of values.
@@ -242,6 +251,31 @@ const add = async (req, res) => {
 
     // ── Fetch existing variants once for cartesian expansion ─────────────
     const existingVariants = await Variant.findAll({ where: { productId } });
+    const existingSignatures = existingVariants.map(v => getVariantSignature(v.attributes));
+    const incomingSignatures = [];
+
+    // Verify uniqueness of incoming variant combos and SKUs
+    for (const payload of incomingPayloads) {
+      const parsedAttributes = parseAttributes(payload.attributes || []);
+      const sig = getVariantSignature(parsedAttributes);
+      if (sig) {
+        if (existingSignatures.includes(sig)) {
+          return res.status(400).json({ message: `A variant with the options "${payload.variantName || sig}" already exists for this product.` });
+        }
+        if (incomingSignatures.includes(sig)) {
+          return res.status(400).json({ message: `Duplicate variant options for "${payload.variantName || sig}" specified in the request.` });
+        }
+        incomingSignatures.push(sig);
+      }
+
+      if (payload.sku) {
+        const skuVal = String(payload.sku).trim();
+        const conflict = await Variant.findOne({ where: { sku: skuVal } });
+        if (conflict) {
+          return res.status(400).json({ message: `SKU code "${skuVal}" is already in use by another variant.` });
+        }
+      }
+    }
 
     // ── Helper: build variantName from attribute combo ────────────────────
     const comboName = (attrs) =>
@@ -303,9 +337,41 @@ const update = async (req, res) => {
     const variant = await Variant.findByPk(req.params.id);
     if (!variant) return res.status(404).json({ message: "Not found" });
 
-    const { productId, variantName, mrp, salesPrice, stock, attributes, status, stockStatus, warningThreshold, shippingWeight, shippingDimensions } = req.body;
+    const { productId, variantName, mrp, salesPrice, stock, attributes, status, stockStatus, warningThreshold, shippingWeight, shippingDimensions, sku } = req.body;
     const oldProductId = variant.productId;
     const parsedAttributes = attributes !== undefined ? parseAttributes(attributes) : undefined;
+
+    const targetProductId = productId !== undefined ? productId : variant.productId;
+    const targetAttributes = attributes !== undefined ? parsedAttributes : variant.attributes;
+    
+    if (attributes !== undefined || productId !== undefined) {
+      const sig = getVariantSignature(targetAttributes);
+      if (sig) {
+        const existing = await Variant.findAll({
+          where: {
+            productId: targetProductId,
+            id: { [Op.ne]: variant.id }
+          }
+        });
+        const existingSignatures = existing.map(v => getVariantSignature(v.attributes));
+        if (existingSignatures.includes(sig)) {
+          return res.status(400).json({ message: "A variant with these options already exists for this product." });
+        }
+      }
+    }
+
+    if (sku !== undefined && String(sku).trim() !== '') {
+      const skuVal = String(sku).trim();
+      const conflict = await Variant.findOne({
+        where: {
+          sku: skuVal,
+          id: { [Op.ne]: variant.id }
+        }
+      });
+      if (conflict) {
+        return res.status(400).json({ message: `SKU code "${skuVal}" is already in use by another variant.` });
+      }
+    }
 
     if (mrp !== undefined && Number(mrp) <= 0) return res.status(400).json({ message: "MRP must be greater than 0" });
     if (salesPrice !== undefined && Number(salesPrice) <= 0) return res.status(400).json({ message: "Sales price must be greater than 0" });
@@ -336,6 +402,7 @@ const update = async (req, res) => {
       ...(stockStatus !== undefined && { stockStatus }),
       ...(warningThreshold !== undefined && { warningThreshold: warningThreshold ? parseInt(warningThreshold) : 5 }),
       ...(parsedAttributes !== undefined && { attributes: parsedAttributes }),
+      ...(sku         !== undefined && { sku }),
       ...(status      !== undefined && { status }),
       ...(weightVal   !== undefined && { shippingWeight: weightVal }),
       ...(parsedDimensions !== undefined && { shippingDimensions: parsedDimensions }),

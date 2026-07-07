@@ -31,6 +31,15 @@ function safeAttrs(raw) {
   return [];
 }
 
+const getVariantSignature = (attributes) => {
+  const parsed = safeAttrs(attributes);
+  return parsed
+    .filter(a => a.key && a.value !== undefined && a.value !== null && String(a.value).trim() !== '')
+    .map(a => `${a.key.trim().toLowerCase()}:${a.value.trim().toLowerCase()}`)
+    .sort()
+    .join(';');
+};
+
 
 const validateProductImageDimensions = (file) => {
   return new Promise((resolve) => {
@@ -369,15 +378,47 @@ export default function Variants({ showToast }) {
       if (variantErrors.some(list => list.length)) {
         next.variantErrors = variantErrors;
       }
+
+      // Check duplicates within the builder list
+      const signatures = skus.map(s => getVariantSignature(s.attributes));
+      const duplicateIndices = [];
+      signatures.forEach((sig, idx) => {
+        if (sig && signatures.indexOf(sig) !== idx) {
+          duplicateIndices.push(idx);
+        }
+      });
+      if (duplicateIndices.length > 0) {
+        next.general = 'You have duplicate variant options in the list.';
+      }
+
+      const skusInput = skus.map(s => String(s.sku || '').trim().toLowerCase()).filter(Boolean);
+      const duplicateSkus = skusInput.filter((val, idx) => skusInput.indexOf(val) !== idx);
+      if (duplicateSkus.length > 0) {
+        next.general = (next.general ? next.general + ' ' : '') + 'Duplicate SKU codes found in the list.';
+      }
+
+      // Check duplicates against database existing variants
+      const existingVariants = (rows || []).filter(r => String(r.productId) === String(productId));
+      const existingSignatures = existingVariants.map(r => getVariantSignature(r.attributes));
+      const conflicts = signatures.filter(sig => sig && existingSignatures.includes(sig));
+      if (conflicts.length > 0) {
+        next.general = (next.general ? next.general + ' ' : '') + 'One or more variant combinations already exist in the database for this product.';
+      }
+
+      const existingSkus = (rows || []).map(r => String(r.sku || '').trim().toLowerCase()).filter(Boolean);
+      const skuConflicts = skusInput.filter(sku => existingSkus.includes(sku));
+      if (skuConflicts.length > 0) {
+        next.general = (next.general ? next.general + ' ' : '') + `SKU code "${skuConflicts[0]}" is already in use by another variant.`;
+      }
     }
     setErrors(next);
-    return !Object.keys(next).length;
+    return { valid: !Object.keys(next).length, errors: next };
   };
 
   const validateEdit = () => {
     const next = {};
     if (!productId) next.productId = 'Please select a product';
-    if (!editSku) return false;
+    if (!editSku) return { valid: false, errors: next };
 
     const mrp = Number(editSku.mrp);
     const salesPrice = Number(editSku.salesPrice);
@@ -404,8 +445,27 @@ export default function Variants({ showToast }) {
     if (editSku.stock === '' || editSku.stock === undefined || editSku.stock === null) next.stock = 'Enter stock';
     else if (Number.isNaN(stock) || stock < 0) next.stock = 'Stock cannot be negative';
 
+    // Check duplicates against database existing variants (excluding itself)
+    const existingVariants = (rows || []).filter(r => String(r.productId) === String(productId) && String(r.id) !== String(editSku.id));
+    const existingSignatures = existingVariants.map(r => getVariantSignature(r.attributes));
+    const editSignature = getVariantSignature(editSku.attributes);
+    if (editSignature && existingSignatures.includes(editSignature)) {
+      next.general = 'A variant with these options already exists for this product.';
+    }
+
+    const editSkuVal = String(editSku.sku || '').trim().toLowerCase();
+    if (editSkuVal) {
+      const existingSkus = (rows || [])
+        .filter(r => String(r.id) !== String(editSku.id))
+        .map(r => String(r.sku || '').trim().toLowerCase())
+        .filter(Boolean);
+      if (existingSkus.includes(editSkuVal)) {
+        next.sku = `SKU code "${editSku.sku}" is already in use by another variant.`;
+      }
+    }
+
     setErrors(next);
-    return !Object.keys(next).length;
+    return { valid: !Object.keys(next).length, errors: next };
   };
 
   // ── Async image dimension validation ──────────────────────────────────────
@@ -418,7 +478,11 @@ export default function Variants({ showToast }) {
   // All skus in the builder are new (new_ prefix), just POST each one.
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!validateAdd()) {
+    const { valid, errors: nextErrors } = validateAdd();
+    if (!valid) {
+      if (nextErrors.general) {
+        showToast.error(nextErrors.general);
+      }
       setTimeout(() => {
         const errorEl = document.querySelector('.field-error-msg');
         if (errorEl) {
@@ -466,7 +530,14 @@ export default function Variants({ showToast }) {
   // ── Submit EDIT ───────────────────────────────────────────────────────────
   const handleEdit = async (e) => {
     e.preventDefault();
-    if (!validateEdit()) {
+    const { valid, errors: nextErrors } = validateEdit();
+    if (!valid) {
+      if (nextErrors.general) {
+        showToast.error(nextErrors.general);
+      }
+      if (nextErrors.sku) {
+        showToast.error(nextErrors.sku);
+      }
       setTimeout(() => {
         const errorEl = document.querySelector('.field-error-msg');
         if (errorEl) {

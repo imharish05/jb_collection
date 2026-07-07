@@ -242,6 +242,9 @@
 .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
 .status-pill.delivered { background: #e8f5e9; color: #2e7d32; }
 .status-pill.shipped { background: #e3f2fd; color: #1565c0; }
+.status-pill.processing { background: #f0e1ff; color: #8252e9; }
+.status-pill.pending { background: #efebe9; color: #4e342e; }
+.status-pill.returned { background: #fbe9e7; color: #d84315; }
 
 .order-card-body { padding: 10px 20px; }
 .product-row { display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #f9f9f9; }

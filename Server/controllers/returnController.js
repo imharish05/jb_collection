@@ -210,24 +210,10 @@ const cancelOrder = async (req, res, next) => {
     });
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    // Within 24 hours
-    if (hoursSince(order.createdAt) > 24)
-      return res.status(400).json({ message: "Cancellation window expired (24 hours from placement)" });
-
     // Status check
-    const nonCancellableStatuses = ["confirmed", "shipped", "processing", "delivered", "cancelled"];
+    const nonCancellableStatuses = ["shipped", "processing", "out_for_delivery", "delivered", "cancelled", "returned"];
     if (nonCancellableStatuses.includes(order.status))
-      return res.status(400).json({ message: "Order cannot be cancelled at this stage" });
-
-    // Customised items
-    if (order.status !== "pending" && order.items) {
-      const hasCustom = order.items.some(
-        (item) => 
-          (item.customisationDetails && Object.keys(item.customisationDetails).length > 0)
-      );
-      if (hasCustom)
-        return res.status(400).json({ message: "Customised items in production cannot be cancelled" });
-    }
+      return res.status(400).json({ message: "Order cannot be cancelled after dispatch or shipment" });
 
     // Update order status
     order.status = "cancelled";

@@ -39,6 +39,15 @@ const getImageUrl = (imagePath) => {
   return `${IMG_URL}/uploads/${filename}`;
 };
 
+const getVariantSignature = (attributes) => {
+  if (!Array.isArray(attributes)) return '';
+  return attributes
+    .filter(a => a.key && a.value !== undefined && a.value !== null && String(a.value).trim() !== '')
+    .map(a => `${a.key.trim().toLowerCase()}:${a.value.trim().toLowerCase()}`)
+    .sort()
+    .join(';');
+};
+
 // Convert a full URL back to the relative path the server stores (uploads/products/file.jpg)
 const toRelativePath = (url) => {
   if (!url || url.startsWith('blob:')) return null;
@@ -488,6 +497,24 @@ export default function Products({ showToast }) {
       next.fullDescription = `Long description must be at least ${DESC_LIMITS.long.minWords} words (currently ${longWordCount}).`;
     }
 
+    // Check duplicates inside the variant table
+    const signatures = (variants || []).map(v => getVariantSignature(v.attributes));
+    const duplicateSignatures = signatures.filter((sig, idx) => sig && signatures.indexOf(sig) !== idx);
+
+    const skusInput = (variants || []).map(v => String(v.sku || '').trim().toLowerCase()).filter(Boolean);
+    const duplicateSkus = skusInput.filter((sku, idx) => skusInput.indexOf(sku) !== idx);
+
+    // Get list of existing SKUs on other products
+    const existingGlobalSkus = [];
+    (allProducts || []).forEach(p => {
+      if (editingId && String(p.id) === String(editingId)) return;
+      if (Array.isArray(p.variation)) {
+        p.variation.forEach(v => {
+          if (v.sku) existingGlobalSkus.push(String(v.sku).trim().toLowerCase());
+        });
+      }
+    });
+
     variants.forEach((v, index) => {
       const messages = [];
       const mrp = Number(v.mrp);
@@ -512,6 +539,19 @@ export default function Products({ showToast }) {
         emptyAttrs.forEach(a => {
           messages.push(`${a.key} is mandatory`);
         });
+      }
+
+      const sig = getVariantSignature(v.attributes);
+      if (sig && duplicateSignatures.includes(sig)) {
+        messages.push('Duplicate variant combination in table');
+      }
+
+      const skuVal = String(v.sku || '').trim().toLowerCase();
+      if (skuVal && duplicateSkus.includes(skuVal)) {
+        messages.push('Duplicate SKU code in table');
+      }
+      if (skuVal && existingGlobalSkus.includes(skuVal)) {
+        messages.push('SKU code is already used by another product');
       }
 
       if (!v.mrp) messages.push('Enter MRP');

@@ -467,6 +467,31 @@ const toggleVisibility = (field) => {
                   {activeTab === "orders" && (
                     <div className="tab-card animate-fade-in">
                       <h3>Order History</h3>
+                      <style dangerouslySetInnerHTML={{__html: `
+                        .order-card-footer {
+                          background: #fff !important;
+                          color: #000 !important;
+                        }
+                        .order-footer-left, .order-footer-right {
+                          background: #fff !important;
+                          color: #000 !important;
+                        }
+                        .order-footer-left p, .order-footer-left p strong, .order-total-price {
+                          color: #000 !important;
+                          background: #fff !important;
+                          margin: 0;
+                        }
+                        .btn-view-order {
+                          background: #fff !important;
+                          color: #000 !important;
+                          border: 1px solid #ddd !important;
+                        }
+                        .btn-view-order:hover {
+                          background: #000 !important;
+                          color: #fff !important;
+                          border-color: #000 !important;
+                        }
+                      `}} />
                       <div className="order-list-container mt-4">
                         {ordersLoading && <p style={{ color: "#999", fontSize: 13 }}>Loading orders...</p>}
                         {!ordersLoading && orders.length === 0 && (
@@ -477,10 +502,20 @@ const toggleVisibility = (field) => {
                         )}
                         {!ordersLoading && orders.length > 0 && orders.map((order) => {
                           // ── Cancel order eligibility ──────────────────────────
-                          const hoursFromCreated = hoursSince(order.createdAt);
-                          const orderStatusLow = order.status?.toLowerCase() || "";
-                          const nonCancellableStatuses = ["confirmed", "shipped", "processing", "delivered", "cancelled"];
-                          const canCancel = hoursFromCreated < 24 && !nonCancellableStatuses.includes(orderStatusLow);
+                           const orderStatusLow = order.status?.toLowerCase() || "";
+                           const nonCancellableStatuses = ["shipped", "processing", "out_for_delivery", "delivered", "cancelled", "returned"];
+                           const canCancel = !nonCancellableStatuses.includes(orderStatusLow);
+
+                            const statusMap = {
+                              pending: "Placed",
+                              confirmed: "Processing",
+                              processing: "Out for Delivery",
+                              shipped: "Shipped",
+                              delivery: "Out for Delivery",
+                              delivered: "Delivered",
+                              cancelled: "Cancelled",
+                              returned: "Returned",
+                            };
 
                           const handleCancelFromAccount = async () => {
                             const result = await Swal.fire({
@@ -527,15 +562,14 @@ const toggleVisibility = (field) => {
                               },
                             });
                           };
-
                           return (
                           <div className="order-main-card" key={order.id}>
                             <div className="order-card-header">
                               <div className="header-left">
-                                <span className="order-label">Order <strong style={{ fontFamily: 'monospace', fontSize: '12px' }}>{order.referenceSlug || order.id}</strong></span>
+                                 <span className="order-label" style={{ fontSize: "14px", fontWeight: "600", color: "#555" }}>Order <strong style={{ color: "#111", fontWeight: "700", marginLeft: "4px", fontFamily: "inherit" }}>#{order.referenceSlug || order.id}</strong></span>
                               </div>
                               <div className="header-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                <span className={`status-pill ${orderStatusLow || 'pending'}`}>{order.status || 'Pending'}</span>
+                                <span className={`status-pill ${orderStatusLow || 'pending'}`}>{statusMap[orderStatusLow] || order.status || 'Pending'}</span>
                                 {canCancel && (
                                   <button
                                     onClick={handleCancelFromAccount}
@@ -573,8 +607,8 @@ const toggleVisibility = (field) => {
                               )}
                             </div>
                             <div className="order-card-footer">
-                              <div className="footer-left"><p>Placed on: <strong>{new Date(order.createdAt).toLocaleDateString()}</strong></p></div>
-                              <div className="footer-right w-100 d-flex align-items-center justify-content-between">
+                              <div className="order-footer-left"><p>Placed on: <strong>{new Date(order.createdAt).toLocaleDateString()}</strong></p></div>
+                              <div className="order-footer-right w-100 d-flex align-items-center justify-content-between">
                                  {order.status?.toLowerCase() === "cancelled" ? (() => {
                                   const refund = order.refunds?.[0];
                                   const refundAmt = refund ? parseFloat(refund.refundAmount) : parseFloat(order.totalAmount);

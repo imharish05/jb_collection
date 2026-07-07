@@ -144,11 +144,10 @@ const OrderDetails = () => {
 
   const renderCancelButton = () => {
     if (!order) return null;
-    const hours = hoursSince(order.createdAt);
     const orderStatusLower = order.status?.toLowerCase();
-    const nonCancellable = ["confirmed", "shipped", "processing", "delivered", "cancelled"];
+    const nonCancellable = ["shipped", "processing", "out_for_delivery", "delivered", "cancelled", "returned"];
     
-    const cancellable = hours < 24 && !nonCancellable.includes(orderStatusLower);
+    const cancellable = !nonCancellable.includes(orderStatusLower);
 
     if (!cancellable) return null;
 
@@ -627,25 +626,6 @@ const couponDiscount =
                       ) : (
                         <p style={{ color: "#999" }}>No order items found</p>
                       )}
-
-                      <div className="premium-total-footer">
-                        {priceRows.map((row) => (
-                          <div key={row.key} className={`total-line ${row.footerClassName || ""}`}>
-                            <span>{row.label}</span>
-                            <span className={row.valueClassName || ""}>{row.value}</span>
-                          </div>
-                        ))}
-                        <div className="total-line grand-total">
-                          <span>Grand Total</span>
-                          <span>{formatCurrency(totalAmount)}</span>
-                        </div>
-                        {paymentRows.map((row) => (
-                          <div key={row.key} className={`total-line ${row.footerClassName || ""}`}>
-                            <span>{row.label}</span>
-                            <span className={row.valueClassName || ""}>{row.value}</span>
-                          </div>
-                        ))}
-                      </div>
                     </div>
                   </div>
                 </div>

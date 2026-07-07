@@ -531,7 +531,7 @@ const maybeCreateStockNotification = async (variant, newStatus, productName) => 
 
   await Notification.create({
     type: newType,
-    title: `${emojiMap[newStatus]} ${titleMap[newStatus]}`,
+    title: titleMap[newStatus],
     message: msgMap[newStatus],
     isRead: false,
     metadata: { variantId: variant.id, productId: variant.productId, stock, variantLabel, productName },
@@ -584,7 +584,7 @@ const createOrderNotification = async (order) => {
     const ref = order.referenceSlug || order.id?.toString().slice(-6)?.toUpperCase() || "NEW";
     await Notification.create({
       type: "order",
-      title: "🛒 New Order Received",
+      title: "New Order Received",
       message: `Order #${ref} placed\n₹${Number(order.totalAmount || 0).toLocaleString("en-IN")}`,
       isRead: false,
       metadata: { orderId: order.id, reference: ref, totalAmount: order.totalAmount },

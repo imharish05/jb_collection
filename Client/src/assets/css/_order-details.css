@@ -14,7 +14,7 @@
 
 /* Sidebar Panels */
 .side-card { background: #fff; border-radius: 20px; padding: 25px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.05); }
-.status-box { background: #1a1a1a; color: #fff; position: relative; overflow: hidden; }
+.status-box { color: #fff; position: relative; overflow: hidden; }
 .status-box h4 { font-weight: 800; color: #fff; margin: 0; }
 .mini-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 5px;font-weight: 700; }
 
@@ -100,7 +100,7 @@
   font-weight: 900;
 }
 
-/* Payment status — visually separated from the cost breakdown above,
+/* Payment status ï¿½ visually separated from the cost breakdown above,
    and styled as calm pills so "paid" and "due" read at a glance. */
 .payment-status-block {
   margin-top: 14px;

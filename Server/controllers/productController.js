@@ -43,6 +43,15 @@ function safeParse(val, fallback = []) {
   return fallback;
 }
 
+const getVariantSignature = (attributes) => {
+  const parsed = safeParse(attributes, []);
+  return parsed
+    .filter(a => a.key && a.value !== undefined && a.value !== null && String(a.value).trim() !== '')
+    .map(a => `${a.key.trim().toLowerCase()}:${a.value.trim().toLowerCase()}`)
+    .sort()
+    .join(';');
+};
+
 const isAllCategory = value =>
   ["all", "all-categories", "all-products"].includes(String(value || "").toLowerCase());
 
@@ -236,6 +245,32 @@ const createProduct = async (req, res, next) => {
     const parsedVariants  = variants ? safeParse(variants, []) : [];
     const parsedTags      = tag      ? safeParse(tag,      []) : [];
 
+    // Verify uniqueness of incoming variant options and SKUs inside parsedVariants
+    const incomingSignatures = [];
+    const incomingSkus = [];
+    for (const v of parsedVariants) {
+      const sig = getVariantSignature(v.attributes);
+      if (sig) {
+        if (incomingSignatures.includes(sig)) {
+          return res.status(400).json({ message: `Duplicate variant options for "${v.variantName || sig}" specified in the request.` });
+        }
+        incomingSignatures.push(sig);
+      }
+
+      if (v.sku) {
+        const skuVal = String(v.sku).trim();
+        if (incomingSkus.includes(skuVal)) {
+          return res.status(400).json({ message: `Duplicate SKU code "${skuVal}" specified inside the product variants.` });
+        }
+        incomingSkus.push(skuVal);
+
+        const conflict = await Variant.findOne({ where: { sku: skuVal } });
+        if (conflict) {
+          return res.status(400).json({ message: `SKU code "${skuVal}" is already in use by another variant.` });
+        }
+      }
+    }
+
     // derive price + stock from first variant if provided
     const price = parsedVariants.length > 0
       ? parseFloat(parsedVariants[0].salesPrice) || 0
@@ -324,6 +359,38 @@ const updateProduct = async (req, res, next) => {
     const image          = newImages ? [...existingImages, ...newImages] : (existingImages.length ? existingImages : safeParse(product.image, []));
     const parsedVariants = variants ? safeParse(variants, null) : null;
     const parsedTags     = tag      ? safeParse(tag,      safeParse(product.tag, [])) : safeParse(product.tag, []);
+
+    if (parsedVariants) {
+      const incomingSignatures = [];
+      const incomingSkus = [];
+      for (const v of parsedVariants) {
+        const sig = getVariantSignature(v.attributes);
+        if (sig) {
+          if (incomingSignatures.includes(sig)) {
+            return res.status(400).json({ message: `Duplicate variant options for "${v.variantName || sig}" specified in the request.` });
+          }
+          incomingSignatures.push(sig);
+        }
+
+        if (v.sku) {
+          const skuVal = String(v.sku).trim();
+          if (incomingSkus.includes(skuVal)) {
+            return res.status(400).json({ message: `Duplicate SKU code "${skuVal}" specified inside the product variants.` });
+          }
+          incomingSkus.push(skuVal);
+
+          const conflict = await Variant.findOne({
+            where: {
+              sku: skuVal,
+              productId: { [Op.ne]: product.id }
+            }
+          });
+          if (conflict) {
+            return res.status(400).json({ message: `SKU code "${skuVal}" is already in use by another variant.` });
+          }
+        }
+      }
+    }
 
     const price = parsedVariants
       ? parseFloat(parsedVariants[0]?.salesPrice) || product.price
