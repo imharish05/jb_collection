@@ -49,11 +49,13 @@ const COLOR_MAP = {
   all: "linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff)",
 };
 const LIGHT_COLORS = new Set(["white","ivory","cream","yellow","lime","gold","amber","silver","bronze"]);
+const dynamicColorMap = {};
+
 function toHex(name) {
   if (!name) return null;
   const l = name.trim().toLowerCase();
   if (l.startsWith("#")) return l;
-  return COLOR_MAP[l] || null;
+  return dynamicColorMap[l] || COLOR_MAP[l] || null;
 }
 
 const KEY_ALIASES = { color: "Colour", colour: "Colour", size: "Size", material: "Material", finish: "Finish", capacity: "Capacity" };
@@ -188,6 +190,23 @@ function AttributeGroup({ attrKey, allValues, selectedValue, compatibleSet, onSe
 function ProductModal({ product, currency, discountedPrice, finalProductPrice, finalDiscountedPrice, show, onHide, wishlistItem, compareItem }) {
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const { cartItems } = useSelector((state) => state.cart);
+
+  // Populate dynamicColorMap from current variants
+  if (product && Array.isArray(product.Variants)) {
+    product.Variants.forEach(v => {
+      let attrs = [];
+      if (typeof v.attributes === "string") {
+        try { attrs = JSON.parse(v.attributes); } catch (e) { attrs = []; }
+      } else if (Array.isArray(v.attributes)) {
+        attrs = v.attributes;
+      }
+      const colAttr = attrs.find(a => /colou?r/i.test(a.key));
+      const hexAttr = attrs.find(a => /colourhex/i.test(a.key));
+      if (colAttr && hexAttr) {
+        dynamicColorMap[colAttr.value.toLowerCase().trim()] = hexAttr.value.trim();
+      }
+    });
+  }
 
   const hasNewVar = hasBackendVariants(product);
   const hasOldVar = !hasNewVar && hasOldVariation(product);

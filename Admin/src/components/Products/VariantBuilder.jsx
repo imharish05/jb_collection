@@ -92,6 +92,7 @@ export const renderVariantLabel = (str, circleSize = 12, spacing = 4) => {
       const valPart = part.slice(part.indexOf(':') + 1).trim();
       if (/colourhex/i.test(keyPart)) return false; // skip ColourHex key
       if (isHexColor(valPart)) return false; // skip value if it is hex color
+      if (valPart === '') return false; // skip if value is empty
     }
     return true;
   });
@@ -542,6 +543,33 @@ function OptionRow({ option, onChange, onRemove, canRemove, allOtherKeys }) {
 function SkuRow({ sku, index, onChange, onDelete, errors = [] }) {
   const imgRef = useRef();
   const [imgError, setImgError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    setImgError('');
+    validateVariantImage(file).then((result) => {
+      if (!result.valid) {
+        setImgError(result.error);
+        return;
+      }
+      onChange({ ...sku, imageFile: file, imagePreview: URL.createObjectURL(file) });
+    });
+  };
 
   const handleImg = (e) => {
     const file = e.target.files?.[0];
@@ -591,7 +619,25 @@ function SkuRow({ sku, index, onChange, onDelete, errors = [] }) {
           </div>
         ) : (
           <div onClick={() => imgRef.current?.click()}
-            style={{ width: 90, height: 90, border: `2px dashed ${imgError ? KM.red : KM.teal}`, borderRadius: 10, background: imgError ? KM.redLight : '#F0FAFE', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            style={{
+              width: 90,
+              height: 90,
+              border: `2px dashed ${imgError ? KM.red : dragActive ? '#00b4d8' : KM.teal}`,
+              borderRadius: 10,
+              background: imgError ? KM.redLight : dragActive ? 'rgba(0,180,216,0.08)' : '#F0FAFE',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              transition: 'all 0.2s ease',
+            }}
+          >
             <span style={{ fontSize: 26 }}>🖼️</span>
             <span style={{ fontSize: 10, color: imgError ? KM.red : KM.teal, fontWeight: 700 }}>Upload</span>
           </div>
@@ -809,7 +855,7 @@ export default function VariantBuilder({ variants = [], onChange, errors = {}, e
       const openChoiceMap = {}; // key → open-choice config
       variants.forEach(v => {
         (v.attributes || []).forEach(a => {
-          if (!a.key || a.key === 'Custom Note') return;
+          if (!a.key || a.key.startsWith('Custom Note')) return;
           if (a.isOpenChoice) {
             // Carry open-choice config through
             if (!openChoiceMap[a.key]) openChoiceMap[a.key] = a;

@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Heart } from "lucide-react";
 import {
   addToCartService,
@@ -68,10 +68,11 @@ const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
   if (!attrs || attrs.length === 0) return null;
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-      {attrs.map((a, i) => {
+      {attrs.filter(a => a.key !== "ColourHex").map((a, i) => {
         const isCol = isColourKey(a.key);
-        const hasPreview = isCol && isHexColor(a.value);
-        const displayVal = hasPreview ? a.value.toUpperCase() : a.value;
+        const hexAttr = attrs.find(x => x.key === "ColourHex");
+        const hasSwatch = isCol && hexAttr && isHexColor(hexAttr.value);
+        const swatchColor = hasSwatch ? hexAttr.value : "";
         return (
           <span
             key={i}
@@ -84,25 +85,25 @@ const VariantChips = ({ attrs, fontSize = 10, swatchSize = 12 }) => {
               display: "inline-flex",
               alignItems: "center",
               gap: 4,
+              whiteSpace: "nowrap",
             }}
           >
             <span>{a.key}:</span>
-            {hasPreview ? (
+            {hasSwatch && (
               <span
                 style={{
                   width: swatchSize,
                   height: swatchSize,
                   borderRadius: "50%",
                   border: "1px solid #dcdcdc",
-                  backgroundColor: displayVal,
+                  backgroundColor: swatchColor,
                   display: "inline-block",
                   flexShrink: 0,
                 }}
-                title={displayVal}
+                title={a.value}
               />
-            ) : (
-              <span>{displayVal}</span>
             )}
+            <span>{a.value}</span>
           </span>
         );
       })}

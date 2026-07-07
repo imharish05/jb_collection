@@ -217,33 +217,44 @@ useEffect(() => {
       <LayoutOne headerTop="visible">
         <div className="container" style={{ padding: "30px 15px" }}>
 
+          <style dangerouslySetInnerHTML={{__html: `
+            .thank-you-banner-title {
+              color: #fff !important;
+            }
+            .thank-you-banner-text {
+              color: rgba(255, 255, 255, 0.9) !important;
+            }
+          `}} />
+
           {/* ── Thank you banner (UNCHANGED) ─────────────────────────────── */}
           <div
             style={{
-              background: "linear-gradient(135deg, rgba(223, 77, 129, 0.4) 0%, rgb(255, 232, 214) 100%)",
+              background: "linear-gradient(135deg, var(--theme-color) 0%, #8c0e3b 100%)",
               borderRadius: 20,
               padding: "48px 32px",
               textAlign: "center",
-              border: "1.5px solid #f0c9a0",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              boxShadow: "0 10px 25px rgba(222, 26, 103, 0.15)",
               marginBottom: 40,
             }}
           >
             <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#000", marginBottom: 8 }}>
+            <h2 className="thank-you-banner-title" style={{ fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 8 }}>
               Thank you, {selectedAddr?.fullName?.split(" ")[0] || "Customer"}!
             </h2>
-            <p style={{ color: "#666", fontSize: 16, marginBottom: 20 }}>
+            <p className="thank-you-banner-text" style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: 16, marginBottom: 20 }}>
               Your order has been placed successfully. We'll get it packed with love! 💝
             </p>
             <div
               style={{
                 display: "inline-block",
-                background: "rgba(223, 77, 129)",
+                background: "rgba(255, 255, 255, 0.18)",
                 color: "#fff",
                 borderRadius: 30,
                 padding: "10px 32px",
                 fontWeight: 700,
                 letterSpacing: 1,
+                border: "1px solid rgba(255, 255, 255, 0.3)",
               }}
             >
               Order ID: {referenceSlug}
@@ -308,6 +319,7 @@ useEffect(() => {
           fontSize: 11, fontWeight: 500, color: "#555",
           background: "#f4f4f6", border: "1px solid #e4e4e8",
           borderRadius: 20, padding: "2px 9px", lineHeight: 1.6,
+          whiteSpace: "nowrap",
         }}>
           <span style={{ color: "#999", fontWeight: 400 }}>{tag.key}:</span>
           {hasSwatch && (
@@ -353,6 +365,13 @@ useEffect(() => {
                     <span style={breakdownLabel}>Subtotal (before GST)</span>
                     <span style={breakdownValue}>₹{subtotalBeforeGst.toFixed(2)}</span>
                   </div>
+                  {/* Tax */}
+                  {tax > 0 && (
+                    <div style={breakdownRow}>
+                      <span style={breakdownLabel}>Tax / GST</span>
+                      <span style={breakdownValue}>₹{tax.toFixed(2)}</span>
+                    </div>
+                  )}
                   {/* Coupon Discount */}
                   {couponDiscount > 0 && (
                     <div style={breakdownRow}>
@@ -372,13 +391,6 @@ useEffect(() => {
                       {shippingCharge > 0 ? `₹${shippingCharge.toFixed(2)}` : <span style={{ color: "#27ae60" }}>Free</span>}
                     </span>
                   </div>
-                  {/* Tax */}
-                  {tax > 0 && (
-                    <div style={breakdownRow}>
-                      <span style={breakdownLabel}>Tax / GST</span>
-                      <span style={breakdownValue}>₹{tax.toFixed(2)}</span>
-                    </div>
-                  )}
                   {/* Grand Total */}
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 16, marginTop: 8, paddingTop: 8, borderTop: "1px dashed #eee" }}>
                     <span>Grand Total</span>
@@ -446,14 +458,14 @@ useEffect(() => {
                     {selectedAddr.city}, {selectedAddr.state} — {selectedAddr.pincode}
                   </span>
                 </div>
-                <div style={{ ...infoRow, marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0" }}>
+                {/* <div style={{ ...infoRow, marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0" }}>
                   <span style={infoLabel}>🚚 Estimated delivery</span>
                   <span style={{ ...infoValue, fontWeight: 600, color: "#2e7d32" }}>
                     {estimatedDays
                       ? `${estimatedDays} ${estimatedDays == 1 ? "day" : "days"}`
                       : "3–7 business days"}
                   </span>
-                </div>
+                </div> */}
               </div>
 
               {/* ── Payment (UNCHANGED base, new Partial COD callout added) ─ */}

@@ -14,8 +14,8 @@ const FeatureIcon = ({ spaceTopClass, spaceBottomClass }) => {
         {/* Row of cards, centered and using grid for spacing */}
         <div className="row g-4 justify-content-around">
           {featureIconData?.map(singleFeature => (
-            /* Responsive grid: 1 per row on mobile, 2 on tablet, 4 on desktop */
-            <div className="col-12 col-md-6 col-lg-3" key={singleFeature.id}>
+            /* Responsive grid: 1 per row on mobile, 2 on small tablet, 3 on tablet, 5 on desktop (single line) */
+            <div className="col-12 col-sm-6 col-md-4 col-xl" key={singleFeature.id}>
               <FeatureIconSingle
                 singleFeature={singleFeature}
               />

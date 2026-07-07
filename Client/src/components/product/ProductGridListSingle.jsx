@@ -50,7 +50,20 @@ const ProductGridListSingle = ({
 
   const mainImage  = allImages[0] ? getImgUrl(allImages[0]) : "/assets/img/products/products-1.jpeg";
   const hoverImage = allImages.length > 1 ? getImgUrl(allImages[1]) : null;
-  const hasVariants = variants.length > 0;
+  const hasVariants = variants.length > 1;
+  const resolvedStock = firstVariant ? Number(firstVariant.stock || 0) : Number(product.stock || 0);
+
+  const handleAddToCartClick = () => {
+    const singleVariant = variants.length === 1 ? variants[0] : null;
+    const cartPayload = singleVariant ? {
+      ...product,
+      selectedVariantId: singleVariant.id,
+      selectedVariantName: singleVariant.variantName,
+      price: parseFloat(singleVariant.salesPrice) || product.price,
+      stock: singleVariant.stock,
+    } : product;
+    addToCartService(cartPayload);
+  };
 
   const rate = currency?.currencyRate || 1;
 
@@ -108,7 +121,7 @@ const ProductGridListSingle = ({
                   ) : (
                     <button
                       className={clsx("list-cart-btn", isInCart && "in-cart")}
-                      onClick={() => !isInCart && addToCartService(product)}
+                      onClick={() => !isInCart && handleAddToCartClick()}
                       disabled={isInCart}
                     >
                       {isInCart ? "In Cart ✓" : "Add to Cart"}
@@ -170,9 +183,9 @@ const ProductGridListSingle = ({
                 >
                   View Product
                 </Link>
-              ) : product.stock && product.stock > 0 ? (
+              ) : resolvedStock > 0 ? (
                 <button
-                  onClick={() => !isInCart && addToCartService(product)}
+                  onClick={() => !isInCart && handleAddToCartClick()}
                   disabled={isInCart}
                   className={isInCart ? "in-cart" : ""}
                 >

@@ -107,11 +107,15 @@ export default function SubSubCategories({ showToast }) {
       title: 'Delete Sub-subcategory?',
       message: 'Are you sure you want to delete this sub-subcategory?',
       onConfirm: async () => {
+        const tid = showToast.loading('Deleting sub-subcategory...');
         try {
           await api.delete(`/categories/subsubcategories/${id}`);
+          showToast.success('Sub-subcategory deleted successfully!', tid);
           fetchAll();
         } catch (err) {
           console.error('Failed to delete sub-subcategory:', err);
+          const errMsg = err?.response?.data?.message || err?.message || 'Failed to delete sub-subcategory';
+          showToast.error(errMsg, tid);
         }
       },
     });

@@ -6,8 +6,8 @@ import { fetchProducts } from '../../redux/services/productsService';
 import { confirmDelete } from '../../utils/sweetalert';
 import { hasPermission } from '../../utils/authHelper';
 import AccessDenied from '../AccessDenied';
-import VariantCard from '../Products/VariantCard';
-import { renderVariantLabel, normalizeOptionKey } from '../Products/VariantBuilder';
+import VariantCard, { getProductVariantSchema } from '../Products/VariantCard';
+import { renderVariantLabel } from '../Products/VariantBuilder';
 
 const IMG_URL = process.env.REACT_APP_IMG_URL || '';
 const getImgSrc = (p) => {
@@ -43,9 +43,14 @@ const validateProductImageDimensions = (file) => {
 function variantToSku(v) {
   const parseVariantName = (name) => {
     if (!name || name === 'Default') return [];
+    let customNoteCount = 0;
     return name.split(/\s*(?:·|\||,|\/|-)\s*/).map(part => {
       const ci = part.indexOf(':');
-      if (ci === -1) return { key: 'Custom Note', value: part.trim(), customValue: '' };
+      if (ci === -1) {
+        customNoteCount++;
+        const key = customNoteCount === 1 ? 'Custom Note' : `Custom Note ${customNoteCount}`;
+        return { key, value: part.trim(), customValue: '' };
+      }
       return { key: part.slice(0, ci).trim(), value: part.slice(ci + 1).trim(), customValue: '' };
     }).filter(a => a.key && a.value);
   };
@@ -70,7 +75,7 @@ function variantToSku(v) {
   }
 
   const combo = finalAttrs
-    .filter(a => a.key && a.value && a.key !== 'Custom Note')
+    .filter(a => a.key && a.value && !a.key.startsWith('Custom Note'))
     .map(a => ({ key: a.key, value: a.value }));
 
   let dims = v.shippingDimensions;
@@ -116,7 +121,7 @@ const formHeader = { background: KM.blue, padding: '16px 24px', display: 'flex',
 const headerIcon = { width: 32, height: 32, background: 'rgba(255,255,255,0.15)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 15, fontWeight: 600 };
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 5 };
 const labelStyle = { fontSize: 11, fontWeight: 600, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em' };
-const inputStyle = { padding: '9px 12px', border: `1px solid ${KM.border}`, borderRadius: 8, fontSize: 13, color: KM.text, background: '#fff', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box', textTransform: 'capitalize' };
+const inputStyle = { padding: '9px 12px', border: `1px solid ${KM.border}`, borderRadius: 8, fontSize: 13, color: KM.text, background: '#fff', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' };
 const errorStyle = { fontSize: 11, color: '#dc2626', fontWeight: 600, marginTop: 2 };
 const submitBtn  = { padding: '12px 0', background: KM.orange, color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', width: '100%', marginTop: 8 };
 
@@ -136,14 +141,20 @@ export default function Variants({ showToast }) {
   };
 
   // mode: 'none' | 'add' | 'edit'
-  const [mode,          setMode]          = useState('none');
+  const [mode,          setMode]          = useState(() => localStorage.getItem('draft_mode') || 'none');
   const [editingId,     setEditingId]     = useState(null);
-  const [productId,     setProductId]     = useState('');
+  const [productId,     setProductId]     = useState(() => localStorage.getItem('draft_productId') || '');
   const [filterProduct, setFilterProduct] = useState('');
   const [errors,        setErrors]        = useState({});
 
-  // For ADD — always starts blank, no pre-seeding
-  const [skus, setSkus] = useState([]);
+  // For ADD — loads draft if exists
+  const [skus, setSkus] = useState(() => {
+    const draft = localStorage.getItem('draft_skus');
+    if (draft) {
+      try { return JSON.parse(draft); } catch { return []; }
+    }
+    return [];
+  });
 
   // For EDIT — single SKU loaded from the row being edited
   const [editSku,  setEditSku]  = useState(null);
@@ -153,31 +164,114 @@ export default function Variants({ showToast }) {
     dispatch(fetchProducts());
   }, [dispatch]);
 
+  // Persist draft mode, productId, and skus
+  useEffect(() => {
+    if (mode) {
+      localStorage.setItem('draft_mode', mode);
+    } else {
+      localStorage.removeItem('draft_mode');
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    if (productId) {
+      localStorage.setItem('draft_productId', productId);
+    } else {
+      localStorage.removeItem('draft_productId');
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    if (skus && skus.length > 0) {
+      const clean = skus.map(s => {
+        const { imageFile, galleryFiles, galleryPreviews, ...rest } = s;
+        const cleanPreviews = (galleryPreviews || []).map(p => {
+          if (p && typeof p === 'object' && p.file) {
+            return { url: p.url, isNew: p.isNew }; // omit File
+          }
+          return p;
+        });
+        return { ...rest, galleryPreviews: cleanPreviews };
+      });
+      localStorage.setItem('draft_skus', JSON.stringify(clean));
+    } else {
+      localStorage.removeItem('draft_skus');
+    }
+  }, [skus]);
+
   // ── Reset skus when productId changes in add mode ─────────────────────────
   useEffect(() => {
     if (mode !== 'add') return;
-    setSkus([{}]); // Start with one blank VariantCard
-  }, [productId, mode]);
-
-  const [existingKeys, setExistingKeys] = useState([]);
-
-  useEffect(() => {
     if (!productId) {
-      setExistingKeys([]);
+      setSkus([]);
       return;
     }
-    const productVariants = rows.filter(r => String(r.productId) === String(productId));
-    const keys = new Set();
-    productVariants.forEach(v => {
-      const attrs = safeAttrs(v.attributes);
-      attrs.forEach(a => {
-        if (a.key && a.key !== 'Custom Note') {
-          keys.add(normalizeOptionKey(a.key));
-        }
-      });
+
+    const draftProductId = localStorage.getItem('draft_productId');
+    const draftSkus = localStorage.getItem('draft_skus');
+    if (draftProductId === productId && draftSkus) {
+      return;
+    }
+
+    const product = products.find(p => String(p.id) === String(productId));
+    const schema = getProductVariantSchema(product);
+    const initialAttrs = [];
+    schema.forEach(field => {
+      if (field.type === 'color') {
+        initialAttrs.push({ key: field.key, value: '' });
+        initialAttrs.push({ key: field.key + 'Hex', value: '#000000' });
+      } else {
+        initialAttrs.push({ key: field.key, value: '' });
+      }
     });
-    setExistingKeys([...keys]);
-  }, [productId, rows]);
+
+    setSkus([{
+      id: `new_${Date.now()}_0`,
+      mrp: '',
+      salesPrice: '',
+      stock: '',
+      status: 'Active',
+      sku: '',
+      attributes: initialAttrs,
+      gstMode: 'Inclusive',
+      gstRate: '0%',
+      imageFile: null,
+      imagePreview: null,
+      galleryFiles: [],
+      galleryPreviews: []
+    }]);
+  }, [productId, mode, products]);
+
+  const handleAddAnotherSku = () => {
+    const product = products.find(p => String(p.id) === String(productId));
+    const schema = getProductVariantSchema(product);
+    const initialAttrs = [];
+    schema.forEach(field => {
+      if (field.type === 'color') {
+        initialAttrs.push({ key: field.key, value: '' });
+        initialAttrs.push({ key: field.key + 'Hex', value: '#000000' });
+      } else {
+        initialAttrs.push({ key: field.key, value: '' });
+      }
+    });
+
+    setSkus(prev => [...prev, {
+      id: `new_${Date.now()}_${prev.length}`,
+      mrp: '',
+      salesPrice: '',
+      stock: '',
+      status: 'Active',
+      sku: '',
+      attributes: initialAttrs,
+      gstMode: 'Inclusive',
+      gstRate: '0%',
+      imageFile: null,
+      imagePreview: null,
+      galleryFiles: [],
+      galleryPreviews: []
+    }]);
+  };
+
 
   if (!hasPermission('variants_view')) {
     return <AccessDenied moduleName="Variants" />;
@@ -189,8 +283,22 @@ export default function Variants({ showToast }) {
   const openAdd = () => {
     setMode('add');
     setEditingId(null);
-    setProductId('');
-    setSkus([{}]);
+
+    const draftProductId = localStorage.getItem('draft_productId');
+    const draftSkus = localStorage.getItem('draft_skus');
+    if (draftProductId && draftSkus) {
+      setProductId(draftProductId);
+      try {
+        setSkus(JSON.parse(draftSkus));
+      } catch (e) {
+        setProductId('');
+        setSkus([{}]);
+      }
+    } else {
+      setProductId('');
+      setSkus([{}]);
+    }
+
     setErrors({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -215,20 +323,30 @@ export default function Variants({ showToast }) {
     setSkus([]);
     setEditSku(null);
     setErrors({});
+    localStorage.removeItem('draft_skus');
+    localStorage.removeItem('draft_productId');
+    localStorage.removeItem('draft_mode');
   };
 
   // ── Validate SKU rows ─────────────────────────────────────────────────────
   const validateSkuRows = (skuList) => {
+    const selectedProduct = products.find(p => String(p.id) === String(productId));
+    const schema = getProductVariantSchema(selectedProduct);
+
     return skuList.map((v) => {
       const messages = [];
       const mrp = Number(v.mrp);
       const salesPrice = Number(v.salesPrice);
       const stock = Number(v.stock);
-      const hasAttribute =
-        v.attributes?.some(a => a.key && (a.value || a.customValue)) ||
-        v.combo?.some(a => a.key && a.value);
 
-      if (!hasAttribute) messages.push('Add at least one attribute');
+      // Verify that all keys in the schema are present and filled
+      schema.forEach(field => {
+        const attrVal = v.attributes?.find(a => a.key === field.key)?.value;
+        if (attrVal === undefined || attrVal === null || String(attrVal).trim() === '') {
+          messages.push(`Enter value for ${field.key}`);
+        }
+      });
+
       if (!v.mrp) messages.push('Enter MRP');
       else if (Number.isNaN(mrp) || mrp <= 0) messages.push('MRP must be greater than 0');
       if (!v.salesPrice) messages.push('Enter sales price');
@@ -264,9 +382,18 @@ export default function Variants({ showToast }) {
     const mrp = Number(editSku.mrp);
     const salesPrice = Number(editSku.salesPrice);
     const stock = Number(editSku.stock);
-    const hasAttribute = editSku.attributes?.some(a => a.key && a.value);
 
-    if (!hasAttribute) next.attributes = 'Add at least one attribute';
+    const selectedProduct = products.find(p => String(p.id) === String(productId));
+    const schema = getProductVariantSchema(selectedProduct);
+
+    // Verify that all keys in the schema are present and filled
+    schema.forEach(field => {
+      const attrVal = editSku.attributes?.find(a => a.key === field.key)?.value;
+      if (attrVal === undefined || attrVal === null || String(attrVal).trim() === '') {
+        next[`attr_${field.key}`] = `Enter value for ${field.key}`;
+      }
+    });
+
     if (!editSku.mrp) next.mrp = 'Enter MRP';
     else if (Number.isNaN(mrp) || mrp <= 0) next.mrp = 'MRP must be greater than 0';
 
@@ -291,7 +418,15 @@ export default function Variants({ showToast }) {
   // All skus in the builder are new (new_ prefix), just POST each one.
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!validateAdd()) return;
+    if (!validateAdd()) {
+      setTimeout(() => {
+        const errorEl = document.querySelector('.field-error-msg');
+        if (errorEl) {
+          errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return;
+    }
     if (!(await validateImageDimensions(skus))) {
       showToast.error('One or more variant images have invalid dimensions');
       return;
@@ -331,7 +466,15 @@ export default function Variants({ showToast }) {
   // ── Submit EDIT ───────────────────────────────────────────────────────────
   const handleEdit = async (e) => {
     e.preventDefault();
-    if (!validateEdit()) return;
+    if (!validateEdit()) {
+      setTimeout(() => {
+        const errorEl = document.querySelector('.field-error-msg');
+        if (errorEl) {
+          errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return;
+    }
     
     if (editSku.imageFile) {
       const result = await validateProductImageDimensions(editSku.imageFile);
@@ -380,10 +523,14 @@ export default function Variants({ showToast }) {
       title: 'Delete Variant?',
       message: 'Are you sure you want to delete this variant?',
       onConfirm: async () => {
+        const tid = showToast.loading('Deleting variant...');
         try {
           await dispatch(removeVariant(variantId));
+          showToast.success('Variant deleted successfully!', tid);
         } catch (err) {
           console.error('Failed to delete variant:', err);
+          const errMsg = err?.response?.data?.message || err?.message || 'Failed to delete variant';
+          showToast.error(errMsg, tid);
         }
       },
     });
@@ -450,6 +597,7 @@ export default function Variants({ showToast }) {
                     key={index}
                     index={index}
                     variant={sku}
+                    attributesSchema={getProductVariantSchema(products.find(p => String(p.id) === String(productId)))}
                     onChange={(updated, idx) => {
                       const newSkus = [...skus];
                       newSkus[idx] = updated;
@@ -465,7 +613,7 @@ export default function Variants({ showToast }) {
               </div>
               <button 
                 type="button" 
-                onClick={() => setSkus([...skus, {}])}
+                onClick={handleAddAnotherSku}
                 style={{ padding: '10px 16px', background: '#f8fafc', border: `2px dashed ${KM.border}`, borderRadius: 8, color: KM.blue, fontWeight: 600, cursor: 'pointer' }}
               >
                 + Add Another Variant
@@ -511,6 +659,8 @@ export default function Variants({ showToast }) {
               <VariantCard
                 variant={editSku}
                 onChange={setEditSku}
+                errors={errors}
+                attributesSchema={getProductVariantSchema(products.find(p => String(p.id) === String(productId)))}
                 isEditMode={true}
                 title="Variant Details"
                 subtitle="Update options, price, stock, GST and images"

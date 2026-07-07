@@ -152,10 +152,14 @@ const handleDelete = async (catId) => {
     title: 'Delete Category?',
     message: 'Are you sure you want to delete this category?',
     onConfirm: async () => {
+      const tid = showToast.loading('Deleting category...');
       try {
         await dispatch(removeCategory(catId));
+        showToast.success('Category deleted successfully!', tid);
       } catch (err) {
         console.error('Failed to delete category:', err);
+        const errMsg = err?.response?.data?.message || err?.message || 'Failed to delete category';
+        showToast.error(errMsg, tid);
       }
     },
   });

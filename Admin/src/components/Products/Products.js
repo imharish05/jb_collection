@@ -64,7 +64,7 @@ const formHeader = { background: KM.blue, padding: '16px 24px', display: 'flex',
 const headerIcon = { width: 32, height: 32, background: 'rgba(255,255,255,0.15)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 15, fontWeight: 600 };
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 5 };
 const labelStyle = { fontSize: 11, fontWeight: 500, color: KM.muted, textTransform: 'uppercase', letterSpacing: '0.05em' };
-const inputStyle = { padding: '9px 12px', border: `1px solid ${KM.border}`, borderRadius: 8, fontSize: 13, color: KM.text, background: '#fff', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box', textTransform: 'capitalize' };
+const inputStyle = { padding: '9px 12px', border: `1px solid ${KM.border}`, borderRadius: 8, fontSize: 13, color: KM.text, background: '#fff', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' };
 const tag = (color, bg) => ({ fontSize: 10, fontWeight: 700, color, background: bg, padding: '2px 7px', borderRadius: 4, whiteSpace: 'nowrap' });
 const errorStyle = { fontSize: 11, color: '#dc2626', fontWeight: 600, marginTop: 2 };
 
@@ -80,11 +80,7 @@ function blankVariantRow() {
     stock: '',
     status: 'Active',
     sku: '',
-    attributes: [
-      { key: 'Colour', value: '' },
-      { key: 'ColourHex', value: '#000000' },
-      { key: 'Size', value: '' }
-    ],
+    attributes: [],
     gstMode: 'Inclusive',
     gstRate: '0%',
     imageFile: null,
@@ -144,6 +140,27 @@ export default function Products({ showToast }) {
   const [customisationFieldsTemplates, setCustomisationFieldsTemplates] = useState([]);
   const fileInputRef = useRef();
   const variantBuilderRef = useRef();
+  const [mainDragActive, setMainDragActive] = useState(false);
+
+  const handleMainDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setMainDragActive(true);
+    } else if (e.type === "dragleave") {
+      setMainDragActive(false);
+    }
+  };
+
+  const handleMainDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMainDragActive(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length > 0) {
+      handleFileChange({ target: { files } });
+    }
+  };
 
 
 
@@ -185,7 +202,7 @@ export default function Products({ showToast }) {
 
   // ── Image handlers ────────────────────────────────────────────────────────
   const handleFileChange = (e) => {
-    const selected = Array.from(e.target.files);
+    const selected = Array.from(e.target.files || []);
     if (!selected.length) return;
     
     const currentLength = imageFiles.length;
@@ -202,7 +219,9 @@ export default function Products({ showToast }) {
     
     setImageFiles(prev => [...prev, ...selected]);
     setPreviews(prev => [...prev, ...selected.map(f => URL.createObjectURL(f))]);
-    e.target.value = null;
+    if (e.target && 'value' in e.target) {
+      e.target.value = null;
+    }
   };
 
   const removeImage = (index) => {
@@ -329,9 +348,14 @@ export default function Products({ showToast }) {
         ? p.Variants.map(v => {
           const parseVariantName = (name) => {
             if (!name || name === 'Default') return [];
+            let customNoteCount = 0;
             return name.split(/\s*(?:·|\||,|\/|-)\s*/).map(part => {
               const ci = part.indexOf(':');
-              if (ci === -1) return { key: 'Custom Note', value: part.trim(), customValue: '' };
+              if (ci === -1) {
+                customNoteCount++;
+                const key = customNoteCount === 1 ? 'Custom Note' : `Custom Note ${customNoteCount}`;
+                return { key, value: part.trim(), customValue: '' };
+              }
               return { key: part.slice(0, ci).trim(), value: part.slice(ci + 1).trim(), customValue: '' };
             }).filter(a => a.key && a.value);
           };
@@ -375,15 +399,6 @@ export default function Products({ showToast }) {
             })();
 
           const finalAttrsToSet = [...builtAttrs];
-          if (!finalAttrsToSet.some(a => a.key === 'Colour')) {
-            finalAttrsToSet.push({ key: 'Colour', value: '' });
-          }
-          if (!finalAttrsToSet.some(a => a.key === 'ColourHex')) {
-            finalAttrsToSet.push({ key: 'ColourHex', value: '#000000' });
-          }
-          if (!finalAttrsToSet.some(a => a.key === 'Size')) {
-            finalAttrsToSet.push({ key: 'Size', value: '' });
-          }
 
           return {
             id: v.id || Date.now() + Math.random(),
@@ -406,7 +421,15 @@ export default function Products({ showToast }) {
               return parsed.filter(Boolean).map(img => ({ url: getImageUrl(img), file: null }));
             })(),
             combo: finalAttrsToSet.map(a => ({ key: a.key, value: a.value })),
-            variantName: v.variantName || finalAttrsToSet.map(a => `${a.key}: ${a.value}`).join(' · '),
+            variantName: (v.variantName
+              ? v.variantName.split(/\s*(?:·|\||,|\/)\s*/).filter(part => {
+                  const ci = part.indexOf(':');
+                  if (ci !== -1) {
+                    return part.slice(ci + 1).trim() !== '';
+                  }
+                  return part.trim() !== '';
+                }).join(' · ')
+              : null) || finalAttrsToSet.filter(a => a.key && a.key !== 'ColourHex' && a.value !== undefined && a.value !== null && String(a.value).trim() !== '').map(a => `${a.key}: ${a.value}`).join(' · ') || 'Default',
             attributes: finalAttrsToSet,
           };
         })
@@ -471,11 +494,24 @@ export default function Products({ showToast }) {
       const salesPrice = Number(v.salesPrice);
       const stock = Number(v.stock);
 
-      const colorVal = v.attributes?.find(a => a.key === 'Colour')?.value || '';
-      const sizeVal = v.attributes?.find(a => a.key === 'Size')?.value || '';
+      const activeAttrs = (v.attributes || []).filter(a => a.key && a.key !== 'ColourHex');
+      const emptyAttrs = activeAttrs.filter(a => a.value === undefined || a.value === null || String(a.value).trim() === '');
+      const activeKeys = activeAttrs.map(a => a.key);
 
-      if (!colorVal && !sizeVal) {
+      const hasEmptyColour = emptyAttrs.some(a => a.key === 'Colour');
+      const hasEmptySize = emptyAttrs.some(a => a.key === 'Size');
+      const hasActiveColour = activeKeys.includes('Colour');
+      const hasActiveSize = activeKeys.includes('Size');
+
+      if (hasActiveColour && hasActiveSize && hasEmptyColour && hasEmptySize) {
         messages.push('Either Color or Size is mandatory');
+        emptyAttrs.filter(a => a.key !== 'Colour' && a.key !== 'Size').forEach(a => {
+          messages.push(`${a.key} is mandatory`);
+        });
+      } else {
+        emptyAttrs.forEach(a => {
+          messages.push(`${a.key} is mandatory`);
+        });
       }
 
       if (!v.mrp) messages.push('Enter MRP');
@@ -604,10 +640,14 @@ export default function Products({ showToast }) {
       title: 'Delete Product?',
       message: 'Are you sure you want to delete this product?',
       onConfirm: async () => {
+        const tid = showToast.loading('Deleting product...');
         try {
           await dispatch(removeProduct(id));
+          showToast.success('Product deleted successfully!', tid);
         } catch (err) {
           console.error('Failed to delete product:', err);
+          const errMsg = err?.response?.data?.message || err?.message || 'Failed to delete product';
+          showToast.error(errMsg, tid);
         }
       },
     });
@@ -862,9 +902,28 @@ export default function Products({ showToast }) {
                       <button type="button" onClick={() => removeImage(0)} style={{ position: 'absolute', top: -10, right: -10, width: 24, height: 24, borderRadius: '50%', background: KM.orange, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
                     </div>
                   ) : (
-                    <div onClick={() => fileInputRef.current.click()} style={{ width: '100%', height: 160, border: `2px dashed ${KM.border}`, borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#fafafa' }}>
+                    <div
+                      onClick={() => fileInputRef.current.click()}
+                      onDragEnter={handleMainDrag}
+                      onDragLeave={handleMainDrag}
+                      onDragOver={handleMainDrag}
+                      onDrop={handleMainDrop}
+                      style={{
+                        width: '100%',
+                        height: 160,
+                        border: `2px dashed ${mainDragActive ? '#00b4d8' : KM.border}`,
+                        borderRadius: 10,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        background: mainDragActive ? 'rgba(0,180,216,0.08)' : '#fafafa',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
                       <span style={{ fontSize: 32 }}>📤</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: KM.blue, marginTop: 8 }}>Click to Upload Main Image</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: mainDragActive ? '#00b4d8' : KM.blue, marginTop: 8 }}>Click to Upload Main Image</span>
                       <span style={{ fontSize: 11, color: KM.muted, marginTop: 4 }}>JPG, PNG, WEBP, SVG — 800×1000px recommended</span>
                     </div>
                   )}
@@ -873,6 +932,7 @@ export default function Products({ showToast }) {
 
               <VariantCard 
                 variant={variants[0]}
+                isDynamicBuilder={true}
                 onChange={(updatedVariant) => {
                   const uv = [...variants];
                   uv[0] = updatedVariant;
@@ -1023,7 +1083,7 @@ export default function Products({ showToast }) {
       {loading ? <p style={{ padding: 20 }}>Loading Products...</p> : (
         <DataTable
           columns={(() => {
-            const cols = ['No.', 'Gallery', 'Product', 'Category', 'Sub-Cat', 'Price', 'Disc', 'Stock', 'Variants', 'Flags'];
+            const cols = ['No.', 'Gallery', 'Product', 'Category', 'Sub-Cat', 'Sub-Sub-Cat', 'Price', 'Disc', 'Stock', 'Variants', 'Flags'];
             if (hasPermission('products_edit') || hasPermission('products_delete')) cols.push('Actions');
             return cols;
           })()}
@@ -1065,8 +1125,11 @@ export default function Products({ showToast }) {
                 <td style={{ fontSize: 12, fontWeight: 500 }}>
                   {row.Category?.name || row.Category?.label || '—'}
                 </td>
-                <td style={{ fontSize: 12, color: KM.muted, textTransform: "capitalize" }} className='text-capitalize'>
+                <td style={{ fontSize: 12, color: KM.muted }}>
                   {row.SubCategory?.label || row.subCategoryName || '—'}
+                </td>
+                <td style={{ fontSize: 12, color: KM.muted }}>
+                  {row.SubSubCategory?.label || row.subSubCategoryName || '—'}
                 </td>
                 <td style={{ fontWeight: 700 }}>₹{firstVar?.salesPrice ?? row.price ?? 0}</td>
                 <td>
@@ -1081,13 +1144,9 @@ export default function Products({ showToast }) {
                   </div>
                 </td>
                 <td>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 250, maxHeight: 60, overflowY: 'auto', overflowX: 'hidden', paddingRight: 4 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 400, maxHeight: 120, overflowY: 'auto', overflowX: 'hidden', paddingRight: 4 }}>
                     {row.Variants?.slice(0, 5).map((v, j) => {
-                      const attrs = Array.isArray(v.attributes) ? v.attributes : [];
-                      const label = attrs.length
-                        ? attrs.map(a => a.value).filter(Boolean).join(' / ')
-                        : [v.subCategory, v.colour, v.size, v.material].filter(Boolean).join(' / ')
-                        || v.variantName || '—';
+                      const label = v.variantName || '—';
                       return (
                         <span key={j} title={label} style={{ 
                           fontSize: 10, 

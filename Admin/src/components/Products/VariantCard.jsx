@@ -1,5 +1,15 @@
 import React, { useState, useRef } from 'react';
 
+export const ALL_OPTIONS_SCHEMA = [
+  { key: 'Colour', type: 'color' },
+  { key: 'Size', type: 'size' },
+  { key: 'Material', type: 'text', placeholder: 'e.g. Cotton, Jute, Brass' },
+  { key: 'Pack Size', type: 'text', placeholder: 'e.g. Single, Pack of 12' },
+  { key: 'Weight', type: 'text', placeholder: 'e.g. 500 g, 1 kg' },
+  { key: 'Volume', type: 'text', placeholder: 'e.g. 50 ml, 100 ml' },
+  { key: 'Quantity', type: 'text', placeholder: 'e.g. 30 Tablets, 10 Pieces' }
+];
+
 const KM = {
   orange: '#b60410', orangeLight: '#FEF0EB', blue: '#1A3A6B',
   green: '#39B54A', teal: '#00B4D8', border: '#E5E7EB',
@@ -60,14 +70,7 @@ const inputStyle = {
   background: '#fff'
 };
 
-const ErrorMsg = ({ error }) => {
-  if (!error || !error.length) return null;
-  return (
-    <span style={{ color: '#dc2626', fontSize: 11, fontWeight: 600, marginTop: 4 }}>
-      {Array.isArray(error) ? error.join(' · ') : error}
-    </span>
-  );
-};
+
 
 export default function VariantCard({
   variant,
@@ -77,42 +80,110 @@ export default function VariantCard({
   subtitle = "Fill in the variant details below (mandatory either color or size)",
   onRemove,
   index = 0,
-  isEditMode = false
+  isEditMode = false,
+  attributesSchema = ALL_OPTIONS_SCHEMA,
+  isDynamicBuilder = false
 }) {
-  const [customSizeInput, setCustomSizeInput] = useState('');
+  const [customKeyInput, setCustomKeyInput] = useState('');
+  const [showCustomKeyForm, setShowCustomKeyForm] = useState(false);
+  const [openInputKey, setOpenInputKey] = useState(null);
+  const [inlineVal, setInlineVal] = useState('');
+  const [inlineHex, setInlineHex] = useState('#000000');
   const variantGalleryInputRef = useRef(null);
-  const mainImageInputRef = useRef(null);
+  const [galleryDragActive, setGalleryDragActive] = useState(false);
+
+  const handleGalleryDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setGalleryDragActive(true);
+    } else if (e.type === "dragleave") {
+      setGalleryDragActive(false);
+    }
+  };
+
+  const handleGalleryDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setGalleryDragActive(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length > 0) {
+      handleVariantGalleryChange({ target: { files } });
+    }
+  };
 
   const getAttr = (key) => variant?.attributes?.find(a => a.key === key)?.value || '';
 
-  const updateAttr = (key, value) => {
+  const updateAttr = (key, value, extraAttrs = []) => {
     const updated = { ...variant };
     let attrs = updated.attributes ? [...updated.attributes] : [];
     const idx = attrs.findIndex(a => a.key === key);
     if (idx !== -1) {
-      if (value) attrs[idx].value = value;
-      else attrs.splice(idx, 1);
-    } else if (value) {
+      if (value !== undefined) attrs[idx] = { ...attrs[idx], value };
+    } else {
       attrs.push({ key, value });
     }
+
+    extraAttrs.forEach(extra => {
+      const eIdx = attrs.findIndex(a => a.key === extra.key);
+      if (eIdx !== -1) {
+        attrs[eIdx] = { ...attrs[eIdx], value: extra.value };
+      } else {
+        attrs.push({ key: extra.key, value: extra.value });
+      }
+    });
     updated.attributes = attrs;
-    
-    // Update variantName based on color and size
-    const colVal = attrs.find(a => a.key === 'Colour')?.value || '';
-    const sizeVal = attrs.find(a => a.key === 'Size')?.value || '';
-    updated.variantName = [
-      colVal ? `Colour: ${colVal}` : '',
-      sizeVal ? `Size: ${sizeVal}` : ''
-    ].filter(Boolean).join(' · ') || 'Default';
+
+    // Update variantName based on all non-ColourHex attributes with non-empty values
+    updated.variantName = attrs
+      .filter(a => a.key && a.key !== 'ColourHex' && a.value !== undefined && a.value !== null && String(a.value).trim() !== '')
+      .map(a => `${a.key}: ${a.value}`)
+      .join(' · ') || 'Default';
 
     onChange(updated, index);
+  };
+
+  const removeAttr = (key) => {
+    const updated = { ...variant };
+    let attrs = updated.attributes ? [...updated.attributes] : [];
+    attrs = attrs.filter(a => a.key !== key && a.key !== (key + 'Hex'));
+    updated.attributes = attrs;
+    
+    // Update variantName based on all non-ColourHex attributes with non-empty values
+    updated.variantName = attrs
+      .filter(a => a.key && a.key !== 'ColourHex' && a.value !== undefined && a.value !== null && String(a.value).trim() !== '')
+      .map(a => `${a.key}: ${a.value}`)
+      .join(' · ') || 'Default';
+
+    onChange(updated, index);
+  };
+
+  const addAttrKey = (key) => {
+    if (!key) return;
+    const updated = { ...variant };
+    let attrs = updated.attributes ? [...updated.attributes] : [];
+    if (!attrs.some(a => a.key === key)) {
+      attrs.push({ key, value: '' });
+      if (key === 'Colour') {
+        attrs.push({ key: 'ColourHex', value: '#000000' });
+      }
+    }
+    updated.attributes = attrs;
+    onChange(updated, index);
+  };
+
+  const handleAddCustomKey = () => {
+    const cleanKey = customKeyInput.trim();
+    if (!cleanKey) return;
+    addAttrKey(cleanKey);
+    setCustomKeyInput('');
+    setShowCustomKeyForm(false);
   };
 
   const handleChange = (field, value) => {
     onChange({ ...variant, [field]: value }, index);
   };
 
-  const handleColorNameChange = (val) => updateAttr('Colour', val);
   const handleColorHexChange = (val) => {
     // Update ColourHex attr without affecting variantName
     const updated = { ...variant };
@@ -127,10 +198,9 @@ export default function VariantCard({
     updated.attributes = attrs;
     onChange(updated, index);
   };
-  const handleSizeChange = (val) => updateAttr('Size', val);
 
   const handleVariantGalleryChange = (e) => {
-    const selected = Array.from(e.target.files);
+    const selected = Array.from(e.target.files || []);
     if (!selected.length) return;
     const currentPreviews = variant.galleryPreviews || [];
     const newItems = selected.map(file => ({
@@ -141,7 +211,9 @@ export default function VariantCard({
       ...variant,
       galleryPreviews: [...currentPreviews, ...newItems]
     }, index);
-    e.target.value = null;
+    if (e.target && 'value' in e.target) {
+      e.target.value = null;
+    }
   };
 
   const removeVariantGalleryImage = (idx) => {
@@ -156,15 +228,62 @@ export default function VariantCard({
     }, index);
   };
 
-  const handleMainImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    onChange({ ...variant, imageFile: file, imagePreview: url }, index);
-    e.target.value = null;
+
+  // Compute active schema based on builder vs. locked mode
+  const activeKeys = [...new Set((variant?.attributes || [])
+    .map(a => a.key)
+    .filter(k => k && k !== 'ColourHex'))];
+
+  const resolvedSchemaTemp = isDynamicBuilder
+    ? activeKeys.map(k => {
+        const matched = ALL_OPTIONS_SCHEMA.find(o => o.key === k);
+        if (matched) return matched;
+        return { key: k, type: /colou?r/i.test(k) ? 'color' : (/size/i.test(k) ? 'size' : 'text') };
+      })
+    : attributesSchema;
+
+  const seenSchema = new Set();
+  const resolvedSchema = (resolvedSchemaTemp || []).filter(f => {
+    if (!f.key) return false;
+    if (seenSchema.has(f.key)) return false;
+    seenSchema.add(f.key);
+    return true;
+  });
+
+  const availableOptions = ALL_OPTIONS_SCHEMA.filter(o => !activeKeys.includes(o.key));
+
+  const getFieldError = (key) => {
+    if (!errors) return null;
+    if (Array.isArray(errors)) {
+      return errors.find(msg => msg.toLowerCase().includes(key.toLowerCase()));
+    }
+    if (typeof errors === 'object') {
+      if (errors[key]) return errors[key];
+      const matchedKey = Object.keys(errors).find(k => k.toLowerCase().includes(key.toLowerCase()));
+      if (matchedKey) return errors[matchedKey];
+    }
+    return null;
   };
 
-  const currentSize = getAttr('Size');
+  const renderFieldError = (fieldKey) => {
+    const errorMsg = getFieldError(fieldKey);
+    if (!errorMsg) return null;
+    return (
+      <span className="field-error-msg" style={{ color: '#dc2626', fontSize: 11, fontWeight: 'bold', marginTop: 4, display: 'block' }}>
+        {errorMsg}
+      </span>
+    );
+  };
+
+  const getUnmatchedErrors = () => {
+    if (!errors) return [];
+    const list = Array.isArray(errors) ? errors : Object.values(errors).filter(Boolean);
+    const fieldsToTrack = ['mrp', 'salesprice', 'stock', 'gallery', ...resolvedSchema.map(f => f.key.toLowerCase())];
+    return list.filter(msg => {
+      const low = msg.toLowerCase();
+      return !fieldsToTrack.some(f => low.includes(f));
+    });
+  };
 
   return (
     <div style={{ ...formCard, gridColumn: 'span 2' }}>
@@ -186,79 +305,355 @@ export default function VariantCard({
       </div>
       
       <div style={{ padding: '20px 24px', display: 'grid', gap: 14, gridTemplateColumns: '1fr 1fr' }}>
-        <div style={{ ...fieldStyle, gridColumn: 'span 2' }}>
-          <label style={labelStyle}>Color Name <span style={{ color: KM.muted, fontWeight: 400, textTransform: 'none' }}>(shown to customer)</span></label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <input style={{ ...inputStyle, flex: 1 }} value={getAttr('Colour')} onChange={e => handleColorNameChange(e.target.value)} placeholder="e.g. Cherry Red, Blue, Maroon..." />
-          </div>
-          <span style={{ fontSize: 11, color: KM.muted, marginTop: 2 }}>
-            Customer sees this name — the hex below is used only for the colour swatch.
-          </span>
-        </div>
+        
+        {/* Render Attributes dynamically */}
+        {resolvedSchema.map(field => {
+          const value = getAttr(field.key);
+          const hasValue = !!value;
 
-        <div style={{ ...fieldStyle, gridColumn: 'span 2' }}>
-          <label style={labelStyle}>Color HEX <span style={{ color: KM.muted, fontWeight: 400, textTransform: 'none' }}>(for colour swatch preview)</span></label>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <input
-              type="color"
-              style={{ width: 50, height: 38, border: `1px solid ${KM.border}`, borderRadius: 8, padding: 3, cursor: 'pointer', background: '#fff' }}
-              value={getAttr('ColourHex') || '#000000'}
-              onChange={e => handleColorHexChange(e.target.value)}
-            />
-            <input
-              style={{ ...inputStyle, width: 150 }}
-              value={getAttr('ColourHex') || ''}
-              onChange={e => handleColorHexChange(e.target.value)}
-              placeholder="#000000"
-            />
-            <span style={{ fontSize: 12, color: KM.muted }}>Pick a colour — this fills the swatch on the product page.</span>
-          </div>
-        </div>
+          const renderHeader = () => {
+            const icon = field.key === 'Colour' ? '🎨' 
+                       : field.key === 'Size' ? '📐' 
+                       : field.key === 'Weight' ? '⚖️' 
+                       : field.key === 'Volume' ? '🍼' 
+                       : field.key === 'Quantity' ? '🔢' 
+                       : '⚙️';
+            return (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: KM.text, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>{icon}</span> {field.key} <span style={{ color: '#dc2626' }}>*</span>
+                </span>
+                {isDynamicBuilder && (
+                  <button
+                    type="button"
+                    onClick={() => removeAttr(field.key)}
+                    style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 11, fontWeight: 'bold', padding: 0 }}
+                  >
+                    ✕ Remove Option
+                  </button>
+                )}
+              </div>
+            );
+          };
 
-        <div style={{ ...fieldStyle, gridColumn: 'span 2' }}>
-          <label style={labelStyle}>Size</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-            {['FREE SIZE', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'].map(sz => {
-              const isSelected = currentSize.toUpperCase() === sz;
-              return (
-                <button key={sz} type="button" onClick={() => handleSizeChange(sz)} style={{ padding: '8px 16px', border: `1px solid ${isSelected ? '#8252e9' : KM.border}`, borderRadius: 8, background: isSelected ? '#8252e9' : '#fff', color: isSelected ? '#fff' : '#1e293b', fontWeight: 'bold', fontSize: 13, cursor: 'pointer' }}>
-                  {sz}
-                </button>
-              );
-            })}
-          </div>
+          const getPresets = () => {
+            const k = field.key.toLowerCase();
+            if (k.includes('pack')) return ['Single', 'Pack of 2', 'Pack of 4', 'Pack of 6'];
+            if (k.includes('size')) return ['FREE SIZE', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
+            if (k.includes('colour') || k.includes('color')) return ['Black', 'White', 'Red', 'Blue', 'Green', 'Yellow'];
+            if (k.includes('weight')) return ['1 kg', '500 g', '250 g', '100 g'];
+            if (k.includes('volume')) return ['1 L', '500 ml', '250 ml', '100 ml'];
+            return [];
+          };
 
-          {currentSize && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#f3e8ff', border: '1px solid #c084fc', color: '#6b21a8', borderRadius: 6, fontSize: 13, fontWeight: '600', marginTop: 4, marginBottom: 8, width: 'fit-content' }}>
-              <span>{currentSize}</span>
-              <span onClick={() => handleSizeChange('')} style={{ cursor: 'pointer', color: '#a855f7', fontWeight: 'bold', marginLeft: 4 }}>✕</span>
+          const presets = getPresets();
+
+          return (
+            <div key={field.key} style={{ ...fieldStyle, gridColumn: 'span 2', background: '#fafafa', padding: 12, borderRadius: 8, border: `1px solid ${KM.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {renderHeader()}
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                {/* Active value pill */}
+                {hasValue ? (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#f3e8ff', border: '1px solid #c084fc', color: '#6b21a8', borderRadius: 20, fontSize: 13, fontWeight: '600' }}>
+                    {field.type === 'color' && (
+                      <span
+                        style={{ width: 14, height: 14, borderRadius: '50%', border: '1px solid #c084fc', backgroundColor: getAttr(field.key + 'Hex') || '#000000', display: 'inline-block' }}
+                      />
+                    )}
+                    <span>{value}</span>
+                    <span
+                      onClick={() => {
+                        if (field.type === 'color') {
+                          updateAttr(field.key, '', [{ key: 'ColourHex', value: '' }]);
+                        } else {
+                          updateAttr(field.key, '');
+                        }
+                      }}
+                      style={{ cursor: 'pointer', color: '#a855f7', fontWeight: 'bold', marginLeft: 4, fontSize: 12 }}
+                    >
+                      ✕
+                    </span>
+                  </div>
+                ) : null}
+
+                {/* Inline input form if open */}
+                {openInputKey === field.key ? (
+                  field.type === 'color' ? (
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: '#f8fafc', padding: 8, borderRadius: 8, border: `1px solid ${KM.border}` }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <span style={{ fontSize: 9, color: KM.muted, fontWeight: 700 }}>COLOUR NAME</span>
+                        <input
+                          style={{ ...inputStyle, padding: '5px 8px', width: 240 }}
+                          placeholder="e.g. Cherry Red, Blue"
+                          value={inlineVal}
+                          onChange={e => setInlineVal(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <span style={{ fontSize: 9, color: KM.muted, fontWeight: 700 }}>HEX VALUE</span>
+                        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                          <input
+                            type="color"
+                            style={{ width: 28, height: 28, border: `1px solid ${KM.border}`, borderRadius: 6, padding: 2, cursor: 'pointer', background: '#fff' }}
+                            value={inlineHex}
+                            onChange={e => setInlineHex(e.target.value)}
+                          />
+                          <input
+                            style={{ ...inputStyle, width: 80, padding: '4px 6px', fontSize: 12 }}
+                            value={inlineHex}
+                            onChange={e => setInlineHex(e.target.value)}
+                            placeholder="#000000"
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4, alignSelf: 'flex-end', marginBottom: 2 }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (inlineVal.trim()) {
+                              updateAttr(field.key, inlineVal.trim(), [{ key: 'ColourHex', value: inlineHex }]);
+                              setOpenInputKey(null);
+                            }
+                          }}
+                          style={{ padding: '6px 12px', background: KM.teal, color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 12 }}
+                        >
+                          Add
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setOpenInputKey(null)}
+                          style={{ padding: '6px 12px', background: '#e2e8f0', color: KM.text, border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 12 }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <input
+                        style={{ ...inputStyle, padding: '6px 10px', width: 150 }}
+                        placeholder={`Enter ${field.key}...`}
+                        value={inlineVal}
+                        onChange={e => setInlineVal(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (inlineVal.trim()) {
+                              updateAttr(field.key, inlineVal.trim());
+                              setOpenInputKey(null);
+                            }
+                          }
+                        }}
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (inlineVal.trim()) {
+                            updateAttr(field.key, inlineVal.trim());
+                            setOpenInputKey(null);
+                          }
+                        }}
+                        style={{ padding: '6px 12px', background: KM.teal, color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 12 }}
+                      >
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOpenInputKey(null)}
+                        style={{ padding: '6px 12px', background: '#e2e8f0', color: KM.text, border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 12 }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  /* Dashed Add button if no value is set */
+                  !hasValue && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenInputKey(field.key);
+                        setInlineVal('');
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        padding: '6px 14px',
+                        background: '#fff',
+                        border: '1px dashed #22c55e',
+                        color: '#22c55e',
+                        borderRadius: 20,
+                        cursor: 'pointer',
+                        fontSize: 12,
+                        fontWeight: 'bold',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      + Add {field.key}
+                    </button>
+                  )
+                )}
+
+                {/* Color HEX picker inline next to the active color pill */}
+                {field.type === 'color' && hasValue && (
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginLeft: 12 }}>
+                    <span style={{ fontSize: 11, color: KM.muted, fontWeight: 600 }}>HEX:</span>
+                    <input
+                      type="color"
+                      style={{ width: 28, height: 28, border: `1px solid ${KM.border}`, borderRadius: 6, padding: 2, cursor: 'pointer', background: '#fff' }}
+                      value={getAttr(field.key + 'Hex') || '#000000'}
+                      onChange={e => handleColorHexChange(e.target.value)}
+                    />
+                    <input
+                      style={{ ...inputStyle, width: 80, padding: '4px 6px', fontSize: 12 }}
+                      value={getAttr(field.key + 'Hex') || ''}
+                      onChange={e => handleColorHexChange(e.target.value)}
+                      placeholder="#000000"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Suggestions Presets */}
+              {!hasValue && presets.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                  {presets.map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => {
+                        if (field.type === 'color') {
+                          const hexMap = {
+                            black: '#000000',
+                            white: '#ffffff',
+                            red: '#ff0000',
+                            blue: '#0000ff',
+                            green: '#008000',
+                            yellow: '#ffff00',
+                          };
+                          const hex = hexMap[preset.toLowerCase()] || '#000000';
+                          updateAttr(field.key, preset, [{ key: 'ColourHex', value: hex }]);
+                        } else {
+                          updateAttr(field.key, preset);
+                        }
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        border: `1px solid ${KM.border}`,
+                        borderRadius: 20,
+                        background: '#fff',
+                        color: KM.text,
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseOver={e => { e.currentTarget.style.borderColor = KM.blue; e.currentTarget.style.color = KM.blue; }}
+                      onMouseOut={e => { e.currentTarget.style.borderColor = KM.border; e.currentTarget.style.color = KM.text; }}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {renderFieldError(field.key)}
             </div>
-          )}
+          );
+        })}
 
-          <div style={{ display: 'flex', gap: 10 }}>
-            <input style={inputStyle} value={customSizeInput} onChange={e => setCustomSizeInput(e.target.value)} placeholder="Type and press Enter or click a preset above" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (customSizeInput.trim()) { handleSizeChange(customSizeInput.trim()); setCustomSizeInput(''); } } }} />
-            <button type="button" onClick={() => { if (customSizeInput.trim()) { handleSizeChange(customSizeInput.trim()); setCustomSizeInput(''); } }} style={{ padding: '8px 20px', background: '#8252e9', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold' }}>Add</button>
+        {/* Dynamic Builder: Selector to add options */}
+        {isDynamicBuilder && (
+          <div style={{ gridColumn: 'span 2', display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10, padding: '16px 20px', borderRadius: 10, border: `1.5px dashed ${KM.border}`, background: '#f8fafc' }}>
+            <div style={{ width: '100%', fontSize: 11, fontWeight: 700, color: KM.blue, textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: 4 }}>
+              Add Option Type
+            </div>
+            {availableOptions.map(o => (
+              <button
+                key={o.key}
+                type="button"
+                onClick={() => addAttrKey(o.key)}
+                style={{
+                  padding: '6px 14px',
+                  background: '#fff',
+                  border: `1.5px dashed ${KM.blue}`,
+                  color: KM.blue,
+                  borderRadius: 20,
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={e => { e.currentTarget.style.background = '#f1f5f9'; }}
+                onMouseOut={e => { e.currentTarget.style.background = '#fff'; }}
+              >
+                + Add {o.key}
+              </button>
+            ))}
+            {showCustomKeyForm ? (
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input
+                  style={{ ...inputStyle, padding: '5px 10px', width: 150 }}
+                  placeholder="Custom option key..."
+                  value={customKeyInput}
+                  onChange={e => setCustomKeyInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomKey(); } }}
+                  autoFocus
+                />
+                <button type="button" onClick={handleAddCustomKey} style={{ padding: '6px 12px', background: KM.teal, color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 12 }}>Add</button>
+                <button type="button" onClick={() => setShowCustomKeyForm(false)} style={{ padding: '6px 12px', background: '#e2e8f0', color: KM.text, border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 12 }}>Cancel</button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowCustomKeyForm(true)}
+                style={{
+                  padding: '6px 14px',
+                  background: '#fff',
+                  border: `1.5px dashed ${KM.orange}`,
+                  color: KM.orange,
+                  borderRadius: 20,
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s'
+                }}
+              >
+                + Add Custom Type...
+              </button>
+            )}
           </div>
-        </div>
+        )}
 
-        <div style={{ ...fieldStyle, gridColumn: 'span 2' }}>
-          <label style={labelStyle}>SKU Code</label>
-          <input style={inputStyle} value={variant?.sku || ''} onChange={e => handleChange('sku', e.target.value)} placeholder="Unique SKU, e.g. TIN-SAR-001-RED" />
-        </div>
+        {isEditMode && (
+          <div style={{ ...fieldStyle, gridColumn: 'span 2' }}>
+            <label style={labelStyle}>Status *</label>
+            <select style={inputStyle} value={variant?.status || 'Active'} onChange={e => handleChange('status', e.target.value)}>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        )}
 
         <div style={fieldStyle}>
           <label style={labelStyle}>Selling Price (₹) *</label>
           <input type="number" step="0.01" style={inputStyle} required value={variant?.salesPrice || ''} onChange={e => handleChange('salesPrice', e.target.value)} placeholder="0.00" />
+          {renderFieldError('salesPrice')}
         </div>
 
         <div style={fieldStyle}>
           <label style={labelStyle}>MRP Price (₹)</label>
           <input type="number" step="0.01" style={inputStyle} value={variant?.mrp || ''} onChange={e => handleChange('mrp', e.target.value)} placeholder="0.00" />
+          {renderFieldError('mrp')}
         </div>
 
         <div style={fieldStyle}>
           <label style={labelStyle}>Stock Qty *</label>
           <input type="number" style={inputStyle} required value={variant?.stock || ''} onChange={e => handleChange('stock', e.target.value)} placeholder="0" />
+          {renderFieldError('stock')}
         </div>
 
         <div style={fieldStyle}>
@@ -284,23 +679,32 @@ export default function VariantCard({
           </select>
         </div>
 
-        {isEditMode && (
-          <div style={fieldStyle}>
-            <label style={labelStyle}>Status *</label>
-            <select style={inputStyle} value={variant?.status || 'Active'} onChange={e => handleChange('status', e.target.value)}>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-        )}
-
         {/* Variant Gallery upload */}
         <div style={{ ...fieldStyle, gridColumn: 'span 2', marginTop: 10 }}>
           <label style={labelStyle}>Variant Gallery (Optional Sub-images)</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            <div onClick={() => variantGalleryInputRef.current.click()} style={{ width: 80, height: 80, border: `2px dashed ${KM.border}`, borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#fafafa' }}>
+            <div
+              onClick={() => variantGalleryInputRef.current.click()}
+              onDragEnter={handleGalleryDrag}
+              onDragLeave={handleGalleryDrag}
+              onDragOver={handleGalleryDrag}
+              onDrop={handleGalleryDrop}
+              style={{
+                width: 80,
+                height: 80,
+                border: `2px dashed ${galleryDragActive ? KM.orange : KM.border}`,
+                borderRadius: 8,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                background: galleryDragActive ? 'rgba(245,158,11,0.08)' : '#fafafa',
+                transition: 'all 0.2s ease',
+              }}
+            >
               <span style={{ fontSize: 20 }}>+</span>
-              <span style={{ fontSize: 10, color: KM.muted, fontWeight: 600 }}>add</span>
+              <span style={{ fontSize: 10, color: galleryDragActive ? KM.orange : KM.muted, fontWeight: 600 }}>add</span>
             </div>
             {(variant?.galleryPreviews || []).map((item, idx) => (
               <div key={idx} style={{ position: 'relative', width: 80, height: 80 }}>
@@ -310,12 +714,51 @@ export default function VariantCard({
             ))}
           </div>
           <input ref={variantGalleryInputRef} type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={handleVariantGalleryChange} />
+          {renderFieldError('gallery')}
         </div>
 
       </div>
-      <div style={{ gridColumn: 'span 2', padding: '0 24px 20px' }}>
-        <ErrorMsg error={errors} />
-      </div>
+      {getUnmatchedErrors().length > 0 && (
+        <div style={{ gridColumn: 'span 2', padding: '0 24px 20px' }}>
+          <span className="field-error-msg" style={{ color: '#dc2626', fontSize: 11, fontWeight: 600 }}>
+            {getUnmatchedErrors().join(' · ')}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
+
+export const getProductVariantSchema = (product) => {
+  if (!product) return [];
+  
+  // Reconstruct schema from existing variants
+  const variantsList = Array.isArray(product.Variants) ? product.Variants : [];
+  if (variantsList.length > 0) {
+    const defaultVariant = variantsList[0];
+    let attrs = [];
+    if (Array.isArray(defaultVariant.attributes)) {
+      attrs = defaultVariant.attributes;
+    } else if (typeof defaultVariant.attributes === 'string') {
+      try { attrs = JSON.parse(defaultVariant.attributes); } catch { attrs = []; }
+    }
+    
+    // Filter out ColourHex helper and deduplicate keys to avoid double inputs
+    const seen = new Set();
+    const keys = attrs
+      .filter(a => a.key && a.key !== 'ColourHex')
+      .map(a => ({
+        key: a.key,
+        type: /colou?r/i.test(a.key) ? 'color' : (/size/i.test(a.key) ? 'size' : 'text')
+      }))
+      .filter(a => {
+        if (seen.has(a.key)) return false;
+        seen.add(a.key);
+        return true;
+      });
+    if (keys.length > 0) return keys;
+  }
+
+  // Fallback to ALL_OPTIONS_SCHEMA
+  return ALL_OPTIONS_SCHEMA;
+};

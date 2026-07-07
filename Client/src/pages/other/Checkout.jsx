@@ -741,6 +741,15 @@ const Checkout = () => {
               orderId: id,
               referenceSlug,
               selectedShippingAddr,
+              billingAddress: selectedBillingAddr,
+              paymentMethod: "cod",
+              cartItems: checkoutItems,
+              estimatedDays: shippingInfo?.estimatedDays || null,
+              shippingCharge: shippingInfo?.shippingCharge || 0,
+              couponCode: shippingPricing.couponCode || null,
+              couponDiscount: shippingPricing.couponDiscount || 0,
+              tax: shippingPricing.gstAmount || 0,
+              orderStatus: "confirmed",
             }
           });
         }, 500);

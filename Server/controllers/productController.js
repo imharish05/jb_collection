@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { Product, Variant, Category, Brand, SubCategory, CartItem, WishlistItem, Review } = require("../models");
+const { Product, Variant, Category, Brand, SubCategory, SubSubCategory, CartItem, WishlistItem, Review } = require("../models");
 const { Op }    = require("sequelize");
 const sequelize = require("../config/database");
 const { syncProductVariants } = require("./variantController");
@@ -22,6 +22,12 @@ const PRODUCT_INCLUDE = [
   {
     model: SubCategory,
     as: "SubCategory",
+    attributes: ["id", "label", "value"],
+    required: false,
+  },
+  {
+    model: SubSubCategory,
+    as: "SubSubCategory",
     attributes: ["id", "label", "value"],
     required: false,
   },
@@ -215,7 +221,7 @@ const getProductById = async (req, res, next) => {
 const createProduct = async (req, res, next) => {
   try {
     const {
-      productName, categoryId, subCategoryId, brandId,
+      productName, categoryId, subCategoryId, subSubCategoryId, brandId,
       isNewArrival, isHotDeal, discount, offerEnd, tag,
       shortDescription, fullDescription, variants,
       isPartialCodAvailable,
@@ -254,6 +260,7 @@ const createProduct = async (req, res, next) => {
       fullDescription:  fullDescription  || null,
       categoryId:      categoryId    || null,
       subCategoryId:   subCategoryId || null,
+      subSubCategoryId: subSubCategoryId || null,
       brandId:         brandId       || null,
       isPartialCodAvailable: isPartialCodAvailable === "false" || isPartialCodAvailable === false ? false : true,
       shippingWeight:  shippingWeight ? parseFloat(shippingWeight) : null,
@@ -274,7 +281,7 @@ const createProduct = async (req, res, next) => {
         mrp:         v.mrp,
         salesPrice:  v.salesPrice,
         stock:       v.stock || 0,
-        sku:         v.sku || null,
+        sku:         v.sku || generateSku("KMV"),
         attributes:  v.attributes || [],
         status:      v.status || "Active",
         image:       vGalleryImages[0] || null,
@@ -304,7 +311,7 @@ const updateProduct = async (req, res, next) => {
     if (!product) return res.status(404).json({ message: "Product not found" });
 
     const {
-      productName, categoryId, subCategoryId, brandId,
+      productName, categoryId, subCategoryId, subSubCategoryId, brandId,
       isNewArrival, isHotDeal, discount, offerEnd, tag,
       shortDescription, fullDescription, variants,
       isPartialCodAvailable,
@@ -351,6 +358,7 @@ const updateProduct = async (req, res, next) => {
       fullDescription:  fullDescription  !== undefined ? fullDescription  : product.fullDescription,
       categoryId:       categoryId       !== undefined ? (categoryId || null)        : product.categoryId,
       subCategoryId:    subCategoryId    !== undefined ? (subCategoryId || null)     : product.subCategoryId,
+      subSubCategoryId: subSubCategoryId !== undefined ? (subSubCategoryId || null)  : product.subSubCategoryId,
       brandId:          brandId          !== undefined ? (brandId || null)           : product.brandId,
       isPartialCodAvailable: isPartialCodAvailable !== undefined
                           ? (isPartialCodAvailable === "false" || isPartialCodAvailable === false ? false : true)
@@ -416,7 +424,7 @@ const updateProduct = async (req, res, next) => {
             mrp:         v.mrp,
             salesPrice:  v.salesPrice,
             stock:       v.stock || 0,
-            sku:         v.sku || null,
+            sku:         v.sku || generateSku("KMV"),
             attributes:  v.attributes || [],
             status:      v.status || "Active",
             image:       mainVarImg,

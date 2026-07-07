@@ -376,6 +376,16 @@ const ProductDescriptionInfo = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const allProducts = useSelector((state) => state.product.products || []);
+  const cartItemsFromStore = useSelector((state) => state.cart.cartItems);
+  const cartItems = cartItemsFromStore || cartItemsProp || [];
+  // Read current checkout session to support quantity merging on repeated Buy Now
+  const checkoutSession = useSelector((state) => state.checkout);
+
+  // Real-time inventory sync & polling
+  const [localProduct, setLocalProduct] = useState(product);
+
   // Populate dynamicColorMap from current variants
   if (localProduct && Array.isArray(localProduct.Variants)) {
     localProduct.Variants.forEach(v => {
@@ -392,12 +402,6 @@ const ProductDescriptionInfo = ({
       }
     });
   }
-  const { isAuthenticated } = useSelector((state) => state.auth);
-  const allProducts = useSelector((state) => state.product.products || []);
-  const cartItemsFromStore = useSelector((state) => state.cart.cartItems);
-  const cartItems = cartItemsFromStore || cartItemsProp || [];
-  // Read current checkout session to support quantity merging on repeated Buy Now
-  const checkoutSession = useSelector((state) => state.checkout);
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const shareTitle = localProduct?.name || product?.name || "this product";
@@ -406,9 +410,6 @@ const ProductDescriptionInfo = ({
   const facebookShareUrl = `https:https://www.facebook.com/share/1E8XuTpw4k//sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareMessage)}`;
   const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
   const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
-
-  // Real-time inventory sync & polling
-  const [localProduct, setLocalProduct] = useState(product);
 
   useEffect(() => {
     setLocalProduct(product);
@@ -1140,7 +1141,7 @@ const handleBuyNow = async () => {
                 {isAuthenticated && productCartQty > 0 ? (
                   <>
                   <div className="col-12 pdp-info__purchase-cell pdp-info__purchase-cell--primary">
-                    <Link to="/cart" style={{ width: "100%", height: "46px", background: "var(--theme-color)", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none" }} onMouseEnter={(e) => e.currentTarget.style.background = "#e8974d"} onMouseLeave={(e) => e.currentTarget.style.background = "var(--theme-color)"}>
+                    <Link to="/cart" style={{ width: "100%", height: "46px", background: "#16a34a", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none" }} onMouseEnter={(e) => e.currentTarget.style.background = "#15803d"} onMouseLeave={(e) => e.currentTarget.style.background = "#16a34a"}>
                       View Cart
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>

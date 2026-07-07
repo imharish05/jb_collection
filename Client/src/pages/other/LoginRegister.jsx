@@ -100,7 +100,7 @@ const LoginRegister = () => {
             <div className="header-content">
               <span className="brand-tag">JB House of Fashion</span>
               <h1>{isLogin ? "Welcome Back" : "Create Account"}</h1>
-              <p>{isLogin ? "Sign in to manage your orders." : "Join us for personalized gifting experiences."}</p>
+              <p>{isLogin ? "Sign in to manage your orders." : "Join us for personalized style experiences."}</p>
             </div>
           </div>
 

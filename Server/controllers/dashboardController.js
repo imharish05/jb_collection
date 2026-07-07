@@ -46,12 +46,15 @@ const getStats = async (req, res) => {
       return row;
     });
 
-    let totalGST = 0, totalShipping = 0, remainAmount = 0;
+    let totalGST = 0, totalShipping = 0, remainAmount = 0, totalRevenue = 0;
     orderSums.forEach(o => {
       totalGST      += parseFloat(o.taxAmount) || 0;
       totalShipping += parseFloat(o.shippingCharge) || 0;
       remainAmount  += (parseFloat(o.totalAmount) || 0) - (parseFloat(o.taxAmount) || 0) - (parseFloat(o.shippingCharge) || 0);
+      totalRevenue  += parseFloat(o.totalAmount) || 0;
     });
+
+    const averageOrderValue = orderSums.length > 0 ? (totalRevenue / orderSums.length) : 0;
 
     // ── Razorpay Payment Stats (all-time) ──
     const successfulPaymentCount  = razorpayPayments.successCount;
@@ -66,6 +69,8 @@ const getStats = async (req, res) => {
         totalGST: parseFloat(totalGST.toFixed(2)),
         totalShipping: parseFloat(totalShipping.toFixed(2)),
         remainAmount: parseFloat(remainAmount.toFixed(2)),
+        totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+        averageOrderValue: parseFloat(averageOrderValue.toFixed(2)),
         successfulPaymentCount,
         successfulPaymentAmount: parseFloat(successfulPaymentAmount.toFixed(2)),
         failedPaymentCount,

@@ -1,7 +1,7 @@
 const { DataTypes, Op } = require("sequelize");
 const ReferenceSequence = require("../models/ReferenceSequence");
 
-const PREFIX = "KGF";
+const PREFIX = "JBH";
 const WIDTH = 6;
 const REFERENCE_SLUG_FIELD = "referenceSlug";
 
@@ -10,14 +10,14 @@ const formatReferenceSlug = (num) => `${PREFIX}${String(num).padStart(WIDTH, "0"
 const normalizeReferenceSlug = (value) => {
   if (!value) return value;
   const text = String(value).trim().toUpperCase();
-  const match = text.match(/^KGF-?(\d+)$/);
+  const match = text.match(/^(?:KGF|JBH)-?(\d+)$/);
   if (!match) return text;
   return formatReferenceSlug(parseInt(match[1], 10));
 };
 
 const getReferenceNumber = (value) => {
   const normalized = normalizeReferenceSlug(value);
-  const match = String(normalized || "").match(/^KGF(\d+)$/);
+  const match = String(normalized || "").match(/^(?:KGF|JBH)(\d+)$/);
   return match ? parseInt(match[1], 10) : 0;
 };
 

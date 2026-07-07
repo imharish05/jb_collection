@@ -394,21 +394,45 @@ export const isColourKey = (key) => /colou?r/i.test(key || '');
 
 export const renderVariantLabel = (str, circleSize = 12, spacing = 4) => {
   if (!str) return '—';
-  const parts = str.split(/(\s*·\s*|\s*\/\s*)/);
+  // Split on middle dots and slashes
+  const rawParts = str.split(/(\s*·\s*|\s*\/\s*)/);
+  // Filter out any part whose key is ColourHex or is a hex color (we only want to show the colour name, not the hex code)
+  const parts = rawParts.filter(part => {
+    if (/^\s*[·/]\s*$/.test(part)) return true; // keep separators initially
+    const trimmedVal = part.trim();
+    if (isHexColor(trimmedVal)) return false; // skip raw hex color
+    if (part.includes(':')) {
+      const keyPart = part.slice(0, part.indexOf(':')).trim();
+      const valPart = part.slice(part.indexOf(':') + 1).trim();
+      if (/colourhex/i.test(keyPart)) return false; // skip ColourHex key
+      if (isHexColor(valPart)) return false; // skip value if it is hex color
+      if (valPart === '') return false; // skip if value is empty
+    }
+    return true;
+  });
+  // Remove leading/trailing/consecutive separators
+  const trimmed = parts.filter((p, i) => {
+    if (/^\s*[·/]\s*$/.test(p)) {
+      const prev = parts[i - 1];
+      const next = parts[i + 1];
+      return prev && !/^\s*[·/]\s*$/.test(prev) && next && !/^\s*[·/]\s*$/.test(next);
+    }
+    return true;
+  });
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap' }}>
-      {parts.map((part, idx) => {
+      {trimmed.map((part, idx) => {
         if (/^\s*[·/]\s*$/.test(part)) {
           return <span key={idx} style={{ color: '#aaa', margin: '0 4px' }}>{part}</span>;
         }
         if (part.includes(':')) {
           const colonIdx = part.indexOf(':');
-          const key = part.slice(0, colonIdx + 1);
+          const keyLabel = part.slice(0, colonIdx + 1);
           const val = part.slice(colonIdx + 1).trim();
           if (isHexColor(val)) {
             return (
               <span key={idx} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                <span>{key}</span>
+                <span>{keyLabel}</span>
                 <span
                   style={{
                     width: circleSize,
@@ -425,9 +449,14 @@ export const renderVariantLabel = (str, circleSize = 12, spacing = 4) => {
               </span>
             );
           }
+          return (
+            <span key={idx} style={{ display: 'inline-flex', alignItems: 'center' }}>
+              <span>{keyLabel} {val}</span>
+            </span>
+          );
         }
-        const trimmed = part.trim();
-        if (isHexColor(trimmed)) {
+        const trimmedVal = part.trim();
+        if (isHexColor(trimmedVal)) {
           return (
             <span key={idx} style={{ display: 'inline-flex', alignItems: 'center' }}>
               <span
@@ -436,7 +465,7 @@ export const renderVariantLabel = (str, circleSize = 12, spacing = 4) => {
                   height: circleSize,
                   borderRadius: '50%',
                   border: '1px solid #dcdcdc',
-                  backgroundColor: trimmed,
+                  backgroundColor: trimmedVal,
                   display: 'inline-block',
                   marginRight: spacing,
                   flexShrink: 0,

@@ -269,7 +269,7 @@ const add = async (req, res) => {
           stock:      stock      ?? 0,
           stockStatus: stockStatus || null,
           warningThreshold: warningThreshold !== undefined ? parseInt(warningThreshold) : 5,
-          sku:        sku || null,
+          sku:        sku || generateSku(),
           attributes: combo,
           status:     status     || "Active",
           image:      image || galleryPaths[0] || null,
@@ -386,6 +386,11 @@ const remove = async (req, res) => {
     const variant = await Variant.findByPk(req.params.id);
     if (!variant) return res.status(404).json({ message: "Not found" });
     const productId = variant.productId;
+
+    const variantCount = await Variant.count({ where: { productId } });
+    if (variantCount <= 1) {
+      return res.status(400).json({ message: "Cannot delete the last remaining variant of a product. A product must always have at least one variant." });
+    }
 
     const CartItem = require("../models/CartItem");
     const WishlistItem = require("../models/WishlistItem");

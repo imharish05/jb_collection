@@ -27,7 +27,9 @@ const ProductGridSingle = ({
 
   // ── Image resolution ──────────────────────────────────────────────────────
   // Priority: product.image[0] → product.image[1] → Variants[0].image → fallback
-  const hasVariants = Array.isArray(product.Variants) && product.Variants.length > 0;
+  const hasVariants = Array.isArray(product.Variants) && product.Variants.length > 1;
+  const firstVariant = Array.isArray(product.Variants) && product.Variants.length > 0 ? product.Variants[0] : null;
+  const resolvedStock = firstVariant && product.Variants.length === 1 ? Number(firstVariant.stock || 0) : Number(product.stock || 0);
 
   const productImages = Array.isArray(product.image)
     ? product.image.filter(Boolean)
@@ -52,7 +54,6 @@ const ProductGridSingle = ({
     : null;
 
   // ── Pricing ───────────────────────────────────────────────────────────────
-  const firstVariant = hasVariants ? product.Variants[0] : null;
   const basePrice = firstVariant
     ? parseFloat(firstVariant.salesPrice) || product.price
     : product.price;
@@ -79,15 +80,23 @@ const ProductGridSingle = ({
       navigate(`${process.env.PUBLIC_URL}/login?redirect=${redirect}`);
       return;
     }
-    if (Array.isArray(product.Variants) && product.Variants.length > 0) {
+    if (hasVariants) {
       navigate(process.env.PUBLIC_URL + "/product/" + (product.slug || product.id));
       return;
     }
-    if (!product.stock || Number(product.stock) <= 0) {
+    if (resolvedStock <= 0) {
       cogoToast.warn("This product is out of stock", { position: "top-center" });
       return;
     }
-    addToCartService(dispatch, product);
+    const singleVariant = Array.isArray(product.Variants) && product.Variants.length === 1 ? product.Variants[0] : null;
+    const cartPayload = singleVariant ? {
+      ...product,
+      selectedVariantId: singleVariant.id,
+      selectedVariantName: singleVariant.variantName,
+      price: parseFloat(singleVariant.salesPrice) || product.price,
+      stock: singleVariant.stock,
+    } : product;
+    addToCartService(dispatch, cartPayload);
   };
 
   // Wishlist icon active when this product is in wishlist (any variant).
@@ -180,8 +189,8 @@ const ProductGridSingle = ({
 
           {/* Add to Cart Overlay */}
           <div className="cart-action-overlay">
-            {(product.stock && product.stock > 0) || (Array.isArray(product.Variants) && product.Variants.length > 0) ? (
-              Array.isArray(product.Variants) && product.Variants.length > 0 ? (
+            {resolvedStock > 0 || hasVariants ? (
+              hasVariants ? (
                 <button onClick={handleAddToCart}>
                   SELECT OPTIONS
                 </button>

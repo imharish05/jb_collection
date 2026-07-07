@@ -8,6 +8,27 @@ import AccessDenied from '../AccessDenied';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
 
+// Subcategory Image Dimension Validator (400×400px square)
+const SUBCATEGORY_IMAGE_DIMENSIONS = {
+  width: 400,
+  height: 400,
+  aspectRatio: 1 / 1,
+  tolerance: 0.05,
+  maxFileSize: 3 * 1024 * 1024,
+  formats: [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
+    'image/heic', 'image/heif', 'image/avif'
+  ],
+};
+
+const validateSubCategoryImageDimensions = (file) => {
+  return new Promise((resolve) => {
+    // Validation temporarily disabled per user request
+    resolve({ valid: true, dimensions: { width: 400, height: 400 } });
+  });
+};
+
 const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   if (imagePath.startsWith('http')) return imagePath;
@@ -25,8 +46,11 @@ export default function SubCategories({ showToast }) {
   const [label, setLabel]                 = useState('');
   const [categoryId, setCategoryId]       = useState('');
   const [isActive, setIsActive]           = useState(true);
+  
   const [imageFile, setImageFile]         = useState(null);
   const [preview, setPreview]             = useState(null);
+  const [errors, setErrors]               = useState({});
+  const [imageDimensions, setImageDimensions] = useState(null);
   const fileInputRef = useRef();
 
   const generateSlug = (name) => {
@@ -75,6 +99,8 @@ export default function SubCategories({ showToast }) {
     setIsActive(true);
     setImageFile(null);
     setPreview(null);
+    setErrors({});
+    setImageDimensions(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -85,6 +111,8 @@ export default function SubCategories({ showToast }) {
     setIsActive(row.isActive !== false);
     setPreview(row.image ? getImageUrl(row.image) : null);
     setImageFile(null);
+    setErrors({});
+    setImageDimensions(null);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -92,13 +120,35 @@ export default function SubCategories({ showToast }) {
   const handleClearImage = () => {
     setImageFile(null);
     setPreview(null);
+    setImageDimensions(null);
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.image;
+      return newErrors;
+    });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!label) { showToast.error('Please enter a subcategory name'); return; }
-    if (!categoryId) { showToast.error('Please select a parent category'); return; }
+    
+    const newErrors = {};
+    if (!label) newErrors.label = 'Please enter a subcategory name';
+    if (!categoryId) newErrors.categoryId = 'Please select a parent category';
+    if (!imageFile && !preview) newErrors.image = 'Image is required';
+    
+    // Validate image dimensions if new image is selected
+    if (imageFile && imageDimensions && !imageDimensions.valid) {
+      newErrors.image = imageDimensions.error;
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showToast.error(Object.values(newErrors)[0]);
+      return;
+    }
+    
+    setErrors({});
 
     const data = new FormData();
     data.append('label', label);
@@ -130,25 +180,26 @@ export default function SubCategories({ showToast }) {
       title: 'Delete Subcategory?',
       message: 'Are you sure you want to delete this subcategory?',
       onConfirm: async () => {
+        const tid = showToast.loading('Deleting subcategory...');
         try {
           await api.delete(`/categories/subcategories/${subId}`);
+          showToast.success('Subcategory deleted successfully!', tid);
           fetchAll();
         } catch (err) {
           console.error('Failed to delete subcategory:', err);
+          const errMsg = err?.response?.data?.message || err?.message || 'Failed to delete subcategory';
+          showToast.error(errMsg, tid);
         }
       },
     });
   };
 
-  const safeCategories = Array.isArray(categories) ? categories : [];
-
   const getCategoryLabel = (row) => {
-    const catId = row.categoryId || row.category_id;
-    if (row.category?.label) return row.category.label;
-    if (row.category?.name) return row.category.name;
-    const cat = safeCategories.find(c => c.id === catId);
-    return cat ? (cat.label || cat.name) : '-';
+    const parentCat = categories.find(c => String(c.id) === String(row.categoryId || row.category_id));
+    return parentCat ? (parentCat.label || parentCat.name) : '-';
   };
+
+  const safeCategories = Array.isArray(categories) ? categories : [];
 
   return (
     <div className="categories-container">
@@ -177,7 +228,7 @@ export default function SubCategories({ showToast }) {
           <div className="km-form-body">
             <form className="km-form-grid" onSubmit={handleSubmit}>
               <div className="km-field km-field-half">
-                <label className="km-label">Parent Category</label>
+                <label className="km-label">Parent Category *</label>
                 <select
                   className="km-input"
                   value={categoryId}
@@ -192,7 +243,7 @@ export default function SubCategories({ showToast }) {
               </div>
 
               <div className="km-field km-field-half">
-                <label className="km-label">Sub Category Name</label>
+                <label className="km-label">Sub Category Name *</label>
                 <input
                   className="km-input" type="text" placeholder="e.g. Spice Box" required
                   value={label} onChange={e => setLabel(e.target.value)}
@@ -206,9 +257,25 @@ export default function SubCategories({ showToast }) {
                 fileInputRef={fileInputRef}
                 onFileChange={(e) => {
                   const file = e.target.files[0];
-                  if (file) setImageFile(file);
+                  if (file) {
+                    setImageFile(file);
+                    // Validate dimensions asynchronously
+                    validateSubCategoryImageDimensions(file).then((result) => {
+                      setImageDimensions(result);
+                      if (!result.valid) {
+                        setErrors(prev => ({ ...prev, image: result.error }));
+                      } else {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.image;
+                          return newErrors;
+                        });
+                      }
+                    });
+                  }
                 }}
                 onClear={handleClearImage}
+                validation={imageDimensions}
                 requirements="400×400px (1:1) • Max: 3MB (JPG/WebP)"
               />
 
@@ -318,6 +385,76 @@ export default function SubCategories({ showToast }) {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 20px;
+        }
+        .km-field-full {
+          grid-column: span 2;
+        }
+        .upload-grid-wrapper {
+          display: flex;
+          gap: 16px;
+          margin-top: 8px;
+          align-items: flex-start;
+        }
+        .drop-zone-area {
+          flex: 1;
+          height: 110px;
+          border: 2px dashed rgba(0, 0, 0, 0.1);
+          background: rgba(0, 0, 0, 0.02);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .drop-zone-area.active-file {
+          border-color: #45b369;
+          background: rgba(69, 179, 105, 0.05);
+        }
+        .upload-text {
+          font-size: 13px;
+          color: #666;
+          margin: 0;
+        }
+        .upload-icon {
+          text-align: center;
+        }
+        .preview-tile {
+          width: 110px;
+          height: 110px;
+          border-radius: 12px;
+          overflow: hidden;
+          position: relative;
+          border: 2px solid #487fff;
+          flex-shrink: 0;
+        }
+        .preview-tile img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .preview-remove {
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: rgba(0,0,0,0.7);
+          color: white;
+          border: none;
+          cursor: pointer;
+        }
+        .preview-tag {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: rgba(0, 0, 0, 0.5);
+          color: #fff;
+          font-size: 9px;
+          text-align: center;
+          padding: 3px 0;
         }
         .km-form-actions {
           grid-column: span 2;

@@ -2,116 +2,15 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
 import { editVariant, fetchVariants } from '../../redux/services/variantsService';
-import { isHexColor } from '../Products/VariantBuilder';
+import { renderVariantLabel } from '../Products/VariantBuilder';
 import { hasPermission } from '../../utils/authHelper';
 import { fetchInventorySettings } from '../../redux/services/notificationsService';
 import AccessDenied from '../AccessDenied';
 
-const isColourKey = (key) => /colou?r/i.test(key || '');
-
 const pillClass = { Active: 'pill-active', Inactive: 'pill-inactive' };
 const KM = { orange: '#b60410', orangeLight: '#FEF0EB', blue: '#1A3A6B', green: '#39B54A', teal: '#00B4D8', border: '#E5E7EB', text: '#1A1A2E', muted: '#6B7280', bg: '#F9FAFB' };
 
-function safeAttrs(raw) {
-  if (Array.isArray(raw)) return raw;
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
 
-function parseVariantName(name) {
-  if (!name || name === 'Default') return [];
-  return name
-    .split('·')
-    .map(part => part.trim())
-    .filter(Boolean)
-    .map(part => {
-      const [key, ...rest] = part.split(':');
-      return rest.length
-        ? { key: key.trim(), value: rest.join(':').trim() }
-        : { key: 'Variant', value: part };
-    })
-    .filter(item => item.key && item.value);
-}
-
-function variantParts(row) {
-  const attrs = safeAttrs(row.attributes)
-    .map(attr => {
-      const isCol = isColourKey(attr.key);
-      const val = attr.value === 'Custom' ? attr.customValue : attr.value;
-      const resolvedVal = (isCol && isHexColor(val)) ? val.toUpperCase() : val;
-      return { key: attr.key, value: resolvedVal };
-    })
-    .filter(attr => attr.key && attr.value);
-
-  if (attrs.length) return attrs;
-
-  const parsed = parseVariantName(row.variantName);
-  return parsed.map(part => {
-    const isCol = isColourKey(part.key);
-    const resolvedVal = (isCol && isHexColor(part.value)) ? part.value.toUpperCase() : part.value;
-    return { ...part, value: resolvedVal };
-  });
-}
-
-function VariantChips({ row, chipStyle = {}, labelStyle = {}, slashStyle = {} }) {
-  const parts = variantParts(row);
-  if (!parts.length) return <span style={{ color: KM.muted, fontSize: 12 }}>Default variant</span>;
-
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxWidth: 720 }}>
-      {parts.map((part, index) => {
-        const isCol = isColourKey(part.key);
-        const hasPreview = isCol && isHexColor(part.value);
-        return (
-          <span
-            key={`${part.key}-${part.value}-${index}`}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              padding: '4px 9px',
-              borderRadius: 999,
-              background: part.key === 'Custom Note' ? '#fff7ed' : '#f8fafc',
-              border: `1px solid ${part.key === 'Custom Note' ? '#fed7aa' : KM.border}`,
-              color: KM.text,
-              fontSize: 12,
-              fontWeight: 600,
-              lineHeight: 1.2,
-              ...chipStyle,
-            }}
-          >
-            <span style={{ color: part.key === 'Custom Note' ? KM.orange : KM.blue, fontWeight: 700, ...labelStyle }}>
-              {part.key}
-            </span>
-            <span style={{ color: KM.muted, fontWeight: 500, ...slashStyle }}>/</span>
-            {hasPreview && (
-              <span
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  border: '1px solid #dcdcdc',
-                  backgroundColor: part.value,
-                  display: 'inline-block',
-                  marginRight: 2,
-                  flexShrink: 0,
-                }}
-              />
-            )}
-            <span>{part.value}</span>
-          </span>
-        );
-      })}
-    </div>
-  );
-}
 
 
 // ── Stock Adjust Modal ──────────────────────────────────────────────────────
@@ -152,13 +51,8 @@ function StockModal({ variant, onClose, onDone, showToast }) {
             <div style={{ color: 'rgba(255,255,255,0.72)', fontSize: 13, marginTop: 6, fontWeight: 600 }}>
               {variant.productName || `Product #${variant.productId}`} —{' '}
             </div>
-            <div style={{ marginTop: 10 }}>
-              <VariantChips
-                row={variant}
-                chipStyle={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', color: '#fff' }}
-                labelStyle={{ color: '#bfdbfe' }}
-                slashStyle={{ color: 'rgba(255,255,255,0.45)' }}
-              />
+            <div style={{ marginTop: 10, color: '#fff', fontSize: 13, fontWeight: 700 }}>
+              {renderVariantLabel(variant.variantName)}
             </div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>×</button>
@@ -307,8 +201,8 @@ export default function Stock({ showToast }) {
               <tr key={row.id}>
                 <td style={{ fontWeight: 600, color: KM.muted }}>{i+1}</td>
                 <td style={{ fontWeight: 600 }}>{row.productName || `ID: ${row.productId}`}</td>
-                <td>
-                  <VariantChips row={row} />
+                <td style={{ fontWeight: 600 }}>
+                  {renderVariantLabel(row.variantName)}
                 </td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
