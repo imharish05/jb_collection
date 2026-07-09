@@ -18,6 +18,7 @@ import {
 } from "../../store/services/addressService";
 import { fetchOrders } from "../../store/services/orderService";
 import { getImgUrl } from "../../helpers/imageUrl";
+import { generateInvoicePDF } from "../../helpers/invoice";
 
 // Strip old variant suffix saved in productName (e.g. "Gifts (Colour: #000000)" → "Gifts")
 const cleanProductName = (name) => {
@@ -566,7 +567,7 @@ const toggleVisibility = (field) => {
                           <div className="order-main-card" key={order.id}>
                             <div className="order-card-header">
                               <div className="header-left">
-                                 <span className="order-label" style={{ fontSize: "14px", fontWeight: "600", color: "#555" }}>Order <strong style={{ color: "#111", fontWeight: "700", marginLeft: "4px", fontFamily: "inherit" }}>#{order.referenceSlug || order.id}</strong></span>
+                                 <span className="order-label" style={{ fontSize: "14px", fontWeight: "600", color: "#555" }}>Order <strong style={{ color: "#111", fontWeight: "700", marginLeft: "4px", fontFamily: "inherit" }}>{order.referenceSlug || order.id}</strong></span>
                               </div>
                               <div className="header-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                                 <span className={`status-pill ${orderStatusLow || 'pending'}`}>{statusMap[orderStatusLow] || order.status || 'Pending'}</span>
@@ -608,40 +609,44 @@ const toggleVisibility = (field) => {
                             </div>
                             <div className="order-card-footer">
                               <div className="order-footer-left"><p>Placed on: <strong>{new Date(order.createdAt).toLocaleDateString()}</strong></p></div>
-                              <div className="order-footer-right w-100 d-flex align-items-center justify-content-between">
-                                 {order.status?.toLowerCase() === "cancelled" ? (() => {
-                                  const refund = order.refunds?.[0];
-                                  const refundAmt = refund ? parseFloat(refund.refundAmount) : parseFloat(order.totalAmount);
-                                  const refStatus = (refund?.refundStatus || "pending").toLowerCase();
+                              <div className="order-footer-right w-100 d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2" style={{ marginTop: "10px" }}>
+                                {order.status?.toLowerCase() === "cancelled" ? (() => {
+                                  const paymentTypeNorm = String(order.paymentType || "").toUpperCase();
+                                  const paymentMethodNorm = String(order.paymentMethod || "").toLowerCase();
                                   
-                                  let statusText = "Pending";
-                                  let statusColor = "#9ca3af"; // grey
-                                  let tick = "";
-                                  
-                                  if (refStatus === "completed" || refStatus === "manual_completed" || refStatus === "refund_completed") {
-                                    statusText = "Refunded";
-                                    statusColor = "#22c55e"; // green
-                                    tick = " ✓";
-                                  } else if (refStatus === "initiated") {
-                                    statusText = "Initiated";
-                                    statusColor = "#f59e0b"; // amber
-                                  } else if (refStatus === "failed") {
-                                    statusText = "Failed";
-                                    statusColor = "#ef4444"; // red
-                                  } else if (refStatus === "manual_pending") {
-                                    statusText = "Pending";
-                                    statusColor = "#9ca3af"; // grey
+                                  const isFullCod = paymentTypeNorm === "FULL_COD" || paymentMethodNorm === "cod" || paymentMethodNorm === "full_cod";
+                                  const isPartialCod = paymentTypeNorm === "PARTIAL_COD" || paymentMethodNorm === "partial_cod";
+                                  const isPrepaid = paymentTypeNorm === "PREPAID" || (!isFullCod && !isPartialCod);
+
+                                  if (isFullCod) {
+                                    return null;
                                   }
-                                  
+
+                                  let refundAmt = 0;
+                                  if (isPartialCod) {
+                                    refundAmt = parseFloat(order.advancePaid || 0);
+                                  } else {
+                                    refundAmt = parseFloat(order.totalAmount || 0);
+                                  }
+
                                   return (
                                     <span className="order-total-price">
-                                      Refund: ₹{refundAmt.toFixed(2)} — <span style={{ color: statusColor, fontWeight: 700 }}>{statusText}{tick}</span>
+                                      Refund: ₹{refundAmt.toFixed(2)} — <span style={{ color: "#22c55e", fontWeight: 700 }}>Refunded ✓</span>
                                     </span>
                                   );
                                 })() : (
                                   <span className="order-total-price">Total: ₹{order.totalAmount}</span>
                                 )}
-                                 <Link to={`/order-details/${order.referenceSlug || order.id}`} className="btn-view-order">Details</Link>
+                                  <div style={{ display: "flex", gap: "8px" ,alignItems : 'center', justifyContent : 'space-between'}}>
+                                    <button 
+                                      onClick={() => generateInvoicePDF(order)}
+                                      className="btn-view-order"
+                                      style={{ display: "flex", alignItems: "center", gap: "6px", background: "#f0fdf4", color: "#166534", borderColor: "#bcf0da", cursor: "pointer" }}
+                                    >
+                                      📄 Invoice
+                                    </button>
+                                    <Link to={`/order-details/${order.referenceSlug || order.id}`} className="btn-view-order">Details</Link>
+                                  </div>
                               </div>
                             </div>
                           </div>

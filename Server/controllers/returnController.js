@@ -63,12 +63,8 @@ const createReturnRequest = async (req, res, next) => {
       return res.status(400).json({ message: "Returns are only accepted for delivered orders" });
 
     // 3. Return window check
-    if (reason === "shipping_damage") {
-      if (hoursSince(order.updatedAt) > 48)
-        return res.status(400).json({ message: "Shipping damage claim window expired (48 hours from delivery)" });
-    } else {
-      if (daysSince(order.updatedAt) > 3)
-        return res.status(400).json({ message: "Return window expired (3 days from delivery)" });
+    if (daysSince(order.updatedAt) > 7) {
+      return res.status(400).json({ message: "Return window expired (7 days from delivery)" });
     }
 
     // 4. Find the specific order item
@@ -93,8 +89,8 @@ const createReturnRequest = async (req, res, next) => {
     // 7. Proof upload validation
     const hasVideo  = req.files && req.files.video  && req.files.video.length  > 0;
     const hasImages = req.files && req.files.images && req.files.images.length > 0;
-    if (!hasVideo && !hasImages)
-      return res.status(400).json({ message: "At least one proof upload required (video or images)" });
+    if (!hasVideo)
+      return res.status(400).json({ message: "An unboxing video is mandatory for return/replacement requests." });
 
     // 8. Quantity validation
     const qty = parseInt(return_quantity, 10);

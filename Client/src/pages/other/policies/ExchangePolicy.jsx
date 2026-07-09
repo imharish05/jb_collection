@@ -82,6 +82,9 @@ const ExchangePolicy = () => {
                 <li>In their original packaging</li>
                 <li>With all original tags attached</li>
               </ul>
+              <div style={{ background: "#fef2f2", borderLeft: "4px solid #ef4444", padding: "14px 16px", margin: "18px 0", borderRadius: "4px", color: "#991b1b" }}>
+                <strong>Mandatory Proof Requirement:</strong> A complete, unedited box unboxing video is strictly required as proof to verify all return or replacement claims. Requests submitted without a valid unboxing video will not be accepted under any circumstances.
+              </div>
             </div>
 
             {/* 2 */}

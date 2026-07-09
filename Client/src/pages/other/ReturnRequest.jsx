@@ -227,8 +227,8 @@ const ReturnRequest = () => {
       setReturnQuantity(safeQty);
     }
 
-    if (!videoFile && imageFiles.length === 0) {
-      cogoToast.error("Please upload at least one proof (unboxing video or images)", { position: "top-center" });
+    if (!videoFile) {
+      cogoToast.error("An unboxing video is strictly mandatory to submit a return or replacement request.", { position: "top-center" });
       return;
     }
 
@@ -387,12 +387,9 @@ const ReturnRequest = () => {
                         required
                       >
                         <option value="">-- Choose Reason --</option>
-                        <option value="damaged_product">Product Received Damaged</option>
-                        <option value="defective_product">Product Received Defective</option>
-                        <option value="wrong_product">Incorrect Product Received</option>
-                        <option value="different_from_description">Product Different From Website Description</option>
+                        <option value="wrong_product">Incorrect / Wrong Product Delivered</option>
                         <option value="shipping_damage">Damaged in Transit / Shipping Damage</option>
-                        <option value="other">Other Reason</option>
+                        <option value="defective_product">Manufacturing Defect / Defective Product</option>
                       </select>
                     </div>
 
@@ -435,13 +432,13 @@ const ReturnRequest = () => {
                     {/* File uploads section */}
                     <div className="rr-upload-section">
                       <label className="rr-upload-header">
-                        Proof of Issue (At least one is required)
+                        Proof of Issue (Unboxing Video is REQUIRED)
                       </label>
                       <p className="rr-upload-hint">
-                        Please upload box opening unboxing video OR clear supporting images. Max video: 50MB (MP4/MOV). Max images: 5MB each, up to 10 photos.
+                        Please upload a box opening unboxing video (Required). Max video: 50MB (MP4/MOV). Optional: upload clear supporting images (Max 5MB each, up to 10 photos).
                       </p>
 
-                      <div className="rr-upload-grid">
+                      <div className="rr-upload-grid" style={{ gridTemplateColumns: "1fr" }}>
                         <div>
                           <div
                             className={`rr-upload-zone ${videoFile ? "has-file" : ""}`}
@@ -449,9 +446,9 @@ const ReturnRequest = () => {
                           >
                             <i className="fa fa-video-camera rr-upload-icon"></i>
                             <p className="rr-upload-label">
-                              {videoFile ? videoFile.name : "Upload Unboxing Video"}
+                              {videoFile ? videoFile.name : "Upload Unboxing Video (Required)"}
                             </p>
-                            <span className="rr-upload-size">{videoFile ? `${(videoFile.size / (1024 * 1024)).toFixed(1)} MB` : "Required if no images"}</span>
+                            <span className="rr-upload-size">{videoFile ? `${(videoFile.size / (1024 * 1024)).toFixed(1)} MB` : "Required under return policy"}</span>
                           </div>
                           <input
                             type="file"
@@ -471,6 +468,7 @@ const ReturnRequest = () => {
                           )}
                         </div>
 
+                        {/* Commented out for future use:
                         <div>
                           <div
                             className="rr-upload-zone"
@@ -480,7 +478,7 @@ const ReturnRequest = () => {
                             <p className="rr-upload-label">
                               Upload Images ({imageFiles.length})
                             </p>
-                            <span className="rr-upload-size">Required if no video</span>
+                            <span className="rr-upload-size">Optional supporting images</span>
                           </div>
                           <input
                             type="file"
@@ -491,8 +489,10 @@ const ReturnRequest = () => {
                             className="rr-upload-input"
                           />
                         </div>
+                        */}
                       </div>
 
+                      {/* Commented out for future use:
                       {imageFiles.length > 0 && (
                         <div className="rr-proof-preview">
                           {imageFiles.map((file, idx) => (
@@ -505,6 +505,7 @@ const ReturnRequest = () => {
                           ))}
                         </div>
                       )}
+                      */}
                     </div>
 
                     {/* Verified Customer box */}

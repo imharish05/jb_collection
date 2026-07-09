@@ -39,13 +39,13 @@ const ReturnTracking = () => {
   }, [loadReturn]);
 
   const stages = [
-    { key: "pending_review", label: "Request Submitted", icon: "fa-send" },
-    { key: "approved", label: "Under Review", icon: "fa-eye" },
-    { key: "pickup_scheduled", label: "Approved / Pickup Scheduled", icon: "fa-calendar" },
+    { key: "pending_review", label: "Pending Review", icon: "fa-send" },
+    { key: "approved", label: "Approved", icon: "fa-check" },
+    { key: "pickup_scheduled", label: "Pickup Scheduled", icon: "fa-calendar" },
     { key: "picked_up", label: "Picked Up", icon: "fa-truck" },
-    { key: "inspection_completed", label: "Inspection Done", icon: "fa-search" },
-    { key: "refund_initiated", label: "Initiated", icon: "fa-refresh" },
-    { key: "refund_completed", label: "Completed / Refunded", icon: "fa-check-circle" },
+    { key: "inspection_completed", label: "Inspection Completed", icon: "fa-search" },
+    { key: "refund_initiated", label: returnReq?.returnType === "replacement" ? "Replacement Shipped" : "Refund Initiated", icon: "fa-refresh" },
+    { key: "refund_completed", label: returnReq?.returnType === "replacement" ? "Replacement Delivered" : "Refund Completed", icon: "fa-check-circle" },
   ];
 
   const getActiveStageIndex = (status) => {
@@ -61,7 +61,6 @@ const ReturnTracking = () => {
     if (status === "refund_initiated" || status === "replacement_shipped") return 5;
 
     // refund_completed / replacement_delivered → all steps done ✅
-    // Return stages.length so every step shows as completed (green checkmark)
     if (status === "refund_completed" || status === "replacement_delivered") return 7;
 
     return 0;

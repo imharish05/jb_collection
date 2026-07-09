@@ -11,6 +11,7 @@ import { refreshProductsSilently } from "../../store/services/productService";
 import { clearCheckout } from "../../store/slices/checkout-slice";
 import { replaceCart } from "../../store/slices/cart-slice";
 import api from "../../api/axios";
+import { generateInvoicePDF } from "../../helpers/invoice";
 
 const parseJson = (val) => {
   if (!val || typeof val !== "string") return val;
@@ -532,6 +533,21 @@ useEffect(() => {
             >
               📋 View My Orders
             </Link>
+            {state && (
+              <button
+                onClick={() => generateInvoicePDF(state)}
+                style={{
+                  ...ctaBtnOutline,
+                  background: "#f0fdf4",
+                  color: "#166534",
+                  borderColor: "#bcf0da",
+                  cursor: "pointer",
+                  outline: "none"
+                }}
+              >
+                📄 Download Invoice PDF
+              </button>
+            )}
             <Link
               to={process.env.PUBLIC_URL + "/shop"}
               style={{ ...ctaBtnOutline }}

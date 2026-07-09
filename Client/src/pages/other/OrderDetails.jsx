@@ -209,7 +209,7 @@ const OrderDetails = () => {
       );
     }
 
-    const withinReturnWindow = hours <= 72; // 3 days
+    const withinReturnWindow = hours <= 168; // 7 days
     if (!withinReturnWindow) {
       return (
         <div style={{ marginTop: "10px" }}>
@@ -218,7 +218,7 @@ const OrderDetails = () => {
       );
     }
 
-    const remainingHoursTotal = Math.max(0, 72 - hours);
+    const remainingHoursTotal = Math.max(0, 168 - hours);
     const remDays = Math.floor(remainingHoursTotal / 24);
     const remHours = Math.floor(remainingHoursTotal % 24);
 
@@ -404,45 +404,94 @@ const couponDiscount =
     return ref.refundStatus;
   };
 
-  const paymentRows = [
-    paidAmount > 0 && {
-      key: "paid",
-      label: paidLabel,
-      value: formatCurrency(paidAmount),
-      className: "breakdown-row--paid",
-      footerClassName: "paid-line",
-    },
-    order.codCollected && rawDueAmount > 0 && {
-      key: "cod-collected",
-      label: "Paid on Delivery (COD)",
-      value: formatCurrency(rawDueAmount),
-      className: "breakdown-row--paid",
-      footerClassName: "paid-line",
-    },
-    showDueRow && {
-      key: "due",
-      label: dueLabel,
-      value: formatCurrency(dueAmount),
-      className: dueAmount > 0 ? "breakdown-row--due" : "breakdown-row--due-clear",
-      footerClassName: dueAmount > 0 ? "due-line" : "due-line due-line--clear",
-    },
-    order.codCollected && paidAmount > 0 && {
-      key: "total-paid",
-      label: "Total Paid",
-      value: formatCurrency(paidAmount + rawDueAmount),
-      className: "breakdown-row--paid",
-      footerClassName: "paid-line",
-      valueClassName: "font-weight-bold",
-    },
-    refund && {
-      key: "refund-status",
-      label: "Refund",
-      value: getRefundLabel(refund),
-      className: "breakdown-row--refund",
-      footerClassName: "refund-line",
-      valueClassName: ["completed", "manual_completed"].includes(refund.refundStatus?.toLowerCase()) ? "text-success" : "text-warning",
+  let paymentRows = [];
+  if (isCancelled) {
+    if (paymentTypeNorm === "FULL_COD") {
+      paymentRows = [
+        {
+          key: "payment-status-not-collected",
+          label: "Payment Status",
+          value: "Not Collected",
+          className: "breakdown-row--refund",
+          valueClassName: "text-danger"
+        }
+      ];
+    } else if (paymentTypeNorm === "PARTIAL_COD") {
+      paymentRows = [
+        paidAmount > 0 && {
+          key: "paid",
+          label: paidLabel,
+          value: formatCurrency(paidAmount),
+          className: "breakdown-row--paid",
+          footerClassName: "paid-line",
+        },
+        {
+          key: "refund-status",
+          label: "Refund",
+          value: `${formatCurrency(paidAmount)} — Refunded ✓`,
+          className: "breakdown-row--refund",
+          valueClassName: "text-success",
+        }
+      ].filter(Boolean);
+    } else {
+      paymentRows = [
+        paidAmount > 0 && {
+          key: "paid",
+          label: paidLabel,
+          value: formatCurrency(paidAmount),
+          className: "breakdown-row--paid",
+          footerClassName: "paid-line",
+        },
+        {
+          key: "refund-status",
+          label: "Refund",
+          value: `${formatCurrency(totalAmount)} — Refunded ✓`,
+          className: "breakdown-row--refund",
+          valueClassName: "text-success",
+        }
+      ].filter(Boolean);
     }
-  ].filter(Boolean);
+  } else {
+    paymentRows = [
+      paidAmount > 0 && {
+        key: "paid",
+        label: paidLabel,
+        value: formatCurrency(paidAmount),
+        className: "breakdown-row--paid",
+        footerClassName: "paid-line",
+      },
+      order.codCollected && rawDueAmount > 0 && {
+        key: "cod-collected",
+        label: "Paid on Delivery (COD)",
+        value: formatCurrency(rawDueAmount),
+        className: "breakdown-row--paid",
+        footerClassName: "paid-line",
+      },
+      showDueRow && {
+        key: "due",
+        label: dueLabel,
+        value: formatCurrency(dueAmount),
+        className: dueAmount > 0 ? "breakdown-row--due" : "breakdown-row--due-clear",
+        footerClassName: dueAmount > 0 ? "due-line" : "due-line due-line--clear",
+      },
+      order.codCollected && paidAmount > 0 && {
+        key: "total-paid",
+        label: "Total Paid",
+        value: formatCurrency(paidAmount + rawDueAmount),
+        className: "breakdown-row--paid",
+        footerClassName: "paid-line",
+        valueClassName: "font-weight-bold",
+      },
+      refund && {
+        key: "refund-status",
+        label: "Refund",
+        value: getRefundLabel(refund),
+        className: "breakdown-row--refund",
+        footerClassName: "refund-line",
+        valueClassName: ["completed", "manual_completed"].includes(refund.refundStatus?.toLowerCase()) ? "text-success" : "text-warning",
+      }
+    ].filter(Boolean);
+  }
   const priceRows = [
     discount > 0 && {
       key: "items-total",

@@ -25,6 +25,32 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+const getPaymentSummaryLabel = (order) => {
+  const status = (order.status || "").toLowerCase();
+  const paymentType = (order.paymentType || "").toUpperCase();
+  const codAmount = parseFloat(order.codAmount || 0);
+  const advancePaid = parseFloat(order.advancePaid || 0);
+  const totalAmount = parseFloat(order.totalAmount || 0);
+
+  if (status !== 'cancelled') {
+    if (paymentType === 'FULL_COD' || paymentType === 'PARTIAL_COD') {
+      return { label: 'Due at Delivery', value: codAmount };
+    }
+    return null;
+  } else {
+    if (paymentType === 'PREPAID') {
+      return { label: 'Refunded', value: totalAmount, refunded: true };
+    }
+    if (paymentType === 'PARTIAL_COD' && advancePaid > 0) {
+      return { label: 'Refunded', value: advancePaid, refunded: true };
+    }
+    if (paymentType === 'FULL_COD') {
+      return { label: 'Not Collected', value: 0, cancelled: true };
+    }
+    return null;
+  }
+};
+
 // ─── KGF Order Number Generator ──────────────────────────────────────────────
 // Generates a unique, sequential order number like KGF-000001.
 // Uses MAX() on existing order_number values so it is race-safe for low-to-medium
@@ -127,7 +153,13 @@ const getMyOrders = async (req, res, next) => {
     // Sync refund status from Razorpay in case webhook was missed (e.g. localhost, delay)
     await syncRefunds(orders);
 
-    return res.json(orders);
+    const ordersJson = orders.map(o => {
+      const json = o.toJSON();
+      json.paymentSummary = getPaymentSummaryLabel(o);
+      return json;
+    });
+
+    return res.json(ordersJson);
   } catch (err) {
     next(err);
   }
@@ -156,7 +188,10 @@ const getOrderById = async (req, res, next) => {
     // Sync refund status from Razorpay in case webhook was missed
     await syncRefunds(order);
 
-    return res.json(order);
+    const json = order.toJSON();
+    json.paymentSummary = getPaymentSummaryLabel(order);
+
+    return res.json(json);
   } catch (err) {
     next(err);
   }
@@ -511,7 +546,12 @@ const getAllOrders = async (req, res, next) => {
         { model: Refund, as: "refunds" },
       ],
     });
-    return res.json({ orders });
+    const ordersJson = orders.map(o => {
+      const json = o.toJSON();
+      json.paymentSummary = getPaymentSummaryLabel(o);
+      return json;
+    });
+    return res.json({ orders: ordersJson });
   } catch (err) {
     next(err);
   }

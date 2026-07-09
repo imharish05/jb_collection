@@ -174,6 +174,22 @@ export default function ReturnDetail() {
     }
   };
 
+  const handleInitiateReplacement = async () => {
+    setSubmitting(true);
+    const tid = toast.loading('Initiating replacement shipment…');
+    try {
+      const token = localStorage.getItem('adminToken');
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.post(`/returns/admin/${id}/replacement`, {}, { headers });
+      toast.success('✅ Replacement dispatched successfully!', { id: tid });
+      fetchDetail();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Replacement initiation failed', { id: tid });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSchedulePickup = async () => {
     setSubmitting(true);
     const tid = toast.loading('Scheduling pickup via Shiprocket…');
@@ -512,6 +528,51 @@ export default function ReturnDetail() {
                       onMouseLeave={e => { if (!submitting) e.currentTarget.style.background = '#059669'; }}
                     >
                       {submitting ? 'Processing…' : '💸 Initiate Refund'}
+                    </button>
+                  </div>
+                )}
+
+                {r?.returnType === 'replacement' && r?.status === 'inspection_completed' && (!reverseShipment || !reverseShipment.replacementAwb) && (
+                  <div style={{ marginTop: '8px', border: '1px solid #f3e8ff', borderRadius: '12px', padding: '16px', background: '#faf5ff' }}>
+                    <div style={{ fontSize: '12px', color: '#6b21a8', fontWeight: 700, marginBottom: '4px' }}>🚚 Replacement Action Required</div>
+                    <div style={{ fontSize: '12px', color: '#374151', marginBottom: '12px', lineHeight: 1.5 }}>
+                      Inspection complete! Click below to dispatch the replacement item. Standard tracking code and shipment records will be generated automatically.
+                    </div>
+                    <button
+                      onClick={() => {
+                        toast(
+                          (t) => (
+                            <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              <strong>Dispatch Replacement for Return #{r.requestId || r.referenceSlug || r.id}?</strong>
+                              <span style={{ fontSize: 12, color: '#6b7280' }}>
+                                A replacement order/shipment record will be generated. The status will update to "Replacement Shipped".
+                              </span>
+                              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                                <button
+                                  onClick={async () => { toast.dismiss(t.id); handleInitiateReplacement(); }}
+                                  style={{ padding: '6px 16px', background: '#6b21a8', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
+                                >🚚 Yes, Dispatch</button>
+                                <button
+                                  onClick={() => toast.dismiss(t.id)}
+                                  style={{ padding: '6px 14px', background: '#374151', color: '#d1d5db', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
+                                >Cancel</button>
+                              </div>
+                            </span>
+                          ),
+                          { duration: Infinity }
+                        );
+                      }}
+                      disabled={submitting}
+                      style={{
+                        width: '100%', background: submitting ? '#d1d5db' : '#6b21a8',
+                        color: '#fff', border: 'none', borderRadius: '8px', padding: '11px',
+                        fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer',
+                        fontSize: '14px', transition: 'background .2s',
+                      }}
+                      onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = '#581c87'; }}
+                      onMouseLeave={e => { if (!submitting) e.currentTarget.style.background = '#6b21a8'; }}
+                    >
+                      {submitting ? 'Processing…' : '🚚 Dispatch Replacement'}
                     </button>
                   </div>
                 )}
