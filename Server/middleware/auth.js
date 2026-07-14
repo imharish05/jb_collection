@@ -83,16 +83,16 @@ const adminOnly = async (req, res, next) => {
       } else if (url.includes("/api/inventory-settings") || url.includes("/api/stock") || url.includes("/api/products/stock")) {
         if (method === "get") reqPerm = "stock_view";
         else reqPerm = "stock_edit";
+      } else if (url.includes("/api/categories/subcategories") || url.includes("/api/categories/subsubcategories") || url.includes("/api/subcategories") || url.includes("/api/sub_categories")) {
+        if (method === "get") reqPerm = "subcategories_view";
+        else if (method === "post") reqPerm = "subcategories_create";
+        else if (method === "put" || method === "patch") reqPerm = "subcategories_edit";
+        else if (method === "delete") reqPerm = "subcategories_delete";
       } else if (url.includes("/api/categories")) {
         if (method === "get") reqPerm = "categories_view";
         else if (method === "post") reqPerm = "categories_create";
         else if (method === "put" || method === "patch") reqPerm = "categories_edit";
         else if (method === "delete") reqPerm = "categories_delete";
-      } else if (url.includes("/api/subcategories") || url.includes("/api/sub_categories")) {
-        if (method === "get") reqPerm = "subcategories_view";
-        else if (method === "post") reqPerm = "subcategories_create";
-        else if (method === "put" || method === "patch") reqPerm = "subcategories_edit";
-        else if (method === "delete") reqPerm = "subcategories_delete";
       } else if (url.includes("/api/brands")) {
         if (method === "get") reqPerm = "brands_view";
         else if (method === "post") reqPerm = "brands_create";
@@ -108,11 +108,13 @@ const adminOnly = async (req, res, next) => {
         else if (method === "post") reqPerm = "coupons_create";
         else if (method === "put" || method === "patch") reqPerm = "coupons_edit";
         else if (method === "delete") reqPerm = "coupons_delete";
-      } else if (url.includes("/api/marketing") || url.includes("/api/nav") || url.includes("/api/testimonials") || url.includes("/api/blogs")) {
+      } else if (url.includes("/api/marketing") || url.includes("/api/nav") || url.includes("/api/testimonials") || url.includes("/api/blogs") || url.includes("/api/hero-slides") || url.includes("/api/offer-banners") || url.includes("/api/marquee")) {
         let moduleName = "marquee";
-        if (url.includes("/api/blogs")) moduleName = "timeless";
+        if (url.includes("/api/blogs")) moduleName = "blogs";
         if (url.includes("/testimonials")) moduleName = "testimonials";
-        if (url.includes("/banners") || url.includes("/hero")) moduleName = "banners";
+        if (url.includes("/banners") || url.includes("/offer-banners")) moduleName = "timeless";
+        if (url.includes("/hero") || url.includes("/hero-slides")) moduleName = "banners";
+        if (url.includes("/marquee")) moduleName = "marquee";
         
         if (method === "get") reqPerm = `${moduleName}_view`;
         else if (method === "post") reqPerm = `${moduleName}_create`;
@@ -133,6 +135,24 @@ const adminOnly = async (req, res, next) => {
         else reqPerm = "contacts_delete";
       } else if (url.includes("/api/customers")) {
         reqPerm = "customers_view";
+      } else if (url.includes("/api/settings")) {
+        if (method === "get") reqPerm = "settings_view";
+        else reqPerm = "settings_edit";
+      } else if (url.includes("/api/timeline")) {
+        if (method === "get") reqPerm = "timeline_view";
+        else if (method === "post") reqPerm = "timeline_create";
+        else if (method === "put" || method === "patch") reqPerm = "timeline_edit";
+        else if (method === "delete") reqPerm = "timeline_delete";
+      } else if (url.includes("/api/fonts")) {
+        if (method === "get") reqPerm = "fonts_view";
+        else if (method === "post") reqPerm = "fonts_create";
+        else if (method === "put" || method === "patch") reqPerm = "fonts_edit";
+        else if (method === "delete") reqPerm = "fonts_delete";
+      } else if (url.includes("/api/delivery-zones") || url.includes("/api/delivery_zones")) {
+        if (method === "get") reqPerm = "delivery_zones_view";
+        else if (method === "post") reqPerm = "delivery_zones_create";
+        else if (method === "put" || method === "patch") reqPerm = "delivery_zones_edit";
+        else if (method === "delete") reqPerm = "delivery_zones_delete";
       } else if (url.includes("/api/dashboard/reports") || url.includes("/api/reports")) {
         if (method === "get") {
           if (perms.includes("reports_view") || perms.includes("reports_export")) {
@@ -142,6 +162,8 @@ const adminOnly = async (req, res, next) => {
         } else {
           reqPerm = "reports_export";
         }
+      } else if (url.includes("/api/dashboard")) {
+        reqPerm = "reports_view";
       } else if (url.includes("/api/roles")) {
         if (method === "get") reqPerm = "roles_view";
         else if (method === "post") reqPerm = "roles_create";

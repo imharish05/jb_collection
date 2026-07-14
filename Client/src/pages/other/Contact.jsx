@@ -83,7 +83,7 @@ const Contact = () => {
 
   return (
     <Fragment>
-      <SEO title="Contact JB House of Fashion" titleTemplate="Get in Touch for Customized Gifts" description="Contact JB House of Fashion for bulk orders, corporate gifts, customized return gifts, wedding gifts, personalized solutions, and gift consultations. Serving Chennai and all of India." keywords="contact JB House of Fashion, bulk orders, corporate gifts inquiry, customized gifts contact, return gifts supplier contact, personalized gifts consultation" />
+      <SEO title="Contact JB Collections" titleTemplate="Customer Support" description="Contact JB Collections customer service for help with your orders, shopping account, groceries, apparel deliveries, and other inquiries. We're here to assist you." keywords="contact JB Collections, customer service, support team, order tracking, groceries delivery contact, shopping support" />
 
       <LayoutOne headerTop="visible">
         {/* breadcrumb */}

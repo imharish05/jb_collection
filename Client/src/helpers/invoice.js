@@ -107,9 +107,9 @@ export const generateInvoicePDF = (orderOrState) => {
 
   // Header styling - Clean, minimal store info aligned left X=20
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
+  doc.setFontSize(16);
   doc.setTextColor(182, 4, 16); // Brand red color: #b60410
-  doc.text("JB HOUSE OF FASHION", 20, 25);
+  doc.text("JB HOUSE OF FASHION (JB Tex & Tailors)", 20, 25);
   
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
@@ -315,7 +315,7 @@ export const generateInvoicePDF = (orderOrState) => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(182, 4, 16);
-  doc.text("Thank you for shopping with JB House of Fashion!", 105, currentY + 35, { align: "center" });
+  doc.text("Thank you for shopping with JB House of Fashion (JB Tex & Tailors)!", 105, currentY + 35, { align: "center" });
   
   doc.save(`Invoice_${orderId}.pdf`);
 };

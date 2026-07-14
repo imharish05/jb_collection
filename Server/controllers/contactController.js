@@ -1,4 +1,5 @@
 const Contact = require("../models/Contact");
+const { sendContactSubmissionEmail } = require("../utils/mailer");
 
 // GET /contact/all (admin only)
 const getAll = async (req, res) => {
@@ -41,6 +42,11 @@ const create = async (req, res) => {
       phone: phone ? phone.trim() : null,
       message: message.trim(),
       status: "new",
+    });
+
+    // Send email to admin asynchronously
+    sendContactSubmissionEmail(contact).catch(err => {
+      console.error("[Mailer] Contact notification email failed:", err);
     });
 
     res.status(201).json({

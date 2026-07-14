@@ -50,14 +50,14 @@ export default function AdminContacts() {
       ) : (
         <DataTable
           columns={(() => {
-            const cols = ['#ID', 'Name', 'Email', 'Phone', 'Message', 'Date'];
+            const cols = ['No', 'Name', 'Email', 'Phone', 'Message', 'Date'];
             if (hasPermission('contacts_delete')) cols.push('Actions');
             return cols;
           })()}
           initialRows={contacts}
-          renderRow={(c) => (
+          renderRow={(c, index) => (
             <tr key={c.id}>
-              <td className="td-id">#{c.id}</td>
+              <td className="td-id">{index + 1}</td>
               <td style={{ fontWeight: 600 }}>{c.name}</td>
               <td className="td-muted">{c.email}</td>
               <td>{c.phone || '—'}</td>

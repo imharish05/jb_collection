@@ -1141,7 +1141,7 @@ const handleBuyNow = async () => {
                 {isAuthenticated && productCartQty > 0 ? (
                   <>
                   <div className="col-12 pdp-info__purchase-cell pdp-info__purchase-cell--primary">
-                    <Link to="/cart" style={{ width: "100%", height: "46px", background: "#16a34a", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none" }} onMouseEnter={(e) => e.currentTarget.style.background = "#15803d"} onMouseLeave={(e) => e.currentTarget.style.background = "#16a34a"}>
+                    <Link to="/cart" style={{ width: "100%", height: "46px", background: "#e4bd73", color: "#b60410", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none" }} onMouseEnter={(e) => e.currentTarget.style.background = "#d8b268"} onMouseLeave={(e) => e.currentTarget.style.background = "#e4bd73"}>
                       View Cart
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>

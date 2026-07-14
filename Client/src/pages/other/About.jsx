@@ -17,10 +17,10 @@ const About = () => {
   return (
     <Fragment>
       <SEO
-        title="About JB House of Fashion"
-        titleTemplate="Personalized & Customized Gifts Factory"
-        description="Learn about JB House of Fashion - a complete gift solution hub offering personalized and customized return gifts, corporate gifts, and bulk gifts. Established to deliver creativity, quality, and affordability across Chennai and India."
-        keywords="about JB House of Fashion, customized gifts factory, return gifts manufacturer, corporate gifts supplier, personalized gifts company, laser engraving services, bulk gifts Chennai"
+        title="About JB Collections"
+        titleTemplate="Online Shopping Store"
+        description="Learn about JB Collections - your premium online shopping mall offering high-quality groceries, fashion, beauty, home goods, toys, and food items at the best prices."
+        keywords="about JB Collections, online department store, grocery store, fashion clothing retailer, beauty care shop, home goods store, baby products"
       /> 
       <LayoutOne headerTop="visible">
         {/* breadcrumb */}

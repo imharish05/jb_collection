@@ -31,6 +31,12 @@ const PRODUCT_INCLUDE = [
     attributes: ["id", "label", "value"],
     required: false,
   },
+  {
+    model: Brand,
+    as: "Brand",
+    attributes: ["id", "name", "logo"],
+    required: false,
+  },
 ];
 
 // safely parse a value that might be a JSON string or already an array/object
@@ -135,7 +141,7 @@ const shape = (p) => {
 // Query params: category, tag, search, minPrice, maxPrice, rating, sort
 const getAllProducts = async (req, res, next) => {
   try {
-    const { category, tag, search, minPrice, maxPrice, rating, sort, includeCombos } = req.query;
+    const { category, tag, search, minPrice, maxPrice, rating, sort, includeCombos, brand } = req.query;
 
     const where = { isActive: true };
 
@@ -144,6 +150,9 @@ const getAllProducts = async (req, res, next) => {
         { name:             { [Op.like]: `%${search}%` } },
         { shortDescription: { [Op.like]: `%${search}%` } },
       ];
+    }
+    if (brand) {
+      where.brandId = parseInt(brand) || null;
     }
     if (minPrice || maxPrice) {
       where.price = {};

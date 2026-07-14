@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import DataTable from '../DataTable/DataTable';
-import toast from 'react-hot-toast';
 import {
   fetchOfferBanners,
   createOfferBanner,
@@ -9,6 +8,7 @@ import {
   removeOfferBanner,
 } from '../../redux/services/timelesstreasuresservice';
 import { hasPermission } from '../../utils/authHelper';
+import { confirmDelete } from '../../utils/sweetalert';
 import AccessDenied from '../AccessDenied';
 
 const BASE_URL = process.env.REACT_APP_IMG_URL;
@@ -36,8 +36,41 @@ const BANNER_DIMENSIONS = {
 
 const validateImageDimensions = (file) => {
   return new Promise((resolve) => {
-    // Validation temporarily disabled per user request
-    resolve({ valid: true, dimensions: { width: 1920, height: 1080 } });
+    if (file.size > BANNER_DIMENSIONS.maxFileSize) {
+      resolve({ valid: false, error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB` });
+      return;
+    }
+    if (!BANNER_DIMENSIONS.formats.includes(file.type)) {
+      resolve({ valid: false, error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You uploaded: ${file.type || 'unknown'}` });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        const actualRatio = width / height;
+        const expectedRatio = BANNER_DIMENSIONS.aspectRatio;
+        const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
+
+        // Check aspect ratio
+        if (ratioDiff > BANNER_DIMENSIONS.tolerance) {
+          resolve({
+            valid: false,
+            error: `Incorrect aspect ratio. Use 16:9 (${BANNER_DIMENSIONS.width}×${BANNER_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
+            dimensions: { width, height },
+          });
+          return;
+        }
+
+        resolve({
+          valid: true,
+          dimensions: { width, height },
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   });
 };
 
@@ -171,39 +204,20 @@ export default function TimelessTreasures({ showToast }) {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleDelete = async (rowId, rowTitle) => {
-    const confirmId = showToast.loading('Delete this banner?');
-    toast(
-      (t) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span>Are you sure you want to delete <b>"{rowTitle}"</b>?</span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-            <button
-              style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={async () => {
-                toast.dismiss(t.id);
-                const toastId = showToast.loading('Deleting banner...');
-                try {
-                  await dispatch(removeOfferBanner(rowId));
-                  showToast.success('Banner deleted', toastId);
-                } catch (err) {
-                  showToast.error(err?.response?.data?.message || 'Failed to delete', toastId);
-                }
-              }}
-            >
-              Yes, Delete
-            </button>
-            <button
-              style={{ background: '#444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ),
-      { id: confirmId, duration: Infinity }
-    );
+  const handleDelete = (rowId, rowTitle) => {
+    confirmDelete({
+      title: 'Delete Banner?',
+      message: `Are you sure you want to delete "${rowTitle}"?`,
+      onConfirm: async () => {
+        const toastId = showToast.loading('Deleting banner...');
+        try {
+          await dispatch(removeOfferBanner(rowId));
+          showToast.success('Banner deleted successfully!', toastId);
+        } catch (err) {
+          showToast.error(err?.response?.data?.message || 'Failed to delete banner', toastId);
+        }
+      },
+    });
   };
 
   const handleSubmit = async (e) => {

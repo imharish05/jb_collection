@@ -54,10 +54,10 @@ SEO.propTypes = {
 }
 
 SEO.defaultProps = {
-    title: "JB House of Fashion",
-    titleTemplate: "Personalized Return Gifts & Corporate Gifts Crafted for Every Occasion",
-    description: "JB House of Fashion Factory offers customized corporate gifts and return gifts for weddings, engagements, baby showers, birthdays, housewarming ceremonies, puberty ceremonies, upanayanam, festivals, Navaratri, Varalakshmi Pooja, corporate events, school functions, retirement functions and special occasions.",
-    keywords: "Return gifts, customized gifts, personalized gifts, corporate gifts, wedding return gifts, bulk return gifts, custom gifts Chennai, personalized corporate gifts, laser engraving, laser etching",
+    title: "JB Collections",
+    titleTemplate: "Online Shopping Mall for Groceries, Fashion, Home & Beauty",
+    description: "JB Collections is your one-stop online shopping store for fresh groceries, staples, trendy fashion apparel, beauty products, home essentials, toys, baby care, and food items. Shop the best deals and get safe delivery at your doorstep.",
+    keywords: "online shopping, buy groceries, buy fashion clothing, cosmetics beauty care, home products online, toys baby care, food store, gift cards, JB Collections",
 };
 
 export default SEO;

@@ -29,20 +29,21 @@ const calculateTotalWeight = (items) => {
   return parseFloat(total.toFixed(3));
 };
 
-// ── Helper: fetch delivery zone charge for a state ──────────────────────────
-const fetchDeliveryZoneCharge = async (state) => {
-  if (!state) return null;
+// ── Helper: fetch delivery zone charge for a pincode ──────────────────────────
+const fetchDeliveryZoneCharge = async (pincode) => {
+  if (!pincode) return null;
   try {
-    const res = await api.get(`/delivery-zones/charge/${encodeURIComponent(state)}`);
+    const res = await api.get(`/delivery-zones/charge/${encodeURIComponent(pincode)}`);
     return {
       found: true,
+      serviceable: res.data.serviceable !== false,
       shippingCharge: res.data.deliveryCharge ?? res.data.charge ?? 0,
-      state: res.data.state || state,
+      pincode: res.data.zone?.pincode || pincode,
     };
   } catch (err) {
     if (err.response?.status === 404) {
-      // No zone configured for this state — free shipping or default
-      return { found: false, shippingCharge: 0, state };
+      // No zone configured for this pincode — unserviceable
+      return { found: false, serviceable: false, shippingCharge: 0, pincode };
     }
     console.error("[Checkout] Delivery zone fetch failed:", err.message);
     return null;
@@ -406,23 +407,24 @@ const Checkout = () => {
   }, []);
 
   /* ── Check shipping rates when address changes ── */
-  /* ── Fetch delivery zone charge whenever shipping address state changes ── */
+  /* ── Fetch delivery zone charge whenever shipping address pincode changes ── */
   useEffect(() => {
     const loadDeliveryZone = async () => {
-      const state = selectedShippingAddr?.state;
-      if (!state) {
+      const pincode = selectedShippingAddr?.pincode;
+      if (!pincode) {
         setShippingInfo(null);
         setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: 0 }));
         return;
       }
       setCheckingServiceability(true);
-      const result = await fetchDeliveryZoneCharge(state);
+      const result = await fetchDeliveryZoneCharge(pincode);
       setCheckingServiceability(false);
-      if (result) {
-        setShippingInfo({ ...result, serviceable: true, codAvailable: true, allCouriers: [] });
+      if (result && result.serviceable) {
+        setShippingInfo({ ...result, codAvailable: true, allCouriers: [] });
         setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: result.shippingCharge }));
       } else {
-        setShippingInfo(null);
+        setShippingInfo({ found: false, serviceable: false, codAvailable: false, shippingCharge: 0 });
+        setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: 0 }));
       }
     };
     loadDeliveryZone();
@@ -1335,15 +1337,6 @@ const Checkout = () => {
                             onChange={(e) => {
                               const newState = e.target.value;
                               setAddrForm((f) => ({ ...f, state: newState }));
-                              // Live-preview delivery zone charge when state changes
-                              if (newState) {
-                                fetchDeliveryZoneCharge(newState).then((result) => {
-                                  if (result) {
-                                    setShippingInfo({ ...result, serviceable: true, codAvailable: true, allCouriers: [] });
-                                    setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: result.shippingCharge }));
-                                  }
-                                });
-                              }
                             }}
                           >
                             <option value="">— Select State —</option>
@@ -1358,7 +1351,22 @@ const Checkout = () => {
                           <input
                             className={`kco-input ${addrErrors.pincode ? "error" : ""}`}
                             value={addrForm.pincode}
-                            onChange={(e) => setAddrForm((f) => ({ ...f, pincode: e.target.value }))}
+                            onChange={(e) => {
+                              const newPin = e.target.value;
+                              setAddrForm((f) => ({ ...f, pincode: newPin }));
+                              const cleanPin = newPin.replace(/\D/g, "");
+                              if (cleanPin.length === 6) {
+                                fetchDeliveryZoneCharge(cleanPin).then((result) => {
+                                  if (result && result.serviceable) {
+                                    setShippingInfo({ ...result, codAvailable: true, allCouriers: [] });
+                                    setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: result.shippingCharge }));
+                                  } else {
+                                    setShippingInfo({ found: false, serviceable: false, codAvailable: false, shippingCharge: 0 });
+                                    setShippingPricing((prev) => withGrandTotal({ ...prev, shipping: 0 }));
+                                  }
+                                });
+                              }
+                            }}
                             placeholder="6-digit pincode"
                             maxLength={6}
                             type="tel"
@@ -1623,9 +1631,9 @@ const Checkout = () => {
                     <div className="kco-sum-row">
                       <span>
                         Shipping
-                        {selectedShippingAddr?.state && (
+                        {selectedShippingAddr?.pincode && (
                           <span style={{ fontSize: "0.85em", color: "#888", marginLeft: 4 }}>
-                            ({selectedShippingAddr.state})
+                            ({selectedShippingAddr.pincode})
                           </span>
                         )}
                       </span>
@@ -1634,14 +1642,14 @@ const Checkout = () => {
                           <span style={{ color: "#888" }}>⏳ Checking...</span>
                         ) : !selectedShippingAddr ? (
                           <span style={{ color: "#aaa", fontSize: 12 }}>Select address</span>
-                        ) : shippingInfo ? (
+                        ) : (shippingInfo && shippingInfo.serviceable !== false) ? (
                           shippingInfo.shippingCharge === 0 ? (
                             <span style={{ color: "#16a34a", fontWeight: 700 }}>FREE</span>
                           ) : (
                             `₹${parseFloat(shippingInfo.shippingCharge).toFixed(2)}`
                           )
                         ) : (
-                          <span style={{ color: "#aaa", fontSize: 12 }}>—</span>
+                          <span style={{ color: "#ef4444", fontWeight: 700 }}>❌ Not Serviceable</span>
                         )}
                       </span>
                     </div>
@@ -1685,12 +1693,12 @@ const Checkout = () => {
                   <button
                     className="kco-place-order-btn"
                     onClick={handlePlaceOrder}
-                    disabled={placing || !selectedShippingAddr || !paymentMethod || checkingServiceability || (selectedShippingAddr && !shippingInfo)}
+                    disabled={placing || !selectedShippingAddr || !paymentMethod || checkingServiceability || (selectedShippingAddr && (!shippingInfo || shippingInfo.serviceable === false))}
                     style={{
                       width: "100%",
                       display: "block",
-                      opacity: placing || !selectedShippingAddr || !paymentMethod || checkingServiceability || (selectedShippingAddr && !shippingInfo) ? 0.5 : 1,
-                      cursor: placing || !selectedShippingAddr || !paymentMethod || checkingServiceability || (selectedShippingAddr && !shippingInfo) ? "not-allowed" : "pointer",
+                      opacity: placing || !selectedShippingAddr || !paymentMethod || checkingServiceability || (selectedShippingAddr && (!shippingInfo || shippingInfo.serviceable === false)) ? 0.5 : 1,
+                      cursor: placing || !selectedShippingAddr || !paymentMethod || checkingServiceability || (selectedShippingAddr && (!shippingInfo || shippingInfo.serviceable === false)) ? "not-allowed" : "pointer",
                       marginBottom: 16,
                       padding: "14px 20px",
                       borderRadius: "12px",

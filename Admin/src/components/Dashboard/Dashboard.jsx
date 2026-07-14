@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { renderVariantLabel } from '../Products/VariantBuilder';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import styles from './Dashboard.module.css';
 import { loadDashboard, loadChart } from '../../redux/services/dashboardService';
@@ -24,6 +25,7 @@ const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 2022 }, (_, i) => CURRE
 
 export default function Dashboard() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { stats, recentProducts, recentVariants, thresholds, totalStock, orderCounts, monthlyData, monthlySalesData, quarterlySalesData, loading, graphLoading, quarterlyLoading } = useSelector(state => state.dashboard);
 
   // Settings-aware stock helpers
@@ -178,14 +180,11 @@ export default function Dashboard() {
   }, [selectedYear]);
 
   const STAT_CARDS = [
-    { label: 'Total Products', value: stats.totalProducts, bg: 'linear-gradient(135deg,#487fff 0%,#486cea 100%)', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 7h.01" /></svg>) },
-    { label: 'Total Customers', value: stats.totalCustomers, bg: 'linear-gradient(135deg,#ea8b0c 0%,#d97b08 100%)', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>) },
-    { label: 'Stock Items', value: totalStock, bg: 'linear-gradient(135deg,#45b369 0%,#2a8a22 100%)', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>) },
-    { label: 'Total Revenue', value: typeof stats.totalRevenue === 'number' ? `₹${stats.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : stats.totalRevenue, bg: 'linear-gradient(135deg,#8252e9 0%,#6a3bd0 100%)', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12M6 8h12M6 3a5 5 0 0 1 0 10h4M12 13l7 8" /></svg>) },
-    { label: 'Avg Order Value', value: typeof stats.averageOrderValue === 'number' ? `₹${stats.averageOrderValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : stats.averageOrderValue, bg: 'linear-gradient(135deg,#0ea5b8 0%,#0b8595 100%)', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>) },
-    // { label: 'Total GST', value: typeof stats.totalGST === 'number' ? `₹${stats.totalGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : stats.totalGST, bg: 'linear-gradient(135deg,#8252e9 0%,#6a3bd0 100%)', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 14l2 2 4-4" /><circle cx="12" cy="12" r="10" /></svg>) },
-    // { label: 'Total Shipping', value: typeof stats.totalShipping === 'number' ? `₹${stats.totalShipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : stats.totalShipping, bg: 'linear-gradient(135deg,#0ea5b8 0%,#0b8595 100%)', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13" /><path d="M16 8h4l3 5v3h-7V8z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>) },
-    // { label: 'Remain Amount', value: typeof stats.remainAmount === 'number' ? `₹${stats.remainAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : stats.remainAmount, bg: 'linear-gradient(135deg,#ef4444 0%,#c92f2f 100%)', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>) },
+    { label: 'Total Products', value: stats.totalProducts, bg: 'linear-gradient(135deg,#487fff 0%,#486cea 100%)', path: '/products', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 7h.01" /></svg>) },
+    { label: 'Total Customers', value: stats.totalCustomers, bg: 'linear-gradient(135deg,#ea8b0c 0%,#d97b08 100%)', path: '/customers', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>) },
+    { label: 'Stock Items', value: totalStock, bg: 'linear-gradient(135deg,#45b369 0%,#2a8a22 100%)', path: '/stock', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>) },
+    { label: 'Total Revenue', value: typeof stats.totalRevenue === 'number' ? `₹${stats.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : stats.totalRevenue, bg: 'linear-gradient(135deg,#8252e9 0%,#6a3bd0 100%)', path: '/reports', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12M6 8h12M6 3a5 5 0 0 1 0 10h4M12 13l7 8" /></svg>) },
+    { label: 'Avg Order Value', value: typeof stats.averageOrderValue === 'number' ? `₹${stats.averageOrderValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : stats.averageOrderValue, bg: 'linear-gradient(135deg,#0ea5b8 0%,#0b8595 100%)', path: '/reports', icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>) }
   ];
 
   const filteredStatCards = STAT_CARDS.filter(card => {
@@ -257,7 +256,12 @@ export default function Dashboard() {
       {filteredStatCards.length > 0 && (
         <div className={styles.statsRow}>
           {filteredStatCards.map((s, i) => (
-            <div key={s.label} className={styles.statCard} style={{ '--bg': s.bg, '--delay': `${i * 80}ms` }}>
+            <div 
+              key={s.label} 
+              className={styles.statCard} 
+              style={{ '--bg': s.bg, '--delay': `${i * 80}ms`, cursor: s.path ? 'pointer' : 'default' }}
+              onClick={() => s.path && navigate(s.path)}
+            >
               <div className={styles.scTop}>
                 <div className={styles.scMeta}>
                   <div className={styles.scIcon}>{s.icon}</div>

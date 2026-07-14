@@ -23,8 +23,30 @@ const VARIANT_IMAGE_RULES = {
 
 const validateVariantImage = (file) => {
   return new Promise((resolve) => {
-    // Validation temporarily disabled per user request
-    resolve({ valid: true });
+    if (file.size > VARIANT_IMAGE_RULES.maxFileSize) {
+      resolve({ valid: false, error: `File too large. Max 3MB. Yours: ${(file.size / 1024 / 1024).toFixed(2)}MB` });
+      return;
+    }
+    if (!VARIANT_IMAGE_RULES.formats.includes(file.type)) {
+      resolve({ valid: false, error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). Yours: ${file.type || 'unknown'}` });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        const ratio = width / height;
+        const diff = Math.abs(ratio - VARIANT_IMAGE_RULES.aspectRatio) / VARIANT_IMAGE_RULES.aspectRatio;
+        if (diff > VARIANT_IMAGE_RULES.tolerance) {
+          resolve({ valid: false, error: `Wrong ratio. Use 5:6 (${VARIANT_IMAGE_RULES.width}×${VARIANT_IMAGE_RULES.height}px). Yours: ${width}×${height}px` });
+          return;
+        }
+        resolve({ valid: true });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   });
 };
 

@@ -1,5 +1,6 @@
 import cogoToast from "cogo-toast";
 import { setCategories, setEvents, setCombos, setRootCombos } from "../slices/navMenuSlice";
+import { setBrands } from "../slices/brandsSlice";
 import api from "../../api/axios";
 
 export const getNavCategories = async (dispatch) => {
@@ -18,6 +19,16 @@ export const getNavCategories = async (dispatch) => {
     } catch (comboErr) {
       console.error("Unable to fetch root combos:", comboErr);
       dispatch(setRootCombos([]));
+    }
+
+    // Fetch active brands for client-side filtering
+    try {
+      const resBrands = await api.get("/brands");
+      const activeBrands = (resBrands.data || []).filter(b => b.isActive !== false);
+      dispatch(setBrands(activeBrands));
+    } catch (brandErr) {
+      console.error("Unable to fetch brands:", brandErr);
+      dispatch(setBrands([]));
     }
 
     console.log(res.data.data.categories);

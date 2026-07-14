@@ -40,11 +40,54 @@ const getVariantSignature = (attributes) => {
     .join(';');
 };
 
+// Product Image Dimension Validator (800×960px 5:6 portrait)
+const PRODUCT_IMAGE_DIMENSIONS = {
+  width: 800,
+  height: 960,
+  aspectRatio: 5 / 6,
+  tolerance: 0.05,
+  maxFileSize: 3 * 1024 * 1024,
+  formats: [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
+    'image/heic', 'image/heif', 'image/avif'
+  ],
+};
 
 const validateProductImageDimensions = (file) => {
   return new Promise((resolve) => {
-    // Validation temporarily disabled per user request
-    resolve({ valid: true, dimensions: { width: 400, height: 400 } });
+    if (file.size > PRODUCT_IMAGE_DIMENSIONS.maxFileSize) {
+      resolve({ valid: false, error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB` });
+      return;
+    }
+    if (!PRODUCT_IMAGE_DIMENSIONS.formats.includes(file.type)) {
+      resolve({ valid: false, error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You have: ${file.type || 'unknown'}` });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+         const { width, height } = img;
+         const actualRatio = width / height;
+         const expectedRatio = PRODUCT_IMAGE_DIMENSIONS.aspectRatio;
+         const ratioDiff = Math.abs(actualRatio - expectedRatio) / expectedRatio;
+         if (ratioDiff > PRODUCT_IMAGE_DIMENSIONS.tolerance) {
+           resolve({
+             valid: false,
+             error: `Incorrect aspect ratio. Use 5:6 (${PRODUCT_IMAGE_DIMENSIONS.width}×${PRODUCT_IMAGE_DIMENSIONS.height}px). Yours: ${width}×${height}px`,
+             dimensions: { width, height },
+           });
+           return;
+         }
+         resolve({
+           valid: true,
+           dimensions: { width, height },
+         });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   });
 };
 
@@ -228,7 +271,7 @@ export default function Variants({ showToast }) {
     schema.forEach(field => {
       if (field.type === 'color') {
         initialAttrs.push({ key: field.key, value: '' });
-        initialAttrs.push({ key: field.key + 'Hex', value: '#000000' });
+        initialAttrs.push({ key: 'ColourHex', value: '#000000' });
       } else {
         initialAttrs.push({ key: field.key, value: '' });
       }
@@ -258,7 +301,7 @@ export default function Variants({ showToast }) {
     schema.forEach(field => {
       if (field.type === 'color') {
         initialAttrs.push({ key: field.key, value: '' });
-        initialAttrs.push({ key: field.key + 'Hex', value: '#000000' });
+        initialAttrs.push({ key: 'ColourHex', value: '#000000' });
       } else {
         initialAttrs.push({ key: field.key, value: '' });
       }

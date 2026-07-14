@@ -87,7 +87,7 @@ const Login = ({ onLoginSuccess }) => {
               </button>
             </form>
             <footer className="glass-footer-center">
-              <p>© 2026 JB House of Fashion</p>
+              <p>© 2026 JB House of Fashion (JB Tex & Tailors)</p>
             </footer>
           </div>
         </div>

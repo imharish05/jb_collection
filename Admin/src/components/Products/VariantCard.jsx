@@ -146,7 +146,7 @@ export default function VariantCard({
   const removeAttr = (key) => {
     const updated = { ...variant };
     let attrs = updated.attributes ? [...updated.attributes] : [];
-    attrs = attrs.filter(a => a.key !== key && a.key !== (key + 'Hex'));
+    attrs = attrs.filter(a => a.key !== key && a.key !== 'ColourHex');
     updated.attributes = attrs;
     
     // Update variantName based on all non-ColourHex attributes with non-empty values
@@ -164,7 +164,7 @@ export default function VariantCard({
     let attrs = updated.attributes ? [...updated.attributes] : [];
     if (!attrs.some(a => a.key === key)) {
       attrs.push({ key, value: '' });
-      if (key === 'Colour') {
+      if (/colou?r/i.test(key)) {
         attrs.push({ key: 'ColourHex', value: '#000000' });
       }
     }
@@ -358,7 +358,7 @@ export default function VariantCard({
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#f3e8ff', border: '1px solid #c084fc', color: '#6b21a8', borderRadius: 20, fontSize: 13, fontWeight: '600' }}>
                     {field.type === 'color' && (
                       <span
-                        style={{ width: 14, height: 14, borderRadius: '50%', border: '1px solid #c084fc', backgroundColor: getAttr(field.key + 'Hex') || '#000000', display: 'inline-block' }}
+                        style={{ width: 14, height: 14, borderRadius: '50%', border: '1px solid #c084fc', backgroundColor: getAttr('ColourHex') || '#000000', display: 'inline-block' }}
                       />
                     )}
                     <span>{value}</span>
@@ -505,12 +505,12 @@ export default function VariantCard({
                     <input
                       type="color"
                       style={{ width: 28, height: 28, border: `1px solid ${KM.border}`, borderRadius: 6, padding: 2, cursor: 'pointer', background: '#fff' }}
-                      value={getAttr(field.key + 'Hex') || '#000000'}
+                      value={getAttr('ColourHex') || '#000000'}
                       onChange={e => handleColorHexChange(e.target.value)}
                     />
                     <input
                       style={{ ...inputStyle, width: 80, padding: '4px 6px', fontSize: 12 }}
-                      value={getAttr(field.key + 'Hex') || ''}
+                      value={getAttr('ColourHex') || ''}
                       onChange={e => handleColorHexChange(e.target.value)}
                       placeholder="#000000"
                     />

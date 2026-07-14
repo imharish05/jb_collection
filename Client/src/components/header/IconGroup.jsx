@@ -78,7 +78,7 @@ const IconGroup = ({ iconWhiteClass }) => {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search gifts…"
+            placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="ig-search__input"

@@ -25,6 +25,7 @@ import orderReducer from "./slices/order-slice";
 import reviewReducer from "./slices/review-slice";
 import testimonialReducer from "./slices/testimonialSlice";
 import contactReducer from "./slices/contactSlice";
+import brandsReducer from "./slices/brandsSlice";
 
 import checkoutReducer from "./slices/checkout-slice";
 import returnReducer from "./slices/returnSlice";
@@ -34,7 +35,7 @@ const persistConfig = {
     key: "flone",
     version: 1.1,
     storage,
-    blacklist: ["product", "navMenu", "headerSlider", "review", "return", "settings"]
+    blacklist: ["product", "navMenu", "headerSlider", "review", "return", "settings", "brands"]
 };
 
 const appReducer = combineReducers({
@@ -55,6 +56,7 @@ const appReducer = combineReducers({
     testimonial:   testimonialReducer,
     contact:       contactReducer,
 
+    brands:        brandsReducer,
     return:        returnReducer,
     settings:      settingsReducer,
 });

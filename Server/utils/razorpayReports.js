@@ -129,9 +129,18 @@ async function fetchRazorpayPaymentSummary(query = {}) {
     };
   }
 
-  const range = buildRazorpayDateRange(query);
-  const payments = await fetchAllRazorpayPayments(razorpay, range);
-  return summarizeRazorpayPayments(payments);
+  try {
+    const range = buildRazorpayDateRange(query);
+    const payments = await fetchAllRazorpayPayments(razorpay, range);
+    return summarizeRazorpayPayments(payments);
+  } catch (err) {
+    console.error("[Razorpay] Failed to fetch payment summary:", err.message || err);
+    return {
+      captured: [], failed: [],
+      successCount: 0, failedCount: 0,
+      successAmount: 0, failedAmount: 0,
+    };
+  }
 }
 
 module.exports = {

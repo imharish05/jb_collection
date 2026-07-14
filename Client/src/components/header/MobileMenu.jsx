@@ -19,7 +19,7 @@ const MobileMenu = () => {
             className="offcanvas-header__brand"
             onClick={closeMobileMenu}
           >
-            JB House of Fashion
+            JB House of Fashion (JB Tex & Tailors)
           </Link>
           <button
             className="offcanvas-menu-close"

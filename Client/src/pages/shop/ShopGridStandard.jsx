@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import { getSortedProducts } from '../../helpers/product';
 import SEO from "../../components/seo";
+import { getShopSEO } from '../../helpers/seoHelper';
 import LayoutOne from '../../layouts/LayoutOne';
 import Breadcrumb from '../../wrappers/breadcrumb/Breadcrumb';
 import ShopSidebar from '../../wrappers/product/ShopSidebar';
@@ -43,6 +44,7 @@ const ShopGridStandard = () => {
 
   const { products } = useSelector((state) => state.product);
   const { rootCombos: navCombos = [], categories = [], events = [] } = useSelector((state) => state.navMenu || {});
+  const { brands: allBrands = [] } = useSelector((state) => state.brands || {});
 
   const { search, pathname } = useLocation();
   const navigate = useNavigate();
@@ -58,6 +60,7 @@ const ShopGridStandard = () => {
   const searchParam = params.get("search");
   const subCatParam = params.get("subcategory");
   const subSubCatParam = params.get("subsubcategory");
+  const brandParam = params.get("brand");
 
   const IMG_BASE = process.env.REACT_APP_IMG_URL + "/uploads/";
   const imgSrc = (path) =>
@@ -101,6 +104,11 @@ const ShopGridStandard = () => {
     : comboParam === "all" ? "All Combos"
     : currentCombo ? (currentCombo.label || currentCombo.name || labelMap[comboParam] || comboParam)
     : comboParam ? (labelMap[comboParam] || comboParam)
+    : brandParam ? (() => {
+        const ids = brandParam.split(",").filter(Boolean);
+        const names = ids.map(id => allBrands.find(b => String(b.id) === id)?.name || `Brand #${id}`);
+        return names.join(", ");
+      })()
     : null;
 
   const S = process.env.PUBLIC_URL + "/shop";
@@ -167,11 +175,20 @@ const ShopGridStandard = () => {
       );
     }
 
+    // Apply brand filter if present (supports comma-separated multi-select)
+    if (brandParam) {
+      const brandIds = new Set(brandParam.split(",").filter(Boolean));
+      sorted = sorted.filter(p =>
+        brandIds.has(String(p.brandId)) ||
+        brandIds.has(String(p.Brand?.id))
+      );
+    }
+
     sorted = getSortedProducts(sorted, filterSortType, filterSortValue);
     if (priceRange) sorted = sorted.filter(p => p.price >= priceRange.min && p.price <= priceRange.max);
     setSortedProducts(sorted);
     setCurrentData(showAll ? sorted : sorted.slice(0, displayCount));
-  }, [displayCount, products, sortType, sortValue, subCatParam, subSubCatParam, filterSortType, filterSortValue, pageLimit, showAll, priceRange]);
+  }, [displayCount, products, sortType, sortValue, subCatParam, subSubCatParam, brandParam, filterSortType, filterSortValue, pageLimit, showAll, priceRange]);
 
   // Infinite Scroll Listener
   useEffect(() => {
@@ -233,7 +250,7 @@ const ShopGridStandard = () => {
     setDrawerOpen(false);
   };
 
-  const activeFilterCount = (priceRange ? 1 : 0) + (catParam || eventParam || comboParam || subCatParam || subSubCatParam ? 1 : 0);
+  const activeFilterCount = (priceRange ? 1 : 0) + (catParam || eventParam || comboParam || subCatParam || subSubCatParam || brandParam ? 1 : 0);
   const sliderVal = (draftPrice || priceRange) ? [(draftPrice || priceRange).min, (draftPrice || priceRange).max] : [priceMin, priceMax];
 
   const handleRender = (node, handleProps) => {
@@ -298,13 +315,24 @@ const ShopGridStandard = () => {
     ));
   };
 
+  const seoData = getShopSEO({
+    catParam,
+    subCatParam,
+    subSubCatParam,
+    eventParam,
+    comboParam,
+    searchParam,
+    activeLabel,
+    currentCombo
+  });
+
   return (
     <Fragment>
       <SEO 
-        title={activeLabel ? activeLabel : "Shop Customized Gifts"}
+        title={seoData.title}
         titleTemplate="Personalized & Customized Gifts for Every Occasion" 
-        description="Browse our collection of customized return gifts, personalized corporate gifts, laser engraved products, and bulk gifts for weddings, baby showers, festivals, and corporate events."
-        keywords="buy customized gifts online, personalized gifts shop, return gifts, corporate gifts online, engraved gifts, bulk gifts, keychains, bottles, pens, laser cut jewelry, wedding return gifts, baby shower gifts, corporate gifts"
+        description={seoData.description}
+        keywords={seoData.keywords}
       />
       <LayoutOne headerTop="visible">
         <Breadcrumb pages={[
@@ -465,7 +493,7 @@ const ShopGridStandard = () => {
             <form className="mobile-shop-search" onSubmit={handleMobileSearch}>
               <input
                 type="search"
-                placeholder="Search gifts..."
+                placeholder="Search products..."
                 value={mobileSearch}
                 onChange={e => setMobileSearch(e.target.value)}
               />

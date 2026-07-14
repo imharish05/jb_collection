@@ -1,12 +1,12 @@
 // controllers/dashboardController.js
 const { Op } = require("sequelize");
-const { Product, Variant, Category, User, Order, InventorySettings } = require("../models");
+const { Product, Variant, Category, User, Order, InventorySettings, Contact } = require("../models");
 const { fetchRazorpayPaymentSummary } = require("../utils/razorpayReports");
 
 // ─── GET /api/dashboard/stats ─────────────────────────────────────────────────
 const getStats = async (req, res) => {
   try {
-    const [totalProducts, totalCustomers, orderSums, razorpayPayments, recentProducts] = await Promise.all([
+    const [totalProducts, totalCustomers, orderSums, razorpayPayments, recentProducts, totalContacts] = await Promise.all([
       Product.count({ where: { isActive: true } }),
       User.count({ where: { role: "user" } }),
       Order.findAll({
@@ -34,6 +34,7 @@ const getStats = async (req, res) => {
           },
         ],
       }),
+      Contact.count(),
     ]);
 
     const shaped = recentProducts.map((p) => {
@@ -66,6 +67,7 @@ const getStats = async (req, res) => {
       stats: {
         totalProducts,
         totalCustomers,
+        totalContacts,
         totalGST: parseFloat(totalGST.toFixed(2)),
         totalShipping: parseFloat(totalShipping.toFixed(2)),
         remainAmount: parseFloat(remainAmount.toFixed(2)),

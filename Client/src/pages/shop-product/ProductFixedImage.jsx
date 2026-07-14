@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { useSelector } from "react-redux";
 import { useParams, useLocation } from "react-router-dom";
 import SEO from "../../components/seo";
+import { getProductSEO } from "../../helpers/seoHelper";
 import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
 import RelatedProductSlider from "../../wrappers/product/RelatedProductSlider";
@@ -14,12 +15,16 @@ const ProductFixedImage = () => {
   const { products } = useSelector((state) => state.product);
   const product = products.find(p => p.slug === slug || String(p.id) === String(slug));
 
+  const seoData = getProductSEO(product);
 
   return (
     <Fragment>
       <SEO
-        titleTemplate="Shop - JB House of Fashion"
-        description="Shop premium personalized gifts and unique handcrafted items at JB House of Fashion. Curated gift solutions for every occasion."
+        title={seoData.title}
+        titleTemplate={seoData.titleTemplate}
+        description={seoData.description}
+        keywords={seoData.keywords}
+        image={seoData.image}
       />
 
       <LayoutOne headerTop="visible">

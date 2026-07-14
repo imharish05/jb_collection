@@ -197,7 +197,7 @@ const ProductGridSingle = ({
               ) : (() => {
                 const inCart = cartItem !== undefined && cartItem.quantity > 0;
                 return inCart ? (
-                  <Link to="/cart" className="in-cart" style={{ display: "block", textAlign: "center" }}>
+                  <Link to="/cart" className="cart-action-btn in-cart">
                     GO TO CART →
                   </Link>
                 ) : (
@@ -215,11 +215,38 @@ const ProductGridSingle = ({
         </div>
 
         <div className="product-details-premium">
+          {product.Brand?.name && (
+            <span
+              className="product-brand-tag"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = `${process.env.PUBLIC_URL}/shop?brand=${product.Brand.id}`;
+              }}
+              style={{
+                display: "inline-block",
+                fontSize: "10px",
+                fontWeight: 600,
+                letterSpacing: "0.6px",
+                textTransform: "uppercase",
+                color: "var(--theme-color)",
+                background: "rgba(var(--theme-color-rgb, 219,26,93),0.07)",
+                border: "1px solid rgba(var(--theme-color-rgb, 219,26,93),0.18)",
+                borderRadius: "4px",
+                padding: "2px 8px",
+                marginBottom: "5px",
+                cursor: "pointer",
+                transition: "background 0.15s",
+              }}
+            >
+              {product.Brand.name}
+            </span>
+          )}
           <h4>
             <Link to={process.env.PUBLIC_URL + "/product/" + (product.slug || product.id)}>
               {product.name}
             </Link>
           </h4>
+
 
           <div className="price-rating-row">
             <div className="premium-price">

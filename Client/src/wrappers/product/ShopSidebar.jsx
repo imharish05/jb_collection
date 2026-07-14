@@ -5,11 +5,13 @@ import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
+import { getImgUrl } from "../../helpers/imageUrl";
 
 const S = process.env.PUBLIC_URL + "/shop";
 
 const ShopSidebar = ({ products, getSortParams, filterSortValue, sideSpaceClass }) => {
   const { categories = [], rootCombos = [] } = useSelector((state) => state.navMenu);
+  const { brands: allBrands = [] } = useSelector((state) => state.brands || {});
 
   const { search } = useLocation();
   const navigate = useNavigate();
@@ -19,6 +21,7 @@ const ShopSidebar = ({ products, getSortParams, filterSortValue, sideSpaceClass 
   const activeCombo    = params.get("combo")    || "";
   const activeSubCat   = params.get("subcategory") || "";
   const activeSubSubCat = params.get("subsubcategory") || "";
+  const activeBrand    = params.get("brand") || "";
 
   // Image base URL and source resolver
   const IMG_BASE = process.env.REACT_APP_IMG_URL + "/uploads/";
@@ -32,6 +35,7 @@ const ShopSidebar = ({ products, getSortParams, filterSortValue, sideSpaceClass 
     categories: false,
     events: false,
     combos: false,
+    brands: false,
   });
 
   // Track window resizing to detect mobile viewports smoothly
@@ -41,7 +45,7 @@ const ShopSidebar = ({ products, getSortParams, filterSortValue, sideSpaceClass 
       setIsMobile(mobileMode);
       if (!mobileMode) {
         // Keep everything open on desktop
-        setMobileSections({ price: true, categories: true, events: true, combos: true });
+        setMobileSections({ price: true, categories: true, events: true, combos: true, brands: true });
       }
     };
     handleResize();
@@ -243,6 +247,100 @@ const ShopSidebar = ({ products, getSortParams, filterSortValue, sideSpaceClass 
         </div>
       </div>
 
+      {/* ── Brands Section (multi-select checkboxes) ── */}
+      {(() => {
+        const productBrandIds = new Set(
+          products
+            .filter(p => p.brandId || p.Brand?.id)
+            .map(p => String(p.brandId || p.Brand?.id))
+        );
+        const visibleBrands = allBrands.filter(b => productBrandIds.has(String(b.id)));
+        if (visibleBrands.length === 0) return null;
+
+        // Parse comma-separated active brand IDs
+        const activeBrandSet = new Set(
+          activeBrand ? activeBrand.split(",").filter(Boolean) : []
+        );
+
+        const toggleBrand = (brandId) => {
+          const id = String(brandId);
+          const next = new Set(activeBrandSet);
+          if (next.has(id)) { next.delete(id); } else { next.add(id); }
+          const p = new URLSearchParams(search);
+          if (next.size === 0) { p.delete("brand"); } else { p.set("brand", [...next].join(",")); }
+          const qs = p.toString();
+          navigate(S + (qs ? `?${qs}` : ""));
+        };
+
+        return (
+          <div style={styles.section}>
+            <div className="mobile-accordion-header" onClick={() => toggleMobileSection("brands")}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+            >
+              <p style={{...styles.sectionTitle, margin: 0}}>
+                Brands {isMobile && <span style={styles.mobileChevron}>{mobileSections.brands ? "▲" : "▼"}</span>}
+              </p>
+              {activeBrandSet.size > 0 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); const p = new URLSearchParams(search); p.delete("brand"); const qs = p.toString(); navigate(S + (qs ? `?${qs}` : "")); }}
+                  style={styles.clearBtn}
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+            <div
+              className={clsx("mobile-accordion-content", (mobileSections.brands || !isMobile) && "open")}
+              style={(!mobileSections.brands && isMobile) ? {display: "none"} : {marginTop: 14}}
+            >
+              <ul style={styles.filterList}>
+                {visibleBrands.map(brand => {
+                  const id = String(brand.id);
+                  const checked = activeBrandSet.has(id);
+                  const count = products.filter(p =>
+                    String(p.brandId) === id || String(p.Brand?.id) === id
+                  ).length;
+                  return (
+                    <li key={brand.id}>
+                      <button
+                        onClick={() => toggleBrand(brand.id)}
+                        style={{ ...styles.filterBtn, ...(checked ? styles.filterBtnActive : {}) }}
+                      >
+                        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {/* Checkbox square */}
+                          <span style={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: 4,
+                            border: checked ? "2px solid var(--theme-color)" : "2px solid #ccc",
+                            background: checked ? "var(--theme-color)" : "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            transition: "all 0.15s",
+                          }}>
+                            {checked && (
+                              <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                                <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </span>
+                          {brand.name}
+                        </span>
+                        <span style={{ ...styles.filterCount, ...(checked ? styles.filterCountActive : {}) }}>
+                          ({count})
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Subcategories Section (Cascading) ── */}
       {activeCategory && (
         <div style={styles.section}>
@@ -371,7 +469,24 @@ const ShopSidebar = ({ products, getSortParams, filterSortValue, sideSpaceClass 
         </div>
       )}
 
+
+
     </div>
+  );
+};
+
+// ── Inline Brand Logo ─────────────────────────────────────────────────────────
+const BrandLogo = ({ logo }) => {
+  const IMG_BASE = process.env.REACT_APP_IMG_URL + "/uploads/";
+  if (!logo) return null;
+  const src = logo.startsWith("http") ? logo : `${IMG_BASE}${logo.replace(/^\/?(uploads\/)?/, "")}`;
+  return (
+    <img
+      src={src}
+      alt=""
+      style={{ width: 28, height: 18, objectFit: "contain", marginRight: 8, borderRadius: 2, background: "#f8f8f8" }}
+      onError={e => { e.target.style.display = "none"; }}
+    />
   );
 };
 

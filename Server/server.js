@@ -34,6 +34,7 @@ const testimonialRoutes = require("./routes/testimonials");
 const shippingRoutes = require("./routes/shipping");
 const timelineRoutes = require("./routes/timeline");
 const returnRoutes = require("./routes/returns");
+const newComboRoutes = require("./routes/combos");
 const notificationRoutes    = require("./routes/notifications");
 const inventorySettingsRoutes = require("./routes/inventorySettings");
 const fontRoutes              = require("./routes/fonts");
@@ -131,6 +132,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/timeline", timelineRoutes);
+app.use("/api/combos", newComboRoutes);
 app.use("/api/returns", returnRoutes);
 app.use("/api/notifications",     notificationRoutes);
 app.use("/api/inventory-settings", inventorySettingsRoutes);
@@ -167,7 +169,9 @@ const startServer = async () => {
       await sequelize.query("ALTER TABLE Variants ADD COLUMN images JSON NULL;").catch(() => {});
       await sequelize.query("ALTER TABLE subcategories ADD COLUMN image VARCHAR(255) NULL;").catch(() => {});
       await sequelize.query("ALTER TABLE products ADD COLUMN sub_sub_category_id CHAR(36) BINARY NULL;").catch(() => {});
-      console.log("✅ Users, products, subcategories, and variants table columns verified");
+      await sequelize.query("ALTER TABLE delivery_zones ADD COLUMN pincode TEXT NULL;").catch(() => {});
+      await sequelize.query("ALTER TABLE delivery_zones MODIFY COLUMN state VARCHAR(100) NULL;").catch(() => {});
+      console.log("✅ Users, products, subcategories, variants, and delivery zones table columns verified");
     } catch (alterErr) {
       console.warn("⚠️ Column alter query failed (ignoring):", alterErr.message);
     }

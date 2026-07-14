@@ -124,7 +124,7 @@ const Wishlist = () => {
 
   return (
     <Fragment>
-      <SEO title="My Wishlist" titleTemplate="Saved Gifts & Items - JB House of Fashion" description="Your saved wishlist of personalized and customized gifts. Save your favorite items for later purchase." keywords="wishlist, saved items, gift wishlist" />
+      <SEO title="My Wishlist" titleTemplate="Saved Products - JB Collections" description="View your saved products list at JB Collections. Save your favorite grocery, apparel, home, and beauty items for later purchase." keywords="wishlist, saved products, shopping wishlist, shopping list, JB Collections" />
       <LayoutOne headerTop="visible">
         <Breadcrumb
           pages={[

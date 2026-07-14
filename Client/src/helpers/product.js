@@ -140,13 +140,20 @@ export const getSortedProducts = (products, sortType, sortValue) => {
   if (products && sortType && sortValue) {
     if (sortType === "search") {
       const q = sortValue.toLowerCase();
-      return products.filter(
+      const matched = products.filter(
         product =>
           product.name.toLowerCase().includes(q) ||
           (product.shortDescription && product.shortDescription.toLowerCase().includes(q)) ||
           (product.category && product.category.some(c => c.toLowerCase().includes(q))) ||
-          (product.tag && product.tag.some(t => t.toLowerCase().includes(q)))
+          (product.tag && product.tag.some(t => t.toLowerCase().includes(q))) ||
+          (product.Brand?.name && product.Brand.name.toLowerCase().includes(q))
       );
+      // Boost: products whose brand name matches should appear first
+      return matched.sort((a, b) => {
+        const aIsBrand = (a.Brand?.name && a.Brand.name.toLowerCase().includes(q)) ? 0 : 1;
+        const bIsBrand = (b.Brand?.name && b.Brand.name.toLowerCase().includes(q)) ? 0 : 1;
+        return aIsBrand - bIsBrand;
+      });
     }
     if (sortType === "category") {
       if (isAllCategory(sortValue)) return products;

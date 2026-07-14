@@ -3550,9 +3550,12 @@ updated
 
 /* In Cart state � green confirmation */
 .cart-action-overlay button.in-cart,
-.cart-action-overlay button.in-cart:hover {
-    background: #22c55e;
-    cursor: not-allowed;
+.cart-action-overlay button.in-cart:hover,
+.cart-action-overlay a.in-cart,
+.cart-action-overlay a.in-cart:hover {
+    background: #e4bd73;
+    color: #b60410;
+    cursor: pointer;
     letter-spacing: 0.5px;
 }
 
@@ -4152,9 +4155,12 @@ updated
 .cart-action-overlay button:disabled { opacity: 1; cursor: not-allowed; }
 /* In Cart state � green confirmation */
 .cart-action-overlay button.in-cart,
-.cart-action-overlay button.in-cart:hover {
-    background: #22c55e;
-    cursor: not-allowed;
+.cart-action-overlay button.in-cart:hover,
+.cart-action-overlay a.in-cart,
+.cart-action-overlay a.in-cart:hover {
+    background: #e4bd73;
+    color: #b60410;
+    cursor: pointer;
     letter-spacing: 0.5px;
 }
 
@@ -4717,4 +4723,15 @@ updated
   .deal-scroll-inner { gap: 10px; padding: 0 5px 8px; }
   .deal-scroll-inner [class*="col-"] { width: calc(50vw - 20px) !important; }
 }
+
+/* Make Out of Stock buttons highly distinguishable with black background and white text */
+.out-of-stock,
+button.out-of-stock,
+button.out-of-stock:disabled,
+button.out-of-stock:hover {
+    background: #000000 !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+}
+
 

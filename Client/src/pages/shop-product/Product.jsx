@@ -2,6 +2,7 @@ import React, { Fragment } from "react";
 import { useSelector } from "react-redux";
 import { useParams, useLocation } from "react-router-dom";
 import SEO from "../../components/seo";
+import { getProductSEO } from "../../helpers/seoHelper";
 import LayoutOne from "../../layouts/LayoutOne";
 import Breadcrumb from "../../wrappers/breadcrumb/Breadcrumb";
 import RelatedProductSlider from "../../wrappers/product/RelatedProductSlider";
@@ -34,11 +35,16 @@ const Product = () => {
     product.Category?.value ||
     (product.category?.length ? product.category[0] : null);
 
+  const seoData = getProductSEO(product);
+
   return (
     <Fragment>
       <SEO
-        titleTemplate="Product Page"
-        description="Product Page of JB House of Fashion."
+        title={seoData.title}
+        titleTemplate={seoData.titleTemplate}
+        description={seoData.description}
+        keywords={seoData.keywords}
+        image={seoData.image}
       />
 
       <LayoutOne headerTop="visible">

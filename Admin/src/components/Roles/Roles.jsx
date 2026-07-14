@@ -141,6 +141,15 @@ const PERMISSION_GROUPS = [
       { key: "settings_edit", label: "Edit Settings" }
     ]
   },
+  {
+    module: "Delivery Zones",
+    permissions: [
+      { key: "delivery_zones_view", label: "View Delivery Zones" },
+      { key: "delivery_zones_create", label: "Add Delivery Zone" },
+      { key: "delivery_zones_edit", label: "Edit Delivery Zone" },
+      { key: "delivery_zones_delete", label: "Delete Delivery Zone" }
+    ]
+  },
   /* {
     module: "Customisation Fields",
     permissions: [

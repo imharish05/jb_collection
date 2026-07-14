@@ -23,8 +23,38 @@ const BRAND_LOGO_CONFIG = {
 
 const validateBrandLogo = (file) => {
   return new Promise((resolve) => {
-    // Validation temporarily disabled per user request
-    resolve({ valid: true, dimensions: { width: 120, height: 120 } });
+    // Check file size
+    if (file.size > BRAND_LOGO_CONFIG.maxFileSize) {
+      resolve({
+        valid: false,
+        error: `File too large. Max: 3MB. You have: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+      });
+      return;
+    }
+
+    // Check file format
+    if (!BRAND_LOGO_CONFIG.formats.includes(file.type)) {
+      resolve({
+        valid: false,
+        error: `Invalid format. Use common image formats (JPG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO, HEIC, HEIF, AVIF). You uploaded: ${file.type || 'unknown'}`,
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+
+        resolve({
+          valid: true,
+          dimensions: { width, height },
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   });
 };
 
@@ -99,10 +129,11 @@ export default function Brands({ showToast }) {
     const newErrors = {};
 
     if (!brandName.trim()) newErrors.brandName = 'Brand name is required';
-    if (!logoFile && !preview) newErrors.logo = 'Brand logo is required';
-    if (logoFile && logoDimensions && !logoDimensions.valid) {
-      newErrors.logo = logoDimensions.error;
-    }
+    // Logo is optional — no logo validation required
+    // if (!logoFile && !preview) newErrors.logo = 'Brand logo is required';
+    // if (logoFile && logoDimensions && !logoDimensions.valid) {
+    //   newErrors.logo = logoDimensions.error;
+    // }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -190,8 +221,8 @@ export default function Brands({ showToast }) {
                 )}
               </div>
 
-              {/* Brand Logo */}
-              <ImageUploadField
+              {/* Brand Logo — commented out, not required */}
+              {/* <ImageUploadField
                 label="Brand Logo"
                 imageFile={logoFile}
                 preview={preview}
@@ -218,7 +249,7 @@ export default function Brands({ showToast }) {
                 validation={logoDimensions}
                 requirements="300×120px • Max: 3MB (Common Image Formats)"
                 accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/heic,image/heif,image/avif"
-              />
+              /> */}
 
               {/* Status */}
               <div className="km-field km-field-full">
@@ -252,7 +283,7 @@ export default function Brands({ showToast }) {
       ) : (
         <DataTable
           columns={(() => {
-            const cols = ['No.', 'Logo', 'Brand Name', 'Status'];
+            const cols = ['No.', 'Brand Name', 'Status'];
             if (hasPermission('brands_edit') || hasPermission('brands_delete')) cols.push('Actions');
             return cols;
           })()}
@@ -260,7 +291,8 @@ export default function Brands({ showToast }) {
           renderRow={(row, i) => (
             <tr key={row.id}>
               <td className="td-id">{i + 1}</td>
-              <td>
+              {/* Logo column commented out */}
+              {/* <td>
                 <div className="img-thumb">
                   {row.logo ? (
                     <img
@@ -275,7 +307,7 @@ export default function Brands({ showToast }) {
                     />
                   ) : '🏢'}
                 </div>
-              </td>
+              </td> */}
               <td>{row.name}</td>
               <td>
                 <span className={`status-pill ${row.isActive ? 'pill-active' : 'pill-inactive'}`}>
