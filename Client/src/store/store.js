@@ -64,8 +64,8 @@ const appReducer = combineReducers({
 // ── Root reducer: wipe cart+wishlist on logout ──────────────────────────────
 export const rootReducer = (state, action) => {
     if (action.type === "auth/logoutAction") {
-        const { currency, navMenu, product, marquee, headerSlider, offerBanner } = state;
-        state = { currency, navMenu, product, marquee, headerSlider, offerBanner };
+        const { currency, navMenu, product, marquee, headerSlider, offerBanner, settings, brands, testimonial } = state;
+        state = { currency, navMenu, product, marquee, headerSlider, offerBanner, settings, brands, testimonial };
     }
     return appReducer(state, action);
 };

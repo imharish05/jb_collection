@@ -117,6 +117,37 @@ const ShopGridStandard = () => {
   const priceMin = 0;
   const priceMax = allPrices.length ? Math.ceil(Math.max(...allPrices)) : 5000;
 
+  const activeBrandSet = useMemo(() => {
+    return new Set(brandParam ? brandParam.split(",").filter(Boolean) : []);
+  }, [brandParam]);
+
+  const visibleBrands = useMemo(() => {
+    const productBrandIds = new Set(
+      products
+        .filter(p => p.brandId || p.Brand?.id)
+        .map(p => String(p.brandId || p.Brand?.id))
+    );
+    return allBrands.filter(b => productBrandIds.has(String(b.id)));
+  }, [products, allBrands]);
+
+  const toggleBrand = (brandId) => {
+    const id = String(brandId);
+    const next = new Set(activeBrandSet);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    const p = new URLSearchParams(search);
+    if (next.size === 0) {
+      p.delete("brand");
+    } else {
+      p.set("brand", [...next].join(","));
+    }
+    const qs = p.toString();
+    navigate(S + (qs ? `?${qs}` : ""));
+  };
+
   const handleSortParams = (type, val) => {
     if (type === "priceRange") {
       const [min, max] = val;
@@ -545,6 +576,31 @@ const ShopGridStandard = () => {
                   <button onClick={() => navigate(S)}>×</button>
                 </span>
               )}
+              {brandParam && (
+                (() => {
+                  const ids = brandParam.split(",").filter(Boolean);
+                  return ids.map(id => {
+                    const brandObj = allBrands.find(b => String(b.id) === id);
+                    if (!brandObj) return null;
+                    return (
+                      <span className="filter-chip" key={id}>
+                        🏷️ {brandObj.name}
+                        <button onClick={() => {
+                          const next = ids.filter(x => x !== id);
+                          const p = new URLSearchParams(search);
+                          if (next.length === 0) {
+                            p.delete("brand");
+                          } else {
+                            p.set("brand", next.join(","));
+                          }
+                          const qs = p.toString();
+                          navigate(S + (qs ? `?${qs}` : ""));
+                        }}>×</button>
+                      </span>
+                    );
+                  });
+                })()
+              )}
             </div>
 
             {priceRange && (
@@ -804,6 +860,42 @@ const ShopGridStandard = () => {
                       </div>
                     );
                   })()
+                )}
+
+                {visibleBrands.length > 0 && (
+                  <div className="drawer-section">
+                    <p className="drawer-section-title">Brands</p>
+                    <div className="drawer-chip-grid">
+                      {visibleBrands.map(brand => {
+                        const id = String(brand.id);
+                        const checked = activeBrandSet.has(id);
+                        const count = products.filter(p =>
+                          String(p.brandId) === id || String(p.Brand?.id) === id
+                        ).length;
+                        return (
+                          <button
+                            key={brand.id}
+                            className={`drawer-chip${checked ? ' active' : ''}`}
+                            onClick={() => toggleBrand(brand.id)}
+                          >
+                            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                              <span style={{
+                                width: "10px",
+                                height: "10px",
+                                borderRadius: "2px",
+                                border: checked ? "1px solid #fff" : "1px solid #ccc",
+                                background: checked ? "#fff" : "transparent",
+                                display: "inline-block",
+                                flexShrink: 0
+                              }} />
+                              {brand.name}
+                            </span>
+                            <span className="drawer-chip-count">({count})</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
 
                 <div className="drawer-footer">

@@ -616,6 +616,10 @@ const ProductDescriptionInfo = ({
     }
   }, [localProduct, selectedVariant, stockState, productCartQty]);
 
+  const isLimitReached = useMemo(() => {
+    return isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock);
+  }, [isAuthenticated, productCartQty, stockState, effectiveStock]);
+
   const redirectToLogin = () => {
     const redirect = encodeURIComponent(window.location.pathname + window.location.search);
     navigate(`${process.env.PUBLIC_URL}/login?redirect=${redirect}`);
@@ -627,7 +631,7 @@ const ProductDescriptionInfo = ({
     </div>
   ) : null;
 
-  const validateCart = () => {
+  const validateCart = (showToastOnError = false) => {
     const next = {};
     if (hasNewVar) {
       const compatibleVariants = activeVariants.filter(v => {
@@ -663,6 +667,12 @@ const ProductDescriptionInfo = ({
     }
 
     setErrors(next);
+
+    if (Object.keys(next).length > 0 && showToastOnError) {
+      const firstError = next.quantity || next.variant;
+      cogoToast.error(firstError, { position: "top-center" });
+    }
+
     return Object.keys(next).length === 0;
   };
 
@@ -673,7 +683,7 @@ const ProductDescriptionInfo = ({
       redirectToLogin();
       return;
     }
-    if (!validateCart()) return;
+    if (!validateCart(true)) return;
     
     setIsAddingToCart(true);
     try {
@@ -723,7 +733,11 @@ const handleBuyNow = async () => {
     redirectToLogin();
     return;
   }
-  if (!validateCart()) return;
+  if (isLimitReached) {
+    cogoToast.error("You already have all available stock of this item in your cart.", { position: "top-center" });
+    return;
+  }
+  if (!validateCart(true)) return;
 
     setIsBuyingNow(true);
     try {
@@ -1151,9 +1165,26 @@ const handleBuyNow = async () => {
                   <div className="col-12 col-sm-6 pdp-info__purchase-cell pdp-info__purchase-cell--secondary">
                     <button
                       onClick={handleBuyNow}
-                      disabled={isAddingToCart || isBuyingNow || (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))}
-                      style={{ width: "100%", height: "46px", background: "var(--theme-color)", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(205,131,62,0.25)" }}
-                      title="Buy this product now"
+                      disabled={isAddingToCart || isBuyingNow}
+                      style={{
+                        width: "100%",
+                        height: "46px",
+                        background: isLimitReached ? "#2a2a2a" : "var(--theme-color)",
+                        color: isLimitReached ? "#888880" : "#fff",
+                        fontWeight: 600,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        textDecoration: "none",
+                        borderRadius: "8px",
+                        transition: "all 0.2s ease",
+                        border: "none",
+                        cursor: isLimitReached ? "not-allowed" : "pointer",
+                        boxShadow: isLimitReached ? "none" : "0 4px 12px rgba(205,131,62,0.25)",
+                        opacity: isLimitReached ? 0.75 : 1
+                      }}
+                      title={isLimitReached ? "You already have all available stock in your cart" : "Buy this product now"}
                     >
                       {isBuyingNow ? (
                         <>
@@ -1165,7 +1196,7 @@ const handleBuyNow = async () => {
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M5 12h14M12 5l7 7-7 7"/>
                           </svg>
-                          Buy Now
+                          {isLimitReached ? "Limit Reached" : "Buy Now"}
                         </>
                       )}
                     </button>
@@ -1199,9 +1230,26 @@ const handleBuyNow = async () => {
                     <div className="col-12 col-sm-6 pdp-info__purchase-cell pdp-info__purchase-cell--secondary">
                       <button
                         onClick={handleBuyNow}
-                        disabled={isAddingToCart || isBuyingNow || (isAuthenticated && productCartQty >= (stockState.maxQty !== undefined ? stockState.maxQty : effectiveStock))}
-                        style={{ width: "100%", height: "46px", background: "var(--theme-color)", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", textDecoration: "none", borderRadius: "8px", transition: "all 0.2s ease", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(205,131,62,0.25)" }}
-                        title="Buy this product now"
+                        disabled={isAddingToCart || isBuyingNow}
+                        style={{
+                          width: "100%",
+                          height: "46px",
+                          background: isLimitReached ? "#2a2a2a" : "var(--theme-color)",
+                          color: isLimitReached ? "#888880" : "#fff",
+                          fontWeight: 600,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
+                          textDecoration: "none",
+                          borderRadius: "8px",
+                          transition: "all 0.2s ease",
+                          border: "none",
+                          cursor: isLimitReached ? "not-allowed" : "pointer",
+                          boxShadow: isLimitReached ? "none" : "0 4px 12px rgba(205,131,62,0.25)",
+                          opacity: isLimitReached ? 0.75 : 1
+                        }}
+                        title={isLimitReached ? "You already have all available stock in your cart" : "Buy this product now"}
                       >
                         {isBuyingNow ? (
                           <>
@@ -1213,7 +1261,7 @@ const handleBuyNow = async () => {
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M5 12h14M12 5l7 7-7 7"/>
                             </svg>
-                            Buy Now
+                            {isLimitReached ? "Limit Reached" : "Buy Now"}
                           </>
                         )}
                       </button>

@@ -50,6 +50,9 @@ const Contact = () => {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = "Please enter a valid email";
     }
+    if (formData.phone && (formData.phone.length !== 10 || !/^\d{10}$/.test(formData.phone))) {
+      errors.phone = "Phone number must be exactly 10 digits";
+    }
     if (!formData.message.trim()) errors.message = "Message is required";
     if (formData.message.trim().length < 10) errors.message = "Message must be at least 10 characters";
     return errors;
@@ -57,9 +60,18 @@ const Contact = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (formErrors[name]) {
-      setFormErrors((prev) => ({ ...prev, [name]: "" }));
+    if (name === "phone") {
+      if (/^\d*$/.test(value) && value.length <= 10) {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+        if (formErrors[name]) {
+          setFormErrors((prev) => ({ ...prev, [name]: "" }));
+        }
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      if (formErrors[name]) {
+        setFormErrors((prev) => ({ ...prev, [name]: "" }));
+      }
     }
   };
 
@@ -165,13 +177,18 @@ const Contact = () => {
                       </div>
 
                       <div className="glass-input-group">
-                        <label>Phone Number (Optional)</label>
+                        <label>Phone Number (Optional) {formErrors.phone && <span style={{ color: '#ef4444', fontSize: '12px' }}>- {formErrors.phone}</span>}</label>
                         <input
                           type="tel"
                           name="phone"
                           placeholder="e.g. 9876543210"
                           value={formData.phone}
                           onChange={handleChange}
+                          maxLength={10}
+                          style={{
+                            borderColor: formErrors.phone ? '#ef4444' : 'rgba(0, 0, 0, 0.1)',
+                            background: formErrors.phone ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.7)'
+                          }}
                         />
                       </div>
 

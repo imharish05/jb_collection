@@ -46,8 +46,8 @@ const LoginRegister = () => {
     if (!isLogin) {
       if (!phone.trim()) {
         newErrors.phone = "Phone number is required";
-      } else if (phone.length < 10) {
-        newErrors.phone = "Phone number must be 10 digits";
+      } else if (phone.length !== 10 || !/^\d{10}$/.test(phone)) {
+        newErrors.phone = "Phone number must be exactly 10 digits";
       }
     }
 

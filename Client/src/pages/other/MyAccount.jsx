@@ -147,8 +147,8 @@ const MyAccount = () => {
     const cleanPhone = formData.phone.toString().replace("+91 ", "").trim();
     if (!cleanPhone) {
       newErrors.phone = "Phone number is required";
-    } else if (cleanPhone.length < 10) {
-      newErrors.phone = "Phone number must be at least 10 digits";
+    } else if (cleanPhone.length !== 10 || !/^\d{10}$/.test(cleanPhone)) {
+      newErrors.phone = "Phone number must be exactly 10 digits";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -156,15 +156,23 @@ const MyAccount = () => {
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    if (errors[name]) setErrors({ ...errors, [name]: null });
+    if (name === "phone") {
+      const cleanVal = value.replace("+91 ", "").trim();
+      if (/^\d*$/.test(cleanVal) && cleanVal.length <= 10) {
+        setFormData({ ...formData, [name]: cleanVal });
+        if (errors[name]) setErrors({ ...errors, [name]: null });
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+      if (errors[name]) setErrors({ ...errors, [name]: null });
+    }
   };
 
   const handleUpdateProfile = async () => {
     if (validateProfile()) {
       const success = await updateProfileFunction(dispatch, {
         name: formData.name,
-        phone: formData.phone.toString().replace("+91 ", ""),
+        phone: formData.phone.toString().replace("+91 ", "").trim(),
       });
       if (success) setIsEditingProfile(false);
     }
@@ -246,8 +254,15 @@ const MyAccount = () => {
 
   const handleFormChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
-    if (addrErrors[name]) setAddrErrors((prev) => ({ ...prev, [name]: null }));
+    if (name === "phone") {
+      if (/^\d*$/.test(value) && value.length <= 10) {
+        setForm((prev) => ({ ...prev, [name]: value }));
+        if (addrErrors[name]) setAddrErrors((prev) => ({ ...prev, [name]: null }));
+      }
+    } else {
+      setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+      if (addrErrors[name]) setAddrErrors((prev) => ({ ...prev, [name]: null }));
+    }
   };
 
   // ── Address Validation ─────────────────────────────────────────────────────
@@ -257,8 +272,8 @@ const MyAccount = () => {
     if (!form.lastName?.trim()) newErrors.lastName = "Last name is required";
     if (!form.phone?.trim()) {
       newErrors.phone = "Phone number is required";
-    } else if (form.phone.length < 10) {
-      newErrors.phone = "Phone number must be 10 digits";
+    } else if (form.phone.length !== 10 || !/^\d{10}$/.test(form.phone)) {
+      newErrors.phone = "Phone number must be exactly 10 digits";
     }
     if (!form.pincode?.trim()) {
       newErrors.pincode = "Pincode is required";
@@ -450,6 +465,7 @@ const toggleVisibility = (field) => {
                                 placeholder="10-digit number" 
                                 value={formData.phone} 
                                 onChange={handleProfileChange}
+                                maxLength={10}
                                 style={errors.phone ? { borderColor: "var(--theme-color)" } : {}}
                               />
                               <ErrorMsg field="phone" />

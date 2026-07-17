@@ -519,7 +519,7 @@ const Checkout = () => {
   const validateAddr = () => {
     const errs = {};
     if (!addrForm.fullName.trim()) errs.fullName = "Full name is required";
-    if (!addrForm.phone.trim() || addrForm.phone.replace(/\D/g, "").length < 10)
+    if (!addrForm.phone.trim() || addrForm.phone.length !== 10 || !/^\d{10}$/.test(addrForm.phone))
       errs.phone = "Valid 10-digit mobile required";
     if (!addrForm.pincode.trim() || addrForm.pincode.replace(/\D/g, "").length < 6)
       errs.pincode = "Valid 6-digit pincode required";
@@ -1298,7 +1298,12 @@ const Checkout = () => {
                           <input
                             className={`kco-input ${addrErrors.phone ? "error" : ""}`}
                             value={addrForm.phone}
-                            onChange={(e) => setAddrForm((f) => ({ ...f, phone: e.target.value }))}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (/^\d*$/.test(val) && val.length <= 10) {
+                                setAddrForm((f) => ({ ...f, phone: val }));
+                              }
+                            }}
                             placeholder="10-digit mobile"
                             type="tel"
                             maxLength={10}

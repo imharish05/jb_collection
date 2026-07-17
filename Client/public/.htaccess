@@ -1,96 +1,45 @@
 # ============================================================
-# JB House of Fashion — Client (React) .htaccess
-# For Webuzo / Apache hosting
+# JB Collections — Client (React SPA)
+# Optimized for Webuzo / Apache / LiteSpeed hosting
 # ============================================================
 
-Options -MultiViews
-RewriteEngine On
-
-# ── React Router: Redirect all non-file requests to index.html ──
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.html [QSA,L]
+<IfModule mod_rewrite.c>
+    Options -MultiViews
+    RewriteEngine On
+    RewriteBase /
+    
+    # If the requested URL is index.html, do nothing
+    RewriteRule ^index\.html$ - [L]
+    
+    # If the requested filename exists as a file or directory, serve it directly
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Otherwise, redirect all requests to /index.html for React Router
+    RewriteRule . /index.html [L]
+</IfModule>
 
 # ── Security Headers ─────────────────────────────────────────
 <IfModule mod_headers.c>
-    # Prevent clickjacking
     Header always set X-Frame-Options "SAMEORIGIN"
-
-    # Prevent MIME sniffing
     Header always set X-Content-Type-Options "nosniff"
-
-    # XSS Protection
     Header always set X-XSS-Protection "1; mode=block"
-
-    # Referrer policy
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
 
-    # Remove server signature
-    Header unset Server
-    Header always unset X-Powered-By
+# ── GZIP Compression ─────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml application/xml font/woff font/woff2
 </IfModule>
 
 # ── Browser Caching (Performance) ───────────────────────────
 <IfModule mod_expires.c>
     ExpiresActive On
-
-    # HTML — no cache (always fetch latest index.html)
+    ExpiresDefault                          "access plus 1 month"
     ExpiresByType text/html                 "access plus 0 seconds"
-
-    # JS & CSS — cache 1 year (React adds hash to filenames)
+    ExpiresByType application/json          "access plus 0 seconds"
     ExpiresByType application/javascript    "access plus 1 year"
     ExpiresByType text/css                  "access plus 1 year"
-
-    # Images — cache 6 months
-    ExpiresByType image/jpeg                "access plus 6 months"
-    ExpiresByType image/png                 "access plus 6 months"
-    ExpiresByType image/webp                "access plus 6 months"
-    ExpiresByType image/gif                 "access plus 6 months"
-    ExpiresByType image/svg+xml             "access plus 6 months"
     ExpiresByType image/x-icon              "access plus 1 year"
-    ExpiresByType image/vnd.microsoft.icon  "access plus 1 year"
-
-    # Fonts — cache 1 year
-    ExpiresByType font/woff                 "access plus 1 year"
-    ExpiresByType font/woff2                "access plus 1 year"
-    ExpiresByType application/font-woff     "access plus 1 year"
-    ExpiresByType application/font-woff2    "access plus 1 year"
-
-    # JSON & manifest
-    ExpiresByType application/json          "access plus 0 seconds"
-    ExpiresByType application/manifest+json "access plus 1 week"
+    ExpiresByType image/svg+xml             "access plus 6 months"
 </IfModule>
-
-# ── GZIP Compression ─────────────────────────────────────────
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html
-    AddOutputFilterByType DEFLATE text/css
-    AddOutputFilterByType DEFLATE text/javascript
-    AddOutputFilterByType DEFLATE application/javascript
-    AddOutputFilterByType DEFLATE application/json
-    AddOutputFilterByType DEFLATE image/svg+xml
-    AddOutputFilterByType DEFLATE application/xml
-    AddOutputFilterByType DEFLATE font/woff
-    AddOutputFilterByType DEFLATE font/woff2
-</IfModule>
-
-# ── Cache-Control for static assets ─────────────────────────
-<IfModule mod_headers.c>
-    # Cache JS/CSS/images aggressively (content-hashed by React build)
-    <FilesMatch "\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot)$">
-        Header set Cache-Control "public, max-age=31536000, immutable"
-    </FilesMatch>
-
-    # Never cache HTML
-    <FilesMatch "\.html$">
-        Header set Cache-Control "no-cache, no-store, must-revalidate"
-        Header set Pragma "no-cache"
-        Header set Expires "0"
-    </FilesMatch>
-</IfModule>
-
-# ── Block access to sensitive files ─────────────────────────
-<FilesMatch "(\.env|\.git|package\.json|package-lock\.json)$">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
